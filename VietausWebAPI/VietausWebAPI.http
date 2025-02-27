@@ -1,0 +1,6 @@
+@VietausWebAPI_HostAddress = http://localhost:5059
+
+GET {{VietausWebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
