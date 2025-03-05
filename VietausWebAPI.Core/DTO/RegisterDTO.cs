@@ -19,7 +19,7 @@ namespace VietausWebAPI.Core.DTO
         [Required(ErrorMessage = "Password can't be blank.")]
         public string Password { get; set; } = string.Empty;
         [Required(ErrorMessage = "Confirm Password can't be blank.")]
-        [Compare("Password", ErrorMessage = "Confirm Password not correct.")]
+        [Compare("Password", ErrorMessage = "Confirm Password not correct.")] 
         public string ConfirmPassword { get; set; } = string.Empty;
     }
 }
