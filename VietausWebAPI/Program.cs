@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 //Add services to the container.
@@ -54,10 +56,15 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddTransient<IJwtService, JwtService>();
 
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("AppDbConnectinString"));
 });
+
+builder.Services.AddScoped<IInventoryReceiptsService, InventoryReceiptsService>();
+builder.Services.AddScoped<IInventoryReceiptsRepository, InventoryReceiptsRepository>();
 
 // Sử dụng AddIdentityCore khi không muốn sử dụng cookie vì identity tự động gọi sử dụng cookie
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
