@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace VietausWebAPI.Infrastructure.Models;
+namespace VietausWebAPI.Core.Entities;
 
 public partial class MaterialsMaterialGroupsDatum
 {
@@ -10,4 +10,6 @@ public partial class MaterialsMaterialGroupsDatum
     public string MaterialGroupName { get; set; } = null!;
 
     public virtual ICollection<InventoryReceiptsMaterialDatum> InventoryReceiptsMaterialData { get; set; } = new List<InventoryReceiptsMaterialDatum>();
+
+    public virtual ICollection<RequestDetailMaterialDatum> RequestDetailMaterialData { get; set; } = new List<RequestDetailMaterialDatum>();
 }

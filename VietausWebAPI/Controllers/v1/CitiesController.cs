@@ -19,7 +19,9 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
 
     [ApiController]
     [Route("api/[Controller]")]
-    [Authorize] //Này là cấp quyền cho local nhưng có thể cấp quyền chó global bằng cách đăng ký trong programsk
+    //[Authorize] //Này là cấp quyền cho local nhưng có thể cấp quyền chó global bằng cách đăng ký trong programsk
+    [AllowAnonymous]
+
     public class CitiesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;

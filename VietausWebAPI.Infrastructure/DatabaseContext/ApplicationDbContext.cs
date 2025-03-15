@@ -3,11 +3,11 @@ using VietausWebAPI.Core.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using VietausWebAPI.Infrastructure.Models;
+using VietausWebAPI.Core.Entities;
 
 namespace VietausWebAPI.WebAPI.DatabaseContext
 {
-    // Scaffold-DbContext "Server=DESKTOP-8O1VNPK\SQLEXPRESS;Database=VietausDb;Trusted_Connection=True;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Models --context ApplicationDbContext
+    // Scaffold-DbContext "Server=DESKTOP-8O1VNPK\SQLEXPRESS;Database=VietausDb;Trusted_Connection=True;TrustServerCertificate=True;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Models -context ApplicationDbContext
 
 
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid,
@@ -24,21 +24,25 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
         public DbSet<EmployeesCommonDatum> EmployeesCommonData { get; set; }
 
+        public DbSet<EventHistoryQlsx> EventHistoryQlsxes { get; set; }
+
         public DbSet<GroupsCommonDatum> GroupsCommonData { get; set; }
 
         public DbSet<InventoryReceiptsMaterialDatum> InventoryReceiptsMaterialData { get; set; }
 
-        public DbSet<MachineHistory> MachineHistories { get; set; }
+        public DbSet<MachineHistoryMd> MachineHistoryMds { get; set; }
 
         public DbSet<MachinesCommonDatum> MachinesCommonData { get; set; }
 
         public DbSet<MaterialsMaterialGroupsDatum> MaterialsMaterialGroupsData { get; set; }
 
-        public DbSet<OperationHistory> OperationHistories { get; set; }
+        public DbSet<OperationHistoryMd> OperationHistoryMds { get; set; }
 
         public DbSet<PartsCommonDatum> PartsCommonData { get; set; }
 
-        public DbSet<ProductCodeHistory> ProductCodeHistories { get; set; }
+        public DbSet<ProductCodeHistoryMd> ProductCodeHistoryMds { get; set; }
+
+        public DbSet<QlsxMachineEvent> QlsxMachineEvents { get; set; }
 
         public DbSet<RequestDetailMaterialDatum> RequestDetailMaterialData { get; set; }
 
@@ -50,23 +54,6 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Cities>().HasData(new Cities { Id = Guid.Parse("E9A77912-953B-4E0F-A650-6D8FA72DAE54"), Name = "Rem" });
-
-            modelBuilder.Entity<ApplicationUserRole>(userRole =>
-            {
-                userRole.HasKey(ur => new { ur.UserId, ur.RoleId });
-
-                userRole.HasOne(ur => ur.User)
-                    .WithMany(u => u.UserRoles)
-                    .HasForeignKey(ur => ur.UserId);
-
-                userRole.HasOne(ur => ur.Role)
-                    .WithMany(r => r.UserRoles)
-                    .HasForeignKey(ur => ur.RoleId);
-
-                userRole.Property(ur => ur.IsActive)
-                    .IsRequired()
-                    .HasDefaultValue(true);
-            });
 
             modelBuilder.Entity<ApprovalHistoryMaterialDatum>(entity =>
             {
@@ -116,6 +103,10 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .IsUnicode(false);
             });
 
+            modelBuilder.Entity<Cities>(entity =>
+            {
+                entity.Property(e => e.Id).ValueGeneratedNever();
+            });
 
             modelBuilder.Entity<EmployeesCommonDatum>(entity =>
             {
@@ -168,6 +159,27 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasConstraintName("FK__Employees__PartI__68487DD7");
             });
 
+            modelBuilder.Entity<EventHistoryQlsx>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK__EventHis__3214EC27A12BECC3");
+
+                entity.ToTable("EventHistory_Qlsx");
+
+                entity.Property(e => e.Id).HasColumnName("ID");
+                entity.Property(e => e.EventId)
+                    .HasMaxLength(16)
+                    .IsUnicode(false)
+                    .HasColumnName("EventID");
+                entity.Property(e => e.MachineId)
+                    .HasMaxLength(16)
+                    .IsUnicode(false)
+                    .HasColumnName("MachineID");
+
+                entity.HasOne(d => d.Event).WithMany(p => p.EventHistoryQlsxes)
+                    .HasForeignKey(d => d.EventId)
+                    .HasConstraintName("FK_Event");
+            });
+
             modelBuilder.Entity<GroupsCommonDatum>(entity =>
             {
                 entity.HasKey(e => e.GroupId).HasName("PK__Groups__149AF30A6FD59030");
@@ -175,7 +187,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.ToTable("Groups_Common_data");
 
                 entity.Property(e => e.GroupId)
-                    .ValueGeneratedNever()
+                    .HasMaxLength(10)
                     .HasColumnName("GroupID");
                 entity.Property(e => e.Description).HasMaxLength(255);
                 entity.Property(e => e.GroupName).HasMaxLength(50);
@@ -214,11 +226,11 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasConstraintName("FK__Inventory__Reque__73BA3083");
             });
 
-            modelBuilder.Entity<MachineHistory>(entity =>
+            modelBuilder.Entity<MachineHistoryMd>(entity =>
             {
                 entity
                     .HasNoKey()
-                    .ToTable("MachineHistory");
+                    .ToTable("MachineHistory_MD");
 
                 entity.Property(e => e.EnergyTotalOfDay).HasColumnType("decimal(10, 2)");
                 entity.Property(e => e.MachineCleaningEnergyOfDay).HasColumnType("decimal(10, 2)");
@@ -250,7 +262,9 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .IsUnicode(false)
                     .HasColumnName("MachineID");
                 entity.Property(e => e.Description).HasMaxLength(255);
-                entity.Property(e => e.GroupId).HasColumnName("GroupID");
+                entity.Property(e => e.GroupId)
+                    .HasMaxLength(10)
+                    .HasColumnName("GroupID");
                 entity.Property(e => e.MachineName).HasMaxLength(50);
                 entity.Property(e => e.PartId)
                     .HasMaxLength(16)
@@ -281,11 +295,11 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.MaterialGroupName).HasMaxLength(50);
             });
 
-            modelBuilder.Entity<OperationHistory>(entity =>
+            modelBuilder.Entity<OperationHistoryMd>(entity =>
             {
                 entity
                     .HasNoKey()
-                    .ToTable("OperationHistory");
+                    .ToTable("OperationHistory_MD");
 
                 entity.Property(e => e.BatchNo)
                     .HasMaxLength(50)
@@ -313,11 +327,11 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.PartName).HasMaxLength(50);
             });
 
-            modelBuilder.Entity<ProductCodeHistory>(entity =>
+            modelBuilder.Entity<ProductCodeHistoryMd>(entity =>
             {
                 entity
                     .HasNoKey()
-                    .ToTable("ProductCodeHistory");
+                    .ToTable("ProductCodeHistory_MD");
 
                 entity.Property(e => e.BatchNo)
                     .HasMaxLength(10)
@@ -334,33 +348,48 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.StartTime).HasColumnType("datetime");
                 entity.Property(e => e.TotalTime).HasColumnType("decimal(10, 2)");
                 entity.Property(e => e.WaitingTime).HasColumnType("decimal(10, 2)");
+            });
 
-                entity.HasOne(d => d.Machine).WithMany()
-                    .HasForeignKey(d => d.MachineId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__ProductCo__Waiti__03F0984C");
+            modelBuilder.Entity<QlsxMachineEvent>(entity =>
+            {
+                entity.HasKey(e => e.EventId).HasName("PK__QlsxMach__7944C870FF2700F3");
+
+                entity.ToTable("QlsxMachineEvent");
+
+                entity.Property(e => e.EventId)
+                    .HasMaxLength(16)
+                    .IsUnicode(false)
+                    .HasColumnName("EventID");
+                entity.Property(e => e.EventName).HasMaxLength(255);
             });
 
             modelBuilder.Entity<RequestDetailMaterialDatum>(entity =>
             {
-                entity.HasKey(e => e.DetailId).HasName("PK__RequestD__135C314DB6F3BFEE");
+                entity.HasKey(e => e.DetailId).HasName("PK__RequestD__135C314DE18E63EF");
 
                 entity.ToTable("RequestDetail_Material_data");
 
-                entity.Property(e => e.DetailId)
+                entity.Property(e => e.DetailId).HasColumnName("DetailID");
+                entity.Property(e => e.MaterialGroupId)
                     .HasMaxLength(16)
                     .IsUnicode(false)
-                    .HasColumnName("DetailID");
-                entity.Property(e => e.MaterialId)
-                    .HasMaxLength(10)
-                    .IsUnicode(false)
-                    .HasColumnName("MaterialID");
+                    .HasColumnName("MaterialGroupID");
                 entity.Property(e => e.MaterialName).HasMaxLength(50);
                 entity.Property(e => e.RequestId)
-                    .HasMaxLength(10)
+                    .HasMaxLength(16)
                     .IsUnicode(false)
                     .HasColumnName("RequestID");
                 entity.Property(e => e.Unit).HasMaxLength(50);
+
+                entity.HasOne(d => d.MaterialGroup).WithMany(p => p.RequestDetailMaterialData)
+                    .HasForeignKey(d => d.MaterialGroupId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__RequestDe__Mater__1F63A897");
+
+                entity.HasOne(d => d.Request).WithMany(p => p.RequestDetailMaterialData)
+                    .HasForeignKey(d => d.RequestId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__RequestDet__Unit__1E6F845E");
             });
 
             modelBuilder.Entity<SupplyRequestsMaterialDatum>(entity =>
@@ -387,7 +416,6 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__SupplyReq__Emplo__6C190EBB");
             });
-
         }
     }
 }

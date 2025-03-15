@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace VietausWebAPI.Infrastructure.Models;
+namespace VietausWebAPI.Core.Entities;
 
 public partial class MachinesCommonDatum
 {
@@ -9,7 +9,7 @@ public partial class MachinesCommonDatum
 
     public string MachineName { get; set; } = null!;
 
-    public int GroupId { get; set; }
+    public string GroupId { get; set; } = null!;
 
     public string PartId { get; set; } = null!;
 

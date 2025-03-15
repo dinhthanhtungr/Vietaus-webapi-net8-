@@ -1,12 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using VietausWebAPI.Core.DTO;
+using VietausWebAPI.Core.DTO.PostDTO;
 using VietausWebAPI.Core.ServiceContracts;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1
 {
     [ApiController]
-    [Route("api/InventoryReceipts/Add")]
+    [Route("api/InventoryReceipts")]
     [AllowAnonymous]
     public class InventoryReceiptsController : Controller
     {
@@ -17,11 +17,18 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
             _inventoryReceiptsService = inventoryReceiptsService;
         }
 
-        [HttpPost]
+        [HttpPost("Add")]
         public async Task<IActionResult> AddInventoryReceipts([FromBody] InventoryReceiptsDTO inventoryReceiptsDTO)
         {
-            await _inventoryReceiptsService.AddInventoryReceiptsAsync(inventoryReceiptsDTO);
+            await _inventoryReceiptsService.AddInventoryReceiptsServiceAsync(inventoryReceiptsDTO);
             return Ok( new { message = "Request complion" });
+        }
+
+        [HttpGet("GetAll")]
+        public async Task<IActionResult> GetAllInventoryReceipts()
+        {
+            var resuilt = await _inventoryReceiptsService.GetAllInventoryReceiptsServiceAsync();
+            return Ok(resuilt);
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
-using VietausWebAPI.Core.DTO;
-using VietausWebAPI.Core.Models;
-using VietausWebAPI.Infrastructure.Models;
+using VietausWebAPI.Core.DTO.GetDTO;
+using VietausWebAPI.Core.DTO.PostDTO;
+using VietausWebAPI.Core.Entities;
 
 
 namespace VietausWebAPI.Core.MappingProfiles
@@ -10,7 +10,13 @@ namespace VietausWebAPI.Core.MappingProfiles
     {
         public AppMappingProfile()
         {
-            CreateMap<InventoryReceiptsDTO, InventoryReceiptsMaterialDatum>().ReverseMap();
+            CreateMap<SendData, InventoryReceiptsMaterialDatum>().ReverseMap()
+                .ForMember(dest => dest.MaterialGroupId, opt => opt.Ignore()) // Không map navigation
+                .ForMember(dest => dest.RequestId, opt => opt.Ignore())       // Không map navigation
+            ;
+            CreateMap<InventoryReceiptsGetDTO, InventoryReceiptsMaterialDatum>().ReverseMap();
+            CreateMap<SupplyRequestsMaterialDatum, SupplyRequestsMaterialDatumDTO>().ReverseMap();
+            CreateMap<RequestDetailMaterialDatum, RequestDetailMaterialDatumPostDTO>().ReverseMap();
         }
     }
 }

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace VietausWebAPI.Infrastructure.Models;
+namespace VietausWebAPI.Core.Entities;
 
-public partial class OperationHistory
+public partial class OperationHistoryMd
 {
     public string MachineId { get; set; } = null!;
 

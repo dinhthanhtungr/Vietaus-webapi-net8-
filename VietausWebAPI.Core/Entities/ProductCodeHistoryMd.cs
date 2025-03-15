@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace VietausWebAPI.Infrastructure.Models;
+namespace VietausWebAPI.Core.Entities;
 
-public partial class ProductCodeHistory
+public partial class ProductCodeHistoryMd
 {
     public string MachineId { get; set; } = null!;
 
@@ -26,6 +26,4 @@ public partial class ProductCodeHistory
     public int ProducingEnergy { get; set; }
 
     public int WaitingEnergy { get; set; }
-
-    public virtual MachinesCommonDatum Machine { get; set; } = null!;
 }

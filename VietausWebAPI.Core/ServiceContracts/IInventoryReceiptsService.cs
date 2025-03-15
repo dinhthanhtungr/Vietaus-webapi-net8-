@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using VietausWebAPI.Core.DTO;
+using VietausWebAPI.Core.DTO.GetDTO;
+using VietausWebAPI.Core.DTO.PostDTO;
+
 
 namespace VietausWebAPI.Core.ServiceContracts
 {
     public interface IInventoryReceiptsService
     {
-        Task AddInventoryReceiptsAsync(InventoryReceiptsDTO inventoryReceiptsDTO);
+        Task AddInventoryReceiptsServiceAsync(InventoryReceiptsDTO inventoryReceiptsDTO);
+        Task<IEnumerable<InventoryReceiptsGetDTO>> GetAllInventoryReceiptsServiceAsync();
     }
 }

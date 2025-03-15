@@ -1,14 +1,10 @@
 ﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using VietausWebAPI.Core.DTO;
+using VietausWebAPI.Core.DTO.GetDTO;
+using VietausWebAPI.Core.DTO.PostDTO;
+using VietausWebAPI.Core.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
-using VietausWebAPI.Core.Service;
 using VietausWebAPI.Core.ServiceContracts;
-using VietausWebAPI.Infrastructure.Models;
+
 
 namespace VietausWebAPI.Core.Service
 {
@@ -22,15 +18,19 @@ namespace VietausWebAPI.Core.Service
             _mapper = mapper;
         }
 
-        public Task AddInventoryReceipts()
+        public async Task AddInventoryReceiptsServiceAsync(InventoryReceiptsDTO inventoryReceiptsDTO)
         {
-            throw new NotImplementedException();
+            var inventoryReceipts = _mapper.Map<List<InventoryReceiptsMaterialDatum>>(inventoryReceiptsDTO.Items);
+            await _inventoryReceiptsRepository.AddInventoryReceiptsRepositoryAsync(inventoryReceipts);
         }
 
-        public async Task AddInventoryReceiptsAsync(InventoryReceiptsDTO inventoryReceiptsDTO)
+        public async Task<IEnumerable<InventoryReceiptsGetDTO>> GetAllInventoryReceiptsServiceAsync()
         {
-            var inventoryReceipts = _mapper.Map<InventoryReceiptsMaterialDatum>(inventoryReceiptsDTO);
-            await _inventoryReceiptsRepository.AddInventoryReceipts(inventoryReceipts);
+            var inventoryReceipts = await _inventoryReceiptsRepository.GetAllInventoryReceiptsRepositoryAsync();
+            var result = _mapper.Map<IEnumerable<InventoryReceiptsGetDTO>>(inventoryReceipts);
+            //var inventoryReceipts = _mapper.Map<InventoryReceiptsMaterialDatum>(inventoryReceiptsDTO);
+            return result;
         }
+
     }
 }

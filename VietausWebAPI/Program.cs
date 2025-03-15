@@ -13,6 +13,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Infrastructure.Repositories;
+using VietausWebAPI.WebAPI;
 
 var builder = WebApplication.CreateBuilder(args);
 //Add services to the container.
@@ -25,6 +26,9 @@ builder.Services.AddControllers(options =>
 
     .RequireAuthenticatedUser().Build();
     options.Filters.Add(new AuthorizeFilter(policy));
+}).AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
 });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -51,7 +55,14 @@ builder.Services.AddCors(options =>
         .WithMethods("GET")
         ;
     });
+
+    options.AddPolicy("AllowAllOrigins",
+    policy => policy.AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader());
 });
+
+
 
 
 builder.Services.AddTransient<IJwtService, JwtService>();
@@ -63,13 +74,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("AppDbConnectinString"));
 });
 
-builder.Services.AddScoped<IInventoryReceiptsService, InventoryReceiptsService>();
-builder.Services.AddScoped<IInventoryReceiptsRepository, InventoryReceiptsRepository>();
+builder.Services.AddApplicationServices();
 
 // Sử dụng AddIdentityCore khi không muốn sử dụng cookie vì identity tự động gọi sử dụng cookie
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
 {
-    options.Password.RequiredLength = 5;
+    options.Password.RequiredLength = 5; 
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequireDigit = false;
     options.Password.RequireLowercase = true;
@@ -128,6 +138,8 @@ builder.Services.AddAuthentication(options =>
 });
 
 var app = builder.Build();
+
+app.UseCors("AllowAllOrigins");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

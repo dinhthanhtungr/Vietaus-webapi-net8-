@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VietausWebAPI.Core.DTO
+namespace VietausWebAPI.Core.DTO.GetDTO
 {
-    public class InventoryReceiptsDTO
+    public class InventoryReceiptsGetDTO
     {
-
+        public int ReceiptId { get; set; }
         public string MaterialGroupId { get; set; } = null!;
 
         public string RequestId { get; set; } = null!;
@@ -26,5 +26,6 @@ namespace VietausWebAPI.Core.DTO
         public decimal TotalPrice { get; set; }
 
         public string? Note { get; set; }
+        public bool? Status { get; set; }
     }
 }

@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 
-namespace VietausWebAPI.Infrastructure.Models;
+namespace VietausWebAPI.Core.Entities;
 
 public partial class InventoryReceiptsMaterialDatum
 {
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public int ReceiptId { get; set; }
-
     public string MaterialGroupId { get; set; } = null!;
 
     public string RequestId { get; set; } = null!;
@@ -26,6 +22,10 @@ public partial class InventoryReceiptsMaterialDatum
     public decimal TotalPrice { get; set; }
 
     public string? Note { get; set; }
+
+    public int ReceiptId { get; set; }
+    public bool? Status { get; set; }
+
     public virtual MaterialsMaterialGroupsDatum MaterialGroup { get; set; } = null!;
 
     public virtual SupplyRequestsMaterialDatum Request { get; set; } = null!;
