@@ -17,6 +17,7 @@ namespace VietausWebAPI.Core.MappingProfiles
             CreateMap<InventoryReceiptsGetDTO, InventoryReceiptsMaterialDatum>().ReverseMap();
             CreateMap<SupplyRequestsMaterialDatum, SupplyRequestsMaterialDatumDTO>().ReverseMap();
             CreateMap<RequestDetailMaterialDatum, RequestDetailMaterialDatumPostDTO>().ReverseMap();
+            CreateMap<SupplyRequestsMaterialDatum, RequestDTO>().ReverseMap().ForMember(dest => dest.RequestDetailMaterialData, opt => opt.MapFrom(src => src.RequestDetails)).ForMember(dest => dest.RequestDetailMaterialData, opt => opt.Ignore());
         }
     }
 }

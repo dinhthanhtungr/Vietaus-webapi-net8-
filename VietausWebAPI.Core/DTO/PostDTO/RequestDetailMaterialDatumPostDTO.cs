@@ -8,8 +8,6 @@ namespace VietausWebAPI.Core.DTO.PostDTO
 {
     public class RequestDetailMaterialDatumPostDTO
     {
-        public string RequestId { get; set; } = null!;
-
         public string MaterialGroupId { get; set; } = null!;
 
         public string MaterialName { get; set; } = null!;

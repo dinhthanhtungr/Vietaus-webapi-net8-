@@ -17,6 +17,9 @@ namespace VietausWebAPI.WebAPI
             services.AddScoped<IRequestDetailMaterialService, RequestDetailMaterialService>();
             services.AddScoped<IApprovalHistoryMaterialRepository, ApprovalHistoryMaterialRepository>();
             services.AddScoped<IApprovalHistoryMaterialService, ApprovalHistoryMaterialService>();
+            services.AddScoped<IRequestMaterialRepository, RequestMaterialRepository>();
+            services.AddScoped<IRequestMaterialService, RequestMaterialService>();
+
 
             return services;
         }
