@@ -30,7 +30,7 @@ namespace VietausWebAPI.Core.Service
 
         public async Task<IEnumerable<ApprovalHistoryMaterialPostDTO>> GetApprovalHistoryMaterialServiceAsync()
         {
-            var approvalHistoryMaterial = _approvalHistoryMaterialRepository.GetApprovalHistoryMaterialRepositoryAsync();
+            var approvalHistoryMaterial = await _approvalHistoryMaterialRepository.GetApprovalHistoryMaterialRepositoryAsync();
             var result = _mapper.Map<IEnumerable<ApprovalHistoryMaterialPostDTO>>(approvalHistoryMaterial);
             return result;
         }

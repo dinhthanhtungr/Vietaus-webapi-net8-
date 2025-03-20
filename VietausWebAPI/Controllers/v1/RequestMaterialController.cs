@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.DTO.PostDTO;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Core.ServiceContracts;
@@ -20,7 +21,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
         }       
 
         [HttpPost("RequestData")]
-        public async Task<IActionResult> CreateRequest([FromBody] RequestDTO requestDTO)
+        public async Task<IActionResult> CreateRequest([FromBody] RequestMaterialDTO requestDTO)
         {
             try
             {
@@ -32,9 +33,24 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
             {
                 return BadRequest(ex.Message);
             }
-            }
+        }
+        
+
+        [HttpGet("ResponseRequestID")]
+        public async Task<IActionResult> GetGetLastRequestId()
+        {
+            var result = await _requestMaterialService.GetLastRequestIdService();
+            return Ok(result);
         }
 
-        //[HttpGet("ResponseRequestID")]
-        //public async 
+        [HttpGet("ResponseMaterials")]
+        public async Task<IActionResult> GetMaterial([FromQuery] RequestMaterialQuery? query)
+        {
+            var result = await _requestMaterialService.GetMaterialAsyncService(query);
+            return Ok(result);
+        }
+
+
+    }
+
 }   

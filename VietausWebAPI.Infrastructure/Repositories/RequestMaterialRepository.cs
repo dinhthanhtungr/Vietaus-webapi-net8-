@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.WebAPI.DatabaseContext;
@@ -49,10 +51,43 @@ namespace VietausWebAPI.Infrastructure.Repositories
             return request;
         }
 
-        public Task GetLastRequestIdRepository(string requestId)
+        public async Task<SupplyRequestsMaterialDatum> GetLastRequestIdRepository()
         {
-            throw new NotImplementedException();
+            //var lastRequestId = await _context.SupplyRequestsMaterialData.OrderByDescending(x => x.RequestId).FirstOrDefaultAsync();
+
+            return await _context.SupplyRequestsMaterialData.OrderByDescending(x => x.RequestId).FirstOrDefaultAsync();
         }
+
+        public async Task<IEnumerable<SupplyRequestsMaterialDatum>> GetRequestRepository(RequestMaterialQuery query)
+        {
+            var queryable = _context.SupplyRequestsMaterialData
+                .AsNoTracking()
+                .Include(r => r.RequestDetailMaterialData)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(query.RequestId))
+            {
+                queryable = queryable.Where(x => x.RequestId == query.RequestId);
+            }
+
+            if (query.RequestDate != null)
+            {
+                queryable = queryable.Where(x => x.RequestDate == query.RequestDate);
+            }
+
+            if (!string.IsNullOrEmpty(query.EmployeeId))
+            {
+                queryable = queryable.Where(x => x.EmployeeId == query.EmployeeId);
+            }
+
+            if (!string.IsNullOrEmpty(query.RequestStatus))
+            {
+                queryable = queryable.Where(x => x.RequestStatus == query.RequestStatus);
+            }
+
+            return await queryable.ToListAsync();
+        }
+
 
         public async Task RollbackAsync(IDbContextTransaction transaction)
         {

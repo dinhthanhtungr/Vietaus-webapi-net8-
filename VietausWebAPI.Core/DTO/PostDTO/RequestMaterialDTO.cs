@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace VietausWebAPI.Core.DTO.PostDTO
 {
-    public class RequestDTO
+    public class RequestMaterialDTO
     {
         public string RequestId { get; set; }
         public DateTime RequestDate { get; set; }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
+using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.DTO.PostDTO;
 using VietausWebAPI.Core.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
@@ -22,7 +23,7 @@ namespace VietausWebAPI.Core.Service
             _mapper = mapper;
         }
 
-        public async Task<string> CreateRequestMaterial(RequestDTO requestDTO)
+        public async Task<string> CreateRequestMaterial(RequestMaterialDTO requestDTO)
         {
             using var transaction = await _requestRepository.BeginTransactionAsync();
             try
@@ -57,10 +58,19 @@ namespace VietausWebAPI.Core.Service
                 return ex.ToString();
             }
         }
-
-        public Task<string> GetLastRequestIdService()
+        public async Task<RequestIdDTO> GetLastRequestIdService()
         {
-            throw new NotImplementedException();
+            var supplyRequestMaterialDatum = await _requestRepository.GetLastRequestIdRepository();
+            var result = _mapper.Map<RequestIdDTO>(supplyRequestMaterialDatum);
+
+            return result;
+        }
+
+        public async Task<IEnumerable<RequestMaterialDTO>> GetMaterialAsyncService(RequestMaterialQuery query)
+        {
+            var materials = await _requestRepository.GetRequestRepository(query);
+            var result = _mapper.Map<IEnumerable<RequestMaterialDTO>>(materials);
+            return result;
         }
     }
 }
