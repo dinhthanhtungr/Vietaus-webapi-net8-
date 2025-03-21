@@ -24,9 +24,14 @@ public partial class InventoryReceiptsMaterialDatum
     public string? Note { get; set; }
 
     public int ReceiptId { get; set; }
+
     public bool? Status { get; set; }
+
+    public string? SupplierId { get; set; }
 
     public virtual MaterialsMaterialGroupsDatum MaterialGroup { get; set; } = null!;
 
     public virtual SupplyRequestsMaterialDatum Request { get; set; } = null!;
+
+    public virtual MaterialSuppliersMaterialDatum? Supplier { get; set; }
 }

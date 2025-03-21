@@ -26,4 +26,6 @@ public partial class ProductCodeHistoryMd
     public int ProducingEnergy { get; set; }
 
     public int WaitingEnergy { get; set; }
+
+    public virtual MachinesCommonDatum Machine { get; set; } = null!;
 }

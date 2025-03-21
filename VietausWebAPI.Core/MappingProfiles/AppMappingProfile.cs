@@ -16,7 +16,6 @@ namespace VietausWebAPI.Core.MappingProfiles
             ;
             CreateMap<InventoryReceiptsGetDTO, InventoryReceiptsMaterialDatum>().ReverseMap();
             CreateMap<SupplyRequestsMaterialDatum, SupplyRequestsMaterialDatumDTO>().ReverseMap();
-            CreateMap<RequestDetailMaterialDatum, RequestDetailMaterialDatumPostDTO>().ReverseMap();
             CreateMap<SupplyRequestsMaterialDatum, RequestIdDTO>().ReverseMap().ForMember(dest => dest.RequestId, opt => opt.MapFrom(src => src.RequestId));
             CreateMap<SupplyRequestsMaterialDatum, RequestMaterialDTO>().ReverseMap().ForMember(dest => dest.RequestDetailMaterialData, opt => opt.MapFrom(src => src.RequestDetails)).ForMember(dest => dest.RequestDetailMaterialData, opt => opt.Ignore());
 
@@ -24,6 +23,7 @@ namespace VietausWebAPI.Core.MappingProfiles
             .ForMember(dest => dest.RequestDetails, opt => opt.MapFrom(src => src.RequestDetailMaterialData ?? new List<RequestDetailMaterialDatum>()));
 
             CreateMap<RequestDetailMaterialDatum, RequestDetailMaterialDatumPostDTO>()
+                .ReverseMap()
                 //.ForMember(dest => dest.MaterialGroupId, opt => opt.MapFrom(src => src.RequestId))
                 .ForMember(dest => dest.MaterialGroupId, opt => opt.MapFrom(src => src.MaterialGroupId))
                 .ForMember(dest => dest.MaterialName, opt => opt.MapFrom(src => src.MaterialName))

@@ -33,8 +33,6 @@ namespace VietausWebAPI.Infrastructure.Repositories
             return await _context.Database.BeginTransactionAsync();
         }
 
-
-
         public async Task CommitTransactionAsync(IDbContextTransaction transaction)
         {
             if (transaction == null)
@@ -47,14 +45,11 @@ namespace VietausWebAPI.Infrastructure.Repositories
         public async Task<SupplyRequestsMaterialDatum> CreateRequestAsync(SupplyRequestsMaterialDatum request)
         {
             await _context.SupplyRequestsMaterialData.AddRangeAsync(request);
-            //await _context.SaveChangesAsync();
             return request;
         }
 
         public async Task<SupplyRequestsMaterialDatum> GetLastRequestIdRepository()
         {
-            //var lastRequestId = await _context.SupplyRequestsMaterialData.OrderByDescending(x => x.RequestId).FirstOrDefaultAsync();
-
             return await _context.SupplyRequestsMaterialData.OrderByDescending(x => x.RequestId).FirstOrDefaultAsync();
         }
 
@@ -63,6 +58,7 @@ namespace VietausWebAPI.Infrastructure.Repositories
             var queryable = _context.SupplyRequestsMaterialData
                 .AsNoTracking()
                 .Include(r => r.RequestDetailMaterialData)
+                .Include(r => r.Employee)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(query.RequestId))
@@ -70,20 +66,93 @@ namespace VietausWebAPI.Infrastructure.Repositories
                 queryable = queryable.Where(x => x.RequestId == query.RequestId);
             }
 
-            if (query.RequestDate != null)
+            // Lọc theo khoản thời gian
+            if (query.RequestDateFrom != null && query.RequestDateTo != null)
+            {
+                queryable = queryable.Where(x => x.RequestDate >= query.RequestDateFrom && x.RequestDate <= query.RequestDateTo);
+            }
+
+            else if (query.RequestDateFrom.HasValue) 
+            {
+                queryable = queryable.Where(x => x.RequestDate.Date >= query.RequestDateFrom.Value);
+            }
+
+            else if (query.RequestDateTo.HasValue)
+            {
+                queryable = queryable.Where(x => x.RequestDate.Date <= query.RequestDateTo.Value);
+            }
+            else if (query.RequestDate != null)
             {
                 queryable = queryable.Where(x => x.RequestDate == query.RequestDate);
             }
 
+            // Lọc theo EmployeeId
             if (!string.IsNullOrEmpty(query.EmployeeId))
             {
                 queryable = queryable.Where(x => x.EmployeeId == query.EmployeeId);
             }
 
+            // Lọc theo RequestStatus
             if (!string.IsNullOrEmpty(query.RequestStatus))
             {
                 queryable = queryable.Where(x => x.RequestStatus == query.RequestStatus);
             }
+
+            // Lọc theo MaterialName
+            if (!string.IsNullOrEmpty(query.MaterialName))
+            {
+                queryable = queryable.Where(x => x.RequestDetailMaterialData.Any(y => y.MaterialName.Contains(query.MaterialName)));
+            }
+
+            // Lọc theo MaterialGroupID
+            if (!string.IsNullOrEmpty(query.MaterialGroupID))
+            {
+                queryable = queryable.Where(x => x.RequestDetailMaterialData.Any(y => y.MaterialGroupId.Contains(query.MaterialGroupID)));
+            }
+
+            if (!string.IsNullOrEmpty(query.Department))
+            {
+                queryable = queryable.Where(x => x.Employee.PartId == query.Department);
+            }
+
+            if (!string.IsNullOrEmpty(query.EmployeeName))
+            {
+                queryable = queryable.Where(x => x.Employee.FullName.Contains(query.EmployeeName));
+            }
+
+            // Sắp xếp
+            switch (query.SortBy?.ToLower())
+            {
+                case "RequestId":
+                    queryable = query.SortAscending
+                        ? queryable.OrderBy(x => x.RequestId) 
+                        : queryable.OrderByDescending(x => x.RequestId);
+                    break;
+                case "RequestDate":
+                    queryable = query.SortAscending
+                        ? queryable.OrderBy(x => x.RequestDate)
+                        : queryable.OrderByDescending(x => x.RequestDate);
+                    break;
+                case "RequestStatus":
+                    queryable = query.SortAscending
+                        ? queryable.OrderBy(x => x.RequestStatus)
+                        : queryable.OrderByDescending(x => x.RequestStatus);
+                    break;
+                default:
+                    queryable = queryable.OrderBy(x => x.RequestDate);
+                    break;
+            }
+
+            // Tính tổng số trang trước khi nhận trang
+            int totalItems = await queryable.CountAsync();
+            
+            int pageNumber = Math.Max(1, query.PageNumber);
+            int pageSize = Math.Max(1, query.PageSize);
+            queryable = queryable
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize);
+
+            var items = await queryable.ToListAsync();
 
             return await queryable.ToListAsync();
         }
