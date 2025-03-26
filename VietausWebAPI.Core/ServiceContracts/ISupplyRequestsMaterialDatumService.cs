@@ -11,5 +11,7 @@ namespace VietausWebAPI.Core.ServiceContracts
     {
         Task AddSupplyRequestsMaterialDatumAsync(SupplyRequestsMaterialDatumDTO supplyRequestsMaterialDatumDTO);
         Task<IEnumerable<SupplyRequestsMaterialDatumDTO>> GetAllSupplyRequestsMaterialDatumAsync();
+        Task UpdateRequestStatusAsyncService(string requestId, string requestStatus);
+
     }
 }

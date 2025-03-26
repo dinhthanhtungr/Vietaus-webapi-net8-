@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VietausWebAPI.Core.DTO.PostDTO;
+using VietausWebAPI.Core.DTO.QueryObject;
 using VietausWebAPI.Core.ServiceContracts;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1
@@ -28,6 +29,13 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
         public async Task<IActionResult> GetAllInventoryReceipts()
         {
             var resuilt = await _inventoryReceiptsService.GetAllInventoryReceiptsServiceAsync();
+            return Ok(resuilt);
+        }
+
+        [HttpGet("Search")]
+        public async Task<IActionResult> SearchInventoryReceipts([FromQuery] InventoryReceiptsQuery? query)
+        {
+            var resuilt = await _inventoryReceiptsService.AddInventoryReceiptsServiceAsync(query);
             return Ok(resuilt);
         }
     }

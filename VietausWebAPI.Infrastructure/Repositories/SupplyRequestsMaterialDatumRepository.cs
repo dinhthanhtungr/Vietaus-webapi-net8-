@@ -18,12 +18,28 @@ namespace VietausWebAPI.Infrastructure.Repositories
         public async Task AddSupplyRequestsMaterialDatumRepository(List<SupplyRequestsMaterialDatum> supplyRequestsMaterialData)
         {
             await _context.SupplyRequestsMaterialData.AddRangeAsync(supplyRequestsMaterialData);
-            await _context.SaveChangesAsync();
+            //await _context.SaveChangesAsync();
         }
 
         public async Task<IEnumerable<SupplyRequestsMaterialDatum>> GetAllSupplyRequestsMaterialDatumRepository()
         {
             return await _context.SupplyRequestsMaterialData.ToListAsync();
         }
+
+        public async Task UpdateRequestStatusAsyncRepository(string requestId, string requestStatus)
+        {
+            var request = await _context.SupplyRequestsMaterialData
+                .FirstOrDefaultAsync(x => x.RequestId == requestId);
+
+            if (request == null)
+            {
+                throw new Exception($"Request with ID {requestId} not found");
+            }
+            else
+            {
+                request.RequestStatus = requestStatus;
+            }
+        }
+
     }
 }

@@ -33,6 +33,13 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
             return Ok(result);
         }
 
+        [HttpPost("UpdateRequestStatus")]
+        public async Task<IActionResult> UpdateRequestStatus([FromQuery] string requestId, [FromQuery] string status )
+        {
+            await _supplyRequestsMaterialDatumService.UpdateRequestStatusAsyncService(requestId, status);
+            return Ok(new { Message = "Request status updated" });
+        }
+
 
     }
 }

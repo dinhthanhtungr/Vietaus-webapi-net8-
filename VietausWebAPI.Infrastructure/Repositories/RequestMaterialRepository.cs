@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using VietausWebAPI.Core.DTO.GetDTO;
+using VietausWebAPI.Core.DTO.QueryObject;
 using VietausWebAPI.Core.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.WebAPI.DatabaseContext;
@@ -15,7 +15,6 @@ namespace VietausWebAPI.Infrastructure.Repositories
     public class RequestMaterialRepository : IRequestMaterialRepository
     {
         private readonly ApplicationDbContext  _context;
-        private IDbContextTransaction _transaction;
 
         public RequestMaterialRepository (ApplicationDbContext context)
         {
@@ -25,21 +24,6 @@ namespace VietausWebAPI.Infrastructure.Repositories
         public async Task AddRequestDetailMaterialAsync(List<RequestDetailMaterialDatum> requestDetail)
         {
             await _context.RequestDetailMaterialData.AddRangeAsync(requestDetail);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task<IDbContextTransaction> BeginTransactionAsync()
-        {
-            return await _context.Database.BeginTransactionAsync();
-        }
-
-        public async Task CommitTransactionAsync(IDbContextTransaction transaction)
-        {
-            if (transaction == null)
-            {
-                throw new ArgumentNullException(nameof(transaction));
-            }
-            await transaction.CommitAsync();
         }
 
         public async Task<SupplyRequestsMaterialDatum> CreateRequestAsync(SupplyRequestsMaterialDatum request)
@@ -110,11 +94,13 @@ namespace VietausWebAPI.Infrastructure.Repositories
                 queryable = queryable.Where(x => x.RequestDetailMaterialData.Any(y => y.MaterialGroupId.Contains(query.MaterialGroupID)));
             }
 
+            // Lọc theo Department
             if (!string.IsNullOrEmpty(query.Department))
             {
                 queryable = queryable.Where(x => x.Employee.PartId == query.Department);
             }
 
+            // Lọc theo EmployeeName
             if (!string.IsNullOrEmpty(query.EmployeeName))
             {
                 queryable = queryable.Where(x => x.Employee.FullName.Contains(query.EmployeeName));
@@ -152,15 +138,13 @@ namespace VietausWebAPI.Infrastructure.Repositories
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize);
 
-            var items = await queryable.ToListAsync();
-
             return await queryable.ToListAsync();
         }
 
 
         public async Task RollbackAsync(IDbContextTransaction transaction)
         {
-            await _transaction.RollbackAsync();
+            await transaction.RollbackAsync();
         }
     }
 }

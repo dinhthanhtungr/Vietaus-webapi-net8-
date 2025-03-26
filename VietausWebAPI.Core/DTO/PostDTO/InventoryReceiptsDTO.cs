@@ -31,5 +31,6 @@ namespace VietausWebAPI.Core.DTO.PostDTO
         public string? Note { get; set; }
 
         public bool? Status { get; set; }
+        public string? SupplierId { get; set; }
     }
 }

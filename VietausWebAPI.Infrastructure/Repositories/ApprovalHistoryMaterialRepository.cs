@@ -19,15 +19,19 @@ namespace VietausWebAPI.Infrastructure.Repositories
         {
             _context = context;
         }
-        public async Task AddApprovalHistoryMaterialRepositoryAsync(IEnumerable<ApprovalHistoryMaterialDatum> approvalLevelsCommonData)
+
+        public async Task AddApprovalHistoryMaterialRepositoryAsync(ApprovalHistoryMaterialDatum approvalLevelsCommonData)
         {
             await _context.ApprovalHistoryMaterialData.AddRangeAsync(approvalLevelsCommonData);
-            await _context.SaveChangesAsync(); 
         }
 
-        public async Task<IEnumerable<ApprovalHistoryMaterialDatum>> GetApprovalHistoryMaterialRepositoryAsync()
+        public async Task<IEnumerable<ApprovalHistoryMaterialDatum>> GetApprovalHistoryMaterialRepositoryAsync(string requestID)
         {
-            return await _context.ApprovalHistoryMaterialData.ToListAsync();
+            return await _context.ApprovalHistoryMaterialData
+                .AsNoTracking()
+                .Where(x => x.RequestId == requestID)
+                .ToListAsync();
         }
+
     }
 }

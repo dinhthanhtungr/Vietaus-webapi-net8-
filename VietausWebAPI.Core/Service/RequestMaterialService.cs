@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.DTO.PostDTO;
+using VietausWebAPI.Core.DTO.QueryObject;
 using VietausWebAPI.Core.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Core.ServiceContracts;
@@ -14,23 +15,25 @@ namespace VietausWebAPI.Core.Service
 {
     public class RequestMaterialService : IRequestMaterialService
     {
-        private readonly IRequestMaterialRepository _requestRepository;
+        //private readonly IRequestMaterialRepository _requestRepository;
         private readonly IMapper _mapper;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public RequestMaterialService (IRequestMaterialRepository repository, IMapper mapper)
+        public RequestMaterialService (IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _requestRepository = repository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
         public async Task<string> CreateRequestMaterial(RequestMaterialDTO requestDTO)
         {
-            using var transaction = await _requestRepository.BeginTransactionAsync();
+            await _unitOfWork.BeginTransactionAsync();
             try
             {
                 var request = _mapper.Map<SupplyRequestsMaterialDatum>(requestDTO);
 
-                await _requestRepository.CreateRequestAsync(request);
+
+                await _unitOfWork.RequestMaterialRepository.CreateRequestAsync(request);
 
                 var requestDetails = requestDTO.RequestDetails.Select(detailDTO =>
                 {
@@ -39,14 +42,9 @@ namespace VietausWebAPI.Core.Service
                     return detail;
                 }).ToList();
 
-
-                Console.WriteLine("Saving request details...");
-                await _requestRepository.AddRequestDetailMaterialAsync(requestDetails);
-                Console.WriteLine("Request details saved.");
-
-                Console.WriteLine("Committing transaction...");
-                await _requestRepository.CommitTransactionAsync(transaction);
-                Console.WriteLine("Transaction committed.");
+                await _unitOfWork.RequestMaterialRepository.AddRequestDetailMaterialAsync(requestDetails);
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
 
 
 
@@ -54,13 +52,14 @@ namespace VietausWebAPI.Core.Service
             }
             catch (Exception ex) 
             {
-                await _requestRepository.RollbackAsync(transaction);
+                //await _requestRepository.RollbackAsync(transaction);
+                await _unitOfWork.RollbackTransactionAsync();
                 return ex.ToString();
             }
         }
         public async Task<RequestIdDTO> GetLastRequestIdService()
         {
-            var supplyRequestMaterialDatum = await _requestRepository.GetLastRequestIdRepository();
+            var supplyRequestMaterialDatum = await _unitOfWork.RequestMaterialRepository.GetLastRequestIdRepository();
             var result = _mapper.Map<RequestIdDTO>(supplyRequestMaterialDatum);
 
             return result;
@@ -68,7 +67,7 @@ namespace VietausWebAPI.Core.Service
 
         public async Task<IEnumerable<RequestMaterialDTO>> GetMaterialAsyncService(RequestMaterialQuery query)
         {
-            var materials = await _requestRepository.GetRequestRepository(query);
+            var materials = await _unitOfWork.RequestMaterialRepository.GetRequestRepository(query);
             var result = _mapper.Map<IEnumerable<RequestMaterialDTO>>(materials);
             return result;
         }

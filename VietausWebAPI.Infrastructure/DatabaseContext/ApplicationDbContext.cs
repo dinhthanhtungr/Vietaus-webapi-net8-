@@ -7,7 +7,7 @@ using VietausWebAPI.Core.Entities;
 
 namespace VietausWebAPI.WebAPI.DatabaseContext
 {
-    // Scaffold-DbContext "Server=DESKTOP-8O1VNPK\SQLEXPRESS;Database=VietausDb;Trusted_Connection=True;TrustServerCertificate=True;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Models -context ApplicationDbContext
+    // Scaffold-DbContext "Server=DESKTOP-BL5L5IM;Database=VietausDb;Trusted_Connection=True;TrustServerCertificate=True;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Models -context ApplicationDbContext
 
 
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid,
@@ -36,6 +36,8 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
         public DbSet<MaterialsMaterialGroupsDatum> MaterialsMaterialGroupsData { get; set; }
 
+        public DbSet<MaterialSuppliersMaterialDatum> MaterialSuppliersMaterialData { get; set; }
+
         public DbSet<OperationHistoryMd> OperationHistoryMds { get; set; }
 
         public DbSet<PartsCommonDatum> PartsCommonData { get; set; }
@@ -55,16 +57,27 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<Cities>().HasData(new Cities { Id = Guid.Parse("E9A77912-953B-4E0F-A650-6D8FA72DAE54"), Name = "Rem" });
 
+            modelBuilder.Entity<SupplyRequestsMaterialDatum>(entity =>
+            {
+                entity.HasKey(e => e.RequestId);
+                entity.Property(e => e.RequestId)
+                      .HasColumnType("NVARCHAR(50)")
+                      .HasMaxLength(50);
+                entity.Property(e => e.EmployeeId)
+                      .HasColumnType("NVARCHAR(50)")
+                      .HasMaxLength(50);
+                entity.Property(e => e.RequestStatus)
+                      .HasColumnType("NVARCHAR(50)")
+                      .HasMaxLength(50);
+            });
+
             modelBuilder.Entity<ApprovalHistoryMaterialDatum>(entity =>
             {
-                entity.HasKey(e => e.Id).HasName("PK__Approval__3214EC27AC4B986D");
+                entity.HasKey(e => e.Id).HasName("PK__Approval__3214EC279BFACB25");
 
                 entity.ToTable("ApprovalHistory_Material_data");
 
-                entity.Property(e => e.Id)
-                    .HasMaxLength(10)
-                    .IsUnicode(false)
-                    .HasColumnName("ID");
+                entity.Property(e => e.Id).HasColumnName("ID");
                 entity.Property(e => e.ApprovalDate).HasColumnType("datetime");
                 entity.Property(e => e.EmployeeId)
                     .HasMaxLength(16)
@@ -79,12 +92,31 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.HasOne(d => d.Employee).WithMany(p => p.ApprovalHistoryMaterialData)
                     .HasForeignKey(d => d.EmployeeId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__ApprovalH__Emplo__778AC167");
+                    .HasConstraintName("FK_EmployeeID_Common");
 
                 entity.HasOne(d => d.Request).WithMany(p => p.ApprovalHistoryMaterialData)
                     .HasForeignKey(d => d.RequestId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__ApprovalH__Reque__76969D2E");
+                    .HasConstraintName("FK_ApprovalHistory_Request");
+            });
+
+
+            modelBuilder.Entity<MaterialSuppliersMaterialDatum>(entity =>
+            {
+                entity.HasKey(e => e.SupplierId).HasName("PK__Material__4BE66694441AFF7D");
+
+                entity.ToTable("MaterialSuppliers_Material_data");
+
+                entity.Property(e => e.SupplierId)
+                    .HasMaxLength(16)
+                    .IsUnicode(false)
+                    .HasColumnName("SupplierID");
+                entity.Property(e => e.Address).HasMaxLength(500);
+                entity.Property(e => e.Note).HasMaxLength(500);
+                entity.Property(e => e.Phone)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+                entity.Property(e => e.SupplierName).HasMaxLength(255);
             });
 
             modelBuilder.Entity<ApprovalLevelsCommonDatum>(entity =>

@@ -8,7 +8,6 @@ namespace VietausWebAPI.Core.DTO.PostDTO
 {
     public class ApprovalHistoryMaterialPostDTO
     {
-        public string Id { get; set; } = null!;
 
         public string RequestId { get; set; } = null!;
 
@@ -17,5 +16,6 @@ namespace VietausWebAPI.Core.DTO.PostDTO
         public DateTime ApprovalDate { get; set; }
 
         public string? Note { get; set; }
+        public string requestStatus { get; set; } = null!;
     }
 }

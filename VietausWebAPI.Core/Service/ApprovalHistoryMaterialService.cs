@@ -13,26 +13,44 @@ namespace VietausWebAPI.Core.Service
 {
     public class ApprovalHistoryMaterialService : IApprovalHistoryMaterialService
     {
-        private readonly IApprovalHistoryMaterialRepository _approvalHistoryMaterialRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public ApprovalHistoryMaterialService (IApprovalHistoryMaterialRepository approvalHistoryMaterialRepository, IMapper mapper)
+        public ApprovalHistoryMaterialService(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _approvalHistoryMaterialRepository = approvalHistoryMaterialRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
-        public async Task AddApprovalHistoryMaterialServiceAsync(ApprovalHistoryMaterialPostDTO approvalHistoryMaterialPostDTOs)
+        public async Task AddApprovalHistoryMaterialServiceAsync(ApprovalHistoryMaterialPostDTO approvalHistoryMaterialPostDTO)
         {
-            var result = _mapper.Map<IEnumerable<ApprovalHistoryMaterialDatum>>(approvalHistoryMaterialPostDTOs);
-            await _approvalHistoryMaterialRepository.AddApprovalHistoryMaterialRepositoryAsync(result);
-        }
+            //var approvalHistory = _mapper.Map<ApprovalHistoryMaterialDatum>(approvalHistoryMaterialPostDTO);
+            //await _unitOfWork.ApprovalHistoryMaterialRepository.AddApprovalHistoryMaterialRepositoryAsync(approvalHistory);
 
-        public async Task<IEnumerable<ApprovalHistoryMaterialPostDTO>> GetApprovalHistoryMaterialServiceAsync()
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var approvalHistory = _mapper.Map<ApprovalHistoryMaterialDatum>(approvalHistoryMaterialPostDTO);
+                await _unitOfWork.ApprovalHistoryMaterialRepository.AddApprovalHistoryMaterialRepositoryAsync(approvalHistory);
+
+                await _unitOfWork.SupplyRequestsMaterialDatumRepository.UpdateRequestStatusAsyncRepository(
+                    approvalHistoryMaterialPostDTO.RequestId,
+                    approvalHistoryMaterialPostDTO.requestStatus
+                );
+
+                await _unitOfWork.SaveChangesAsync();   
+                await _unitOfWork.CommitTransactionAsync();
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw ex;
+            }
+        }
+        public async Task<IEnumerable<ApprovalHistoryMaterialPostDTO>> GetApprovalHistoryMaterialServiceAsync(string requestId)
         {
-            var approvalHistoryMaterial = await _approvalHistoryMaterialRepository.GetApprovalHistoryMaterialRepositoryAsync();
-            var result = _mapper.Map<IEnumerable<ApprovalHistoryMaterialPostDTO>>(approvalHistoryMaterial);
-            return result;
+            var approvalHistories = await _unitOfWork.ApprovalHistoryMaterialRepository.GetApprovalHistoryMaterialRepositoryAsync(requestId);
+            return _mapper.Map<IEnumerable<ApprovalHistoryMaterialPostDTO>>(approvalHistories);
         }
     }
 }

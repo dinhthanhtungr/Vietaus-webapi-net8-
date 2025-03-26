@@ -8,5 +8,7 @@ namespace VietausWebAPI.Core.Repositories_Contracts
     {
         Task AddSupplyRequestsMaterialDatumRepository(List<SupplyRequestsMaterialDatum> supplyRequestsMaterialData);
         Task<IEnumerable<SupplyRequestsMaterialDatum>> GetAllSupplyRequestsMaterialDatumRepository();
+
+        Task UpdateRequestStatusAsyncRepository(string requestId, string requestStatus);
     }
 }

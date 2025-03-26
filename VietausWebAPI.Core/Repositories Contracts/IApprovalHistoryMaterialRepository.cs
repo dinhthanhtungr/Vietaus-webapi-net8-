@@ -9,7 +9,7 @@ namespace VietausWebAPI.Core.Repositories_Contracts
 {
     public interface IApprovalHistoryMaterialRepository
     {
-        public Task AddApprovalHistoryMaterialRepositoryAsync(IEnumerable<ApprovalHistoryMaterialDatum> approvalLevelsCommonData);
-        public Task<IEnumerable<ApprovalHistoryMaterialDatum>> GetApprovalHistoryMaterialRepositoryAsync();
+        public Task AddApprovalHistoryMaterialRepositoryAsync(ApprovalHistoryMaterialDatum approvalLevelsCommonData);
+        public Task<IEnumerable<ApprovalHistoryMaterialDatum>> GetApprovalHistoryMaterialRepositoryAsync(string requestID);
     }
 }

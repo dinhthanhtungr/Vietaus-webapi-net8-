@@ -5,7 +5,7 @@ namespace VietausWebAPI.Core.Entities;
 
 public partial class ApprovalHistoryMaterialDatum
 {
-    public string Id { get; set; } = null!;
+    public int Id { get; set; }
 
     public string RequestId { get; set; } = null!;
 

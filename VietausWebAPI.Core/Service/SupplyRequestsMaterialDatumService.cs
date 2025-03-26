@@ -9,26 +9,32 @@ namespace VietausWebAPI.Core.Service
 {
     public class SupplyRequestsMaterialDatumService : ISupplyRequestsMaterialDatumService
     {
-        private readonly ISupplyRequestsMaterialDatumRepository _supplyRequestsMaterialDatumRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public SupplyRequestsMaterialDatumService(ISupplyRequestsMaterialDatumRepository supplyRequestsMaterialDatumRepository, IMapper mapper)
+        public SupplyRequestsMaterialDatumService(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _supplyRequestsMaterialDatumRepository = supplyRequestsMaterialDatumRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
         public async Task AddSupplyRequestsMaterialDatumAsync(SupplyRequestsMaterialDatumDTO supplyRequestsMaterialDatumDTO)
         {
             var supplyRequestMaterialDatum = _mapper.Map<List<SupplyRequestsMaterialDatum>>(supplyRequestsMaterialDatumDTO);
-            await _supplyRequestsMaterialDatumRepository.AddSupplyRequestsMaterialDatumRepository(supplyRequestMaterialDatum);
+            await _unitOfWork.SupplyRequestsMaterialDatumRepository.AddSupplyRequestsMaterialDatumRepository(supplyRequestMaterialDatum);
         }
 
         public async Task<IEnumerable<SupplyRequestsMaterialDatumDTO>> GetAllSupplyRequestsMaterialDatumAsync()
         {
-            var supplyRequestMaterialDatum = await _supplyRequestsMaterialDatumRepository.GetAllSupplyRequestsMaterialDatumRepository();
+            var supplyRequestMaterialDatum = await _unitOfWork.SupplyRequestsMaterialDatumRepository.GetAllSupplyRequestsMaterialDatumRepository();
             var result = _mapper.Map<IEnumerable<SupplyRequestsMaterialDatumDTO>>(supplyRequestMaterialDatum);
 
             return result;
+        }
+
+        public async Task UpdateRequestStatusAsyncService(string requestId, string requestStatus)
+        {
+            await _unitOfWork.SupplyRequestsMaterialDatumRepository.UpdateRequestStatusAsyncRepository(requestId, requestStatus);
+            await _unitOfWork.SaveChangesAsync();
         }
     }
 }

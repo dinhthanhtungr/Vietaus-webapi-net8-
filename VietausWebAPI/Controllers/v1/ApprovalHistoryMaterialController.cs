@@ -13,23 +13,24 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
     {
         private readonly IApprovalHistoryMaterialService _approvalHistoryMaterialService;
 
-        public ApprovalHistoryMaterialController (IApprovalHistoryMaterialService approvalHistoryMaterialService)
+        public ApprovalHistoryMaterialController(IApprovalHistoryMaterialService approvalHistoryMaterialService)
         {
             _approvalHistoryMaterialService = approvalHistoryMaterialService;
         }
 
         [HttpGet("Get")]
-        public async Task<IActionResult> AddApprovalHistoryMaterial([FromBody] ApprovalHistoryMaterialPostDTO approvalHistoryMaterialPostDTO)
+
+        public async Task<IActionResult> GetAllApprovalHistoryMaterial([FromQuery] string? query)
         {
-            await _approvalHistoryMaterialService.AddApprovalHistoryMaterialServiceAsync(approvalHistoryMaterialPostDTO);
-            return Ok(new { Message = "Request complion"});
+            await _approvalHistoryMaterialService.GetApprovalHistoryMaterialServiceAsync(query);
+            return Ok(new { Message = "Request complion" });
         }
 
         [HttpPost("Post")]
-        public async Task<IActionResult> GetAllApprovalHistoryMaterial()
+        public async Task<IActionResult> AddApprovalHistoryMaterial([FromBody] ApprovalHistoryMaterialPostDTO approvalHistoryMaterialPostDTO)
         {
-            var result = await _approvalHistoryMaterialService.GetApprovalHistoryMaterialServiceAsync();
-            return Ok(result);
+            await _approvalHistoryMaterialService.AddApprovalHistoryMaterialServiceAsync(approvalHistoryMaterialPostDTO);
+            return Ok(new { Message = "Approval history material added successfully" });
         }
     }
 }
