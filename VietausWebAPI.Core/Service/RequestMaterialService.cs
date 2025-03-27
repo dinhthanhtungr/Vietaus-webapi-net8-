@@ -18,13 +18,21 @@ namespace VietausWebAPI.Core.Service
         //private readonly IRequestMaterialRepository _requestRepository;
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
-
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="unitOfWork"></param>
+        /// <param name="mapper"></param>
         public RequestMaterialService (IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-
+        /// <summary>
+        /// Tạo một đề xuất mua vật tư với đầy đủ các thông số
+        /// </summary>
+        /// <param name="requestDTO"></param>
+        /// <returns></returns>
         public async Task<string> CreateRequestMaterial(RequestMaterialDTO requestDTO)
         {
             await _unitOfWork.BeginTransactionAsync();
@@ -57,6 +65,10 @@ namespace VietausWebAPI.Core.Service
                 return ex.ToString();
             }
         }
+        /// <summary>
+        /// Lấy ra mã đề xuất cuối cùng
+        /// </summary>
+        /// <returns></returns>
         public async Task<RequestIdDTO> GetLastRequestIdService()
         {
             var supplyRequestMaterialDatum = await _unitOfWork.RequestMaterialRepository.GetLastRequestIdRepository();
@@ -64,7 +76,11 @@ namespace VietausWebAPI.Core.Service
 
             return result;
         }
-
+        /// <summary>
+        /// Lấy ra danh sách vật tư theo các điều kiện tìm kiếm
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
         public async Task<IEnumerable<RequestMaterialDTO>> GetMaterialAsyncService(RequestMaterialQuery query)
         {
             var materials = await _unitOfWork.RequestMaterialRepository.GetRequestRepository(query);

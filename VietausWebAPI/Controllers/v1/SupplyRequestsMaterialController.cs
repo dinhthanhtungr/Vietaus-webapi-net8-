@@ -13,11 +13,20 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
     {
         private readonly ISupplyRequestsMaterialDatumService _supplyRequestsMaterialDatumService;
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="supplyRequestsMaterialDatumService"></param>
         public SupplyRequestsMaterialController (ISupplyRequestsMaterialDatumService supplyRequestsMaterialDatumService)
         {
             _supplyRequestsMaterialDatumService = supplyRequestsMaterialDatumService;
         }
 
+        /// <summary>
+        /// Thêm đề xuất mới
+        /// </summary>
+        /// <param name="supplyRequestsMaterialDatumDTO"></param>
+        /// <returns></returns>
         [HttpPost("Add")]
         public async Task<IActionResult> AddSupplyRequestMaterial([FromBody] SupplyRequestsMaterialDatumDTO supplyRequestsMaterialDatumDTO)
         {
@@ -25,6 +34,10 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
             return Ok(new { Message = "Request complion" });
         }
 
+        /// <summary>
+        /// Lấy tất cả đề xuất
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("GetAll")]
         public async Task<IActionResult> GetAllSupplyRequestsMaterial()
         {
@@ -33,7 +46,13 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
             return Ok(result);
         }
 
-        [HttpPost("UpdateRequestStatus")]
+        /// <summary>
+        /// Cập nhật trạng thái đề xuất
+        /// </summary>
+        /// <param name="requestId"></param>
+        /// <param name="status"></param>
+        /// <returns></returns>
+        [HttpPatch("UpdateRequestStatus")]
         public async Task<IActionResult> UpdateRequestStatus([FromQuery] string requestId, [FromQuery] string status )
         {
             await _supplyRequestsMaterialDatumService.UpdateRequestStatusAsyncService(requestId, status);

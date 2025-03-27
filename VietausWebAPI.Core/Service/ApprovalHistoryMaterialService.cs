@@ -15,18 +15,23 @@ namespace VietausWebAPI.Core.Service
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="unitOfWork"></param>
+        /// <param name="mapper"></param>
         public ApprovalHistoryMaterialService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-
+        /// <summary>
+        /// Thêm lịch sử phê duyệt vật tư
+        /// </summary>
+        /// <param name="approvalHistoryMaterialPostDTO"></param>
+        /// <returns></returns>
         public async Task AddApprovalHistoryMaterialServiceAsync(ApprovalHistoryMaterialPostDTO approvalHistoryMaterialPostDTO)
         {
-            //var approvalHistory = _mapper.Map<ApprovalHistoryMaterialDatum>(approvalHistoryMaterialPostDTO);
-            //await _unitOfWork.ApprovalHistoryMaterialRepository.AddApprovalHistoryMaterialRepositoryAsync(approvalHistory);
-
             await _unitOfWork.BeginTransactionAsync();
             try
             {
@@ -47,6 +52,11 @@ namespace VietausWebAPI.Core.Service
                 throw ex;
             }
         }
+        /// <summary>
+        /// Lấy lịch sử phê duyệt vật tư
+        /// </summary>
+        /// <param name="requestId"></param>
+        /// <returns></returns>
         public async Task<IEnumerable<ApprovalHistoryMaterialPostDTO>> GetApprovalHistoryMaterialServiceAsync(string requestId)
         {
             var approvalHistories = await _unitOfWork.ApprovalHistoryMaterialRepository.GetApprovalHistoryMaterialRepositoryAsync(requestId);

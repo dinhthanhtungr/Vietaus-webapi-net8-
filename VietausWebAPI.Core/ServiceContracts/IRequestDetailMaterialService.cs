@@ -9,7 +9,16 @@ namespace VietausWebAPI.Core.ServiceContracts
 {
     public interface IRequestDetailMaterialService
     {
+        /// <summary>
+        /// Thêm mới danh sách các vật tư đề xuất đi chung với lại request
+        /// </summary>
+        /// <param name="requestDetailMaterialDatumPostDTO"></param>
+        /// <returns></returns>
         Task AddRequestDetailServiceAsync(RequestDetailMaterialDatumPostDTO requestDetailMaterialDatumPostDTO);
+        /// <summary>
+        /// Lấy tất cả danh sách vật tư đề xuất
+        /// </summary>
+        /// <returns></returns>
         Task<IEnumerable<RequestDetailMaterialDatumPostDTO>> GetAllRequestDetailServiceAsync();
     }
 }

@@ -15,28 +15,46 @@ namespace VietausWebAPI.Infrastructure.Repositories
     public class RequestMaterialRepository : IRequestMaterialRepository
     {
         private readonly ApplicationDbContext  _context;
-
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="context"></param>
         public RequestMaterialRepository (ApplicationDbContext context)
         {
             _context = context;
         }
-
+        /// <summary>
+        /// Thêm chi tiết đề xuất mua vật tư
+        /// </summary>
+        /// <param name="requestDetail"></param>
+        /// <returns></returns>
         public async Task AddRequestDetailMaterialAsync(List<RequestDetailMaterialDatum> requestDetail)
         {
             await _context.RequestDetailMaterialData.AddRangeAsync(requestDetail);
         }
-
+        /// <summary>
+        /// Tạo một đề xuất mua vật tư với đầy đủ các thông số
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         public async Task<SupplyRequestsMaterialDatum> CreateRequestAsync(SupplyRequestsMaterialDatum request)
         {
             await _context.SupplyRequestsMaterialData.AddRangeAsync(request);
             return request;
         }
-
+        /// <summary>
+        /// Lấy ra mã đề xuất cuối cùng
+        /// </summary>
+        /// <returns></returns>
         public async Task<SupplyRequestsMaterialDatum> GetLastRequestIdRepository()
         {
             return await _context.SupplyRequestsMaterialData.OrderByDescending(x => x.RequestId).FirstOrDefaultAsync();
         }
-
+        /// <summary>
+        /// Lấy ra danh sách đề xuất mua vật tư theo điều kiện tìm kiếm
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
         public async Task<IEnumerable<SupplyRequestsMaterialDatum>> GetRequestRepository(RequestMaterialQuery query)
         {
             var queryable = _context.SupplyRequestsMaterialData
@@ -44,7 +62,7 @@ namespace VietausWebAPI.Infrastructure.Repositories
                 .Include(r => r.RequestDetailMaterialData)
                 .Include(r => r.Employee)
                 .AsQueryable();
-
+            // Lọc theo RequestId
             if (!string.IsNullOrEmpty(query.RequestId))
             {
                 queryable = queryable.Where(x => x.RequestId == query.RequestId);
@@ -60,7 +78,7 @@ namespace VietausWebAPI.Infrastructure.Repositories
             {
                 queryable = queryable.Where(x => x.RequestDate.Date >= query.RequestDateFrom.Value);
             }
-
+           
             else if (query.RequestDateTo.HasValue)
             {
                 queryable = queryable.Where(x => x.RequestDate.Date <= query.RequestDateTo.Value);
@@ -140,8 +158,11 @@ namespace VietausWebAPI.Infrastructure.Repositories
 
             return await queryable.ToListAsync();
         }
-
-
+        /// <summary>
+        /// Rollback transaction
+        /// </summary>
+        /// <param name="transaction"></param>
+        /// <returns></returns>
         public async Task RollbackAsync(IDbContextTransaction transaction)
         {
             await transaction.RollbackAsync();

@@ -15,6 +15,11 @@ namespace VietausWebAPI.Core.Service
         
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        /// <summary>
+        /// Khởi tạo đối tượng InventoryReceiptsService
+        /// </summary>
+        /// <param name="unitOfWork"></param>
+        /// <param name="mapper"></param>
         public InventoryReceiptsService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             //_inventoryReceiptsRepository = inventoryReceiptsRepository;
@@ -22,16 +27,14 @@ namespace VietausWebAPI.Core.Service
             _mapper = mapper;
         }
 
-        //public async Task AddInventoryReceiptsServiceAsync(InventoryReceiptsDTO inventoryReceiptsDTO)
-        //{
-        //    var inventoryReceipts = _mapper.Map<List<InventoryReceiptsMaterialDatum>>(inventoryReceiptsDTO.Items);
-        //    await _unitOfWork.InventoryReceiptsRepository.AddInventoryReceiptsRepositoryAsync(inventoryReceipts);
-        //}
-
+        /// <summary>
+        /// Thêm mới danh sách phiếu nhập kho
+        /// </summary>
+        /// <param name="inventoryReceiptsDTO"></param>
+        /// <returns></returns>
         public async Task AddInventoryReceiptsServiceAsync(InventoryReceiptsDTO inventoryReceiptsDTO)
         {
-            //var inventoryReceipts = _mapper.Map<List<InventoryReceiptsMaterialDatum>>(inventoryReceiptsDTO.Items);
-            //await _unitOfWork.InventoryReceiptsRepository.AddInventoryReceiptsRepositoryAsync(inventoryReceipts);
+
             await _unitOfWork.BeginTransactionAsync();
             try
             {
@@ -47,6 +50,11 @@ namespace VietausWebAPI.Core.Service
             }
         }
 
+        /// <summary>
+        /// Tìm kiếm danh sách phiếu nhập kho theo các tiêu chí tìm kiếm và trả về kết quả phân trang
+        /// </summary>
+        /// <param name="inventoryReceiptsQuery"></param>
+        /// <returns></returns>
         public async Task<PagedResult<InventoryReceiptsGetDTO>> AddInventoryReceiptsServiceAsync(InventoryReceiptsQuery inventoryReceiptsQuery)
         {
             var materials = await _unitOfWork.InventoryReceiptsRepository.SearchInventoryReceiptsRepositoryAsync(inventoryReceiptsQuery);
@@ -54,11 +62,27 @@ namespace VietausWebAPI.Core.Service
             return result;
         }
 
+        /// <summary>
+        /// Lấy tất cả danh sách phiếu nhập kho
+        /// </summary>
+        /// <returns></returns>
         public async Task<IEnumerable<InventoryReceiptsGetDTO>> GetAllInventoryReceiptsServiceAsync()
         {
             var inventoryReceipts = await _unitOfWork.InventoryReceiptsRepository.GetAllInventoryReceiptsRepositoryAsync();
             var result = _mapper.Map<IEnumerable<InventoryReceiptsGetDTO>>(inventoryReceipts);
             return result;
+        }
+
+        /// <summary>
+        /// Cập nhật giá danh sách phiếu nhập kho 
+        /// </summary>
+        /// <param name="inventoryReceiptsUpdatePriceDTO"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task UpdateInventoryReceiptsServiceAsync(InventoryReceiptsUpdatePriceDTO inventoryReceiptsUpdatePriceDTO)
+        {
+            await _unitOfWork.InventoryReceiptsRepository.UpdateInventoryReceiptsRepositoryAsync(inventoryReceiptsUpdatePriceDTO); ;
+            await _unitOfWork.SaveChangesAsync();
         }
 
     }

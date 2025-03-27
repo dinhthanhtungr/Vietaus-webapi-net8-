@@ -12,8 +12,22 @@ namespace VietausWebAPI.Core.ServiceContracts
 {
     public interface IRequestMaterialService
     {
+        /// <summary>
+        /// Tạo một đề xuất mua vật tư với đầy đủ các thông số
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         Task<string> CreateRequestMaterial(RequestMaterialDTO request);
+        /// <summary>
+        /// Lấy ra mã đề xuất cuối cùng
+        /// </summary>
+        /// <returns></returns>
         Task<RequestIdDTO> GetLastRequestIdService();
+        /// <summary>
+        /// Lấy ra danh sách vật tư theo các điều kiện tìm kiếm
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
         Task<IEnumerable<RequestMaterialDTO>> GetMaterialAsyncService(RequestMaterialQuery query);
     }
 }

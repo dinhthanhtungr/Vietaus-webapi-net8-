@@ -9,8 +9,23 @@ namespace VietausWebAPI.Core.ServiceContracts
 {
     public interface ISupplyRequestsMaterialDatumService
     {
+        /// <summary>
+        /// Thêm đề xuất mới
+        /// </summary>
+        /// <param name="supplyRequestsMaterialDatumDTO"></param>
+        /// <returns></returns>
         Task AddSupplyRequestsMaterialDatumAsync(SupplyRequestsMaterialDatumDTO supplyRequestsMaterialDatumDTO);
+        /// <summary>
+        /// Lấy tất cả đề xuất
+        /// </summary>
+        /// <returns></returns>
         Task<IEnumerable<SupplyRequestsMaterialDatumDTO>> GetAllSupplyRequestsMaterialDatumAsync();
+        /// <summary>
+        /// Cập nhật trạng thái đề xuất
+        /// </summary>
+        /// <param name="requestId"></param>
+        /// <param name="requestStatus"></param>
+        /// <returns></returns>
         Task UpdateRequestStatusAsyncService(string requestId, string requestStatus);
 
     }

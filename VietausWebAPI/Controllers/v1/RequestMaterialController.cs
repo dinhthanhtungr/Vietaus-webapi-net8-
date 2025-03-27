@@ -14,12 +14,19 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
     public class RequestMaterialController : Controller
     {
         private readonly IRequestMaterialService _requestMaterialService;
- 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="requestMaterialService"></param>
         public RequestMaterialController (IRequestMaterialService requestMaterialService)
         {
             _requestMaterialService = requestMaterialService;
-        }       
-
+        }
+        /// <summary>
+        /// Tạo một đề xuất mua vật tư với đầy đủ các thông số
+        /// </summary>
+        /// <param name="requestDTO"></param>
+        /// <returns></returns>
         [HttpPost("RequestData")]
         public async Task<IActionResult> CreateRequest([FromBody] RequestMaterialDTO requestDTO)
         {
@@ -34,15 +41,21 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
                 return BadRequest(ex.Message);
             }
         }
-        
-
+        /// <summary>
+        /// Lay ra ma de xuat cuoi cung
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("ResponseRequestID")]
         public async Task<IActionResult> GetGetLastRequestId()
         {
             var result = await _requestMaterialService.GetLastRequestIdService();
             return Ok(result);
         }
-
+        /// <summary>
+        /// Tim kiếm theo các điều kiện 
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
         [HttpGet("ResponseMaterials")]
         public async Task<IActionResult> GetMaterial([FromQuery] RequestMaterialQuery? query)
         {

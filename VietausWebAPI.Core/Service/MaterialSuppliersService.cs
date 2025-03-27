@@ -15,19 +15,30 @@ namespace VietausWebAPI.Core.Service
     {
         private readonly IMaterialSuppliersRepository _materialSuppliersRepository;
         private readonly IMapper _mapper;
-
+        /// <summary>
+        /// Contructor
+        /// </summary>
+        /// <param name="materialSuppliersRepository"></param>
+        /// <param name="mapper"></param>
         public MaterialSuppliersService(IMaterialSuppliersRepository materialSuppliersRepository, IMapper mapper)
         {
             _materialSuppliersRepository = materialSuppliersRepository;
             _mapper = mapper;
         }
-
+        /// <summary>
+        /// Thêm mới nhà cung cấp vật liệu
+        /// </summary>
+        /// <param name="materialSuppliersDTO"></param>
+        /// <returns></returns>
         public async Task AddMaterialSuppliersServiceAsync(MaterialSuppliersDTO materialSuppliersDTO)
         {
             var materialSuppliers = _mapper.Map<MaterialSuppliersMaterialDatum>(materialSuppliersDTO);
             await _materialSuppliersRepository.AddMaterialSupplierRepositoryAsync(materialSuppliers);
         }
-
+        /// <summary>
+        /// Lấy tất cả nhà cung cấp vật liệu
+        /// </summary>
+        /// <returns></returns>
         public async Task<IEnumerable<MaterialSuppliersDTO>> GetAllMaterialSuppliersServiceAsync()
         {
             var materialSuppliers = await _materialSuppliersRepository.GetAllMaterialSuppliersRepositoryAsync();

@@ -14,17 +14,28 @@ namespace VietausWebAPI.Infrastructure.Repositories
     public class ApprovalHistoryMaterialRepository : IApprovalHistoryMaterialRepository
     {
         private readonly ApplicationDbContext _context;
-
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="context"></param>
         public ApprovalHistoryMaterialRepository (ApplicationDbContext context)
         {
             _context = context;
         }
-
+        /// <summary>
+        /// Thêm lịch sử phê duyệt vật tư
+        /// </summary>
+        /// <param name="approvalLevelsCommonData"></param>
+        /// <returns></returns>
         public async Task AddApprovalHistoryMaterialRepositoryAsync(ApprovalHistoryMaterialDatum approvalLevelsCommonData)
         {
             await _context.ApprovalHistoryMaterialData.AddRangeAsync(approvalLevelsCommonData);
         }
-
+        /// <summary>
+        /// Lấy lịch sử phê duyệt vật tư
+        /// </summary>
+        /// <param name="requestID"></param>
+        /// <returns></returns>
         public async Task<IEnumerable<ApprovalHistoryMaterialDatum>> GetApprovalHistoryMaterialRepositoryAsync(string requestID)
         {
             return await _context.ApprovalHistoryMaterialData

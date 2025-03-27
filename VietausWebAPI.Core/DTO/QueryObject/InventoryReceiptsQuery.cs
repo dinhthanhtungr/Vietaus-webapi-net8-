@@ -19,6 +19,7 @@ namespace VietausWebAPI.Core.DTO.QueryObject
         public string? RequestStatus { get; set; }
         //public string? Department { get; set; }
         public string? EmployeeName { get; set; }
+        public bool? Static { get; set; }
         public bool SortAscending { get; set; }
 
         // Các trường cho phân trang
