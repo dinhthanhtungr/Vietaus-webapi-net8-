@@ -18,7 +18,6 @@ namespace VietausWebAPI.Infrastructure.Repositories
         public async Task AddSupplyRequestsMaterialDatumRepository(List<SupplyRequestsMaterialDatum> supplyRequestsMaterialData)
         {
             await _context.SupplyRequestsMaterialData.AddRangeAsync(supplyRequestsMaterialData);
-            //await _context.SaveChangesAsync();
         }
 
         public async Task<IEnumerable<SupplyRequestsMaterialDatum>> GetAllSupplyRequestsMaterialDatumRepository()

@@ -7,7 +7,9 @@ namespace VietausWebAPI.Core.Repositories_Contracts
     {
         Task AddInventoryReceiptsRepositoryAsync(List<InventoryReceiptsMaterialDatum> inventoryReceiptsMaterialDatum);
         Task<IEnumerable<InventoryReceiptsMaterialDatum>> GetAllInventoryReceiptsRepositoryAsync();
-        Task<IEnumerable<InventoryReceiptsMaterialDatum>> SearchInventoryReceiptsRepositoryAsync(InventoryReceiptsQuery query);
+        Task<PagedResult<InventoryReceiptsMaterialDatum>> SearchInventoryReceiptsRepositoryAsync(InventoryReceiptsQuery query);
+        //Task<IEnumerable<InventoryReceiptsMaterialDatum>> SearchInventoryReceiptsRepositoryAsync(InventoryReceiptsQuery query);
+
         Task<bool> UpdateInventoryReceiptsRepositoryAsync(List<InventoryReceiptsMaterialDatum> inventoryReceiptsMaterialDatum);
     }
 }

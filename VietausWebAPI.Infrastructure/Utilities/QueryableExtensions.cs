@@ -5,21 +5,24 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using VietausWebAPI.Core.DTO.QueryObject;
+using VietausWebAPI.Core.Entities;
 
 namespace VietausWebAPI.Infrastructure.Utilities
 {
-    public class QueryableExtensions
+    public static class QueryableExtensions
     {
-        public static async Task<PagedResult<T>> GetPagedAsync<T>(IQueryable<T> queryable, int page, int pageSize)
+        public static async Task<PagedResult<T>> GetPagedAsync<T>(IQueryable<T> queryable, PaginationQuery query)
         {
-            var totalCount = queryable.Count();
-            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
-            var items = await queryable.Skip((page - 1) * pageSize)
+            int pageNumber = Math.Max(1, query.PageNumber);
+            int pageSize = Math.Max(1, query.PageSize);
+
+            int totalItems = await queryable.CountAsync();
+            var items = await queryable
+                .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
-            var result = new PagedResult<T>(items, totalCount, page, pageSize);
-            return result;
+            return new PagedResult<T>(items, totalItems, pageNumber, pageSize);
         }
     }
 }

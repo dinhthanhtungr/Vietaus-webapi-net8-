@@ -9,6 +9,7 @@ using VietausWebAPI.Core.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 
 using VietausWebAPI.WebAPI.DatabaseContext;
+using VietausWebAPI.Infrastructure.Utilities;
 
 namespace VietausWebAPI.Infrastructure.Repositories
 {
@@ -32,14 +33,84 @@ namespace VietausWebAPI.Infrastructure.Repositories
             return await _context.InventoryReceiptsMaterialData.ToListAsync();
         }
 
-        public async Task<IEnumerable<InventoryReceiptsMaterialDatum>> SearchInventoryReceiptsRepositoryAsync(InventoryReceiptsQuery query)
+        //public async Task<IEnumerable<InventoryReceiptsMaterialDatum>> SearchInventoryReceiptsRepositoryAsync(InventoryReceiptsQuery query)
+        //{
+        //    var queryable = _context.InventoryReceiptsMaterialData
+        //        .AsNoTracking()
+        //        .Include(r => r.Request)
+        //        .Include(r => r.Request.Employee)
+        //        //.Include(r => r.SupplierId)
+        //        //.Include(r => r.)
+        //        .AsQueryable();
+
+        //    if (!string.IsNullOrEmpty(query.RequestId))
+        //    {
+        //        queryable = queryable.Where(x => x.RequestId == query.RequestId);
+        //    }
+
+        //    if (!string.IsNullOrEmpty(query.EmployeeName))
+        //    {
+        //        queryable = queryable.Where(x => x.Request.Employee.FullName == query.EmployeeName);    
+        //    }
+
+        //    else if (query.ReceiptDate != null)
+        //    {
+        //        queryable = queryable.Where(x => x.ReceiptDate == query.ReceiptDate);
+        //    }
+        //    // Lọc theo RequestStatus
+        //    if (!string.IsNullOrEmpty(query.RequestStatus))
+        //    {
+        //        queryable = queryable.Where(x => x.Request.RequestStatus == query.RequestStatus);
+        //    }
+
+        //    // Lọc theo MaterialName
+        //    if (!string.IsNullOrEmpty(query.MaterialName))
+        //    {
+        //        queryable = queryable.Where(x => x.MaterialName == query.MaterialName);
+        //    }
+
+        //    // Sắp xếp
+        //    switch (query.SortBy?.ToLower())
+        //    {
+        //        case "RequestId":
+        //            queryable = query.SortAscending
+        //                ? queryable.OrderBy(x => x.RequestId)
+        //                : queryable.OrderByDescending(x => x.RequestId);
+        //            break;
+        //        case "RequestDate":
+        //            queryable = query.SortAscending
+        //                ? queryable.OrderBy(x => x.ReceiptDate)
+        //                : queryable.OrderByDescending(x => x.ReceiptDate);
+        //            break;
+        //        //case "RequestStatus":
+        //        //    queryable = query.SortAscending
+        //        //        ? queryable.OrderBy(x => x.RequestStatus)
+        //        //        : queryable.OrderByDescending(x => x.RequestStatus);
+        //        //    break;
+        //        default:
+        //            queryable = queryable.OrderBy(x => x.ReceiptDate);
+        //            break;
+        //    }
+
+
+        //    // Tính tổng số trang trước khi nhận trang
+        //    int totalItems = await queryable.CountAsync();
+
+        //    int pageNumber = Math.Max(1, query.PageNumber);
+        //    int pageSize = Math.Max(1, query.PageSize);
+        //    queryable = queryable
+        //        .Skip((pageNumber - 1) * pageSize)
+        //        .Take(pageSize);
+
+        //    return await queryable.ToListAsync();
+        //}
+
+        public async Task<PagedResult<InventoryReceiptsMaterialDatum>> SearchInventoryReceiptsRepositoryAsync(InventoryReceiptsQuery query)
         {
             var queryable = _context.InventoryReceiptsMaterialData
                 .AsNoTracking()
                 .Include(r => r.Request)
                 .Include(r => r.Request.Employee)
-                //.Include(r => r.SupplierId)
-                //.Include(r => r.)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(query.RequestId))
@@ -49,7 +120,7 @@ namespace VietausWebAPI.Infrastructure.Repositories
 
             if (!string.IsNullOrEmpty(query.EmployeeName))
             {
-                queryable = queryable.Where(x => x.Request.Employee.FullName == query.EmployeeName);    
+                queryable = queryable.Where(x => x.Request.Employee.FullName == query.EmployeeName);
             }
 
             else if (query.ReceiptDate != null)
@@ -59,9 +130,10 @@ namespace VietausWebAPI.Infrastructure.Repositories
             // Lọc theo RequestStatus
             if (!string.IsNullOrEmpty(query.RequestStatus))
             {
-                queryable = queryable.Where(x => x.RequestId == query.RequestStatus);
+                queryable = queryable.Where(x => x.Request.RequestStatus == query.RequestStatus);
             }
 
+            // Lọc theo MaterialName
             if (!string.IsNullOrEmpty(query.MaterialName))
             {
                 queryable = queryable.Where(x => x.MaterialName == query.MaterialName);
@@ -80,27 +152,25 @@ namespace VietausWebAPI.Infrastructure.Repositories
                         ? queryable.OrderBy(x => x.ReceiptDate)
                         : queryable.OrderByDescending(x => x.ReceiptDate);
                     break;
-                //case "RequestStatus":
-                //    queryable = query.SortAscending
-                //        ? queryable.OrderBy(x => x.RequestStatus)
-                //        : queryable.OrderByDescending(x => x.RequestStatus);
-                //    break;
                 default:
                     queryable = queryable.OrderBy(x => x.ReceiptDate);
                     break;
             }
 
+            var temp = new PaginationQuery();
+
 
             // Tính tổng số trang trước khi nhận trang
-            int totalItems = await queryable.CountAsync();
+            //int totalItems = await queryable.CountAsync();
 
-            int pageNumber = Math.Max(1, query.PageNumber);
-            int pageSize = Math.Max(1, query.PageSize);
-            queryable = queryable
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
+            //int pageNumber = Math.Max(1, query.PageNumber);
+            //int pageSize = Math.Max(1, query.PageSize);
+            //queryable = queryable
+            //    .Skip((pageNumber - 1) * pageSize)
+            //    .Take(pageSize);
 
-            return await queryable.ToListAsync();
+            //return await queryable.ToListAsync();
+            return await QueryableExtensions.GetPagedAsync(queryable, query);
         }
 
         public async Task<bool> UpdateInventoryReceiptsRepositoryAsync(List<InventoryReceiptsMaterialDatum> inventoryReceiptsMaterialDatum)

@@ -14,6 +14,6 @@ namespace VietausWebAPI.Core.ServiceContracts
     {
         Task AddInventoryReceiptsServiceAsync(InventoryReceiptsDTO inventoryReceiptsDTO);
         Task<IEnumerable<InventoryReceiptsGetDTO>> GetAllInventoryReceiptsServiceAsync();
-        Task<IEnumerable<InventoryReceiptsGetDTO>> AddInventoryReceiptsServiceAsync(InventoryReceiptsQuery inventoryReceiptsQuery);
+        Task<PagedResult<InventoryReceiptsGetDTO>> AddInventoryReceiptsServiceAsync(InventoryReceiptsQuery inventoryReceiptsQuery);
     }
 }

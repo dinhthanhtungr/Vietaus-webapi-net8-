@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace VietausWebAPI.Core.DTO.QueryObject
 {
-    public class InventoryReceiptsQuery
+    public class InventoryReceiptsQuery : PaginationQuery
     {
         public string? RequestId { get; set; }
         //public DateTime? RequestDate { get; set; }

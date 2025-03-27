@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.DTO.PostDTO;
+using VietausWebAPI.Core.DTO.QueryObject;
 using VietausWebAPI.Core.Entities;
 
 
@@ -15,6 +16,8 @@ namespace VietausWebAPI.Core.MappingProfiles
                 //.ForMember(dest => dest.RequestId, opt => opt.Ignore())       // Không map navigation
             ;
             CreateMap<InventoryReceiptsGetDTO, InventoryReceiptsMaterialDatum>().ReverseMap();
+            //CreateMap<InventoryReceiptsGetDTO, InventoryReceiptsMaterialDatum>().ReverseMap();
+            CreateMap(typeof(PagedResult<>), typeof(PagedResult<>));
             CreateMap<SupplyRequestsMaterialDatum, SupplyRequestsMaterialDatumDTO>().ReverseMap();
             CreateMap<SupplyRequestsMaterialDatum, RequestIdDTO>().ReverseMap().ForMember(dest => dest.RequestId, opt => opt.MapFrom(src => src.RequestId));
             CreateMap<SupplyRequestsMaterialDatum, RequestMaterialDTO>().ReverseMap().ForMember(dest => dest.RequestDetailMaterialData, opt => opt.MapFrom(src => src.RequestDetails)).ForMember(dest => dest.RequestDetailMaterialData, opt => opt.Ignore());
