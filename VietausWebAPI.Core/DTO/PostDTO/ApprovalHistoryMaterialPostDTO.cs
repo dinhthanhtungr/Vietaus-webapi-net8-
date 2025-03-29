@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 
 namespace VietausWebAPI.Core.DTO.PostDTO
 {
-    public class ApprovalHistoryMaterialPostDTO
+    public class ApprovalHistoryMaterialPostDTO : RequestStatusPostDTO
     {
 
-        public string RequestId { get; set; } = null!;
+        //public string RequestId { get; set; } = null!;
 
         public string EmployeeId { get; set; } = null!;
 
         public DateTime ApprovalDate { get; set; }
 
         public string? Note { get; set; }
-        public string requestStatus { get; set; } = null!;
+        //public string requestStatus { get; set; } = null!;
     }
 }

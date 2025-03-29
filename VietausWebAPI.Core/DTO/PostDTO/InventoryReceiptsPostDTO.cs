@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace VietausWebAPI.Core.DTO.PostDTO
 {
-    public class InventoryReceiptsDTO
+    public class InventoryReceiptsPostDTO : RequestStatusPostDTO
     {
         public List<SendData> Items { get; set; }
     }
-    public class SendData
+    public class SendData 
     {
         public string MaterialGroupId { get; set; } = null!;
 

@@ -14,6 +14,7 @@ using System.Text;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Infrastructure.Repositories;
 using VietausWebAPI.WebAPI;
+using VietausWebAPI.WebAPI.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 //Add services to the container.
@@ -76,6 +77,20 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddApplicationServices();
 
+builder.Services.AddSignalR();
+
+// Thêm CORS để Blazor WebAssembly có thể kết nối
+//builder.Services.AddCors(options =>
+//{
+//    options.AddPolicy("AllowBlazor", builder =>
+//    {
+//        builder.WithOrigins("https://localhost:5001") // URL của Blazor WebAssembly
+//               .AllowAnyMethod()
+//               .AllowAnyHeader()
+//               .AllowCredentials();
+//    });
+//});
+
 // Sử dụng AddIdentityCore khi không muốn sử dụng cookie vì identity tự động gọi sử dụng cookie
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
 {
@@ -93,6 +108,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 .AddDefaultTokenProviders();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 //JWT
 builder.Services.AddAuthentication(options =>
@@ -155,6 +171,8 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.MapHub<NotificationHub>("/notificationHub");
 
 app.MapControllers();
 

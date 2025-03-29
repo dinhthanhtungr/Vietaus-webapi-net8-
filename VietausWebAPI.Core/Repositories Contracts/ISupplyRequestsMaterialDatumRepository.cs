@@ -18,6 +18,12 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         /// <returns></returns>
         Task<IEnumerable<SupplyRequestsMaterialDatum>> GetAllSupplyRequestsMaterialDatumRepository();
         /// <summary>
+        /// Lấy đề xuất theo id
+        /// </summary>
+        /// <param name="requestId"></param>
+        /// <returns></returns>
+        Task<SupplyRequestsMaterialDatum> GetWithId(string requestId);
+        /// <summary>
         /// Cập nhật trạng thái đề xuất
         /// </summary>
         /// <param name="requestId"></param>

@@ -26,6 +26,17 @@ namespace VietausWebAPI.Infrastructure.Repositories
         {
             await _context.SupplyRequestsMaterialData.AddRangeAsync(supplyRequestsMaterialData);
         }
+
+        /// <summary>
+        /// Lấy đề xuất theo id
+        /// </summary>
+        /// <param name="requestId"></param>
+        /// <returns></returns>
+        public async Task<SupplyRequestsMaterialDatum> GetWithId(string requestId)
+        {
+            return await _context.SupplyRequestsMaterialData.FirstOrDefaultAsync(x => x.RequestId == requestId);         
+        }
+
         /// <summary>
         /// Lấy tất cả đề xuất
         /// </summary>

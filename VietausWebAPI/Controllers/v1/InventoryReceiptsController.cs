@@ -26,7 +26,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
         /// <param name="inventoryReceiptsDTO"></param>
         /// <returns></returns>
         [HttpPost("Add")]
-        public async Task<IActionResult> AddInventoryReceipts([FromBody] InventoryReceiptsDTO inventoryReceiptsDTO)
+        public async Task<IActionResult> AddInventoryReceipts([FromBody] InventoryReceiptsPostDTO inventoryReceiptsDTO)
         {
             await _inventoryReceiptsService.AddInventoryReceiptsServiceAsync(inventoryReceiptsDTO);
             return Ok( new { message = "Request complion" });
@@ -49,7 +49,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
         [HttpGet("Search")]
         public async Task<IActionResult> SearchInventoryReceipts([FromQuery] InventoryReceiptsQuery? query)
         {
-            var resuilt = await _inventoryReceiptsService.AddInventoryReceiptsServiceAsync(query);
+            var resuilt = await _inventoryReceiptsService.SearchInventoryReceiptsServiceAsync(query);
             return Ok(resuilt);
         }
         /// <summary>

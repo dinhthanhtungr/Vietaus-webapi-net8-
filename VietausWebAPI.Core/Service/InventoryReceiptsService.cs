@@ -32,7 +32,7 @@ namespace VietausWebAPI.Core.Service
         /// </summary>
         /// <param name="inventoryReceiptsDTO"></param>
         /// <returns></returns>
-        public async Task AddInventoryReceiptsServiceAsync(InventoryReceiptsDTO inventoryReceiptsDTO)
+        public async Task AddInventoryReceiptsServiceAsync(InventoryReceiptsPostDTO inventoryReceiptsDTO)
         {
 
             await _unitOfWork.BeginTransactionAsync();
@@ -40,6 +40,12 @@ namespace VietausWebAPI.Core.Service
             {
                 var inventoryReceipts = _mapper.Map<List<InventoryReceiptsMaterialDatum>>(inventoryReceiptsDTO.Items);
                 await _unitOfWork.InventoryReceiptsRepository.AddInventoryReceiptsRepositoryAsync(inventoryReceipts);
+
+                await _unitOfWork.SupplyRequestsMaterialDatumRepository.UpdateRequestStatusAsyncRepository(
+                    inventoryReceiptsDTO.RequestId,
+                    inventoryReceiptsDTO.requestStatus
+                );
+
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
             }
@@ -55,11 +61,26 @@ namespace VietausWebAPI.Core.Service
         /// </summary>
         /// <param name="inventoryReceiptsQuery"></param>
         /// <returns></returns>
-        public async Task<PagedResult<InventoryReceiptsGetDTO>> AddInventoryReceiptsServiceAsync(InventoryReceiptsQuery inventoryReceiptsQuery)
+        public async Task<PagedResult<InventoryReceiptsGetDTO>> SearchInventoryReceiptsServiceAsync(InventoryReceiptsQuery inventoryReceiptsQuery)
         {
             var materials = await _unitOfWork.InventoryReceiptsRepository.SearchInventoryReceiptsRepositoryAsync(inventoryReceiptsQuery);
             var result = _mapper.Map<PagedResult<InventoryReceiptsGetDTO>>(materials);
             return result;
+
+            //await _unitOfWork.BeginTransactionAsync();
+
+            //try
+            //{
+            //    var materials = await _unitOfWork.InventoryReceiptsRepository.SearchInventoryReceiptsRepositoryAsync(inventoryReceiptsQuery);
+            //    var result = _mapper.Map<PagedResult<InventoryReceiptsGetDTO>>(materials);
+            //    await _unitOfWork.CommitTransactionAsync();
+            //    return result;
+            //}
+            //catch (Exception ex)
+            //{
+            //    await _unitOfWork.RollbackTransactionAsync();
+            //    throw ex;
+            //}
         }
 
         /// <summary>

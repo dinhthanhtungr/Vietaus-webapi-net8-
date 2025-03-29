@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.SignalR;
 using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Core.ServiceContracts;
+
 
 
 namespace VietausWebAPI.Core.Service
@@ -11,15 +13,18 @@ namespace VietausWebAPI.Core.Service
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly INotificationService _notificationService;
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="unitOfWork"></param>
         /// <param name="mapper"></param>
-        public SupplyRequestsMaterialDatumService(IUnitOfWork unitOfWork, IMapper mapper)
+        /// <param name="hubContext"></param>
+        public SupplyRequestsMaterialDatumService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _notificationService = notificationService;
         }
         /// <summary>
         /// Thêm đề xuất mới
@@ -50,8 +55,24 @@ namespace VietausWebAPI.Core.Service
         /// <returns></returns>
         public async Task UpdateRequestStatusAsyncService(string requestId, string requestStatus)
         {
+            //var request = await _unitOfWork.SupplyRequestsMaterialDatumRepository.GetWithId(requestId);
+            //if (request == null)
+            //{
+            //    throw new KeyNotFoundException($"Supply request with ID {requestId} not found");
+            //}
+
+            //if (request.RequestStatus == requestStatus)
+            //{
+            //    return;
+            //}
+
+            //var oldStatus = request.RequestStatus;
+            //request.RequestStatus = requestStatus;
+
             await _unitOfWork.SupplyRequestsMaterialDatumRepository.UpdateRequestStatusAsyncRepository(requestId, requestStatus);
             await _unitOfWork.SaveChangesAsync();
+
+            //var requestor = await _unitOfWork.UserRepository.GetUserById(request.RequestorId);
         }
     }
 }
