@@ -25,7 +25,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
     /// <summary>
     /// Controller responsible for user authentication and account management.
     /// </summary>
-    //[AllowAnonymous] // Cho phép request kể cả khi không có token
+    [AllowAnonymous] // Cho phép request kể cả khi không có token
     public class AccountController : CustomControllerBase
     {
         // Dependency-injected services for user management
@@ -218,7 +218,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
         /// <param name="roleName"></param>
         /// <returns></returns>
         [HttpPost("Create-role")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateRole(string roleName)
         {
             if (string.IsNullOrEmpty(roleName))

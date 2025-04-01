@@ -71,6 +71,24 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                       .HasMaxLength(50);
             });
 
+            modelBuilder.Entity<ApplicationUserRole>(userRole =>
+            {
+                // Định nghĩa khóa chính
+                userRole.HasKey(ur => new { ur.UserId, ur.RoleId });
+
+                // Quan hệ với ApplicationUser
+                userRole.HasOne(ur => ur.User)
+                        .WithMany(u => u.UserRoles)
+                        .HasForeignKey(ur => ur.UserId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                // Quan hệ với ApplicationRole
+                userRole.HasOne(ur => ur.Role)
+                        .WithMany(r => r.UserRoles)
+                        .HasForeignKey(ur => ur.RoleId)
+                        .OnDelete(DeleteBehavior.Cascade);
+            });
+
             modelBuilder.Entity<ApprovalHistoryMaterialDatum>(entity =>
             {
                 entity.HasKey(e => e.Id).HasName("PK__Approval__3214EC279BFACB25");
