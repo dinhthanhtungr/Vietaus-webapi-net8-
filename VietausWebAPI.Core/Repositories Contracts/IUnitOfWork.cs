@@ -14,6 +14,7 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         IApprovalHistoryMaterialRepository ApprovalHistoryMaterialRepository { get; }
         ISupplyRequestsMaterialDatumRepository SupplyRequestsMaterialDatumRepository { get; }
         IInventoryReceiptsRepository InventoryReceiptsRepository { get; }
+        IEmployeesCommonRepository EmployeesCommonRepository { get; }
         // Thêm các repository khác nếu cần
         Task<IDbContextTransaction> BeginTransactionAsync();
         Task CommitTransactionAsync();

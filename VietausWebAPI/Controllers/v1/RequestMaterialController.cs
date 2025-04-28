@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.DotNet.Scaffolding.Shared.Messaging;
 using VietausWebAPI.Core.DTO.PostDTO;
 using VietausWebAPI.Core.DTO.QueryObject;
 using VietausWebAPI.Core.Repositories_Contracts;
@@ -33,7 +34,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
             try
             {
                 var requestId = await _requestMaterialService.CreateRequestMaterial(requestDTO);
-                return Ok(new { requestId = requestId });
+                return Ok(new { Message = "Đã đề xuất thành công" });
             }
 
             catch (Exception ex)
@@ -49,7 +50,8 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
         public async Task<IActionResult> GetGetLastRequestId()
         {
             var result = await _requestMaterialService.GetLastRequestIdService();
-            return Ok(result);
+
+            return Ok(new { RequestId = result });
         }
         /// <summary>
         /// Tim kiếm theo các điều kiện 
@@ -63,6 +65,17 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
             return Ok(result);
         }
 
+        /// <summary>
+        /// Lấy ra danh sách đã được trải phẳng vật tư theo các điều kiện tìm kiếm
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        [HttpGet("FlatRequestMaterials")]
+        public async Task<IActionResult> GetFlatRequestMaterial([FromQuery] RequestMaterialQuery? query)
+        {
+            var result = await _requestMaterialService.FlatRequestMaterialService(query);
+            return Ok(result);
+        }
 
     }
 

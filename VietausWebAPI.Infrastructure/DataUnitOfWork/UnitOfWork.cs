@@ -15,6 +15,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IApprovalHistoryMaterialRepository ApprovalHistoryMaterialRepository { get; }
         public ISupplyRequestsMaterialDatumRepository SupplyRequestsMaterialDatumRepository { get; }
         public IInventoryReceiptsRepository InventoryReceiptsRepository { get; }
+        public IEmployeesCommonRepository EmployeesCommonRepository { get; }
 
         /// <summary>
         /// Khởi tạo UnitOfWork
@@ -24,17 +25,20 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         /// <param name="approvalHistoryMaterialRepository"></param>
         /// <param name="supplyRequestsMaterialDatumRepository"></param>
         /// <param name="inventoryReceiptsRepository"></param>
+        /// <param name="employeesCommonRepository"></param>
         public UnitOfWork(ApplicationDbContext context 
             , IRequestMaterialRepository requestMaterialRepository
             , IApprovalHistoryMaterialRepository approvalHistoryMaterialRepository
             , ISupplyRequestsMaterialDatumRepository supplyRequestsMaterialDatumRepository
-            , IInventoryReceiptsRepository inventoryReceiptsRepository)
+            , IInventoryReceiptsRepository inventoryReceiptsRepository
+            , IEmployeesCommonRepository employeesCommonRepository)
         {
             _context = context;
             RequestMaterialRepository = requestMaterialRepository;
             ApprovalHistoryMaterialRepository = approvalHistoryMaterialRepository;
             SupplyRequestsMaterialDatumRepository = supplyRequestsMaterialDatumRepository;
-            InventoryReceiptsRepository = inventoryReceiptsRepository; ;
+            InventoryReceiptsRepository = inventoryReceiptsRepository; 
+            EmployeesCommonRepository = employeesCommonRepository;
         }
         /// <summary>
         /// Bắt đầu một transaction

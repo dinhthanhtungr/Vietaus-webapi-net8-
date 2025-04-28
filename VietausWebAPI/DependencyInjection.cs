@@ -25,6 +25,10 @@ namespace VietausWebAPI.WebAPI
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IApprovalHistoryMaterialRepository, ApprovalHistoryMaterialRepository>();
             services.AddScoped<IApprovalHistoryMaterialService, ApprovalHistoryMaterialService>();
+            services.AddScoped<IEmployeesCommonRepository, EmployeesCommonRepository>();
+            services.AddScoped<IEmployeesCommonService, EmployeesCommonService>();
+            services.AddScoped<IMaterialGroupsService, MaterialGroupsService>();
+            services.AddScoped<IMaterialGroupsRepository, MaterialGroupsRepository>();
 
             return services;
         }

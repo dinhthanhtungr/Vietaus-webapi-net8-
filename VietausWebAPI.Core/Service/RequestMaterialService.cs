@@ -69,23 +69,37 @@ namespace VietausWebAPI.Core.Service
         /// Lấy ra mã đề xuất cuối cùng
         /// </summary>
         /// <returns></returns>
-        public async Task<RequestIdDTO> GetLastRequestIdService()
+        //public async Task<RequestIdDTO> GetLastRequestIdService()
+        //{
+        //    var supplyRequestMaterialDatum = await _unitOfWork.RequestMaterialRepository.GetLastRequestIdRepository();
+        //    var result = _mapper.Map<RequestIdDTO>(supplyRequestMaterialDatum);
+
+        //    return result;
+        //}
+        public async Task<string> GetLastRequestIdService()
         {
             var supplyRequestMaterialDatum = await _unitOfWork.RequestMaterialRepository.GetLastRequestIdRepository();
-            var result = _mapper.Map<RequestIdDTO>(supplyRequestMaterialDatum);
+            //var result = _mapper.Map<RequestIdDTO>(supplyRequestMaterialDatum);
 
-            return result;
+            return supplyRequestMaterialDatum;
         }
         /// <summary>
         /// Lấy ra danh sách vật tư theo các điều kiện tìm kiếm
         /// </summary>
         /// <param name="query"></param>
         /// <returns></returns>
-        public async Task<IEnumerable<RequestMaterialDTO>> GetMaterialAsyncService(RequestMaterialQuery query)
+        public async Task<PagedResult<RequestMaterialDTO>> GetMaterialAsyncService(RequestMaterialQuery query)
         {
             var materials = await _unitOfWork.RequestMaterialRepository.GetRequestRepository(query);
-            var result = _mapper.Map<IEnumerable<RequestMaterialDTO>>(materials);
+            var result = _mapper.Map<PagedResult<RequestMaterialDTO>>(materials);
             return result;
+        }
+
+        public async Task<PagedResult<FlatRequestMaterialDto>> FlatRequestMaterialService(RequestMaterialQuery query)
+        {
+            var result = await _unitOfWork.RequestMaterialRepository.FlatRequestMaterialRepository(query);
+            return result;
+            //throw new NotImplementedException();
         }
     }
 }

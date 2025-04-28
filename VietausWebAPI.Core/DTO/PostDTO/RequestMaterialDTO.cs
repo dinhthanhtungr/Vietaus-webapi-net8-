@@ -10,7 +10,8 @@ namespace VietausWebAPI.Core.DTO.PostDTO
     {
         public string RequestId { get; set; }
         public DateTime RequestDate { get; set; }
-        public string EmployeeId { get; set; } 
+        public string EmployeeId { get; set; }
+        public string PartName { get; set; }     // Thêm PartName của bộ phận
         public string RequestStatus { get; set; }
         public List<RequestDetailMaterialDatumPostDTO> RequestDetails { get; set; }
     }

@@ -22,12 +22,19 @@ namespace VietausWebAPI.Core.ServiceContracts
         /// Lấy ra mã đề xuất cuối cùng
         /// </summary>
         /// <returns></returns>
-        Task<RequestIdDTO> GetLastRequestIdService();
+        //Task<RequestIdDTO> GetLastRequestIdService();
+        Task<string> GetLastRequestIdService();
         /// <summary>
         /// Lấy ra danh sách vật tư theo các điều kiện tìm kiếm
         /// </summary>
         /// <param name="query"></param>
         /// <returns></returns>
-        Task<IEnumerable<RequestMaterialDTO>> GetMaterialAsyncService(RequestMaterialQuery query);
+        Task<PagedResult<RequestMaterialDTO>> GetMaterialAsyncService(RequestMaterialQuery query);
+        /// <summary>
+        /// Lấy ra danh sách đã được trải phẳng vật tư theo các điều kiện tìm kiếm
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        Task<PagedResult<FlatRequestMaterialDto>> FlatRequestMaterialService(RequestMaterialQuery query);
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Storage;
+using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.DTO.QueryObject;
 using VietausWebAPI.Core.Entities;
 
@@ -27,12 +28,18 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         /// Lấy ra mã đề xuất cuối cùng
         /// </summary>
         /// <returns></returns>
-        Task<SupplyRequestsMaterialDatum> GetLastRequestIdRepository();
+        Task<string> GetLastRequestIdRepository();
         /// <summary>
         /// Lấy ra danh sách đề xuất mua vật tư theo điều kiện tìm kiếm
         /// </summary>
         /// <param name="query"></param>
         /// <returns></returns>
-        Task<IEnumerable<SupplyRequestsMaterialDatum>> GetRequestRepository(RequestMaterialQuery query);
+        Task<PagedResult<SupplyRequestsMaterialDatum>> GetRequestRepository(RequestMaterialQuery query);
+        /// <summary>
+        /// Lấy ra danh sách đã được trải phẳng vật tư theo các điều kiện tìm kiếm
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        Task<PagedResult<FlatRequestMaterialDto>> FlatRequestMaterialRepository(RequestMaterialQuery query);
     }
 }

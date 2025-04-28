@@ -21,9 +21,5 @@ namespace VietausWebAPI.Core.DTO.QueryObject
         public string? EmployeeName { get; set; }
         public bool? Static { get; set; }
         public bool SortAscending { get; set; }
-
-        // Các trường cho phân trang
-        public int PageNumber { get; set; } = 1; // Mặc định là trang 1
-        public int PageSize { get; set; } = 5; // Mặc định 5 bản ghi mỗi trang
     }
 }
