@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace VietausWebAPI.Core.DTO.PostDTO
 {
-    public class InventoryReceiptsPostDTO : RequestStatusPostDTO
+    public class InventoryReceiptsPostDTO 
     {
         public List<SendData> Items { get; set; }
     }

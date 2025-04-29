@@ -41,10 +41,10 @@ namespace VietausWebAPI.Core.Service
                 var inventoryReceipts = _mapper.Map<List<InventoryReceiptsMaterialDatum>>(inventoryReceiptsDTO.Items);
                 await _unitOfWork.InventoryReceiptsRepository.AddInventoryReceiptsRepositoryAsync(inventoryReceipts);
 
-                await _unitOfWork.SupplyRequestsMaterialDatumRepository.UpdateRequestStatusAsyncRepository(
-                    inventoryReceiptsDTO.RequestId,
-                    inventoryReceiptsDTO.requestStatus
-                );
+                //await _unitOfWork.SupplyRequestsMaterialDatumRepository.UpdateRequestStatusAsyncRepository(
+                //    inventoryReceiptsDTO.RequestId,
+                //    inventoryReceiptsDTO.requestStatus
+                //);
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
