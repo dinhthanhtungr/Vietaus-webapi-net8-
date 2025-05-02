@@ -28,7 +28,7 @@ namespace VietausWebAPI.Core.ServiceContracts
         /// </summary>
         /// <param name="inventoryReceiptsQuery"></param>
         /// <returns></returns>
-        Task<PagedResult<InventoryReceiptsGetDTO>> SearchInventoryReceiptsServiceAsync(InventoryReceiptsQuery inventoryReceiptsQuery);
+        Task<PagedResult<InventoryReceiptsForInputGetDTO>> SearchInventoryReceiptsServiceAsync(InventoryReceiptsQuery inventoryReceiptsQuery);
         /// <summary>
         /// Cập nhật giá cho danh sách phiếu nhập kho
         /// </summary>

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.DotNet.Scaffolding.Shared.Messaging;
 using VietausWebAPI.Core.DTO.GetDTO;
+using VietausWebAPI.Core.DTO.PostDTO;
 using VietausWebAPI.Core.ServiceContracts;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1
@@ -31,6 +32,13 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
         public async Task<IActionResult> AddSupplyRequestMaterial([FromBody] SupplyRequestsMaterialDatumDTO supplyRequestsMaterialDatumDTO)
         {
             await _supplyRequestsMaterialDatumService.AddSupplyRequestsMaterialDatumAsync(supplyRequestsMaterialDatumDTO);
+            return Ok(new { Message = "Request complion" });
+        }
+
+        [HttpPost("approve-receipt")]
+        public async Task<IActionResult> ApproveReceipt([FromBody] ApproveReceiptDTO supplyRequestsMaterialDatumDTO)
+        {
+            await _supplyRequestsMaterialDatumService.ApproveAndUpdateAsync(supplyRequestsMaterialDatumDTO);
             return Ok(new { Message = "Request complion" });
         }
 

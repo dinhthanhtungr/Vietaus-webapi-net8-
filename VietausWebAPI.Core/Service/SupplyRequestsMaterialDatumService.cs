@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.IdentityModel.Tokens;
 using VietausWebAPI.Core.DTO.GetDTO;
+using VietausWebAPI.Core.DTO.PostDTO;
 using VietausWebAPI.Core.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Core.ServiceContracts;
@@ -35,6 +37,29 @@ namespace VietausWebAPI.Core.Service
         {
             var supplyRequestMaterialDatum = _mapper.Map<List<SupplyRequestsMaterialDatum>>(supplyRequestsMaterialDatumDTO);
             await _unitOfWork.SupplyRequestsMaterialDatumRepository.AddSupplyRequestsMaterialDatumRepository(supplyRequestMaterialDatum);
+        }
+
+        public async Task ApproveAndUpdateAsync(ApproveReceiptDTO inventoryReceiptsMaterialDatum)
+        {
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+
+            try
+            {
+                // Cập nhật trạng thái đề xuất
+                await _unitOfWork.SupplyRequestsMaterialDatumRepository.UpdateRequestStatusAsyncRepository(inventoryReceiptsMaterialDatum.RequestId, inventoryReceiptsMaterialDatum.status);
+                // Thêm mới phiếu nhập kho
+                var inventoryReceipts = _mapper.Map<List<InventoryReceiptsMaterialDatum>>(inventoryReceiptsMaterialDatum.Items);
+                await _unitOfWork.InventoryReceiptsRepository.AddInventoryReceiptsRepositoryAsync(inventoryReceipts);
+                // Lưu thay đổi
+                await _unitOfWork.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception("Đã xảy ra lỗi: " + ex.Message);
+            }
         }
         /// <summary>
         /// Lấy tất cả đề xuất

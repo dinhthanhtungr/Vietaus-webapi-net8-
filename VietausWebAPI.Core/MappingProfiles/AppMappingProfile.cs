@@ -14,6 +14,10 @@ namespace VietausWebAPI.Core.MappingProfiles
             CreateMap<MaterialsMaterialGroupsDatum, MaterialGroupsDTO>().ReverseMap();
             CreateMap<SendData, InventoryReceiptsMaterialDatum>().ReverseMap();
             CreateMap<InventoryReceiptsGetDTO, InventoryReceiptsMaterialDatum>().ReverseMap();
+            CreateMap<InventoryReceiptsMaterialDTO, InventoryReceiptsMaterialDatum>().ReverseMap();
+            CreateMap<InventoryReceiptsForInputGetDTO, InventoryReceiptsMaterialDatum>().ReverseMap()
+                .ForMember(d => d.RequestDate, opt => opt.MapFrom(src => src.Request.RequestDate))
+                .ForMember(d => d.RequestStatus, opt => opt.MapFrom(src => src.Request.RequestStatus));
             //CreateMap<InventoryReceiptsGetDTO, InventoryReceiptsMaterialDatum>().ReverseMap();
             CreateMap<EmployeesCommonDatumDTO, EmployeesCommonDatum>().ReverseMap();
             CreateMap<SupplyRequestsMaterialDatumDTO, SupplyRequestsMaterialDatum>().ReverseMap();

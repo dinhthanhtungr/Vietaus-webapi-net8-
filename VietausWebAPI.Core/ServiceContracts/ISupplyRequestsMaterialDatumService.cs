@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.DTO.GetDTO;
+using VietausWebAPI.Core.DTO.PostDTO;
+using VietausWebAPI.Core.Entities;
 
 namespace VietausWebAPI.Core.ServiceContracts
 {
@@ -27,6 +30,14 @@ namespace VietausWebAPI.Core.ServiceContracts
         /// <param name="requestStatus"></param>
         /// <returns></returns>
         Task UpdateRequestStatusAsyncService(string requestId, string requestStatus);
+        /// <summary>
+        /// Cập nhật trạng thái đề xuất và thêm mới phiếu nhập kho
+        /// </summary>
+        /// <param name="inventoryReceiptsMaterialDatum"></param>
+        /// <param name="requestId"></param>
+        /// <param name="requestStatus"></param>
+        /// <returns></returns>
+        Task ApproveAndUpdateAsync(ApproveReceiptDTO inventoryReceiptsMaterialDatum);
 
     }
 }

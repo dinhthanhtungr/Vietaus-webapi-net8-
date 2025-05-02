@@ -61,10 +61,10 @@ namespace VietausWebAPI.Core.Service
         /// </summary>
         /// <param name="inventoryReceiptsQuery"></param>
         /// <returns></returns>
-        public async Task<PagedResult<InventoryReceiptsGetDTO>> SearchInventoryReceiptsServiceAsync(InventoryReceiptsQuery inventoryReceiptsQuery)
+        public async Task<PagedResult<InventoryReceiptsForInputGetDTO>> SearchInventoryReceiptsServiceAsync(InventoryReceiptsQuery inventoryReceiptsQuery)
         {
             var materials = await _unitOfWork.InventoryReceiptsRepository.SearchInventoryReceiptsRepositoryAsync(inventoryReceiptsQuery);
-            var result = _mapper.Map<PagedResult<InventoryReceiptsGetDTO>>(materials);
+            var result = _mapper.Map<PagedResult<InventoryReceiptsForInputGetDTO>>(materials);
             return result;
 
             //await _unitOfWork.BeginTransactionAsync();

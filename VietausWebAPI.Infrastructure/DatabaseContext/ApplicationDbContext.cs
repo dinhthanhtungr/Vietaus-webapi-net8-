@@ -254,10 +254,10 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasMaxLength(16)
                     .IsUnicode(false)
                     .HasColumnName("RequestID");
-                entity.Property(e => e.SupplierId)
-                    .HasMaxLength(16)
-                    .IsUnicode(false)
-                    .HasColumnName("SupplierID");
+                //entity.Property(e => e.SupplierId)
+                //    .HasMaxLength(16)
+                //    .IsUnicode(false)
+                //    .HasColumnName("SupplierID");
                 entity.Property(e => e.TotalPrice).HasColumnType("decimal(18, 2)");
                 entity.Property(e => e.Unit).HasMaxLength(50);
                 entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 2)");
