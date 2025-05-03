@@ -58,9 +58,9 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
         /// <param name="inventoryReceiptsUpdatePriceDTO"></param>
         /// <returns></returns>
         [HttpPatch("UpdatePrice")]
-        public async Task<IActionResult> UpdatePrice([FromBody] InventoryReceiptsUpdatePriceDTO inventoryReceiptsUpdatePriceDTO)
+        public async Task<IActionResult> UpdatePrice([FromBody] InventoryReceiptsUpdatePriceDTO inventoryReceiptsUpdatePriceDTO, string RequestId,string status)
         {
-            await _inventoryReceiptsService.UpdateInventoryReceiptsServiceAsync(inventoryReceiptsUpdatePriceDTO);
+            await _inventoryReceiptsService.UpdateInventoryReceiptsServiceAsync(inventoryReceiptsUpdatePriceDTO, RequestId, status);
             return Ok(new { message = "Request complion" });
         }
     }

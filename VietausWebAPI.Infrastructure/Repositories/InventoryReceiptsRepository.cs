@@ -62,7 +62,7 @@ namespace VietausWebAPI.Infrastructure.Repositories
 
             // Lọc theo RequestId
             if (!string.IsNullOrEmpty(query.RequestId))
-            {
+            { 
                 queryable = queryable.Where(x => x.RequestId == query.RequestId);
             }
 
@@ -123,25 +123,13 @@ namespace VietausWebAPI.Infrastructure.Repositories
         /// <returns></returns>
         public async Task UpdateInventoryReceiptsRepositoryAsync(InventoryReceiptsUpdatePriceDTO inventoryReceiptsMaterialDatum)
         {
-            using var transaction = _context.Database.BeginTransaction();
             try
             {
                 //var receiptIds = inventoryReceiptsMaterialDatum.Select(x => x.ReceiptId).ToList();
 
                 var receipts = await _context.InventoryReceiptsMaterialData
                     .FirstOrDefaultAsync(x => x.ReceiptId == inventoryReceiptsMaterialDatum.ReceiptId);
-                //.Where(x => receiptIds.Contains(x.ReceiptId))
-                //.ToListAsync();
 
-                //foreach (var receipt in receipts)
-                //{
-                //    var newReceipt = inventoryReceiptsMaterialDatum.FirstOrDefault(x => x.ReceiptId == receipt.ReceiptId);
-                //    if (newReceipt != null)
-                //    {
-                //        receipt.UnitPrice = newReceipt.UnitPrice;
-                //        receipt.TotalPrice = newReceipt.TotalPrice;
-                //    }
-                //}
                 if (receipts == null)
                 {
                     throw new Exception($"Receipt with ID {inventoryReceiptsMaterialDatum.ReceiptId} not found");
@@ -156,7 +144,7 @@ namespace VietausWebAPI.Infrastructure.Repositories
 
             catch (Exception ex)
             {
-                transaction.Rollback();
+                throw new Exception("Đã xảy ra lỗi: " + ex.Message);
             }
         }
     }

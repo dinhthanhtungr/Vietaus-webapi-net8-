@@ -41,11 +41,6 @@ namespace VietausWebAPI.Core.Service
                 var inventoryReceipts = _mapper.Map<List<InventoryReceiptsMaterialDatum>>(inventoryReceiptsDTO.Items);
                 await _unitOfWork.InventoryReceiptsRepository.AddInventoryReceiptsRepositoryAsync(inventoryReceipts);
 
-                //await _unitOfWork.SupplyRequestsMaterialDatumRepository.UpdateRequestStatusAsyncRepository(
-                //    inventoryReceiptsDTO.RequestId,
-                //    inventoryReceiptsDTO.requestStatus
-                //);
-
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
             }
@@ -100,10 +95,25 @@ namespace VietausWebAPI.Core.Service
         /// <param name="inventoryReceiptsUpdatePriceDTO"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public async Task UpdateInventoryReceiptsServiceAsync(InventoryReceiptsUpdatePriceDTO inventoryReceiptsUpdatePriceDTO)
+        public async Task UpdateInventoryReceiptsServiceAsync(InventoryReceiptsUpdatePriceDTO inventoryReceiptsUpdatePriceDTO, string RequestId, string status)
         {
-            await _unitOfWork.InventoryReceiptsRepository.UpdateInventoryReceiptsRepositoryAsync(inventoryReceiptsUpdatePriceDTO); ;
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.BeginTransactionAsync();
+
+            try
+            {
+                await _unitOfWork.SupplyRequestsMaterialDatumRepository.UpdateRequestStatusAsyncRepository(RequestId, status);
+                await _unitOfWork.InventoryReceiptsRepository.UpdateInventoryReceiptsRepositoryAsync(inventoryReceiptsUpdatePriceDTO); ;
+                await _unitOfWork.SaveChangesAsync();
+
+                await _unitOfWork.CommitTransactionAsync();
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw new Exception("Đã xảy ra lỗi: " + ex.Message);
+            }
+
+
         }
 
     }
