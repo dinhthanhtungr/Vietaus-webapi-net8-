@@ -15,7 +15,6 @@ public partial class ApprovalHistoryMaterialDatum
 
     public string? Note { get; set; }
 
-    public virtual EmployeesCommonDatum Employee { get; set; } = null!;
-
-    public virtual SupplyRequestsMaterialDatum Request { get; set; } = null!;
+    public virtual EmployeesCommonDatum Employee { get; set; }
+    public virtual SupplyRequestsMaterialDatum Request { get; set; }
 }

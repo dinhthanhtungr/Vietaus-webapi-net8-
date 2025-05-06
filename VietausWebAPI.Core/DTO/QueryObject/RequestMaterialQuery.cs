@@ -14,7 +14,7 @@ namespace VietausWebAPI.Core.DTO.QueryObject
         public DateTime? RequestDateTo { get; set; }
         public string KeyWord { get; set; } = string.Empty;
         public List<string> StatusFilter { get; set; } = new List<string>();
-
+        public string? requestStatus { get; set; }
         public string? SortBy { get; set; }
 
         public bool SortAscending { get; set; }

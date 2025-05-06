@@ -7,7 +7,7 @@ public partial class MachineHistoryMd
 {
     public string MachineId { get; set; } = null!;
 
-    public DateTime Time { get; set; }
+    public DateOnly Time { get; set; }
 
     public decimal? ProducingTimeOfDay { get; set; }
 

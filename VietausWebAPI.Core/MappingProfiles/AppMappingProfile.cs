@@ -19,7 +19,8 @@ namespace VietausWebAPI.Core.MappingProfiles
                 .ForMember(d => d.RequestDate, opt => opt.MapFrom(src => src.Request.RequestDate))
                 .ForMember(d => d.RequestStatus, opt => opt.MapFrom(src => src.Request.RequestStatus));
             //CreateMap<InventoryReceiptsGetDTO, InventoryReceiptsMaterialDatum>().ReverseMap();
-            CreateMap<EmployeesCommonDatumDTO, EmployeesCommonDatum>().ReverseMap();
+            CreateMap<EmployeesCommonDatumDTO, EmployeesCommonDatum>().ReverseMap()
+                .ForMember(d => d.PartName, opt => opt.MapFrom(src => src.Part.PartName));
             CreateMap<SupplyRequestsMaterialDatumDTO, SupplyRequestsMaterialDatum>().ReverseMap();
             CreateMap<SupplyRequestsMaterialDatum, RequestIdDTO>().ReverseMap().ForMember(dest => dest.RequestId, opt => opt.MapFrom(src => src.RequestId));
             CreateMap<SupplyRequestsMaterialDatum, RequestMaterialDTO>().ReverseMap().ForMember(dest => dest.RequestDetailMaterialData, opt => opt.MapFrom(src => src.RequestDetails)).ForMember(dest => dest.RequestDetailMaterialData, opt => opt.Ignore());

@@ -11,7 +11,7 @@ public partial class EventHistoryQlsx
 
     public string? EventId { get; set; }
 
-    public DateOnly? EventDate { get; set; }
+    public DateTime? EventDate { get; set; }
 
     public virtual QlsxMachineEvent? Event { get; set; }
 }

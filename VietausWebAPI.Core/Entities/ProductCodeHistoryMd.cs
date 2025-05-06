@@ -15,17 +15,15 @@ public partial class ProductCodeHistoryMd
 
     public DateTime EndTime { get; set; }
 
-    public decimal TotalTime { get; set; }
+    public int TotalTime { get; set; }
 
-    public decimal? ProducingTime { get; set; }
+    public int? ProducingTime { get; set; }
 
-    public decimal? WaitingTime { get; set; }
+    public int? WaitingTime { get; set; }
 
     public int EnergyTotal { get; set; }
 
     public int ProducingEnergy { get; set; }
 
     public int WaitingEnergy { get; set; }
-
-    public virtual MachinesCommonDatum Machine { get; set; } = null!;
 }

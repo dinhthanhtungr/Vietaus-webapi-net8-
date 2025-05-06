@@ -29,9 +29,13 @@ public partial class EmployeesCommonDatum
 
     public string Status { get; set; } = null!;
 
+    public DateOnly? EndDate { get; set; }
+
     public virtual ICollection<ApprovalHistoryMaterialDatum> ApprovalHistoryMaterialData { get; set; } = new List<ApprovalHistoryMaterialDatum>();
 
     public virtual ApprovalLevelsCommonDatum Level { get; set; } = null!;
+
+    public virtual ICollection<ParameterStandardMd> ParameterStandardMds { get; set; } = new List<ParameterStandardMd>();
 
     public virtual PartsCommonDatum Part { get; set; } = null!;
 

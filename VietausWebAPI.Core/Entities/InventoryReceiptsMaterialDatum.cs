@@ -32,6 +32,4 @@ public partial class InventoryReceiptsMaterialDatum
     public virtual MaterialsMaterialGroupsDatum MaterialGroup { get; set; } = null!;
 
     public virtual SupplyRequestsMaterialDatum Request { get; set; } = null!;
-
-    public virtual MaterialSuppliersMaterialDatum? Supplier { get; set; }
 }

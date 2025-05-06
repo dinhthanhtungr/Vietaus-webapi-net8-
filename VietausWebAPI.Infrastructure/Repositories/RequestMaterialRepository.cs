@@ -141,6 +141,10 @@ namespace VietausWebAPI.Infrastructure.Repositories
             {
                 queryable = queryable.Where(x => x.RequestDate == query.RequestDate);
             }
+            else if (query.requestStatus != null)
+            {
+                queryable = queryable.Where(x => x.RequestStatus == query.requestStatus);
+            }
 
             // Sắp xếp
             switch (query.SortBy)
@@ -223,31 +227,32 @@ namespace VietausWebAPI.Infrastructure.Repositories
                 queryable = queryable.Where(x => x.RequestDate == query.RequestDate);
             }
 
-            var flatQuery = queryable
-                .SelectMany(request =>
-                    request.RequestDetailMaterialData
-                        .Where(detail => 
-                            string.IsNullOrWhiteSpace(query.KeyWord) || 
-                            (detail.MaterialName != null && EF.Functions.Collate(detail.MaterialName, "Latin1_General_CI_AI").ToLower().Contains(query.KeyWord.ToLower())) ||
-                            (detail.MaterialGroupId != null && detail.MaterialGroupId.ToLower().Contains(query.KeyWord.ToLower())) ||
-                            (detail.MaterialGroup != null && EF.Functions.Collate(detail.MaterialGroup, "Latin1_General_CI_AI").MaterialGroupName.ToLower().Contains(query.KeyWord.ToLower())) ||
-                            (detail.Request.Employee != null && EF.Functions.Collate(detail.Request.Employee.FullName, "Latin1_General_CI_AI").ToLower().Contains(query.KeyWord.ToLower())) ||
-                            (detail.Request.EmployeeId != null && detail.Request.EmployeeId.ToLower().Contains(query.KeyWord.ToLower()))
 
-                             
-                            ),
-                            (request, detail) => new FlatRequestMaterialDto
-                            {
-                                RequestId = request.RequestId,
-                                RequestDate = request.RequestDate,
-                                RequestStatus = request.RequestStatus,
-                                EmployeeId = request.EmployeeId,
-                                EmployeeName = request.Employee.FullName,
-                                MaterialGroupId = detail.MaterialGroupId,
-                                MaterialName = detail.MaterialName,
-                                RequestQuantity = detail.RequestedQuantity,
-                                Unit = detail.Unit
-                            });
+                var flatQuery = queryable
+                    .SelectMany(request =>
+                        request.RequestDetailMaterialData
+                            .Where(detail =>
+                                string.IsNullOrWhiteSpace(query.KeyWord) ||
+                                (detail.MaterialName != null && EF.Functions.Collate(detail.MaterialName, "Latin1_General_CI_AI").ToLower().Contains(query.KeyWord.ToLower())) ||
+                                (detail.MaterialGroupId != null && detail.MaterialGroupId.ToLower().Contains(query.KeyWord.ToLower())) ||
+                                (detail.MaterialGroup != null && EF.Functions.Collate(detail.MaterialGroup.MaterialGroupName, "Latin1_General_CI_AI").ToLower().Contains(query.KeyWord.ToLower())) ||
+                                (detail.Request.Employee != null && EF.Functions.Collate(detail.Request.Employee.FullName, "Latin1_General_CI_AI").ToLower().Contains(query.KeyWord.ToLower())) ||
+                                (detail.Request.EmployeeId != null && detail.Request.EmployeeId.ToLower().Contains(query.KeyWord.ToLower())) ||
+                                (detail.RequestId != null && detail.RequestId.ToLower().Contains(query.KeyWord.ToLower()))
+
+                                ),
+                                (request, detail) => new FlatRequestMaterialDto
+                                {
+                                    RequestId = request.RequestId,
+                                    RequestDate = request.RequestDate,
+                                    RequestStatus = request.RequestStatus,
+                                    EmployeeId = request.EmployeeId,
+                                    EmployeeName = request.Employee.FullName,
+                                    MaterialGroupId = detail.MaterialGroupId,
+                                    MaterialName = detail.MaterialName,
+                                    RequestQuantity = detail.RequestedQuantity,
+                                    Unit = detail.Unit
+                                });
 
             return await QueryableExtensions.GetPagedAsync(flatQuery, query);
         }

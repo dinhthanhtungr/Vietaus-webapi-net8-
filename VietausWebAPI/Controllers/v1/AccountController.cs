@@ -60,7 +60,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
         /// <param name="registerDTO">Contains user registration information</param>
         /// <returns>Returns success or error message</returns>
         [HttpPost("Register")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<ActionResult<ApplicationUser>> PostRegister(RegisterDTO registerDTO)
         {
             // Validate request model

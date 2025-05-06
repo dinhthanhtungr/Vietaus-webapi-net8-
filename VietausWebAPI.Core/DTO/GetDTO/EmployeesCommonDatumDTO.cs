@@ -12,5 +12,6 @@ namespace VietausWebAPI.Core.DTO.GetDTO
         public string FullName { get; set; } = null!;
         public string LevelId { get; set; } = null!;
         public string PartId { get; set; } = null!;
+        public string PartName { get; set; } = null!;   
     }
 }

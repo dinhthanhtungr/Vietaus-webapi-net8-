@@ -12,6 +12,4 @@ public partial class PartsCommonDatum
     public virtual ICollection<EmployeesCommonDatum> EmployeesCommonData { get; set; } = new List<EmployeesCommonDatum>();
 
     public virtual ICollection<MachinesCommonDatum> MachinesCommonData { get; set; } = new List<MachinesCommonDatum>();
-
-    public virtual ICollection<MaterialsMaterialGroupsDatum> MaterialsMaterialGroupsData { get; set; } = new List<MaterialsMaterialGroupsDatum>();
 }

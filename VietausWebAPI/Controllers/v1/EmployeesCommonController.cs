@@ -19,9 +19,9 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
             _employeesCommonService = employeesCommonService;
         }
         [HttpGet("Get")]
-        public async Task<IActionResult> GetAllEmployeesCommon([FromQuery] string? query)
+        public async Task<IActionResult> GetAllEmployeesCommon([FromQuery] string? Email)
         {
-            var result = await _employeesCommonService.GetEmployeesWithIdServiceAsync(query);
+            var result = await _employeesCommonService.GetEmployeesWithIdServiceAsync(Email);
             return Ok(result);
         }
     }
