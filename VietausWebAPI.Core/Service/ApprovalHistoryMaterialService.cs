@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.DTO.PostDTO;
 using VietausWebAPI.Core.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
@@ -57,10 +58,10 @@ namespace VietausWebAPI.Core.Service
         /// </summary>
         /// <param name="requestId"></param>
         /// <returns></returns>
-        public async Task<IEnumerable<ApprovalHistoryMaterialPostDTO>> GetApprovalHistoryMaterialServiceAsync(string requestId)
+        public async Task<IEnumerable<ApprovalHistoryMaterialGetDTO>> GetApprovalHistoryMaterialServiceAsync(string requestId)
         {
             var approvalHistories = await _unitOfWork.ApprovalHistoryMaterialRepository.GetApprovalHistoryMaterialRepositoryAsync(requestId);
-            return _mapper.Map<IEnumerable<ApprovalHistoryMaterialPostDTO>>(approvalHistories);
+            return _mapper.Map<IEnumerable<ApprovalHistoryMaterialGetDTO>>(approvalHistories);
         }
     }
 }

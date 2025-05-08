@@ -39,5 +39,14 @@ namespace VietausWebAPI.Core.ServiceContracts
         /// <returns></returns>
         Task ApproveAndUpdateAsync(ApproveReceiptDTO inventoryReceiptsMaterialDatum);
 
+        /// <summary>
+        /// Cập nhật trạng thái đề xuất thành công
+        /// </summary>
+        /// <param name="requestId"></param>
+        /// <param name="note"></param>
+        /// <param name="status"></param>
+        /// <returns></returns>
+        Task SuccessRequestStatusAsyncService(string requestId, string note, string status);
+
     }
 }

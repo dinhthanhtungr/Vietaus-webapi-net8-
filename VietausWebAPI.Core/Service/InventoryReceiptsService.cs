@@ -101,9 +101,12 @@ namespace VietausWebAPI.Core.Service
 
             try
             {
-                await _unitOfWork.SupplyRequestsMaterialDatumRepository.UpdateRequestStatusAsyncRepository(RequestId, status);
-                await _unitOfWork.InventoryReceiptsRepository.UpdateInventoryReceiptsRepositoryAsync(inventoryReceiptsUpdatePriceDTO); ;
+                //await _unitOfWork.SupplyRequestsMaterialDatumRepository.UpdateRequestStatusAsyncRepository(RequestId, status);
+                
+                await _unitOfWork.InventoryReceiptsRepository.UpdateInventoryReceiptsRepositoryAsync(inventoryReceiptsUpdatePriceDTO);
                 await _unitOfWork.SaveChangesAsync();
+                //await _unitOfWork.InventoryReceiptsRepository.CheckAndUpdateStatusAsync(RequestId); 
+                //await _unitOfWork.SaveChangesAsync();
 
                 await _unitOfWork.CommitTransactionAsync();
             }

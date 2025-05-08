@@ -54,7 +54,7 @@ namespace VietausWebAPI.Infrastructure.Repositories
             // Lấy bản ghi có RequestId lớn nhất cho ngày hiện tại
             var latestRequest = await _context.SupplyRequestsMaterialData
                 .Where(x => x.RequestId.Contains(datePart))
-                .OrderByDescending(x => x.RequestId)
+                .OrderByDescending(x => x.RequestDate)
                 .FirstOrDefaultAsync();
 
             int nextSequence;
@@ -118,6 +118,12 @@ namespace VietausWebAPI.Infrastructure.Repositories
                     )
                 );
             }
+
+            if (query.PartId != null && query.PartId.Any())
+            {
+                queryable = queryable.Where(x => query.PartId.Contains(x.Employee.PartId));
+            }
+
             if (query.StatusFilter != null && query.StatusFilter.Any())
             {
                 queryable = queryable.Where(x => query.StatusFilter.Contains(x.RequestStatus));

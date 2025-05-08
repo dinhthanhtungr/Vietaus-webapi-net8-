@@ -13,6 +13,7 @@ namespace VietausWebAPI.Core.DTO.QueryObject
         public DateTime? RequestDateFrom { get; set; }
         public DateTime? RequestDateTo { get; set; }
         public string KeyWord { get; set; } = string.Empty;
+        public string? PartId { get; set; }
         public List<string> StatusFilter { get; set; } = new List<string>();
         public string? requestStatus { get; set; }
         public string? SortBy { get; set; }

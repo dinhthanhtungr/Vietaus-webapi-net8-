@@ -67,5 +67,27 @@ namespace VietausWebAPI.Infrastructure.Repositories
             }
         }
 
+        /// <summary>
+        /// Cập nhật trạng thái đề xuất thành công
+        /// </summary>
+        /// <param name="requestId"></param>
+        /// <param name="note"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task SuccessRequestStatusAsyncRepository(string requestId, string note, string status)
+        {
+            var request = await _context.SupplyRequestsMaterialData
+                .FirstOrDefaultAsync(x => x.RequestId == requestId);
+
+            if (request == null)
+            {
+                throw new Exception($"Request with ID {requestId} not found");
+            }
+            else
+            {
+                request.NoteCancel = note;
+                request.RequestStatus = status;
+            }
+        }
     }
 }

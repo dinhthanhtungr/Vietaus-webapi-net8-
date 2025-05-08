@@ -28,8 +28,8 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
         [HttpGet("Get")]
         public async Task<IActionResult> GetAllApprovalHistoryMaterial([FromQuery] string? query)
         {
-            await _approvalHistoryMaterialService.GetApprovalHistoryMaterialServiceAsync(query);
-            return Ok(new { Message = "Request complion" });
+            var result = await _approvalHistoryMaterialService.GetApprovalHistoryMaterialServiceAsync(query);
+            return Ok(result);
         }
         /// <summary>
         /// Thêm lịch sử phê duyệt vật tư

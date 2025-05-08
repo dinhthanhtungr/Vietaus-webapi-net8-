@@ -10,5 +10,7 @@ namespace VietausWebAPI.Core.DTO.PostDTO
     {
         public string requestStatus { get; set; } = null!;
         public string RequestId { get; set; } = null!;
+        public DateTime ApprovalDate { get; set; }
+        public string? Note { get; set; }
     }
 }

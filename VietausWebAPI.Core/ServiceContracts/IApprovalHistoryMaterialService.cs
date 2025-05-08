@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.DTO.PostDTO;
 
 namespace VietausWebAPI.Core.ServiceContracts
@@ -20,6 +21,6 @@ namespace VietausWebAPI.Core.ServiceContracts
         /// </summary>
         /// <param name="requestId"></param>
         /// <returns></returns>
-        public Task<IEnumerable<ApprovalHistoryMaterialPostDTO>> GetApprovalHistoryMaterialServiceAsync(string requestId);
+        public Task<IEnumerable<ApprovalHistoryMaterialGetDTO>> GetApprovalHistoryMaterialServiceAsync(string requestId);
     }
 }

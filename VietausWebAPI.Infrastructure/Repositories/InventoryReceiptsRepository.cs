@@ -37,6 +37,32 @@ namespace VietausWebAPI.Infrastructure.Repositories
             //await _context.SaveChangesAsync();
         }
 
+        public async Task CheckAndUpdateStatusAsync(string requestId)
+        {
+            var materialIds = await _context.RequestDetailMaterialData
+                .Where(x => x.RequestId == requestId)
+                .Select(x => x.MaterialName)
+                .ToListAsync();
+
+            var pricedMaterial = await _context.InventoryReceiptsMaterialData
+                .Where(x => materialIds.Contains(x.MaterialName) && x.UnitPrice > 0 && x.RequestId == requestId)
+                .Select(x => x.MaterialName)
+                .Distinct()
+                .ToListAsync();
+
+            var isComplete = materialIds.All(x => pricedMaterial.Contains(x));
+
+            if (isComplete)
+            {
+                var request = await _context.SupplyRequestsMaterialData.FirstOrDefaultAsync(r => r.RequestId == requestId);
+                if (request != null)
+                {
+                    request.RequestStatus = "Đã nhập kho";
+                    //_context.SupplyRequestsMaterialData.Update(request);
+                }
+            }
+        }
+
         /// <summary>
         /// Lấy tất cả danh sách phiếu nhập kho
         /// </summary>

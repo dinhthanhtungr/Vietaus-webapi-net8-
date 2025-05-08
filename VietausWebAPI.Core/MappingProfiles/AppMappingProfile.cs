@@ -41,9 +41,13 @@ namespace VietausWebAPI.Core.MappingProfiles
             CreateMap(typeof(PagedResult<>), typeof(PagedResult<>));
 
             CreateMap<MaterialSuppliersMaterialDatum, MaterialSuppliersDTO>().ReverseMap();
-            CreateMap<ApprovalHistoryMaterialPostDTO, ApprovalHistoryMaterialDatum>().ReverseMap();
+            CreateMap<ApprovalHistoryMaterialPostDTO, ApprovalHistoryMaterialDatum>().ReverseMap()
+                .ForMember(d => d.requestStatus, opt => opt.MapFrom(src => src.Request.RequestStatus));
+            CreateMap<ApprovalHistoryMaterialGetDTO, ApprovalHistoryMaterialDatum>().ReverseMap()
+                .ForMember(d => d.FullName, opt => opt.MapFrom(src => src.Employee.FullName))
+                .ForMember(d => d.requestStatus, opt => opt.MapFrom(src => src.Request.RequestStatus));
 
-            
+
         }
     }
 }

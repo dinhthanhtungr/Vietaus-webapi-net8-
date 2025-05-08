@@ -30,5 +30,14 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         /// <param name="requestStatus"></param>
         /// <returns></returns>
         Task UpdateRequestStatusAsyncRepository(string requestId, string requestStatus);
+
+        /// <summary>
+        /// Cập nhật trạng thái đề xuất thành công
+        /// </summary>
+        /// <param name="requestId"></param>
+        /// <param name="note"></param>
+        /// <param name="status"></param>
+        /// <returns></returns>
+        Task SuccessRequestStatusAsyncRepository(string requestId, string note, string status);
     }
 }

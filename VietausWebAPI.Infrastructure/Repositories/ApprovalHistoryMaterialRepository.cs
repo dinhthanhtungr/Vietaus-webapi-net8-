@@ -40,6 +40,8 @@ namespace VietausWebAPI.Infrastructure.Repositories
         {
             return await _context.ApprovalHistoryMaterialData
                 .AsNoTracking()
+                .Include(r => r.Employee)
+                .Include(r => r.Request)
                 .Where(x => x.RequestId == requestID)
                 .ToListAsync();
         }

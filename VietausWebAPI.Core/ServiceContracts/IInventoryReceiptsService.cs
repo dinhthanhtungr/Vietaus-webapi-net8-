@@ -35,5 +35,7 @@ namespace VietausWebAPI.Core.ServiceContracts
         /// <param name="inventoryReceiptsUpdatePriceDTO"></param>
         /// <returns></returns>
         Task UpdateInventoryReceiptsServiceAsync(InventoryReceiptsUpdatePriceDTO inventoryReceiptsUpdatePriceDTO, string RequestId, string status);
+
+        
     }
 }

@@ -29,5 +29,7 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         /// <param name="inventoryReceiptsMaterialDatum"></param>
         /// <returns></returns>
         Task UpdateInventoryReceiptsRepositoryAsync(InventoryReceiptsUpdatePriceDTO inventoryReceiptsUpdatePriceDTO);
+
+        Task CheckAndUpdateStatusAsync(string requestId);
     }
 }

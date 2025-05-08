@@ -72,6 +72,20 @@ namespace VietausWebAPI.Core.Service
 
             return result;
         }
+
+        /// <summary>
+        /// Cập nhật trạng thái đề xuất thành công
+        /// </summary>
+        /// <param name="requestId"></param>
+        /// <param name="note"></param>
+        /// <param name="status"></param>
+        /// <returns></returns>
+        public async Task SuccessRequestStatusAsyncService(string requestId, string note, string status)
+        {
+            await _unitOfWork.SupplyRequestsMaterialDatumRepository.SuccessRequestStatusAsyncRepository(requestId, note, status);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
         /// <summary>
         /// Cập nhật trạng thái đề xuất
         /// </summary>

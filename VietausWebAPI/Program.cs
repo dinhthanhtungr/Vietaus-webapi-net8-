@@ -80,16 +80,17 @@ builder.Services.AddApplicationServices();
 builder.Services.AddSignalR();
 
 // Thêm CORS để Blazor WebAssembly có thể kết nối
-//builder.Services.AddCors(options =>
-//{
-//    options.AddPolicy("AllowBlazor", builder =>
-//    {
-//        builder.WithOrigins("https://localhost:5001") // URL của Blazor WebAssembly
-//               .AllowAnyMethod()
-//               .AllowAnyHeader()
-//               .AllowCredentials();
-//    });
-//});
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://192.168.7.226:8081") // ⬅ đúng địa chỉ frontend
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 
 // Sử dụng AddIdentityCore khi không muốn sử dụng cookie vì identity tự động gọi sử dụng cookie
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
@@ -153,18 +154,21 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+//builder.WebHost.UseUrls("http://192.168.7.226:8080");
+
 var app = builder.Build();
 
 app.UseCors("AllowAllOrigins");
+//app.UseCors("AllowFrontend");
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+//if (app.Environment.IsDevelopment())
+//{
+app.UseSwagger();
+app.UseSwaggerUI();
+//}
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 //app.UseRouting();
 

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.DotNet.Scaffolding.Shared.Messaging;
 using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.DTO.PostDTO;
+using VietausWebAPI.Core.DTO.QueryObject;
 using VietausWebAPI.Core.ServiceContracts;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1
@@ -67,6 +68,11 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
             return Ok(new { Message = "Request status updated" });
         }
 
-
+        [HttpPatch("SuccessRequestStatus")]
+        public async Task<IActionResult> SuccessRequestStatus([FromBody] SuccessRequestStatusQuery query)
+        {
+            await _supplyRequestsMaterialDatumService.SuccessRequestStatusAsyncService(query.RequestId, query.Note, query.Status);
+            return Ok(new { Message = "Request status updated" });
+        }
     }
 }
