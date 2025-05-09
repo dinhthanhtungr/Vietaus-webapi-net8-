@@ -14,7 +14,8 @@ namespace VietausWebAPI.Core.DTO.GetDTO
         public string EmployeeName { get; set; } = null!;
         public string RequestStatus { get; set; } = null!;
 
-        public string MaterialGroupId { get; set; } = null!;
+        //public string MaterialGroupId { get; set; } = null!;
+        public string MaterialGroupName { get; set; } = null!;
         public string MaterialName { get; set; } = null!;
         public int RequestQuantity { get; set; }
         public string Unit { get; set; } = null!;

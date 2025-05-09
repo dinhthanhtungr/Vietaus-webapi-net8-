@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.DTO.GetDTO;
 
 namespace VietausWebAPI.Core.DTO.PostDTO
 {
@@ -15,6 +16,6 @@ namespace VietausWebAPI.Core.DTO.PostDTO
         public string? Note { get; set; }
         public string? NoteCancel { get; set; }
         public string RequestStatus { get; set; }
-        public List<RequestDetailMaterialDatumPostDTO> RequestDetails { get; set; }
+        public List<RequestDetailResponseGetDto> RequestDetails { get; set; }
     }
 }

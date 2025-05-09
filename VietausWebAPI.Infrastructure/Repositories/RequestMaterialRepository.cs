@@ -96,7 +96,8 @@ namespace VietausWebAPI.Infrastructure.Repositories
         {
             var queryable = _context.SupplyRequestsMaterialData
                 .AsNoTracking()
-                .Include(r => r.RequestDetailMaterialData)
+                .Include(r => r.RequestDetailMaterialData).ThenInclude(r => r.MaterialGroup)
+
                 .Include(r => r.Employee)
                 .Include(r => r.Employee.Part)
                 .AsQueryable();
@@ -218,6 +219,10 @@ namespace VietausWebAPI.Infrastructure.Repositories
             {
                 queryable = queryable.Where(x => x.RequestDate >= query.RequestDateFrom && x.RequestDate <= query.RequestDateTo);
             }
+            if (query.PartId != null)
+            {
+                queryable = queryable.Where(x => x.Employee.PartId == query.PartId);
+            }
 
             else if (query.RequestDateFrom.HasValue)
             {
@@ -254,7 +259,7 @@ namespace VietausWebAPI.Infrastructure.Repositories
                                     RequestStatus = request.RequestStatus,
                                     EmployeeId = request.EmployeeId,
                                     EmployeeName = request.Employee.FullName,
-                                    MaterialGroupId = detail.MaterialGroupId,
+                                    MaterialGroupName = detail.MaterialGroup.MaterialGroupName,
                                     MaterialName = detail.MaterialName,
                                     RequestQuantity = detail.RequestedQuantity,
                                     Unit = detail.Unit

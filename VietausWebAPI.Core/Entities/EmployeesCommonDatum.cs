@@ -25,11 +25,11 @@ public partial class EmployeesCommonDatum
 
     public string LevelId { get; set; } = null!;
 
-    public DateTime DateHired { get; set; }
+    public DateTime? DateHired { get; set; }
 
-    public string Status { get; set; } = null!;
+    public string? Status { get; set; } = null!;
 
-    public DateOnly? EndDate { get; set; }
+    public DateTime? EndDate { get; set; }
 
     public virtual ICollection<ApprovalHistoryMaterialDatum> ApprovalHistoryMaterialData { get; set; } = new List<ApprovalHistoryMaterialDatum>();
 

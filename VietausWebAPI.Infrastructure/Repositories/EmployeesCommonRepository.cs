@@ -26,7 +26,8 @@ namespace VietausWebAPI.Infrastructure.Repositories
         // Implement methods from IEmployeesCommonRepository here
         public async Task<IEnumerable<EmployeesCommonDatum>> GetEmployeesWithIdRepositoryAsync(string EmployeeName)
         {
-            return await _context.EmployeesCommonData.Include(x => x.Part)
+            return await _context.EmployeesCommonData
+                .Include(x => x.Part)
                 .AsNoTracking()
                 .Where(x => x.Email == EmployeeName)
                 .ToListAsync();

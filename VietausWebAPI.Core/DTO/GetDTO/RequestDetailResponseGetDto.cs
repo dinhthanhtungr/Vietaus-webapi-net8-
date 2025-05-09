@@ -8,11 +8,12 @@ namespace VietausWebAPI.Core.DTO.GetDTO
 {
     public class RequestDetailResponseGetDto
     {
-        public int DetailId { get; set; }
-        public string RequestId { get; set; }
-        public string MaterialGroupId { get; set; }
-        public string MaterialName { get; set; }
+        public string MaterialGroupName { get; set; } = null!;
+
+        public string MaterialName { get; set; } = null!;
+
         public int RequestedQuantity { get; set; }
-        public string Unit { get; set; }
+
+        public string? Unit { get; set; }
     }
 }

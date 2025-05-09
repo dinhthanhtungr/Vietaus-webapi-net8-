@@ -76,9 +76,9 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
             ApplicationUser user = new ApplicationUser()
             {
                 Email = registerDTO.Email,
-                PhoneNumber = registerDTO.Phone,
-                UserName = registerDTO.Email, // Using email as the username
-                personName = registerDTO.UserName
+                //PhoneNumber = registerDTO.Phone,
+                UserName = registerDTO.UserName, // Using UserName as the username
+                personName = registerDTO.PersonName
             };
 
             IdentityResult result = await _UserManager.CreateAsync
@@ -173,7 +173,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
 
             // Find user by email
             ApplicationUser? user = await
-            _UserManager.FindByEmailAsync(loginDTO.Email);
+            _UserManager.FindByNameAsync(loginDTO.Username);
 
             if (user == null)
             {
@@ -384,6 +384,42 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
             await _context.SaveChangesAsync();
             
             return Ok($"Role = {role}, User = {user}, {userRole.UserId}, {userRole.Role} ");
+        }
+
+        [HttpPost("reset-password")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordDTO resetPasswordDTO)
+        {
+            if (!ModelState.IsValid)
+            {
+                String errorMessage = string.Join(" | ",
+                ModelState.Values.SelectMany(v => v.Errors).Select(e =>
+                e.ErrorMessage));
+                return Problem(errorMessage);
+            }
+
+            //var user = await _context.Users.FindAsync(resetPasswordDTO.userName);
+            var user = await _UserManager.FindByNameAsync(resetPasswordDTO.userName);
+
+            if (user == null)
+            {
+                return NotFound(new { Message = "User not found" });
+            }
+
+            var token = await _UserManager.GeneratePasswordResetTokenAsync(user);
+
+            var result = await _UserManager.ResetPasswordAsync(user, token, resetPasswordDTO.newPassword);
+
+            if (result.Succeeded)
+            {
+                return Ok(new { Message = "Password reset successfully" });
+            }
+            else
+            {
+                string errorMessage = string.Join(" | ",
+                result.Errors.Select(e => e.Description));
+                return Problem(errorMessage);
+            }
         }
     }
 }

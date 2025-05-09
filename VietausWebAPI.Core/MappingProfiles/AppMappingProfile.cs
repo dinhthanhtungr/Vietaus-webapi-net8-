@@ -33,10 +33,14 @@ namespace VietausWebAPI.Core.MappingProfiles
             CreateMap<RequestDetailMaterialDatum, RequestDetailMaterialDatumPostDTO>()
                 .ReverseMap()
                 //.ForMember(dest => dest.MaterialGroupId, opt => opt.MapFrom(src => src.RequestId))
-                .ForMember(dest => dest.MaterialGroupId, opt => opt.MapFrom(src => src.MaterialGroupId))
+                //.ForMember(dest => dest.MaterialGroupId, opt => opt.MapFrom(src => src.MaterialGroupId))
                 .ForMember(dest => dest.MaterialName, opt => opt.MapFrom(src => src.MaterialName))
                 .ForMember(dest => dest.RequestedQuantity, opt => opt.MapFrom(src => src.RequestedQuantity))
                 .ForMember(dest => dest.Unit, opt => opt.MapFrom(src => src.Unit));
+
+
+            CreateMap<RequestDetailMaterialDatum, RequestDetailResponseGetDto>()
+                .ForMember(dest => dest.MaterialGroupName, opt => opt.MapFrom(src => src.MaterialGroup.MaterialGroupName));
 
             CreateMap(typeof(PagedResult<>), typeof(PagedResult<>));
 
