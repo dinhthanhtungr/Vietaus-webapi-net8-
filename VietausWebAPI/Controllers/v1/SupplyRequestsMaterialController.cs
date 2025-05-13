@@ -50,13 +50,13 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
         [HttpGet("GetAll")]
         public async Task<IActionResult> GetAllSupplyRequestsMaterial()
         {
-
+            
             var result = await _supplyRequestsMaterialDatumService.GetAllSupplyRequestsMaterialDatumAsync();
             return Ok(result);
         }
 
         /// <summary>
-        /// Cập nhật trạng thái đề xuất
+        /// Cập nhật trạng thái đề xuấtt
         /// </summary>
         /// <param name="requestId"></param>
         /// <param name="status"></param>
