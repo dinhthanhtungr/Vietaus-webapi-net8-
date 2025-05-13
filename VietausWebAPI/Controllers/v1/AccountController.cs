@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using System.Data;
 using System.Security.Claims;
+using System.Runtime.Intrinsics.X86;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1._0
 {
@@ -195,13 +196,18 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
                 Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name).
                 ToListAsync();
 
+            var department = await _context.EmployeesCommonData
+                .Where(e => e.Email == user.Email)
+                .Select(e => e.PartId)
+                .FirstOrDefaultAsync();
+
             if (roles == null || roles.Count == 0)
             {
                 return Unauthorized(new { Message = "Invalid roles" });
             }
             //var roles = await GetActiveRolesForUser(user, _context);
             // Generate JWT token
-            AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(user, roles);
+            AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(user, department, roles);
             // Store refresh token for future authentication
             user.RefreshToken = authenticationResponse.RefreshToken;
             user.RefreshTokenExpirationDateTime =
@@ -331,8 +337,14 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
                 Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name).
                 ToListAsync();
 
+            var department = await _context.EmployeesCommonData
+                .Where(e => e.Email == user.Email)
+                .Select(e => e.PartId)
+                .FirstOrDefaultAsync();
+
+
             // Generate new JWT token
-            AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(user, roles);
+            AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(user, department, roles);
 
             // Update Refresh Token buy not change expirationDatetime 
             user.RefreshToken = authenticationResponse.RefreshToken;

@@ -16,6 +16,6 @@ namespace VietausWebAPI.Core.DTO.PostDTO
         public string? Note { get; set; }
         public string? NoteCancel { get; set; }
         public string RequestStatus { get; set; }
-        public List<RequestDetailResponseGetDto> RequestDetails { get; set; }
+        public List<RequestDetailMaterialDatumPostDTO> RequestDetails { get; set; }
     }
 }
