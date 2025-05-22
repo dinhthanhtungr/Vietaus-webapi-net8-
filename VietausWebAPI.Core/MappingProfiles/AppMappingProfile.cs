@@ -2,7 +2,7 @@
 using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.DTO.PostDTO;
 using VietausWebAPI.Core.DTO.QueryObject;
-using VietausWebAPI.Core.Entities;
+using VietausWebAPI.Core.Domain.Entities;
 
 
 namespace VietausWebAPI.Core.MappingProfiles
@@ -11,7 +11,7 @@ namespace VietausWebAPI.Core.MappingProfiles
     {
         public AppMappingProfile()
         {
-            CreateMap<MaterialsMaterialGroupsDatum, MaterialGroupsDTO>().ReverseMap();
+            CreateMap<MaterialGroupsMaterialDatum, MaterialGroupsDTO>().ReverseMap();
             CreateMap<SendData, InventoryReceiptsMaterialDatum>().ReverseMap();
             CreateMap<InventoryReceiptsGetDTO, InventoryReceiptsMaterialDatum>().ReverseMap();
             CreateMap<InventoryReceiptsMaterialDTO, InventoryReceiptsMaterialDatum>().ReverseMap();
@@ -44,7 +44,7 @@ namespace VietausWebAPI.Core.MappingProfiles
 
             CreateMap(typeof(PagedResult<>), typeof(PagedResult<>));
 
-            CreateMap<MaterialSuppliersMaterialDatum, MaterialSuppliersDTO>().ReverseMap();
+            CreateMap<MaterialsSuppliersMaterialDatum, MaterialSuppliersDTO>().ReverseMap();
             CreateMap<ApprovalHistoryMaterialPostDTO, ApprovalHistoryMaterialDatum>().ReverseMap()
                 .ForMember(d => d.requestStatus, opt => opt.MapFrom(src => src.Request.RequestStatus));
             CreateMap<ApprovalHistoryMaterialGetDTO, ApprovalHistoryMaterialDatum>().ReverseMap()

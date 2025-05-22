@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Storage;
 using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.DTO.QueryObject;
-using VietausWebAPI.Core.Entities;
+using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.Core.Repositories_Contracts
 {

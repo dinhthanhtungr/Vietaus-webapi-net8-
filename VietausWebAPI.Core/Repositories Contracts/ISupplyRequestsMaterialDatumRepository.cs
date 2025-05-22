@@ -1,6 +1,6 @@
 ﻿
 
-using VietausWebAPI.Core.Entities;
+using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.Core.Repositories_Contracts
 {

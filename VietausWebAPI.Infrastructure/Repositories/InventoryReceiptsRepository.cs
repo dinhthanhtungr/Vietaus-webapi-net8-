@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.DTO.QueryObject;
-using VietausWebAPI.Core.Entities;
+using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 
 using VietausWebAPI.WebAPI.DatabaseContext;

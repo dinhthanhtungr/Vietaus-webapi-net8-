@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using VietausWebAPI.Core.Entities;
+using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.WebAPI.DatabaseContext;
 
@@ -25,9 +25,9 @@ namespace VietausWebAPI.Infrastructure.Repositories
         /// <param name="materialGroup"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public async Task AddMaterialGroupRepositoryAsync(MaterialsMaterialGroupsDatum materialGroup)
+        public async Task AddMaterialGroupRepositoryAsync(MaterialGroupsMaterialDatum materialGroup)
         {
-            await _context.MaterialsMaterialGroupsData.AddRangeAsync(materialGroup);
+            await _context.MaterialGroupsMaterialData.AddRangeAsync(materialGroup);
             await _context.SaveChangesAsync();
         }
 
@@ -36,9 +36,9 @@ namespace VietausWebAPI.Infrastructure.Repositories
         /// </summary>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public async Task<IEnumerable<MaterialsMaterialGroupsDatum>> GetAllMaterialGroupsRepositoryAsync()
+        public async Task<IEnumerable<MaterialGroupsMaterialDatum>> GetAllMaterialGroupsRepositoryAsync()
         {
-            return await _context.MaterialsMaterialGroupsData.ToListAsync();
+            return await _context.MaterialGroupsMaterialData.ToListAsync();
         }
     }
 }

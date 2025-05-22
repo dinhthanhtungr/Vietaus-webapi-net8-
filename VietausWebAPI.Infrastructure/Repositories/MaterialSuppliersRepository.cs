@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
-using VietausWebAPI.Core.Entities;
+using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.WebAPI.DatabaseContext;
 
@@ -27,18 +27,18 @@ namespace VietausWebAPI.Infrastructure.Repositories
         /// </summary>
         /// <param name="materialSuppliers"></param>
         /// <returns></returns>
-        public async Task AddMaterialSupplierRepositoryAsync(MaterialSuppliersMaterialDatum materialSuppliers)
+        public async Task AddMaterialSupplierRepositoryAsync(MaterialsSuppliersMaterialDatum materialSuppliers)
         {
-            await _context.MaterialSuppliersMaterialData.AddRangeAsync(materialSuppliers);
+            await _context.MaterialsSuppliersMaterialData.AddRangeAsync(materialSuppliers);
             await _context.SaveChangesAsync();
         }
         /// <summary>
         /// Lấy tất cả nhà cung cấp vật liệu
         /// </summary>
         /// <returns></returns>
-        public async Task<IEnumerable<MaterialSuppliersMaterialDatum>> GetAllMaterialSuppliersRepositoryAsync()
+        public async Task<IEnumerable<MaterialsSuppliersMaterialDatum>> GetAllMaterialSuppliersRepositoryAsync()
         {
-            return await _context.MaterialSuppliersMaterialData.ToListAsync();
+            return await _context.MaterialsSuppliersMaterialData.ToListAsync();
         }
 
     }

@@ -1,7 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
+using VietausWebAPI.Core.Application.Usecases.Approvals.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Usecases.SupplyRequests.RepositoriesContracts;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Core.ServiceContracts;
 using VietausWebAPI.WebAPI.DatabaseContext;
+
 
 namespace VietausWebAPI.Infrastructure.DataUnitOfWork
 {
@@ -17,6 +20,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IInventoryReceiptsRepository InventoryReceiptsRepository { get; }
         public IEmployeesCommonRepository EmployeesCommonRepository { get; }
 
+        public IApprovalRepository ApprovalRepository { get; }
+        public ISupplyRequestRepository SupplyRequestRepository { get; }
+
         /// <summary>
         /// Khởi tạo UnitOfWork
         /// </summary>
@@ -26,19 +32,23 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         /// <param name="supplyRequestsMaterialDatumRepository"></param>
         /// <param name="inventoryReceiptsRepository"></param>
         /// <param name="employeesCommonRepository"></param>
-        public UnitOfWork(ApplicationDbContext context 
+        public UnitOfWork(ApplicationDbContext context
             , IRequestMaterialRepository requestMaterialRepository
             , IApprovalHistoryMaterialRepository approvalHistoryMaterialRepository
             , ISupplyRequestsMaterialDatumRepository supplyRequestsMaterialDatumRepository
             , IInventoryReceiptsRepository inventoryReceiptsRepository
-            , IEmployeesCommonRepository employeesCommonRepository)
+            , IEmployeesCommonRepository employeesCommonRepository
+            , IApprovalRepository approvalRepository
+            , ISupplyRequestRepository supplyRequestRepository)
         {
             _context = context;
             RequestMaterialRepository = requestMaterialRepository;
             ApprovalHistoryMaterialRepository = approvalHistoryMaterialRepository;
             SupplyRequestsMaterialDatumRepository = supplyRequestsMaterialDatumRepository;
-            InventoryReceiptsRepository = inventoryReceiptsRepository; 
+            InventoryReceiptsRepository = inventoryReceiptsRepository;
             EmployeesCommonRepository = employeesCommonRepository;
+            ApprovalRepository = approvalRepository;
+            SupplyRequestRepository = supplyRequestRepository;
         }
         /// <summary>
         /// Bắt đầu một transaction

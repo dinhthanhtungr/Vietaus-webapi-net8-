@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Storage;
+using VietausWebAPI.Core.Application.Usecases.Approvals.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Usecases.SupplyRequests.RepositoriesContracts;
 using VietausWebAPI.Core.ServiceContracts;
 
 namespace VietausWebAPI.Core.Repositories_Contracts
@@ -15,6 +17,9 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         ISupplyRequestsMaterialDatumRepository SupplyRequestsMaterialDatumRepository { get; }
         IInventoryReceiptsRepository InventoryReceiptsRepository { get; }
         IEmployeesCommonRepository EmployeesCommonRepository { get; }
+        IApprovalRepository ApprovalRepository { get; }
+        ISupplyRequestRepository SupplyRequestRepository { get; }
+
         // Thêm các repository khác nếu cần
         Task<IDbContextTransaction> BeginTransactionAsync();
         Task CommitTransactionAsync();

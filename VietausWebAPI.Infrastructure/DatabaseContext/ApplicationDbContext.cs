@@ -1,10 +1,10 @@
-﻿using VietausWebAPI.Core.Models;
+﻿
 using VietausWebAPI.Core.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using VietausWebAPI.Core.Entities;
-using VietausWebAPI.Core.Entities;
+using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.WebAPI.DatabaseContext
 {
@@ -19,103 +19,131 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> option) : base(option) { } 
         public ApplicationDbContext() { }
-        public DbSet<ApprovalHistoryMaterialDatum> ApprovalHistoryMaterialData { get; set; }
+        public virtual DbSet<ApprovalHistoryMaterialDatum> ApprovalHistoryMaterialData { get; set; }
 
-        public DbSet<ApprovalLevelsCommonDatum> ApprovalLevelsCommonData { get; set; }
+        public virtual DbSet<ApprovalLevelsCommonDatum> ApprovalLevelsCommonData { get; set; }
 
-        public DbSet<AssignTask> AssignTasks { get; set; }
+        public virtual DbSet<AssignTask> AssignTasks { get; set; }
 
-        public DbSet<City> Cities { get; set; }
+        public virtual DbSet<City> Cities { get; set; }
 
-        public DbSet<EmployeesCommonDatum> EmployeesCommonData { get; set; }
+        public virtual DbSet<EmployeesCommonDatum> EmployeesCommonData { get; set; }
 
-        public DbSet<EndOfShiftReport> EndOfShiftReports { get; set; }
+        public virtual DbSet<EndOfShiftReport> EndOfShiftReports { get; set; }
 
-        public DbSet<EventHistoryQlsx> EventHistoryQlsxes { get; set; }
+        public virtual DbSet<EventHistoryQlsx> EventHistoryQlsxes { get; set; }
 
-        public DbSet<GroupsCommonDatum> GroupsCommonData { get; set; }
+        public virtual DbSet<GroupsCommonDatum> GroupsCommonData { get; set; }
 
-        public DbSet<HandOverHistory> HandOverHistories { get; set; }
+        public virtual DbSet<HandOverHistory> HandOverHistories { get; set; }
 
-        public DbSet<IncidentMaterial> IncidentMaterials { get; set; }
+        public virtual DbSet<HistoryForProductionPlanPlpu> HistoryForProductionPlanPlpus { get; set; }
 
-        public DbSet<IncidentReport> IncidentReports { get; set; }
+        public virtual DbSet<IncidentMaterial> IncidentMaterials { get; set; }
 
-        public DbSet<InfoBatForPlc> InfoBatForPlcs { get; set; }
+        public virtual DbSet<IncidentReport> IncidentReports { get; set; }
 
-        public DbSet<InfoProForPlc> InfoProForPlcs { get; set; }
+        public virtual DbSet<InfoBatForPlc> InfoBatForPlcs { get; set; }
 
-        public DbSet<InformationShift> InformationShifts { get; set; }
+        public virtual DbSet<InfoProForPlc> InfoProForPlcs { get; set; }
 
-        public DbSet<InventoryReceiptsMaterialDatum> InventoryReceiptsMaterialData { get; set; }
+        public virtual DbSet<InformationShift> InformationShifts { get; set; }
 
-        public DbSet<ListProducedForQc> ListProducedForQcs { get; set; }
+        public virtual DbSet<InventoryReceiptsMaterialDatum> InventoryReceiptsMaterialData { get; set; }
 
-        public DbSet<MachineHistoryMd> MachineHistoryMds { get; set; }
+        public virtual DbSet<ListProducedForQc> ListProducedForQcs { get; set; }
 
-        public DbSet<MachinesCommonDatum> MachinesCommonData { get; set; }
+        public virtual DbSet<MachineHistoryMd> MachineHistoryMds { get; set; }
 
-        public DbSet<MaintenanceHistory> MaintenanceHistories { get; set; }
+        public virtual DbSet<MachinesCommonDatum> MachinesCommonData { get; set; }
 
-        public DbSet<MaintenanceMaterial> MaintenanceMaterials { get; set; }
+        public virtual DbSet<MaintenanceHistory> MaintenanceHistories { get; set; }
 
-        public DbSet<Material> Materials { get; set; }
+        public virtual DbSet<MaintenanceMaterial> MaintenanceMaterials { get; set; }
 
-        public DbSet<MaterialGroup> MaterialGroups { get; set; }
+        public virtual DbSet<Material> Materials { get; set; }
 
-        public DbSet<MaterialSuppliersMaterialDatum> MaterialSuppliersMaterialData { get; set; }
+        public virtual DbSet<MaterialGroup> MaterialGroups { get; set; }
 
-        public DbSet<MaterialsMaterialGroupsDatum> MaterialsMaterialGroupsData { get; set; }
+        public virtual DbSet<MaterialGroupsMaterialDatum> MaterialGroupsMaterialData { get; set; }
 
-        public DbSet<NewMakingHistory> NewMakingHistories { get; set; }
+        public virtual DbSet<MaterialsMaterialDatum> MaterialsMaterialData { get; set; }
 
-        public DbSet<NewMakingMaterial> NewMakingMaterials { get; set; }
+        public virtual DbSet<MaterialsSuppliersMaterialDatum> MaterialsSuppliersMaterialData { get; set; }
 
-        public DbSet<NonCatalogHistory> NonCatalogHistories { get; set; }
+        public virtual DbSet<NewMakingHistory> NewMakingHistories { get; set; }
 
-        public DbSet<OperationHistoryMd> OperationHistoryMds { get; set; }
+        public virtual DbSet<NewMakingMaterial> NewMakingMaterials { get; set; }
 
-        public DbSet<OperatorForRecordToPlc> OperatorForRecordToPlcs { get; set; }
+        public virtual DbSet<NonCatalogHistory> NonCatalogHistories { get; set; }
 
-        public DbSet<OtherMaintenanceHistory> OtherMaintenanceHistories { get; set; }
+        public virtual DbSet<OperationHistoryMd> OperationHistoryMds { get; set; }
 
-        public DbSet<OtherMaintenanceMaterial> OtherMaintenanceMaterials { get; set; }
+        public virtual DbSet<OperatorForRecordToPlc> OperatorForRecordToPlcs { get; set; }
 
-        public DbSet<ParameterStandardMd> ParameterStandardMds { get; set; }
+        public virtual DbSet<OtherMaintenanceHistory> OtherMaintenanceHistories { get; set; }
 
-        public DbSet<PartsCommonDatum> PartsCommonData { get; set; }
+        public virtual DbSet<OtherMaintenanceMaterial> OtherMaintenanceMaterials { get; set; }
 
-        public DbSet<PassDetailHistoryLabqc> PassDetailHistoryLabqcs { get; set; }
+        public virtual DbSet<ParameterStandardMd> ParameterStandardMds { get; set; }
 
-        public DbSet<ProductCodeHistoryMd> ProductCodeHistoryMds { get; set; }
+        public virtual DbSet<PartsCommonDatum> PartsCommonData { get; set; }
 
-        public DbSet<ProductionOrderSummary> ProductionOrderSummaries { get; set; }
+        public virtual DbSet<PassDetailHistoryLabqc> PassDetailHistoryLabqcs { get; set; }
 
-        public DbSet<ProductionPlanHistoryPlpu> ProductionPlanHistoryPlpus { get; set; }
+        public virtual DbSet<PassDetailValuableLabqc> PassDetailValuableLabqcs { get; set; }
 
-        public DbSet<ProductionPlanPlpu> ProductionPlanPlpus { get; set; }
+        public virtual DbSet<PriceHistoryMaterialDatum> PriceHistoryMaterialData { get; set; }
 
-        public DbSet<ProductionStatus> ProductionStatuses { get; set; }
+        public virtual DbSet<ProListToQcLabqc> ProListToQcLabqcs { get; set; }
 
-        public DbSet<QlsxMachineEvent> QlsxMachineEvents { get; set; }
+        public virtual DbSet<ProductCodeHistoryMd> ProductCodeHistoryMds { get; set; }
 
-        public DbSet<RequestDetailMaterialDatum> RequestDetailMaterialData { get; set; }
+        public virtual DbSet<ProductionOrderSummary> ProductionOrderSummaries { get; set; }
 
-        public DbSet<ShiftLeaderForRecordToPlc> ShiftLeaderForRecordToPlcs { get; set; }
+        public virtual DbSet<ProductionPlanChageHistoryQlsx> ProductionPlanChageHistoryQlsxes { get; set; }
 
-        public DbSet<ShiftScheduleHistory> ShiftScheduleHistories { get; set; }
+        public virtual DbSet<ProductionPlanHistoryPlpu> ProductionPlanHistoryPlpus { get; set; }
 
-        public DbSet<SparePartsWarehouse> SparePartsWarehouses { get; set; }
+        public virtual DbSet<ProductionPlanPlpu> ProductionPlanPlpus { get; set; }
 
-        public DbSet<SparePartsWarehouseHistory> SparePartsWarehouseHistories { get; set; }
+        public virtual DbSet<ProductionStatus> ProductionStatuses { get; set; }
 
-        public DbSet<SupplyRequestsMaterialDatum> SupplyRequestsMaterialData { get; set; }
+        public virtual DbSet<PurchaseOrder> PurchaseOrders { get; set; }
 
-        public DbSet<SystemGroup> SystemGroups { get; set; }
+        public virtual DbSet<PurchaseOrderDetailsMaterialDatum> PurchaseOrderDetailsMaterialData { get; set; }
 
-        public DbSet<TempEndOfShiftReport> TempEndOfShiftReports { get; set; }
+        public virtual DbSet<PurchaseOrderStatusHistoryMaterialDatum> PurchaseOrderStatusHistoryMaterialData { get; set; }
 
-        public DbSet<UsagePurpose> UsagePurposes { get; set; }
+        public virtual DbSet<PurchaseOrdersMaterialDatum> PurchaseOrdersMaterialData { get; set; }
+
+        public virtual DbSet<QcresultLabqc> QcresultLabqcs { get; set; }
+
+        public virtual DbSet<QlsxMachineEvent> QlsxMachineEvents { get; set; }
+
+        public virtual DbSet<RequestDetailMaterialDatum> RequestDetailMaterialData { get; set; }
+
+        public virtual DbSet<ShiftLeaderForRecordToPlc> ShiftLeaderForRecordToPlcs { get; set; }
+
+        public virtual DbSet<ShiftScheduleHistory> ShiftScheduleHistories { get; set; }
+
+        public virtual DbSet<SparePartsWarehouse> SparePartsWarehouses { get; set; }
+
+        public virtual DbSet<SparePartsWarehouseHistory> SparePartsWarehouseHistories { get; set; }
+
+        public virtual DbSet<SupplierAddressesMaterialDatum> SupplierAddressesMaterialData { get; set; }
+
+        public virtual DbSet<SuppliersMaterialDatum> SuppliersMaterialData { get; set; }
+
+        public virtual DbSet<SupplyRequestsMaterialDatum> SupplyRequestsMaterialData { get; set; }
+
+        public virtual DbSet<SystemGroup> SystemGroups { get; set; }
+
+        public virtual DbSet<TempEmployeesImport> TempEmployeesImports { get; set; }
+
+        public virtual DbSet<TempEndOfShiftReport> TempEndOfShiftReports { get; set; }
+
+        public virtual DbSet<UsagePurpose> UsagePurposes { get; set; }
 
         //49
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -123,7 +151,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<ApprovalHistoryMaterialDatum>(entity =>
             {
-                entity.HasKey(e => e.Id).HasName("PK__Approval__3214EC27427D13D4");
+                entity.HasKey(e => e.Id).HasName("PK__Approval__3214EC27ACA7D4C9");
 
                 entity.ToTable("ApprovalHistory_Material_data");
 
@@ -138,11 +166,21 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasMaxLength(16)
                     .IsUnicode(false)
                     .HasColumnName("RequestID");
+
+                entity.HasOne(d => d.Employee).WithMany(p => p.ApprovalHistoryMaterialData)
+                    .HasForeignKey(d => d.EmployeeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ApprovalHistory_Employee");
+
+                entity.HasOne(d => d.Request).WithMany(p => p.ApprovalHistoryMaterialData)
+                    .HasForeignKey(d => d.RequestId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ApprovalHistory_Request");
             });
 
             modelBuilder.Entity<ApprovalLevelsCommonDatum>(entity =>
             {
-                entity.HasKey(e => e.LevelId).HasName("PK__Approval__09F03C0601A6AFB1");
+                entity.HasKey(e => e.LevelId).HasName("PK__Approval__09F03C06EF2E5D5D");
 
                 entity.ToTable("ApprovalLevels_Common_data");
 
@@ -154,24 +192,6 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.LevelName)
                     .HasMaxLength(50)
                     .IsUnicode(false);
-            });
-
-            modelBuilder.Entity<ApplicationUserRole>(userRole =>
-            {
-                // Định nghĩa khóa chính
-                userRole.HasKey(ur => new { ur.UserId, ur.RoleId });
-
-                // Quan hệ với ApplicationUser
-                userRole.HasOne(ur => ur.User)
-                        .WithMany(u => u.UserRoles)
-                        .HasForeignKey(ur => ur.UserId)
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                // Quan hệ với ApplicationRole
-                userRole.HasOne(ur => ur.Role)
-                        .WithMany(r => r.UserRoles)
-                        .HasForeignKey(ur => ur.RoleId)
-                        .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<AssignTask>(entity =>
@@ -239,15 +259,10 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .IsUnicode(false);
                 entity.Property(e => e.Status).HasMaxLength(50);
 
-                entity.HasOne(d => d.Level).WithMany(p => p.EmployeesCommonData)
-                    .HasForeignKey(d => d.LevelId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Employees__Level__693CA210");
-
                 entity.HasOne(d => d.Part).WithMany(p => p.EmployeesCommonData)
                     .HasForeignKey(d => d.PartId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Employees__PartI__68487DD7");
+                    .HasConstraintName("FK_Employees_Department");
             });
 
             modelBuilder.Entity<EndOfShiftReport>(entity =>
@@ -344,7 +359,34 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.HasOne(d => d.Shift).WithMany()
                     .HasForeignKey(d => d.ShiftId)
-                    .HasConstraintName("FK__HandOverH__Shift__2A164134");
+                    .HasConstraintName("FK__HandOverH__Shift__32AB8735");
+            });
+
+            modelBuilder.Entity<HistoryForProductionPlanPlpu>(entity =>
+            {
+                entity
+                    .HasNoKey()
+                    .ToTable("HistoryForProductionPlan_Plpu");
+
+                entity.Property(e => e.BatchNo)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.Color).HasMaxLength(50);
+                entity.Property(e => e.MachineId)
+                    .HasMaxLength(20)
+                    .IsUnicode(false)
+                    .HasColumnName("MachineID");
+                entity.Property(e => e.Note1).HasMaxLength(255);
+                entity.Property(e => e.Note2).HasMaxLength(255);
+                entity.Property(e => e.Note3).HasMaxLength(255);
+                entity.Property(e => e.Note4).HasMaxLength(255);
+                entity.Property(e => e.PlanRecordDate)
+                    .HasDefaultValueSql("(getdate())")
+                    .HasColumnType("datetime");
+                entity.Property(e => e.PlannedDate).HasColumnType("datetime");
+                entity.Property(e => e.ProducCode)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<IncidentMaterial>(entity =>
@@ -374,19 +416,20 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasColumnName("IncidentID");
                 entity.Property(e => e.ApprovedId)
                     .HasMaxLength(50)
+                    .IsUnicode(false)
                     .HasColumnName("ApprovedID");
-                entity.Property(e => e.Description).HasMaxLength(255);
-                entity.Property(e => e.EndTime).HasColumnType("datetime");
+                entity.Property(e => e.CopletionDate).HasColumnType("datetime");
                 entity.Property(e => e.IncidentDate).HasColumnType("datetime");
                 entity.Property(e => e.MachineId)
                     .HasMaxLength(16)
                     .IsUnicode(false)
                     .HasColumnName("MachineID");
+                entity.Property(e => e.Note).HasMaxLength(255);
+                entity.Property(e => e.PerformedBy).HasMaxLength(50);
+                entity.Property(e => e.Receiver).HasMaxLength(50);
                 entity.Property(e => e.RelatedDocument)
                     .HasMaxLength(50)
                     .IsUnicode(false);
-                entity.Property(e => e.StartTime).HasColumnType("datetime");
-                entity.Property(e => e.Status).HasMaxLength(50);
 
                 entity.HasOne(d => d.Machine).WithMany(p => p.IncidentReports)
                     .HasForeignKey(d => d.MachineId)
@@ -439,7 +482,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<InformationShift>(entity =>
             {
-                entity.HasKey(e => e.ShiftId).HasName("PK__Informat__C0A838E17FD7FFB8");
+                entity.HasKey(e => e.ShiftId).HasName("PK__Informat__C0A838E198564FB8");
 
                 entity.ToTable("InformationShift");
 
@@ -452,15 +495,12 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<InventoryReceiptsMaterialDatum>(entity =>
             {
-                entity.HasKey(e => e.ReceiptId).HasName("PK__Inventor__CC08C400D77F9BDE");
+                entity.HasKey(e => e.ReceiptId).HasName("PK__Inventor__CC08C400E809090B");
 
                 entity.ToTable("InventoryReceipts_Material_data");
 
                 entity.Property(e => e.ReceiptId).HasColumnName("ReceiptID");
-                entity.Property(e => e.MaterialGroupId)
-                    .HasMaxLength(16)
-                    .IsUnicode(false)
-                    .HasColumnName("MaterialGroupID");
+                entity.Property(e => e.MaterialGroupId).HasColumnName("MaterialGroupID");
                 entity.Property(e => e.MaterialName).HasMaxLength(100);
                 entity.Property(e => e.Note).HasMaxLength(255);
                 entity.Property(e => e.ReceiptDate).HasColumnType("datetime");
@@ -478,8 +518,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.HasOne(d => d.MaterialGroup).WithMany(p => p.InventoryReceiptsMaterialData)
                     .HasForeignKey(d => d.MaterialGroupId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Inventory__Mater__72C60C4A");
+                    .HasConstraintName("FK_InventoryReceipts_MaterialGroupID");
 
                 entity.HasOne(d => d.Request).WithMany(p => p.InventoryReceiptsMaterialData)
                     .HasForeignKey(d => d.RequestId)
@@ -575,13 +614,17 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasMaxLength(50)
                     .IsUnicode(false)
                     .HasColumnName("MaintenanceID");
+                entity.Property(e => e.ApprovedId)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("ApprovedID");
                 entity.Property(e => e.MachineId)
                     .HasMaxLength(16)
                     .IsUnicode(false)
                     .HasColumnName("MachineID");
                 entity.Property(e => e.Note).HasMaxLength(255);
-                entity.Property(e => e.PerformedBy).HasMaxLength(100);
-                entity.Property(e => e.Receiver).HasMaxLength(255);
+                entity.Property(e => e.PerformedBy).HasMaxLength(50);
+                entity.Property(e => e.Receiver).HasMaxLength(50);
                 entity.Property(e => e.RelatedDocument)
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -593,7 +636,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<MaintenanceMaterial>(entity =>
             {
-                entity.HasKey(e => e.Id).HasName("PK__Maintena__3214EC27892EF135");
+                entity.HasKey(e => e.Id).HasName("PK__Maintena__3214EC27863646F9");
 
                 entity.Property(e => e.Id).HasColumnName("ID");
                 entity.Property(e => e.MaintenanceId)
@@ -611,7 +654,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<Material>(entity =>
             {
-                entity.HasKey(e => e.MaterialId).HasName("PK__Material__C5061317706EA7D7");
+                entity.HasKey(e => e.MaterialId).HasName("PK__Material__C5061317643EBA3E");
 
                 entity.Property(e => e.MaterialId)
                     .HasMaxLength(50)
@@ -622,7 +665,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<MaterialGroup>(entity =>
             {
-                entity.HasKey(e => e.MaterialGroupId).HasName("PK__Material__E20265FD50195A54");
+                entity.HasKey(e => e.MaterialGroupId).HasName("PK__Material__E20265FD59BE3B4D");
 
                 entity.Property(e => e.MaterialGroupId)
                     .HasMaxLength(50)
@@ -631,31 +674,89 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.MaterialGroupName).HasMaxLength(100);
             });
 
-            modelBuilder.Entity<MaterialSuppliersMaterialDatum>(entity =>
+            modelBuilder.Entity<MaterialGroupsMaterialDatum>(entity =>
             {
-                entity.HasKey(e => e.SupplierId).HasName("PK__Material__4BE6669436FEAB6C");
+                entity.HasKey(e => e.MaterialGroupId).HasName("PK__Material__E20265FD21A1D63C");
 
-                entity.ToTable("MaterialSuppliers_Material_data");
-
-                entity.Property(e => e.SupplierId)
-                    .HasMaxLength(16)
-                    .IsUnicode(false)
-                    .HasColumnName("SupplierID");
-                entity.Property(e => e.Phone).HasMaxLength(20);
-                entity.Property(e => e.SupplierName).HasMaxLength(100);
-            });
-
-            modelBuilder.Entity<MaterialsMaterialGroupsDatum>(entity =>
-            {
-                entity.HasKey(e => e.MaterialGroupId).HasName("PK__Material__C506131752C1EB3B");
-
-                entity.ToTable("Materials_MaterialGroups_data");
+                entity.ToTable("MaterialGroups_Material_data");
 
                 entity.Property(e => e.MaterialGroupId)
+                    .HasDefaultValueSql("(newid())")
+                    .HasColumnName("MaterialGroupID");
+                entity.Property(e => e.Detail).HasMaxLength(255);
+                entity.Property(e => e.ExternalId)
                     .HasMaxLength(16)
                     .IsUnicode(false)
-                    .HasColumnName("MaterialGroupID");
-                entity.Property(e => e.MaterialGroupName).HasMaxLength(50);
+                    .HasColumnName("externalId");
+                entity.Property(e => e.MaterialGroupName).HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<MaterialsMaterialDatum>(entity =>
+            {
+                entity.HasKey(e => e.MaterialId).HasName("PK__Material__99B653FDEEB02A00");
+
+                entity.ToTable("Materials_material_data");
+
+                entity.Property(e => e.MaterialId)
+                    .HasDefaultValueSql("(newid())")
+                    .HasColumnName("materialId");
+                entity.Property(e => e.CreateDate).HasColumnType("datetime");
+                entity.Property(e => e.EmployeeId)
+                    .HasMaxLength(16)
+                    .IsUnicode(false)
+                    .HasColumnName("EmployeeID");
+                entity.Property(e => e.ExternalId)
+                    .HasMaxLength(50)
+                    .HasColumnName("externalId");
+                entity.Property(e => e.Name).HasMaxLength(255);
+                entity.Property(e => e.Unit).HasMaxLength(50);
+
+                entity.HasOne(d => d.Employee).WithMany(p => p.MaterialsMaterialData)
+                    .HasForeignKey(d => d.EmployeeId)
+                    .HasConstraintName("FK__Materials__Emplo__6DCC4D03");
+
+                entity.HasOne(d => d.MaterialGroup).WithMany(p => p.MaterialsMaterialData)
+                    .HasForeignKey(d => d.MaterialGroupId)
+                    .HasConstraintName("FK__Materials__Mater__6CD828CA");
+            });
+
+            modelBuilder.Entity<MaterialsSuppliersMaterialDatum>(entity =>
+            {
+                entity.HasKey(e => e.MaterialsSuppliersId).HasName("PK__Material__4F13EDBB9241ABE2");
+
+                entity.ToTable("MaterialsSuppliers_material_data");
+
+                entity.Property(e => e.MaterialsSuppliersId)
+                    .HasDefaultValueSql("(newid())")
+                    .HasColumnName("Materials_SuppliersId");
+                entity.Property(e => e.Currency)
+                    .HasMaxLength(10)
+                    .HasColumnName("currency");
+                entity.Property(e => e.CurrentPrice)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("currentPrice");
+                entity.Property(e => e.IsPreferred)
+                    .HasDefaultValue(false)
+                    .HasColumnName("isPreferred");
+                entity.Property(e => e.MaterialId).HasColumnName("materialId");
+                entity.Property(e => e.MinDeliveryDays).HasColumnName("minDeliveryDays");
+                entity.Property(e => e.PriceHistoryId).HasColumnName("priceHistoryId");
+                entity.Property(e => e.SupplierId).HasColumnName("supplierId");
+                entity.Property(e => e.UpdatedDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updatedDate");
+
+                entity.HasOne(d => d.Material).WithMany(p => p.MaterialsSuppliersMaterialData)
+                    .HasForeignKey(d => d.MaterialId)
+                    .HasConstraintName("FK__Materials__mater__7FEAFD3E");
+
+                entity.HasOne(d => d.PriceHistory).WithMany(p => p.MaterialsSuppliersMaterialData)
+                    .HasForeignKey(d => d.PriceHistoryId)
+                    .HasConstraintName("FK__Materials__price__01D345B0");
+
+                entity.HasOne(d => d.Supplier).WithMany(p => p.MaterialsSuppliersMaterialData)
+                    .HasForeignKey(d => d.SupplierId)
+                    .HasConstraintName("FK__Materials__suppl__00DF2177");
             });
 
             modelBuilder.Entity<NewMakingHistory>(entity =>
@@ -668,14 +769,19 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasMaxLength(50)
                     .IsUnicode(false)
                     .HasColumnName("NewMakingID");
-                entity.Property(e => e.Description).HasMaxLength(255);
+                entity.Property(e => e.ApprovedId)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("ApprovedID");
+                entity.Property(e => e.CompletionDate).HasColumnType("datetime");
                 entity.Property(e => e.MachineId)
                     .HasMaxLength(16)
                     .IsUnicode(false)
                     .HasColumnName("MachineID");
                 entity.Property(e => e.NewMaintenanceDate).HasColumnType("datetime");
                 entity.Property(e => e.Note).HasMaxLength(255);
-                entity.Property(e => e.PerformedBy).HasMaxLength(100);
+                entity.Property(e => e.PerformedBy).HasMaxLength(50);
+                entity.Property(e => e.Receiver).HasMaxLength(50);
                 entity.Property(e => e.RelatedDocument)
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -704,7 +810,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<NonCatalogHistory>(entity =>
             {
-                entity.HasKey(e => e.HistoryId).HasName("PK__NonCatal__4D7B4ADD322138F1");
+                entity.HasKey(e => e.HistoryId).HasName("PK__NonCatal__4D7B4ADD6983B45C");
 
                 entity.ToTable("NonCatalogHistory");
 
@@ -784,15 +890,19 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasMaxLength(50)
                     .IsUnicode(false)
                     .HasColumnName("OtherMaintenanceID");
-                entity.Property(e => e.Description).HasMaxLength(255);
+                entity.Property(e => e.ApprovedId)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("ApprovedID");
+                entity.Property(e => e.CompletionDate).HasColumnType("datetime");
                 entity.Property(e => e.MachineId)
                     .HasMaxLength(16)
                     .IsUnicode(false)
                     .HasColumnName("MachineID");
-                entity.Property(e => e.NextOtherMaintenanceDate).HasColumnType("datetime");
                 entity.Property(e => e.Note).HasMaxLength(255);
                 entity.Property(e => e.OtherMaintenanceDate).HasColumnType("datetime");
-                entity.Property(e => e.PerformedBy).HasMaxLength(100);
+                entity.Property(e => e.PerformedBy).HasMaxLength(50);
+                entity.Property(e => e.Receiver).HasMaxLength(50);
                 entity.Property(e => e.RelatedDocument)
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -804,7 +914,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<OtherMaintenanceMaterial>(entity =>
             {
-                entity.HasKey(e => e.Id).HasName("PK__OtherMai__3214EC27797D4C8D");
+                entity.HasKey(e => e.Id).HasName("PK__OtherMai__3214EC2719A8E49D");
 
                 entity.Property(e => e.Id).HasColumnName("ID");
                 entity.Property(e => e.MachineId)
@@ -821,7 +931,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<ParameterStandardMd>(entity =>
             {
-                entity.HasKey(e => e.Id).HasName("PK__Paramete__3214EC07CB1C8BFE");
+                entity.HasKey(e => e.Id).HasName("PK__Paramete__3214EC07CFF3A9B9");
 
                 entity.ToTable("ParameterStandard_MD");
 
@@ -889,7 +999,6 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .IsUnicode(false);
                 entity.Property(e => e.BlackSpot).HasMaxLength(100);
                 entity.Property(e => e.ChipPressing).HasMaxLength(100);
-                entity.Property(e => e.Dispersion).HasMaxLength(100);
                 entity.Property(e => e.EmployeeId)
                     .HasMaxLength(50)
                     .IsUnicode(false)
@@ -908,6 +1017,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasMaxLength(20)
                     .IsUnicode(false)
                     .HasColumnName("QCPassID");
+                entity.Property(e => e.Qcround).HasColumnName("QCRound");
                 entity.Property(e => e.SizeMoisture)
                     .HasMaxLength(100)
                     .HasColumnName("Size_moisture");
@@ -917,6 +1027,100 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.TempSmell)
                     .HasMaxLength(100)
                     .HasColumnName("Temp_smell");
+            });
+
+            modelBuilder.Entity<PassDetailValuableLabqc>(entity =>
+            {
+                entity
+                    .HasNoKey()
+                    .ToTable("PassDetailValuable_LABQC");
+
+                entity.Property(e => e.BatchNo)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+                entity.Property(e => e.MachineId)
+                    .HasMaxLength(20)
+                    .IsUnicode(false)
+                    .HasColumnName("MachineID");
+                entity.Property(e => e.Note).HasMaxLength(255);
+                entity.Property(e => e.Qcdate)
+                    .HasDefaultValueSql("(getdate())")
+                    .HasColumnType("datetime")
+                    .HasColumnName("QCDate");
+                entity.Property(e => e.Qcround).HasColumnName("QCRound");
+            });
+
+            modelBuilder.Entity<PriceHistoryMaterialDatum>(entity =>
+            {
+                entity.HasKey(e => e.PriceHistoryId).HasName("PK__PriceHis__77D1486CEBD19136");
+
+                entity.ToTable("PriceHistory_material_data");
+
+                entity.Property(e => e.PriceHistoryId)
+                    .HasDefaultValueSql("(newid())")
+                    .HasColumnName("priceHistoryId");
+                entity.Property(e => e.Currency)
+                    .HasMaxLength(10)
+                    .HasColumnName("currency");
+                entity.Property(e => e.MaterialId).HasColumnName("materialId");
+                entity.Property(e => e.NewPrice)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("newPrice");
+                entity.Property(e => e.OldPrice)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("oldPrice");
+                entity.Property(e => e.Reason)
+                    .HasMaxLength(255)
+                    .HasColumnName("reason");
+                entity.Property(e => e.SupplierId).HasColumnName("supplierId");
+                entity.Property(e => e.UpdatedBy)
+                    .HasMaxLength(16)
+                    .IsUnicode(false)
+                    .HasColumnName("updatedBy");
+                entity.Property(e => e.UpdatedDate)
+                    .HasDefaultValueSql("(getdate())")
+                    .HasColumnType("datetime")
+                    .HasColumnName("updatedDate");
+
+                entity.HasOne(d => d.Material).WithMany(p => p.PriceHistoryMaterialData)
+                    .HasForeignKey(d => d.MaterialId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__PriceHist__mater__793DFFAF");
+
+                entity.HasOne(d => d.Supplier).WithMany(p => p.PriceHistoryMaterialData)
+                    .HasForeignKey(d => d.SupplierId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__PriceHist__suppl__7A3223E8");
+
+                entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.PriceHistoryMaterialData)
+                    .HasForeignKey(d => d.UpdatedBy)
+                    .HasConstraintName("FK__PriceHist__updat__7B264821");
+            });
+
+            modelBuilder.Entity<ProListToQcLabqc>(entity =>
+            {
+                entity
+                    .HasNoKey()
+                    .ToTable("ProListToQC_LABQC");
+
+                entity.Property(e => e.BatchNo)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+                entity.Property(e => e.Color)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.MachineId)
+                    .HasMaxLength(20)
+                    .IsUnicode(false)
+                    .HasColumnName("MachineID");
+                entity.Property(e => e.Note1).HasMaxLength(255);
+                entity.Property(e => e.Note2).HasMaxLength(255);
+                entity.Property(e => e.Note3).HasMaxLength(255);
+                entity.Property(e => e.Note4).HasMaxLength(255);
+                entity.Property(e => e.ProductionCode)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.Qcround).HasColumnName("QCRound");
             });
 
             modelBuilder.Entity<ProductCodeHistoryMd>(entity =>
@@ -941,7 +1145,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<ProductionOrderSummary>(entity =>
             {
-                entity.HasKey(e => e.BatchNo).HasName("PK__Producti__5D56EB97F590F1F2");
+                entity.HasKey(e => e.BatchNo).HasName("PK__Producti__5D56EB97723AAC93");
 
                 entity.ToTable("ProductionOrderSummary");
 
@@ -956,6 +1160,36 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.Status).HasMaxLength(50);
                 entity.Property(e => e.TpKg).HasColumnName("TP_kg");
                 entity.Property(e => e.TperrKg).HasColumnName("TPErr_kg");
+            });
+
+            modelBuilder.Entity<ProductionPlanChageHistoryQlsx>(entity =>
+            {
+                entity
+                    .HasNoKey()
+                    .ToTable("ProductionPlanChageHistory_QLSX");
+
+                entity.Property(e => e.BatchNo)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.ChageDate)
+                    .HasDefaultValueSql("(getdate())")
+                    .HasColumnType("datetime");
+                entity.Property(e => e.FromMachineId)
+                    .HasMaxLength(16)
+                    .IsUnicode(false)
+                    .HasColumnName("FromMachineID");
+                entity.Property(e => e.Note).HasMaxLength(255);
+                entity.Property(e => e.ProductionCode)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.ShiftId)
+                    .HasMaxLength(20)
+                    .IsUnicode(false)
+                    .HasColumnName("ShiftID");
+                entity.Property(e => e.ToMachineId)
+                    .HasMaxLength(16)
+                    .IsUnicode(false)
+                    .HasColumnName("ToMachineID");
             });
 
             modelBuilder.Entity<ProductionPlanHistoryPlpu>(entity =>
@@ -989,7 +1223,9 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasNoKey()
                     .ToTable("ProductionPlan_Plpu");
 
-                entity.Property(e => e.BatchNo).HasMaxLength(255);
+                entity.Property(e => e.BatchNo)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
                 entity.Property(e => e.Color).HasMaxLength(50);
                 entity.Property(e => e.MachineId)
                     .HasMaxLength(16)
@@ -1002,7 +1238,9 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.ProducCode)
                     .HasMaxLength(50)
                     .IsUnicode(false);
-                entity.Property(e => e.RequestDate).HasDefaultValue(new DateOnly(2000, 1, 1));
+                entity.Property(e => e.RequestDate)
+                    .HasDefaultValue(new DateTime(2000, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified))
+                    .HasColumnType("datetime");
 
                 entity.HasOne(d => d.Machine).WithMany()
                     .HasForeignKey(d => d.MachineId)
@@ -1011,7 +1249,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<ProductionStatus>(entity =>
             {
-                entity.HasKey(e => e.Id).HasName("PK__Producti__3214EC27F938111E");
+                entity.HasKey(e => e.Id).HasName("PK__Producti__3214EC270A51BB82");
 
                 entity.ToTable("ProductionStatus");
 
@@ -1026,11 +1264,142 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.Note3).HasMaxLength(50);
                 entity.Property(e => e.Note4).HasMaxLength(50);
                 entity.Property(e => e.ProductionCode).HasMaxLength(50);
+                entity.Property(e => e.RequestDate).HasColumnType("datetime");
+            });
+
+            modelBuilder.Entity<PurchaseOrder>(entity =>
+            {
+                entity.HasKey(e => e.Poid).HasName("PK__Purchase__5F02A2F4524BBDA2");
+
+                entity.Property(e => e.Poid)
+                    .HasDefaultValueSql("(newid())")
+                    .HasColumnName("POID");
+                entity.Property(e => e.EmployeeId)
+                    .HasMaxLength(16)
+                    .IsUnicode(false);
+                entity.Property(e => e.Note)
+                    .HasMaxLength(255)
+                    .HasColumnName("note");
+                entity.Property(e => e.OrderDate).HasColumnType("datetime");
+                entity.Property(e => e.Pocode)
+                    .HasMaxLength(50)
+                    .HasColumnName("POCode");
+                entity.Property(e => e.Status)
+                    .HasMaxLength(50)
+                    .HasColumnName("status");
+
+                entity.HasOne(d => d.Employee).WithMany(p => p.PurchaseOrders)
+                    .HasForeignKey(d => d.EmployeeId)
+                    .HasConstraintName("FK__PurchaseO__Emplo__0697FACD");
+
+                entity.HasOne(d => d.Supplier).WithMany(p => p.PurchaseOrders)
+                    .HasForeignKey(d => d.SupplierId)
+                    .HasConstraintName("FK__PurchaseO__Suppl__05A3D694");
+            });
+
+            modelBuilder.Entity<PurchaseOrderDetailsMaterialDatum>(entity =>
+            {
+                entity.HasKey(e => e.PodetailId).HasName("PK__Purchase__4EB47B3E41006D70");
+
+                entity.ToTable("PurchaseOrderDetails_material_data");
+
+                entity.Property(e => e.PodetailId)
+                    .HasDefaultValueSql("(newid())")
+                    .HasColumnName("PODetailId");
+                entity.Property(e => e.DeliveryDate).HasColumnType("datetime");
+                entity.Property(e => e.Note)
+                    .HasMaxLength(255)
+                    .HasColumnName("note");
+                entity.Property(e => e.Poid).HasColumnName("POID");
+                entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 2)");
+
+                entity.HasOne(d => d.Material).WithMany(p => p.PurchaseOrderDetailsMaterialData)
+                    .HasForeignKey(d => d.MaterialId)
+                    .HasConstraintName("FK__PurchaseO__Mater__10216507");
+
+                entity.HasOne(d => d.Po).WithMany(p => p.PurchaseOrderDetailsMaterialData)
+                    .HasForeignKey(d => d.Poid)
+                    .HasConstraintName("FK__PurchaseOr__POID__0F2D40CE");
+            });
+
+            modelBuilder.Entity<PurchaseOrderStatusHistoryMaterialDatum>(entity =>
+            {
+                entity.HasKey(e => e.StatusHistoryId).HasName("PK__Purchase__DB973491D5943BE4");
+
+                entity.ToTable("PurchaseOrderStatusHistory_material_data");
+
+                entity.Property(e => e.StatusHistoryId).HasDefaultValueSql("(newid())");
+                entity.Property(e => e.ChangedDate).HasColumnType("datetime");
+                entity.Property(e => e.EmployeeId)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.Note)
+                    .HasMaxLength(255)
+                    .HasColumnName("note");
+                entity.Property(e => e.Poid).HasColumnName("POID");
+                entity.Property(e => e.StatusFrom).HasMaxLength(50);
+                entity.Property(e => e.StatusTo).HasMaxLength(50);
+
+                entity.HasOne(d => d.Po).WithMany(p => p.PurchaseOrderStatusHistoryMaterialData)
+                    .HasForeignKey(d => d.Poid)
+                    .HasConstraintName("FK__PurchaseOr__POID__13F1F5EB");
+            });
+
+            modelBuilder.Entity<PurchaseOrdersMaterialDatum>(entity =>
+            {
+                entity.HasKey(e => e.Poid).HasName("PK__Purchase__5F02A2F422925495");
+
+                entity.ToTable("PurchaseOrders_material_data");
+
+                entity.Property(e => e.Poid)
+                    .HasDefaultValueSql("(newid())")
+                    .HasColumnName("POID");
+                entity.Property(e => e.EmployeeId)
+                    .HasMaxLength(16)
+                    .IsUnicode(false);
+                entity.Property(e => e.Note)
+                    .HasMaxLength(255)
+                    .HasColumnName("note");
+                entity.Property(e => e.OrderDate).HasColumnType("datetime");
+                entity.Property(e => e.Pocode)
+                    .HasMaxLength(50)
+                    .HasColumnName("POCode");
+                entity.Property(e => e.Status)
+                    .HasMaxLength(50)
+                    .HasColumnName("status");
+
+                entity.HasOne(d => d.Employee).WithMany(p => p.PurchaseOrdersMaterialData)
+                    .HasForeignKey(d => d.EmployeeId)
+                    .HasConstraintName("FK__PurchaseO__Emplo__0B5CAFEA");
+
+                entity.HasOne(d => d.Supplier).WithMany(p => p.PurchaseOrdersMaterialData)
+                    .HasForeignKey(d => d.SupplierId)
+                    .HasConstraintName("FK__PurchaseO__Suppl__0A688BB1");
+            });
+
+            modelBuilder.Entity<QcresultLabqc>(entity =>
+            {
+                entity
+                    .HasNoKey()
+                    .ToTable("QCResult_LABQC");
+
+                entity.Property(e => e.Qcdate)
+                    .HasDefaultValueSql("(getdate())")
+                    .HasColumnType("datetime")
+                    .HasColumnName("QCDate");
+                entity.Property(e => e.QcpassId)
+                    .HasMaxLength(20)
+                    .IsUnicode(false)
+                    .HasColumnName("QCPassID");
+                entity.Property(e => e.StatusQc)
+                    .HasMaxLength(20)
+                    .IsUnicode(false)
+                    .HasColumnName("StatusQC");
             });
 
             modelBuilder.Entity<QlsxMachineEvent>(entity =>
             {
-                entity.HasKey(e => e.EventId).HasName("PK__QlsxMach__7944C87098A5F404");
+                entity.HasKey(e => e.EventId).HasName("PK__QlsxMach__7944C870293BFFCB");
 
                 entity.ToTable("QlsxMachineEvent");
 
@@ -1043,15 +1412,12 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<RequestDetailMaterialDatum>(entity =>
             {
-                entity.HasKey(e => e.DetailId).HasName("PK__RequestD__135C314D298B6310");
+                entity.HasKey(e => e.DetailId).HasName("PK__RequestD__135C314D8E645DCC");
 
                 entity.ToTable("RequestDetail_Material_data");
 
                 entity.Property(e => e.DetailId).HasColumnName("DetailID");
-                entity.Property(e => e.MaterialGroupId)
-                    .HasMaxLength(16)
-                    .IsUnicode(false)
-                    .HasColumnName("MaterialGroupID");
+                entity.Property(e => e.MaterialGroupId).HasColumnName("MaterialGroupID");
                 entity.Property(e => e.MaterialName).HasMaxLength(50);
                 entity.Property(e => e.RequestId)
                     .HasMaxLength(16)
@@ -1061,8 +1427,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.HasOne(d => d.MaterialGroup).WithMany(p => p.RequestDetailMaterialData)
                     .HasForeignKey(d => d.MaterialGroupId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__RequestDe__Mater__3C34F16F");
+                    .HasConstraintName("FK_RequestDetail_MaterialGroupID");
 
                 entity.HasOne(d => d.Request).WithMany(p => p.RequestDetailMaterialData)
                     .HasForeignKey(d => d.RequestId)
@@ -1107,12 +1472,12 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.HasOne(d => d.Shift).WithMany()
                     .HasForeignKey(d => d.ShiftId)
-                    .HasConstraintName("FK__ShiftSche__Shift__3E1D39E1");
+                    .HasConstraintName("FK__ShiftSche__Shift__46B27FE2");
             });
 
             modelBuilder.Entity<SparePartsWarehouse>(entity =>
             {
-                entity.HasKey(e => e.SparePartId).HasName("PK__SparePar__F5BA41F25032381C");
+                entity.HasKey(e => e.SparePartId).HasName("PK__SparePar__F5BA41F2CDBCA8E5");
 
                 entity.ToTable("SparePartsWarehouse");
 
@@ -1120,7 +1485,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasMaxLength(50)
                     .IsUnicode(false)
                     .HasColumnName("SparePartID");
-                entity.Property(e => e.Location).HasMaxLength(100);
+                entity.Property(e => e.LocationMaterial).HasMaxLength(100);
                 entity.Property(e => e.MaterialGroupId)
                     .HasMaxLength(50)
                     .IsUnicode(false)
@@ -1153,7 +1518,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<SparePartsWarehouseHistory>(entity =>
             {
-                entity.HasKey(e => e.HistoryId).HasName("PK__SparePar__4D7B4ADDFA72954B");
+                entity.HasKey(e => e.HistoryId).HasName("PK__SparePar__4D7B4ADD6B0DCDCC");
 
                 entity.ToTable("SparePartsWarehouseHistory");
 
@@ -1190,6 +1555,52 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasConstraintName("FK_History_SparePart");
             });
 
+            modelBuilder.Entity<SupplierAddressesMaterialDatum>(entity =>
+            {
+                entity.HasKey(e => e.AddressId).HasName("PK__Supplier__26A111AD8ED3633F");
+
+                entity.ToTable("SupplierAddresses_material_data");
+
+                entity.Property(e => e.AddressId)
+                    .HasDefaultValueSql("(newid())")
+                    .HasColumnName("addressId");
+                entity.Property(e => e.AddressLine)
+                    .HasMaxLength(255)
+                    .HasColumnName("addressLine");
+                entity.Property(e => e.SupplierId).HasColumnName("supplierId");
+
+                entity.HasOne(d => d.Supplier).WithMany(p => p.SupplierAddressesMaterialData)
+                    .HasForeignKey(d => d.SupplierId)
+                    .HasConstraintName("FK__SupplierA__suppl__74794A92");
+            });
+
+            modelBuilder.Entity<SuppliersMaterialDatum>(entity =>
+            {
+                entity.HasKey(e => e.SupplierId).HasName("PK__Supplier__DB8E62ED6236CA8E");
+
+                entity.ToTable("Suppliers_material_data");
+
+                entity.Property(e => e.SupplierId)
+                    .HasDefaultValueSql("(newid())")
+                    .HasColumnName("supplierId");
+                entity.Property(e => e.ExternalId)
+                    .HasMaxLength(50)
+                    .HasColumnName("externalId");
+                entity.Property(e => e.Name).HasMaxLength(255);
+                entity.Property(e => e.Phone)
+                    .HasMaxLength(50)
+                    .HasColumnName("phone");
+                entity.Property(e => e.RegNo)
+                    .HasMaxLength(50)
+                    .HasColumnName("regNo");
+                entity.Property(e => e.TaxNo)
+                    .HasMaxLength(50)
+                    .HasColumnName("taxNo");
+                entity.Property(e => e.Website)
+                    .HasMaxLength(255)
+                    .HasColumnName("website");
+            });
+
             modelBuilder.Entity<SupplyRequestsMaterialDatum>(entity =>
             {
                 entity.HasKey(e => e.RequestId).HasName("PK__SupplyRe__33A8519AEED4B83E");
@@ -1215,13 +1626,38 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<SystemGroup>(entity =>
             {
-                entity.HasKey(e => e.SystemGroupId).HasName("PK__SystemGr__485ED3E3B94E23DD");
+                entity.HasKey(e => e.SystemGroupId).HasName("PK__SystemGr__485ED3E3654E0D8D");
 
                 entity.Property(e => e.SystemGroupId)
                     .HasMaxLength(50)
                     .IsUnicode(false)
                     .HasColumnName("SystemGroupID");
                 entity.Property(e => e.SystemGroupName).HasMaxLength(100);
+            });
+
+            modelBuilder.Entity<TempEmployeesImport>(entity =>
+            {
+                entity
+                    .HasNoKey()
+                    .ToTable("Temp_Employees_Import");
+
+                entity.Property(e => e.Address).HasMaxLength(255);
+                entity.Property(e => e.DateHired).HasMaxLength(50);
+                entity.Property(e => e.DateOfBirth).HasMaxLength(50);
+                entity.Property(e => e.Email).HasMaxLength(255);
+                entity.Property(e => e.EmployeeId).HasColumnName("EmployeeID");
+                entity.Property(e => e.EndDate).HasMaxLength(50);
+                entity.Property(e => e.FullName).HasMaxLength(255);
+                entity.Property(e => e.Gender).HasMaxLength(10);
+                entity.Property(e => e.Identifier).HasMaxLength(50);
+                entity.Property(e => e.LevelId)
+                    .HasMaxLength(20)
+                    .HasColumnName("LevelID");
+                entity.Property(e => e.PartId)
+                    .HasMaxLength(20)
+                    .HasColumnName("PartID");
+                entity.Property(e => e.PhoneNumber).HasMaxLength(50);
+                entity.Property(e => e.Status).HasMaxLength(10);
             });
 
             modelBuilder.Entity<TempEndOfShiftReport>(entity =>
@@ -1268,7 +1704,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<UsagePurpose>(entity =>
             {
-                entity.HasKey(e => e.PurposeId).HasName("PK__UsagePur__79E6A1B40E992E4C");
+                entity.HasKey(e => e.PurposeId).HasName("PK__UsagePur__79E6A1B4AAAD3DE9");
 
                 entity.Property(e => e.PurposeId).HasColumnName("PurposeID");
                 entity.Property(e => e.Note).HasMaxLength(255);

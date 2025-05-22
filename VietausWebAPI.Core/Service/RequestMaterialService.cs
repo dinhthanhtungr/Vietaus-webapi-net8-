@@ -7,7 +7,7 @@ using AutoMapper;
 using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.DTO.PostDTO;
 using VietausWebAPI.Core.DTO.QueryObject;
-using VietausWebAPI.Core.Entities;
+using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Core.ServiceContracts;
 

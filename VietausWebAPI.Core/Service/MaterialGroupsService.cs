@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using VietausWebAPI.Core.DTO.GetDTO;
-using VietausWebAPI.Core.Entities;
+using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Core.ServiceContracts;
 
@@ -27,7 +27,7 @@ namespace VietausWebAPI.Core.Service
         /// <returns></returns>
         public async Task AddMaterialGroupServiceAsync(MaterialGroupsDTO materialGroupDTO)
         {
-            var materialGroup = _mapper.Map<MaterialsMaterialGroupsDatum>(materialGroupDTO);
+            var materialGroup = _mapper.Map<MaterialGroupsMaterialDatum>(materialGroupDTO);
             await _materialGroupsRepository.AddMaterialGroupRepositoryAsync(materialGroup);
         }
 

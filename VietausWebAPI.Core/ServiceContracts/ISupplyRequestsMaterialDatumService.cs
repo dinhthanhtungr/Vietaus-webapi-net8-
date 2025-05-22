@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.DTO.PostDTO;
-using VietausWebAPI.Core.Entities;
+using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.Core.ServiceContracts
 {

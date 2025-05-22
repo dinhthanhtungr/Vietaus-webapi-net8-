@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.DTO.QueryObject;
-using VietausWebAPI.Core.Entities;
+using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Infrastructure.Utilities;
 using VietausWebAPI.WebAPI.DatabaseContext;
@@ -114,7 +114,6 @@ namespace VietausWebAPI.Infrastructure.Repositories
 
                     x.RequestDetailMaterialData.Any(y =>
                         (y.MaterialName != null && EF.Functions.Collate(y.MaterialName, "Latin1_General_CI_AI").ToLower().Contains(keyword)) ||
-                        (y.MaterialGroupId != null && y.MaterialGroupId.ToLower().Contains(keyword)) ||
                         (y.MaterialGroup != null && y.MaterialGroup.MaterialGroupName.ToLower().Contains(keyword))
                     )
                 );
@@ -208,7 +207,7 @@ namespace VietausWebAPI.Infrastructure.Repositories
 
                     x.RequestDetailMaterialData.Any(y =>
                         (y.MaterialName != null && EF.Functions.Collate(y.MaterialName, "Latin1_General_CI_AI").ToLower().Contains(keyword)) ||
-                        (y.MaterialGroupId != null && y.MaterialGroupId.ToLower().Contains(keyword)) ||
+
                         (y.MaterialGroup != null && EF.Functions.Collate(y.MaterialGroup.MaterialGroupName, "Latin1_General_CI_AI").ToLower().Contains(keyword))
                     )
                 );
@@ -245,7 +244,6 @@ namespace VietausWebAPI.Infrastructure.Repositories
                             .Where(detail =>
                                 string.IsNullOrWhiteSpace(query.KeyWord) ||
                                 (detail.MaterialName != null && EF.Functions.Collate(detail.MaterialName, "Latin1_General_CI_AI").ToLower().Contains(query.KeyWord.ToLower())) ||
-                                (detail.MaterialGroupId != null && detail.MaterialGroupId.ToLower().Contains(query.KeyWord.ToLower())) ||
                                 (detail.MaterialGroup != null && EF.Functions.Collate(detail.MaterialGroup.MaterialGroupName, "Latin1_General_CI_AI").ToLower().Contains(query.KeyWord.ToLower())) ||
                                 (detail.Request.Employee != null && EF.Functions.Collate(detail.Request.Employee.FullName, "Latin1_General_CI_AI").ToLower().Contains(query.KeyWord.ToLower())) ||
                                 (detail.Request.EmployeeId != null && detail.Request.EmployeeId.ToLower().Contains(query.KeyWord.ToLower())) ||

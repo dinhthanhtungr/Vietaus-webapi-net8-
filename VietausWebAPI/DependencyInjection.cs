@@ -1,8 +1,14 @@
-﻿using VietausWebAPI.Core.Repositories_Contracts;
+﻿using VietausWebAPI.Core.Application.Usecases.Approvals.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Usecases.Approvals.ServiceContracts;
+using VietausWebAPI.Core.Application.Usecases.Approvals.Services;
+using VietausWebAPI.Core.Application.Usecases.SupplyRequests.RepositoriesContracts;
+using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Core.Service;
 using VietausWebAPI.Core.ServiceContracts;
 using VietausWebAPI.Infrastructure.DataUnitOfWork;
 using VietausWebAPI.Infrastructure.Repositories;
+using VietausWebAPI.Infrastructure.Repositories.Approval;
+using VietausWebAPI.Infrastructure.Repositories.SupplyRequest;
 
 namespace VietausWebAPI.WebAPI
 {
@@ -29,6 +35,11 @@ namespace VietausWebAPI.WebAPI
             services.AddScoped<IEmployeesCommonService, EmployeesCommonService>();
             services.AddScoped<IMaterialGroupsService, MaterialGroupsService>();
             services.AddScoped<IMaterialGroupsRepository, MaterialGroupsRepository>();
+
+            services.AddScoped<IApprovalService, ApprovalService>();
+            services.AddScoped<IApprovalRepository, ApprovalRepository>();
+
+            services.AddScoped<ISupplyRequestRepository, SupplyRequestRepository>();
 
             return services;
         }

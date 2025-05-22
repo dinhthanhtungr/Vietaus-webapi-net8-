@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using VietausWebAPI.Core.Entities;
+using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.Core.Repositories_Contracts
 {
@@ -14,11 +14,11 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         /// </summary>
         /// <param name="materialSuppliers"></param>
         /// <returns></returns>
-        Task AddMaterialSupplierRepositoryAsync(MaterialSuppliersMaterialDatum materialSuppliers);
+        Task AddMaterialSupplierRepositoryAsync(MaterialsSuppliersMaterialDatum materialSuppliers);
         /// <summary>
         /// Lấy tất cả nhà cung cấp vật liệu
         /// </summary>
         /// <returns></returns>
-        Task<IEnumerable<MaterialSuppliersMaterialDatum>> GetAllMaterialSuppliersRepositoryAsync();
+        Task<IEnumerable<MaterialsSuppliersMaterialDatum>> GetAllMaterialSuppliersRepositoryAsync();
     }
 }
