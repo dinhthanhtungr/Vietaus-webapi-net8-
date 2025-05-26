@@ -9,15 +9,13 @@ public partial class RequestDetailMaterialDatum
 
     public string RequestId { get; set; } = null!;
 
-    public string MaterialName { get; set; } = null!;
+    public int? RequestedQuantity { get; set; }
 
-    public int RequestedQuantity { get; set; }
+    public Guid MaterialId { get; set; }
 
-    public string? Unit { get; set; }
+    public string? Note { get; set; }
 
-    public Guid? MaterialGroupId { get; set; }
-
-    public virtual MaterialGroupsMaterialDatum? MaterialGroup { get; set; }
+    public virtual MaterialsMaterialDatum Material { get; set; } = null!;
 
     public virtual SupplyRequestsMaterialDatum Request { get; set; } = null!;
 }

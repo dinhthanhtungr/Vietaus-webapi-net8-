@@ -39,5 +39,14 @@ namespace VietausWebAPI.Infrastructure.Repositories
         {
             return await _context.RequestDetailMaterialData.ToListAsync();
         }
+
+        //public async Task<IEnumerable<RequestDetailMaterialDatum>> GetSearchRequestDetailRepositoryAsync(string requestId)
+        //{
+        //    var result = await _context.RequestDetailMaterialData
+        //        .Where(x => x.RequestId == requestId)
+        //        .ToListAsync();
+
+        //    return result;
+        //}
     }
 }

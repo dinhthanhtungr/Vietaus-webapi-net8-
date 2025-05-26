@@ -31,6 +31,8 @@ public partial class EmployeesCommonDatum
 
     public DateOnly? EndDate { get; set; }
 
+    public virtual ICollection<ApprovalHistoryMaterialDatum> ApprovalHistoryMaterialData { get; set; } = new List<ApprovalHistoryMaterialDatum>();
+
     public virtual ICollection<MaterialsMaterialDatum> MaterialsMaterialData { get; set; } = new List<MaterialsMaterialDatum>();
 
     public virtual ICollection<ParameterStandardMd> ParameterStandardMds { get; set; } = new List<ParameterStandardMd>();
@@ -44,8 +46,4 @@ public partial class EmployeesCommonDatum
     public virtual ICollection<PurchaseOrdersMaterialDatum> PurchaseOrdersMaterialData { get; set; } = new List<PurchaseOrdersMaterialDatum>();
 
     public virtual ICollection<SupplyRequestsMaterialDatum> SupplyRequestsMaterialData { get; set; } = new List<SupplyRequestsMaterialDatum>();
-
-    public virtual ICollection<ApprovalHistoryMaterialDatum> ApprovalHistoryMaterialData { get; set; }
-
 }
-

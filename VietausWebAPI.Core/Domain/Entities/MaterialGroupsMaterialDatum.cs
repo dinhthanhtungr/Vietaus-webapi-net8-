@@ -13,9 +13,5 @@ public partial class MaterialGroupsMaterialDatum
 
     public string? Detail { get; set; }
 
-    public virtual ICollection<InventoryReceiptsMaterialDatum> InventoryReceiptsMaterialData { get; set; } = new List<InventoryReceiptsMaterialDatum>();
-
     public virtual ICollection<MaterialsMaterialDatum> MaterialsMaterialData { get; set; } = new List<MaterialsMaterialDatum>();
-
-    public virtual ICollection<RequestDetailMaterialDatum> RequestDetailMaterialData { get; set; } = new List<RequestDetailMaterialDatum>();
 }

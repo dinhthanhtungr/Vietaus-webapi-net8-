@@ -28,20 +28,20 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
         /// </summary>
         /// <param name="requestDTO"></param>
         /// <returns></returns>
-        [HttpPost("RequestData")]
-        public async Task<IActionResult> CreateRequest([FromBody] RequestMaterialDTO requestDTO)
-        {
-            try
-            {
-                var requestId = await _requestMaterialService.CreateRequestMaterial(requestDTO);
-                return Ok(new { Message = "Đã đề xuất thành công" });
-            }
+        //[HttpPost("RequestData")]
+        //public async Task<IActionResult> CreateRequest([FromBody] RequestMaterialDTO requestDTO)
+        //{
+        //    try
+        //    {
+        //        var requestId = await _requestMaterialService.CreateRequestMaterial(requestDTO);
+        //        return Ok(new { Message = "success" });
+        //    }
 
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(ex.Message);
+        //    }
+        //}
         /// <summary>
         /// Lay ra ma de xuat cuoi cung
         /// </summary>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.DTOs.Approval;
 using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.Core.Repositories_Contracts
@@ -20,5 +21,7 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         /// </summary>
         /// <returns></returns>
         Task<IEnumerable<RequestDetailMaterialDatum>> GetAllRequestMaterialRepository();
+
+        //Task<IEnumerable<RequestDetailMaterialDatum>> GetSearchRequestDetailRepositoryAsync(string requestId);
     }
 }

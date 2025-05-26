@@ -33,38 +33,38 @@ namespace VietausWebAPI.Core.Service
         /// </summary>
         /// <param name="requestDTO"></param>
         /// <returns></returns>
-        public async Task<string> CreateRequestMaterial(RequestMaterialDTO requestDTO)
-        {
-            await _unitOfWork.BeginTransactionAsync();
-            try
-            {
-                var request = _mapper.Map<SupplyRequestsMaterialDatum>(requestDTO);
+        //public async Task<string> CreateRequestMaterial(RequestMaterialDTO requestDTO)
+        //{
+        //    await _unitOfWork.BeginTransactionAsync();
+        //    try
+        //    {
+        //        var request = _mapper.Map<SupplyRequestsMaterialDatum>(requestDTO);
 
 
-                await _unitOfWork.RequestMaterialRepository.CreateRequestAsync(request);
+        //        await _unitOfWork.RequestMaterialRepository.CreateRequestAsync(request);
 
-                var requestDetails = requestDTO.RequestDetails.Select(detailDTO =>
-                {
-                    var detail = _mapper.Map<RequestDetailMaterialDatum>(detailDTO);
-                    detail.RequestId = request.RequestId;
-                    return detail;
-                }).ToList();
+        //        var requestDetails = requestDTO.RequestDetails.Select(detailDTO =>
+        //        {
+        //            var detail = _mapper.Map<RequestDetailMaterialDatum>(detailDTO);
+        //            detail.RequestId = request.RequestId;
+        //            return detail;
+        //        }).ToList();
 
-                await _unitOfWork.RequestMaterialRepository.AddRequestDetailMaterialAsync(requestDetails);
-                await _unitOfWork.SaveChangesAsync();
-                await _unitOfWork.CommitTransactionAsync();
+        //        await _unitOfWork.RequestMaterialRepository.AddRequestDetailMaterialAsync(requestDetails);
+        //        await _unitOfWork.SaveChangesAsync();
+        //        await _unitOfWork.CommitTransactionAsync();
 
 
 
-                return request.RequestId;
-            }
-            catch (Exception ex) 
-            {
-                //await _requestRepository.RollbackAsync(transaction);
-                await _unitOfWork.RollbackTransactionAsync();
-                return ex.ToString();
-            }
-        }
+        //        return request.RequestId;
+        //    }
+        //    catch (Exception ex) 
+        //    {
+        //        //await _requestRepository.RollbackAsync(transaction);
+        //        await _unitOfWork.RollbackTransactionAsync();
+        //        return ex.ToString();
+        //    }
+        //}
         /// <summary>
         /// Lấy ra mã đề xuất cuối cùng
         /// </summary>

@@ -201,13 +201,27 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
                 .Select(e => e.PartId)
                 .FirstOrDefaultAsync();
 
+            var EmployeeId = await _context.EmployeesCommonData
+                .Where(e => e.Email == user.Email)
+                .Select(e => e.EmployeeId)
+                .FirstOrDefaultAsync();
+
+            var departmentName = await _context.EmployeesCommonData
+                .Where(e => e.Email == user.Email)
+                .Join(_context.PartsCommonData,
+                      emp => emp.PartId,
+                      part => part.PartId,
+                      (emp, part) => part.PartName)
+                .FirstOrDefaultAsync();
+
+
             if (roles == null || roles.Count == 0)
             {
                 return Unauthorized(new { Message = "Invalid roles" });
             }
             //var roles = await GetActiveRolesForUser(user, _context);
             // Generate JWT token
-            AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(user, department, roles);
+            AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(user, department, departmentName, EmployeeId, roles);
             // Store refresh token for future authentication
             user.RefreshToken = authenticationResponse.RefreshToken;
             user.RefreshTokenExpirationDateTime =
@@ -343,8 +357,23 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
                 .FirstOrDefaultAsync();
 
 
+            var EmployeeId = await _context.EmployeesCommonData
+                .Where(e => e.Email == user.Email)
+                .Select(e => e.EmployeeId)
+                .FirstOrDefaultAsync();
+
+            var departmentName = await _context.EmployeesCommonData
+                .Where(e => e.Email == user.Email)
+                .Join(_context.PartsCommonData,
+                      emp => emp.PartId,
+                      part => part.PartId,
+                      (emp, part) => part.PartName)
+                .FirstOrDefaultAsync();
+
+
+
             // Generate new JWT token
-            AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(user, department, roles);
+            AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(user, department, departmentName, EmployeeId, roles);
 
             // Update Refresh Token buy not change expirationDatetime 
             user.RefreshToken = authenticationResponse.RefreshToken;

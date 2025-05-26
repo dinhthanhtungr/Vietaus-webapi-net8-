@@ -17,6 +17,8 @@ namespace VietausWebAPI.Core.Application.Usecases.Approvals
             CreateMap<ApprovalResponceListDTO, SupplyRequestsMaterialDatum>().ReverseMap()
                 .ForMember(d => d.fullName, opt => opt.MapFrom(src => src.Employee.FullName))
                 .ForMember(d => d.partName, opt => opt.MapFrom(src => src.Employee.Part.PartName));
+            CreateMap<ApprovalHistoryAndInventoryRequestDTO, ApprovalHistoryMaterialDatum>().ReverseMap();
+
         }
     }
 }

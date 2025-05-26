@@ -17,7 +17,7 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        Task<SupplyRequestsMaterialDatum> CreateRequestAsync(SupplyRequestsMaterialDatum request);
+        //Task<SupplyRequestsMaterialDatum> CreateRequestAsync(SupplyRequestsMaterialDatum request);
         /// <summary>
         /// Thêm chi tiết đề xuất mua vật tư
         /// </summary>

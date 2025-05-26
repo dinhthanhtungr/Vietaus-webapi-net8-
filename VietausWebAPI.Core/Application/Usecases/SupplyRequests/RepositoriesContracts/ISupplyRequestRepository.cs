@@ -13,5 +13,6 @@ namespace VietausWebAPI.Core.Application.Usecases.SupplyRequests.RepositoriesCon
     public interface ISupplyRequestRepository
     {
         public Task<PagedResult<SupplyRequestsMaterialDatum>> GetSupplyRequestRepository(SupplyRequestsQuery query);
+        Task<SupplyRequestsMaterialDatum> CreateRequestAsync(SupplyRequestsMaterialDatum request);
     }
 }

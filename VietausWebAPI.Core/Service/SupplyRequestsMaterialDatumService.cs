@@ -6,6 +6,7 @@ using VietausWebAPI.Core.DTO.PostDTO;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Core.ServiceContracts;
+using VietausWebAPI.Core.DTO.QueryObject;
 
 
 
@@ -49,7 +50,7 @@ namespace VietausWebAPI.Core.Service
                 await _unitOfWork.SupplyRequestsMaterialDatumRepository.UpdateRequestStatusAsyncRepository(inventoryReceiptsMaterialDatum.RequestId, inventoryReceiptsMaterialDatum.status);
                 // Thêm mới phiếu nhập kho
                 var inventoryReceipts = _mapper.Map<List<InventoryReceiptsMaterialDatum>>(inventoryReceiptsMaterialDatum.Items);
-                await _unitOfWork.InventoryReceiptsRepository.AddInventoryReceiptsRepositoryAsync(inventoryReceipts);
+                //await _unitOfWork.InventoryReceiptsRepository.AddInventoryReceiptsRepositoryAsync(inventoryReceipts);
                 // Lưu thay đổi
                 await _unitOfWork.SaveChangesAsync();
 
@@ -112,6 +113,19 @@ namespace VietausWebAPI.Core.Service
             await _unitOfWork.SaveChangesAsync();
 
             //var requestor = await _unitOfWork.UserRepository.GetUserById(request.RequestorId);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<PagedResult<ProgressTimeLineDTO>> GetSearchSupplyRequestsMaterialDatumService(SupplyRequestQuery query)
+        {
+            var supplyInformation = await _unitOfWork.SupplyRequestsMaterialDatumRepository.GetSearchSupplyRequestsMaterialDatumRepository(query);
+            var result = _mapper.Map<PagedResult<ProgressTimeLineDTO>>(supplyInformation);
+            return result;
         }
     }
 }

@@ -17,7 +17,7 @@ namespace VietausWebAPI.Core.ServiceContracts
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        Task<string> CreateRequestMaterial(RequestMaterialDTO request);
+        //Task<string> CreateRequestMaterial(RequestMaterialDTO request);
         /// <summary>
         /// Lấy ra mã đề xuất cuối cùng
         /// </summary>

@@ -7,8 +7,10 @@ using VietausWebAPI.Core.Application.DTOs.InventoryReceipts;
 
 namespace VietausWebAPI.Core.Application.DTOs.Approval
 {
-    public class ApprovalHistoryAndInventoryRequestDTO : ApprovalRequestDTO
+    public class ApprovalHistoryAndInventoryRequestDTO 
     {
-        public List<InventoryReceiptsMaterialDTO> InventoryReceipts { get; set; } = new List<InventoryReceiptsMaterialDTO>();
+        public string RequestId { get; set; }
+        public string status { get; set; }
+        public List<InventoryReceiptsMaterialDTO> Items { get; set; } = new List<InventoryReceiptsMaterialDTO>();
     }
 }

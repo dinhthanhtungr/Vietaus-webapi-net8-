@@ -3,6 +3,7 @@ using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.DTO.PostDTO;
 using VietausWebAPI.Core.DTO.QueryObject;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Application.DTOs.Approval;
 
 
 namespace VietausWebAPI.Core.MappingProfiles
@@ -12,6 +13,10 @@ namespace VietausWebAPI.Core.MappingProfiles
         public AppMappingProfile()
         {
             CreateMap<MaterialGroupsMaterialDatum, MaterialGroupsDTO>().ReverseMap();
+
+            CreateMap<MaterialsSuppliersMaterialDatum, MaterialSuppliersDTO>().ReverseMap();
+
+            //CreateMap<MaterialsMaterialGroupsDatum, MaterialGroupsDTO>().ReverseMap();
             CreateMap<SendData, InventoryReceiptsMaterialDatum>().ReverseMap();
             CreateMap<InventoryReceiptsGetDTO, InventoryReceiptsMaterialDatum>().ReverseMap();
             CreateMap<InventoryReceiptsMaterialDTO, InventoryReceiptsMaterialDatum>().ReverseMap();
@@ -31,27 +36,25 @@ namespace VietausWebAPI.Core.MappingProfiles
             .ForMember(dest => dest.PartName, opt => opt.MapFrom(src => src.Employee != null && src.Employee.Part != null ? src.Employee.Part.PartName : "Không có bộ phận"));
 
             CreateMap<RequestDetailMaterialDatum, RequestDetailMaterialDatumPostDTO>()
-                .ReverseMap()
-                //.ForMember(dest => dest.MaterialGroupId, opt => opt.MapFrom(src => src.RequestId))
-                //.ForMember(dest => dest.MaterialGroupId, opt => opt.MapFrom(src => src.MaterialGroupId))
-                .ForMember(dest => dest.MaterialName, opt => opt.MapFrom(src => src.MaterialName))
-                .ForMember(dest => dest.RequestedQuantity, opt => opt.MapFrom(src => src.RequestedQuantity))
-                .ForMember(dest => dest.Unit, opt => opt.MapFrom(src => src.Unit));
+                .ReverseMap();
+            //.ForMember(dest => dest.MaterialGroupId, opt => opt.MapFrom(src => src.RequestId))
+            //.ForMember(dest => dest.MaterialGroupId, opt => opt.MapFrom(src => src.MaterialGroupId));
 
 
-            CreateMap<RequestDetailMaterialDatum, RequestDetailResponseGetDto>()
-                .ForMember(dest => dest.MaterialGroupName, opt => opt.MapFrom(src => src.MaterialGroup.MaterialGroupName));
+            CreateMap<RequestDetailMaterialDatum, RequestDetailResponseGetDto>().ReverseMap();
 
             CreateMap(typeof(PagedResult<>), typeof(PagedResult<>));
 
-            CreateMap<MaterialsSuppliersMaterialDatum, MaterialSuppliersDTO>().ReverseMap();
+            //CreateMap<MaterialSuppliersMaterialDatum, MaterialSuppliersDTO>().ReverseMap();
             CreateMap<ApprovalHistoryMaterialPostDTO, ApprovalHistoryMaterialDatum>().ReverseMap()
                 .ForMember(d => d.requestStatus, opt => opt.MapFrom(src => src.Request.RequestStatus));
             CreateMap<ApprovalHistoryMaterialGetDTO, ApprovalHistoryMaterialDatum>().ReverseMap()
                 .ForMember(d => d.FullName, opt => opt.MapFrom(src => src.Employee.FullName))
                 .ForMember(d => d.requestStatus, opt => opt.MapFrom(src => src.Request.RequestStatus));
 
+            CreateMap<SupplyRequestsMaterialDatum, ProgressTimeLineDTO>().ReverseMap();
 
+            CreateMap<ApprovalRequestDTO, ApprovalHistoryMaterialDatum>().ReverseMap();
         }
     }
 }

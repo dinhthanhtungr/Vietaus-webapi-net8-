@@ -21,6 +21,13 @@ namespace VietausWebAPI.Infrastructure.Repositories.SupplyRequest
         {
             _context = context;
         }
+
+        public async Task<SupplyRequestsMaterialDatum> CreateRequestAsync(SupplyRequestsMaterialDatum request)
+        {
+            await _context.SupplyRequestsMaterialData.AddRangeAsync(request);
+            return request;
+        }
+
         public async Task<PagedResult<SupplyRequestsMaterialDatum>> GetSupplyRequestRepository(SupplyRequestsQuery query)
         {
             var queryable = _context.SupplyRequestsMaterialData

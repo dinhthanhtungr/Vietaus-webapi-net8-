@@ -32,24 +32,24 @@ namespace VietausWebAPI.Core.Service
         /// </summary>
         /// <param name="inventoryReceiptsDTO"></param>
         /// <returns></returns>
-        public async Task AddInventoryReceiptsServiceAsync(InventoryReceiptsPostDTO inventoryReceiptsDTO)
-        {
+        //public async Task AddInventoryReceiptsServiceAsync(InventoryReceiptsPostDTO inventoryReceiptsDTO)
+        //{
 
-            await _unitOfWork.BeginTransactionAsync();
-            try
-            {
-                var inventoryReceipts = _mapper.Map<List<InventoryReceiptsMaterialDatum>>(inventoryReceiptsDTO.Items);
-                await _unitOfWork.InventoryReceiptsRepository.AddInventoryReceiptsRepositoryAsync(inventoryReceipts);
+        //    await _unitOfWork.BeginTransactionAsync();
+        //    try
+        //    {
+        //        var inventoryReceipts = _mapper.Map<List<InventoryReceiptsMaterialDatum>>(inventoryReceiptsDTO.Items);
+        //        await _unitOfWork.InventoryReceiptsRepository.AddInventoryReceiptsRepositoryAsync(inventoryReceipts);
 
-                await _unitOfWork.SaveChangesAsync();
-                await _unitOfWork.CommitTransactionAsync();
-            }
-            catch (Exception ex)
-            {
-                await _unitOfWork.RollbackTransactionAsync();
-                throw ex;
-            }
-        }
+        //        await _unitOfWork.SaveChangesAsync();
+        //        await _unitOfWork.CommitTransactionAsync();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await _unitOfWork.RollbackTransactionAsync();
+        //        throw ex;
+        //    }
+        //}
 
         /// <summary>
         /// Tìm kiếm danh sách phiếu nhập kho theo các tiêu chí tìm kiếm và trả về kết quả phân trang

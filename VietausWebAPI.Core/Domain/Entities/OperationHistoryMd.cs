@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace VietausWebAPI.Core.Domain.Entities;
 
+
 public partial class OperationHistoryMd
 {
     public string MachineId { get; set; } = null!;

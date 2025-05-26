@@ -25,12 +25,12 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
         /// </summary>
         /// <param name="inventoryReceiptsDTO"></param>
         /// <returns></returns>
-        [HttpPost("Add")]
-        public async Task<IActionResult> AddInventoryReceipts([FromBody] InventoryReceiptsPostDTO inventoryReceiptsDTO)
-        {
-            await _inventoryReceiptsService.AddInventoryReceiptsServiceAsync(inventoryReceiptsDTO);
-            return Ok( new { message = "Request complion" });
-        }
+        //[HttpPost("Add")]
+        //public async Task<IActionResult> AddInventoryReceipts([FromBody] InventoryReceiptsPostDTO inventoryReceiptsDTO)
+        //{
+        //    await _inventoryReceiptsService.AddInventoryReceiptsServiceAsync(inventoryReceiptsDTO);
+        //    return Ok( new { message = "Request complion" });
+        //}
         /// <summary>
         /// Lấy tất cả danh sách phiếu nhập kho
         /// </summary>

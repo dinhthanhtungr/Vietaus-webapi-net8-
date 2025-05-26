@@ -31,36 +31,37 @@ namespace VietausWebAPI.Infrastructure.Repositories
         /// </summary>
         /// <param name="inventoryReceiptsMaterialDatum"></param>
         /// <returns></returns>
-        public async Task AddInventoryReceiptsRepositoryAsync(List<InventoryReceiptsMaterialDatum> inventoryReceiptsMaterialDatum)
-        {
-            await _context.InventoryReceiptsMaterialData.AddRangeAsync(inventoryReceiptsMaterialDatum);
-            //await _context.SaveChangesAsync();
-        }
+        //public async Task AddInventoryReceiptsRepositoryAsync(List<InventoryReceiptsMaterialDatum> inventoryReceiptsMaterialDatum)
+        //{
+        //    await _context.InventoryReceiptsMaterialData.AddRangeAsync(inventoryReceiptsMaterialDatum);
+        //    //await _context.SaveChangesAsync();
+        //}
 
         public async Task CheckAndUpdateStatusAsync(string requestId)
         {
             var materialIds = await _context.RequestDetailMaterialData
                 .Where(x => x.RequestId == requestId)
-                .Select(x => x.MaterialName)
+                .Include(x => x.Material)
+                .Select(x => x.MaterialId)
                 .ToListAsync();
 
-            var pricedMaterial = await _context.InventoryReceiptsMaterialData
-                .Where(x => materialIds.Contains(x.MaterialName) && x.UnitPrice > 0 && x.RequestId == requestId)
-                .Select(x => x.MaterialName)
-                .Distinct()
-                .ToListAsync();
+            //var pricedMaterial = await _context.InventoryReceiptsMaterialData
+            //    .Where(x => materialIds.Contains(x.) && x.UnitPrice > 0 && x.RequestId == requestId)
+            //    .Select(x => x.MaterialName)
+            //    .Distinct()
+            //    .ToListAsync();
 
-            var isComplete = materialIds.All(x => pricedMaterial.Contains(x));
+            //var isComplete = materialIds.All(x => pricedMaterial.Contains(x));
 
-            if (isComplete)
-            {
-                var request = await _context.SupplyRequestsMaterialData.FirstOrDefaultAsync(r => r.RequestId == requestId);
-                if (request != null)
-                {
-                    request.RequestStatus = "Đã nhập kho";
-                    //_context.SupplyRequestsMaterialData.Update(request);
-                }
-            }
+            //if (isComplete)
+            //{
+            //    var request = await _context.SupplyRequestsMaterialData.FirstOrDefaultAsync(r => r.RequestId == requestId);
+            //    if (request != null)
+            //    {
+            //        request.RequestStatus = "Đã nhập kho";
+            //        //_context.SupplyRequestsMaterialData.Update(request);
+            //    }
+            //}
         }
 
         /// <summary>
@@ -109,16 +110,16 @@ namespace VietausWebAPI.Infrastructure.Repositories
                 queryable = queryable.Where(x => x.Request.RequestStatus == query.RequestStatus);
             }
             // Lọc theo Static
-            if (query.Static != null)
-            {
-                queryable = queryable.Where(x => x.Status == query.Static);
-            }   
+            //if (query.Static != null)
+            //{
+            //    queryable = queryable.Where(x => x.Status == query.Static);
+            //}   
 
-            // Lọc theo MaterialName
-            if (!string.IsNullOrEmpty(query.MaterialName))
-            {
-                queryable = queryable.Where(x => x.MaterialName == query.MaterialName);
-            }
+            //// Lọc theo MaterialName
+            //if (!string.IsNullOrEmpty(query.MaterialName))
+            //{
+            //    queryable = queryable.Where(x => x.MaterialName == query.MaterialName);
+            //}
 
             // Sắp xếp
             switch (query.SortBy?.ToLower())
@@ -164,7 +165,7 @@ namespace VietausWebAPI.Infrastructure.Repositories
                 {
                     receipts.UnitPrice = inventoryReceiptsMaterialDatum.UnitPrice;
                     receipts.TotalPrice = inventoryReceiptsMaterialDatum.TotalPrice;
-                    receipts.Status = inventoryReceiptsMaterialDatum.Status;
+                    //receipts.Status = inventoryReceiptsMaterialDatum.Status;
                 }
             }
 

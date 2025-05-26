@@ -11,7 +11,7 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         /// </summary>
         /// <param name="inventoryReceiptsMaterialDatum"></param>
         /// <returns></returns>
-        Task AddInventoryReceiptsRepositoryAsync(List<InventoryReceiptsMaterialDatum> inventoryReceiptsMaterialDatum);
+        //Task AddInventoryReceiptsRepositoryAsync(List<InventoryReceiptsMaterialDatum> inventoryReceiptsMaterialDatum);
         /// <summary>
         /// Lấy tất cả danh sách phiếu nhập kho
         /// </summary>

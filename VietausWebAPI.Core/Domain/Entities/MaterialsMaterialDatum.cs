@@ -21,6 +21,8 @@ public partial class MaterialsMaterialDatum
 
     public virtual EmployeesCommonDatum? Employee { get; set; }
 
+    public virtual ICollection<InventoryReceiptsMaterialDatum> InventoryReceiptsMaterialData { get; set; } = new List<InventoryReceiptsMaterialDatum>();
+
     public virtual MaterialGroupsMaterialDatum? MaterialGroup { get; set; }
 
     public virtual ICollection<MaterialsSuppliersMaterialDatum> MaterialsSuppliersMaterialData { get; set; } = new List<MaterialsSuppliersMaterialDatum>();
@@ -28,4 +30,6 @@ public partial class MaterialsMaterialDatum
     public virtual ICollection<PriceHistoryMaterialDatum> PriceHistoryMaterialData { get; set; } = new List<PriceHistoryMaterialDatum>();
 
     public virtual ICollection<PurchaseOrderDetailsMaterialDatum> PurchaseOrderDetailsMaterialData { get; set; } = new List<PurchaseOrderDetailsMaterialDatum>();
+
+    public virtual ICollection<RequestDetailMaterialDatum> RequestDetailMaterialData { get; set; } = new List<RequestDetailMaterialDatum>();
 }

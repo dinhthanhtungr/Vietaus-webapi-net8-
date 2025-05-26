@@ -12,17 +12,12 @@ namespace VietausWebAPI.Core.DTO.PostDTO
     }
     public class SendData 
     {
-        public string MaterialGroupId { get; set; } = null!;
 
         public string RequestId { get; set; } = null!;
 
         public DateTime ReceiptDate { get; set; }
 
-        public string MaterialName { get; set; } = null!;
-
-        public string Unit { get; set; } = null!;
-
-        public int ReceivedQuantity { get; set; }
+        public Guid MaterialId { get; set; }
 
         public decimal UnitPrice { get; set; }
 

@@ -1,6 +1,7 @@
 ﻿
 
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.DTO.QueryObject;
 
 namespace VietausWebAPI.Core.Repositories_Contracts
 {
@@ -39,5 +40,11 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         /// <param name="status"></param>
         /// <returns></returns>
         Task SuccessRequestStatusAsyncRepository(string requestId, string note, string status);
+
+        /// <summary>
+        /// Duyeet tìm kiếm đề xuất
+        /// </summary>
+        /// <returns></returns>
+        Task<PagedResult<SupplyRequestsMaterialDatum>> GetSearchSupplyRequestsMaterialDatumRepository(SupplyRequestQuery query);
     }
 }

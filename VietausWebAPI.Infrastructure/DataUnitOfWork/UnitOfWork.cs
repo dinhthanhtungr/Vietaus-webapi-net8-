@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
 using VietausWebAPI.Core.Application.Usecases.Approvals.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Usecases.InventoryReceipts.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Usecases.MaterialRequestDetail.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.SupplyRequests.RepositoriesContracts;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Core.ServiceContracts;
@@ -22,6 +24,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
 
         public IApprovalRepository ApprovalRepository { get; }
         public ISupplyRequestRepository SupplyRequestRepository { get; }
+        public IMaterialsRepository MaterialsRepository { get; }
+        public IMaterialRequestDetailRepository MaterialRequestDetailRepository { get; }
+        public IInventoryReceiptRepository InventoryReceiptRepository { get; }
 
         /// <summary>
         /// Khởi tạo UnitOfWork
@@ -39,7 +44,10 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             , IInventoryReceiptsRepository inventoryReceiptsRepository
             , IEmployeesCommonRepository employeesCommonRepository
             , IApprovalRepository approvalRepository
-            , ISupplyRequestRepository supplyRequestRepository)
+            , ISupplyRequestRepository supplyRequestRepository
+            , IMaterialsRepository materialsRepository
+            , IMaterialRequestDetailRepository materialRequestDetailRepository
+            , IInventoryReceiptRepository inventoryReceiptRepository)
         {
             _context = context;
             RequestMaterialRepository = requestMaterialRepository;
@@ -49,6 +57,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             EmployeesCommonRepository = employeesCommonRepository;
             ApprovalRepository = approvalRepository;
             SupplyRequestRepository = supplyRequestRepository;
+            MaterialsRepository = materialsRepository;
+            MaterialRequestDetailRepository = materialRequestDetailRepository;
+            InventoryReceiptRepository = inventoryReceiptRepository;
         }
         /// <summary>
         /// Bắt đầu một transaction

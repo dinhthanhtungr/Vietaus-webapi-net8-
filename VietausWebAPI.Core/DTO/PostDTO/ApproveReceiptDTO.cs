@@ -16,11 +16,9 @@ namespace VietausWebAPI.Core.DTO.PostDTO
 
     public class InventoryReceiptsMaterialDTO
     {
-        public string MaterialGroupId { get; set; } = null!;
         public string RequestId { get; set; } = null!;
         public DateTime ReceiptDate { get; set; }
-        public string MaterialName { get; set; } = null!;
-        public string Unit { get; set; } = null!;
+        public Guid MaterialId { get; set; }
         public int ReceivedQuantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }

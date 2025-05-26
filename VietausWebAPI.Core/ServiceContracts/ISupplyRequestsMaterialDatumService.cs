@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.DTO.PostDTO;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.DTO.QueryObject;
 
 namespace VietausWebAPI.Core.ServiceContracts
 {
@@ -47,6 +48,8 @@ namespace VietausWebAPI.Core.ServiceContracts
         /// <param name="status"></param>
         /// <returns></returns>
         Task SuccessRequestStatusAsyncService(string requestId, string note, string status);
+
+        public Task<PagedResult<ProgressTimeLineDTO>> GetSearchSupplyRequestsMaterialDatumService(SupplyRequestQuery query);
 
     }
 }

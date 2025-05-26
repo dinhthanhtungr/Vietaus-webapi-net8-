@@ -3,6 +3,8 @@ using VietausWebAPI.Core.DTO.PostDTO;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Core.ServiceContracts;
+using VietausWebAPI.Core.Application.DTOs.Approval;
+using VietausWebAPI.Core.DTO.GetDTO;
 
 namespace VietausWebAPI.Core.Service
 {
@@ -40,5 +42,12 @@ namespace VietausWebAPI.Core.Service
             var result = _mapper.Map<IEnumerable<RequestDetailMaterialDatumPostDTO>>(RequestDetailMaterial);
             return result;
         }
+
+        //public async Task<IEnumerable<RequestDetailResponseGetDto>> GetSearchRequestDetailServiceAsync(string requestId)
+        //{
+        //    var result = await _requestDetailMaterialRepository.GetSearchRequestDetailRepositoryAsync(requestId);
+        //    var resultMap = _mapper.Map<IEnumerable<RequestDetailResponseGetDto>>(result);
+        //    return resultMap;
+        //}
     }
 }

@@ -9,6 +9,7 @@ namespace VietausWebAPI.Core.DTO.GetDTO
     public class RequestDetailResponseGetDto
     {
         public string MaterialGroupName { get; set; } = null!;
+        public string MaterialGroupId { get; set; } = null!;
 
         public string MaterialName { get; set; } = null!;
 

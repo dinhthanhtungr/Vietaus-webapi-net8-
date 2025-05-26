@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.Core.Domain.Entities;
+
 
 namespace VietausWebAPI.WebAPI.DatabaseContext
 {
@@ -495,35 +495,31 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<InventoryReceiptsMaterialDatum>(entity =>
             {
-                entity.HasKey(e => e.ReceiptId).HasName("PK__Inventor__CC08C400E809090B");
+                entity.HasKey(e => e.ReceiptId).HasName("PK__Inventor__CC08C40035C35BCB");
 
                 entity.ToTable("InventoryReceipts_Material_data");
 
                 entity.Property(e => e.ReceiptId).HasColumnName("ReceiptID");
-                entity.Property(e => e.MaterialGroupId).HasColumnName("MaterialGroupID");
-                entity.Property(e => e.MaterialName).HasMaxLength(100);
-                entity.Property(e => e.Note).HasMaxLength(255);
+                entity.Property(e => e.MaterialId).HasColumnName("materialId");
                 entity.Property(e => e.ReceiptDate).HasColumnType("datetime");
                 entity.Property(e => e.RequestId)
                     .HasMaxLength(16)
                     .IsUnicode(false)
                     .HasColumnName("RequestID");
-                entity.Property(e => e.SupplierId)
-                    .HasMaxLength(16)
-                    .IsUnicode(false)
-                    .HasColumnName("SupplierID");
-                entity.Property(e => e.TotalPrice).HasColumnType("decimal(18, 2)");
-                entity.Property(e => e.Unit).HasMaxLength(50);
+                entity.Property(e => e.TotalPrice)
+                    .HasComputedColumnSql("([ReceivedQuantity]*[UnitPrice])", true)
+                    .HasColumnType("decimal(29, 2)");
                 entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 2)");
 
-                entity.HasOne(d => d.MaterialGroup).WithMany(p => p.InventoryReceiptsMaterialData)
-                    .HasForeignKey(d => d.MaterialGroupId)
-                    .HasConstraintName("FK_InventoryReceipts_MaterialGroupID");
+                entity.HasOne(d => d.Material).WithMany(p => p.InventoryReceiptsMaterialData)
+                    .HasForeignKey(d => d.MaterialId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InventoryReceipts_Material");
 
                 entity.HasOne(d => d.Request).WithMany(p => p.InventoryReceiptsMaterialData)
                     .HasForeignKey(d => d.RequestId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Inventory__Reque__73BA3083");
+                    .HasConstraintName("FK_InventoryReceipts_Request");
             });
 
             modelBuilder.Entity<ListProducedForQc>(entity =>
@@ -708,7 +704,6 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.ExternalId)
                     .HasMaxLength(50)
                     .HasColumnName("externalId");
-                entity.Property(e => e.Name).HasMaxLength(255);
                 entity.Property(e => e.Unit).HasMaxLength(50);
 
                 entity.HasOne(d => d.Employee).WithMany(p => p.MaterialsMaterialData)
@@ -1412,27 +1407,26 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<RequestDetailMaterialDatum>(entity =>
             {
-                entity.HasKey(e => e.DetailId).HasName("PK__RequestD__135C314D8E645DCC");
+                entity.HasKey(e => e.DetailId).HasName("PK__RequestD__135C314DB8621EA7");
 
                 entity.ToTable("RequestDetail_Material_data");
 
                 entity.Property(e => e.DetailId).HasColumnName("DetailID");
-                entity.Property(e => e.MaterialGroupId).HasColumnName("MaterialGroupID");
-                entity.Property(e => e.MaterialName).HasMaxLength(50);
+                entity.Property(e => e.MaterialId).HasColumnName("materialId");
                 entity.Property(e => e.RequestId)
                     .HasMaxLength(16)
                     .IsUnicode(false)
                     .HasColumnName("RequestID");
-                entity.Property(e => e.Unit).HasMaxLength(50);
 
-                entity.HasOne(d => d.MaterialGroup).WithMany(p => p.RequestDetailMaterialData)
-                    .HasForeignKey(d => d.MaterialGroupId)
-                    .HasConstraintName("FK_RequestDetail_MaterialGroupID");
+                entity.HasOne(d => d.Material).WithMany(p => p.RequestDetailMaterialData)
+                    .HasForeignKey(d => d.MaterialId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_RequestDetail_Material");
 
                 entity.HasOne(d => d.Request).WithMany(p => p.RequestDetailMaterialData)
                     .HasForeignKey(d => d.RequestId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__RequestDet__Unit__778AC167");
+                    .HasConstraintName("FK_RequestDetail_Request");
             });
 
             modelBuilder.Entity<ShiftLeaderForRecordToPlc>(entity =>

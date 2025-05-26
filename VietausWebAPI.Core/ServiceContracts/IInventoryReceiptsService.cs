@@ -17,7 +17,7 @@ namespace VietausWebAPI.Core.ServiceContracts
         /// </summary>
         /// <param name="inventoryReceiptsDTO"></param>
         /// <returns></returns>
-        Task AddInventoryReceiptsServiceAsync(InventoryReceiptsPostDTO inventoryReceiptsDTO);
+        //Task AddInventoryReceiptsServiceAsync(InventoryReceiptsPostDTO inventoryReceiptsDTO);
         /// <summary>
         /// Lấy tất cả danh sách phiếu nhập kho
         /// </summary>
