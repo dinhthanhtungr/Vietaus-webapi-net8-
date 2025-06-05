@@ -17,6 +17,13 @@ namespace VietausWebAPI.Core.Application.Usecases.MaterialRequestDetail
             CreateMap<MaterialRequestDetailPostDTO, RequestDetailMaterialDatum>().ReverseMap()
                 .ForMember(x => x.MaterialName, opt => opt.MapFrom(src => src.Material.Name))
                 .ForMember(x => x.Unit, opt => opt.MapFrom(src => src.Material.Unit));
+
+            CreateMap<POMaterialRequestDetailPostDTO, RequestDetailMaterialDatum>().ReverseMap()
+                .ForMember(x => x.MaterialGroupName, opt => opt.MapFrom(src => src.Material.MaterialGroup.MaterialGroupName))
+                .ForMember(x => x.Unit, opt => opt.MapFrom(src => src.Material.Unit))
+                .ForMember(x => x.Name, opt => opt.MapFrom(src => src.Material.Name))
+                .ForMember(x => x.externalId, opt => opt.MapFrom(src => src.Material.ExternalId));
+
         }
     }
 }

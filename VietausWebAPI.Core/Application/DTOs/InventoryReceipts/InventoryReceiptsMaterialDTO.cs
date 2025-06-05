@@ -11,7 +11,8 @@ namespace VietausWebAPI.Core.Application.DTOs.InventoryReceipts
         public string RequestId { get; set; } = null!;
         public DateTime ReceiptDate { get; set; }
         public Guid MaterialId { get; set; }
-        public int ReceivedQuantity { get; set; }
+        public int ReceiptQty { get; set; }
+        public int? DetailId { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }
         public string? Note { get; set; }

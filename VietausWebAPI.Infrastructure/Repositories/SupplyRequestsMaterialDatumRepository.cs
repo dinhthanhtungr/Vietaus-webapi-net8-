@@ -94,6 +94,11 @@ namespace VietausWebAPI.Infrastructure.Repositories
         public async Task<PagedResult<SupplyRequestsMaterialDatum>> GetSearchSupplyRequestsMaterialDatumRepository(SupplyRequestQuery query)
         {
             var queryable = _context.SupplyRequestsMaterialData
+                .Include(x => x.Employee)
+                .ThenInclude(x => x.Part)
+                .Include(x => x.InventoryReceiptsMaterialData)
+                .ThenInclude(x => x.Material.MaterialGroup)
+
             .AsQueryable();
 
             if (query.PartId != null && query.PartId.Any())
@@ -104,6 +109,40 @@ namespace VietausWebAPI.Infrastructure.Repositories
             if (query.RequestDateFrom != null && query.RequestDateTo != null)
             {
                 queryable = queryable.Where(x => x.RequestDate >= query.RequestDateFrom && x.RequestDate <= query.RequestDateTo);
+            }
+
+            if (query.RequestDateFrom != null)
+            {
+                queryable = queryable.Where(x => x.RequestDate >= query.RequestDateFrom);
+            }
+
+            if (query.RequestDateTo != null)
+            {
+                queryable = queryable.Where(x => x.RequestDate <= query.RequestDateTo);
+            }
+
+            if (query.materialGroupId != null)
+            {
+                queryable = queryable.Where(x =>
+                    x.InventoryReceiptsMaterialData.Any(r => r.Material.MaterialGroupId == query.materialGroupId)
+                );
+            }
+
+            if (query.materialName != null)
+            {
+                var keyword = query.materialName.ToLower();
+
+                queryable = queryable.Where(x =>
+                    x.InventoryReceiptsMaterialData.Any(r =>
+                        EF.Functions.Collate(r.Material.Name, "Latin1_General_CI_AI").Contains(keyword)
+                    )
+                );
+            }
+
+            // Lọc theo nhiều trạng thái (ví dụ: Đang mua, Hoàn thành)
+            if (query.StatusFilter != null && query.StatusFilter.Any())
+            {
+                queryable = queryable.Where(x => query.StatusFilter.Contains(x.RequestStatus));
             }
 
             switch (query.SortBy)

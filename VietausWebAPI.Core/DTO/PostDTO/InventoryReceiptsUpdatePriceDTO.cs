@@ -11,6 +11,7 @@ namespace VietausWebAPI.Core.DTO.PostDTO
         public int ReceiptId { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }
+        public int? DetailId { get; set; }
         public bool? Status { get; set; }
     }
 }

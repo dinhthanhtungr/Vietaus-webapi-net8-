@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using VietausWebAPI.Core.Application.DTOs.InventoryReceipts;
+using VietausWebAPI.Core.Application.Usecases.InventoryReceipts.ServiceContracts;
 using VietausWebAPI.Core.DTO.PostDTO;
 using VietausWebAPI.Core.DTO.QueryObject;
 using VietausWebAPI.Core.ServiceContracts;
@@ -11,57 +13,47 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
     [AllowAnonymous]
     public class InventoryReceiptsController : Controller
     {
-        private readonly IInventoryReceiptsService _inventoryReceiptsService;
-        /// <summary>
-        /// Khởi tạo đối tượng InventoryReceiptsController
-        /// </summary>
-        /// <param name="inventoryReceiptsService"></param>
-        public InventoryReceiptsController(IInventoryReceiptsService inventoryReceiptsService)
+        private readonly IInventoryReceiptService _inventoryReceiptService;
+
+        public InventoryReceiptsController(IInventoryReceiptService inventoryReceiptService)
         {
-            _inventoryReceiptsService = inventoryReceiptsService;
+            _inventoryReceiptService = inventoryReceiptService;
         }
-        /// <summary>
-        /// Thêm mới danh sách phiếu nhập kho
-        /// </summary>
-        /// <param name="inventoryReceiptsDTO"></param>
-        /// <returns></returns>
-        //[HttpPost("Add")]
-        //public async Task<IActionResult> AddInventoryReceipts([FromBody] InventoryReceiptsPostDTO inventoryReceiptsDTO)
-        //{
-        //    await _inventoryReceiptsService.AddInventoryReceiptsServiceAsync(inventoryReceiptsDTO);
-        //    return Ok( new { message = "Request complion" });
-        //}
-        /// <summary>
-        /// Lấy tất cả danh sách phiếu nhập kho
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("GetAll")]
-        public async Task<IActionResult> GetAllInventoryReceipts()
+
+        [HttpGet("GetMaterialReceiptId")]
+        public async Task<IActionResult> GetMaterialReceiptId([FromQuery] string id)
         {
-            var resuilt = await _inventoryReceiptsService.GetAllInventoryReceiptsServiceAsync();
-            return Ok(resuilt);
+            if (string.IsNullOrEmpty(id))
+            {
+                return BadRequest("ID cannot be null or empty.");
+            }
+            try
+            {
+                var result = await _inventoryReceiptService.GetMaterialReceiptIdService(id);
+                if (result == null || !result.Any())
+                {
+                    return NotFound("No inventory receipts found for the provided ID.");
+                }
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
-        /// <summary>
-        /// Tìm kiếm danh sách phiếu nhập kho theo các tiêu chí tìm kiếm và trả về kết quả phân trang
-        /// </summary>
-        /// <param name="query"></param>
-        /// <returns></returns>
-        [HttpGet("Search")]
-        public async Task<IActionResult> SearchInventoryReceipts([FromQuery] InventoryReceiptsQuery? query)
+
+        [HttpPut("UpdateFieldChange")]
+        public async Task<IActionResult> UpdateFieldChange(int id, [FromBody] FieldUpdateDTO field)
         {
-            var resuilt = await _inventoryReceiptsService.SearchInventoryReceiptsServiceAsync(query);
-            return Ok(resuilt);
-        }
-        /// <summary>
-        /// Cập nhật giá cho danh sách phiếu nhập kho
-        /// </summary>
-        /// <param name="inventoryReceiptsUpdatePriceDTO"></param>
-        /// <returns></returns>
-        [HttpPatch("UpdatePrice")]
-        public async Task<IActionResult> UpdatePrice([FromBody] InventoryReceiptsUpdatePriceDTO inventoryReceiptsUpdatePriceDTO, string RequestId,string status)
-        {
-            await _inventoryReceiptsService.UpdateInventoryReceiptsServiceAsync(inventoryReceiptsUpdatePriceDTO, RequestId, status);
-            return Ok(new { message = "Request complion" });
+            try
+            {
+                await _inventoryReceiptService.UpdateFieldChangeService(id, field);
+                return Ok(new { message = "Field updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error processing request: {ex.Message}");
+            }
         }
     }
 }

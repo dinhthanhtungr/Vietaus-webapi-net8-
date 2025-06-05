@@ -15,6 +15,11 @@ namespace VietausWebAPI.Core.Application.Usecases.InventoryReceipts
         public InventoryReceiptMappingProfile()
         {
             CreateMap<InventoryReceiptsMaterialDatum, InventoryReceiptsMaterialDTO>().ReverseMap();
+            CreateMap<InventoryReceiptsMaterialDatum, InventoryDetailMaterialDTO>()
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Material.Name))
+                .ForMember(dest => dest.Unit, opt => opt.MapFrom(src => src.Material.Unit))
+                .ForMember(dest => dest.GroupName, opt => opt.MapFrom(src => src.Material.MaterialGroup.MaterialGroupName))
+                .ReverseMap();
         }
     }
 }

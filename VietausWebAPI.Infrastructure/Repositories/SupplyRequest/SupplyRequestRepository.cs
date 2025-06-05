@@ -11,6 +11,7 @@ using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.DTO.QueryObject;
 using VietausWebAPI.Infrastructure.Utilities;
 using VietausWebAPI.WebAPI.DatabaseContext;
+using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
 
 namespace VietausWebAPI.Infrastructure.Repositories.SupplyRequest
 {
@@ -33,6 +34,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.SupplyRequest
             var queryable = _context.SupplyRequestsMaterialData
                 .AsNoTracking()
                 .Include(x => x.Employee)
+                .Include(x => x.InventoryReceiptsMaterialData)
                 .Include(x => x.Employee.Part)
                 .AsQueryable();
 
@@ -45,6 +47,16 @@ namespace VietausWebAPI.Infrastructure.Repositories.SupplyRequest
                     (x.EmployeeId != null && x.EmployeeId.ToLower().Contains(keyword)) ||
                     (x.RequestId != null && x.RequestId.ToLower().Contains(keyword))
                 );
+            }
+
+            if (query.materialName != null)
+            {
+
+                var keyword = query.materialName.ToLower();
+
+                queryable = queryable.Where(x =>
+                x.InventoryReceiptsMaterialData.Any(r =>
+                    EF.Functions.Collate(r.Material.Name, "Latin1_General_CI_AI").ToLower().Contains(keyword)));
             }
 
             if (query.RequestDateFrom != null && query.RequestDateTo != null)

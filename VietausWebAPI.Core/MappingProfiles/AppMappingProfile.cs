@@ -4,6 +4,7 @@ using VietausWebAPI.Core.DTO.PostDTO;
 using VietausWebAPI.Core.DTO.QueryObject;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Application.DTOs.Approval;
+using VietausWebAPI.Core.DTO;
 
 
 namespace VietausWebAPI.Core.MappingProfiles
@@ -52,9 +53,27 @@ namespace VietausWebAPI.Core.MappingProfiles
                 .ForMember(d => d.FullName, opt => opt.MapFrom(src => src.Employee.FullName))
                 .ForMember(d => d.requestStatus, opt => opt.MapFrom(src => src.Request.RequestStatus));
 
-            CreateMap<SupplyRequestsMaterialDatum, ProgressTimeLineDTO>().ReverseMap();
+            CreateMap<ProgressTimeLineDTO, SupplyRequestsMaterialDatum>().ReverseMap()
+                .ForMember(d => d.fullName, opt => opt.MapFrom(src => src.Employee.FullName))
+                .ForMember(d => d.partName, opt => opt.MapFrom(src => src.Employee.Part.PartName))
+                .ReverseMap();
 
             CreateMap<ApprovalRequestDTO, ApprovalHistoryMaterialDatum>().ReverseMap();
+            
+            CreateMap<PurchaseOrderItem, PurchaseOrderDetailsMaterialDatum>().ReverseMap()
+                .ForMember(d => d.ProductName, opt => opt.MapFrom(src => src.Material.Name));   
+            CreateMap<PurchaseOrderModel, PurchaseOrdersMaterialDatum>().ReverseMap()
+                .ForMember(d => d.Items, opt => opt.MapFrom(src => src.PurchaseOrderDetailsMaterialData))
+                .ForMember(d => d.FullName, opt => opt.MapFrom(src => src.Employee.FullName))
+                .ForMember(d => d.PhoneNumber, opt => opt.MapFrom(src => src.Employee.PhoneNumber))
+                .ForMember(d => d.VendorName, opt => opt.MapFrom(src => src.Supplier.Name))
+                .AfterMap((src, dest) =>
+                {
+                    dest.TotalAmount = src.PurchaseOrderDetailsMaterialData
+                        .Sum(item => item.Quantity * item.UnitPrice.GetValueOrDefault());
+
+                    dest.GrandTotal = dest.TotalAmount * (1 + (src.VAT / 100.0m));
+                }); 
         }
     }
 }

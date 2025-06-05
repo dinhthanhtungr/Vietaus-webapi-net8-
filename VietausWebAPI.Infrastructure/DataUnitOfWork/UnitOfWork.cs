@@ -2,6 +2,8 @@
 using VietausWebAPI.Core.Application.Usecases.Approvals.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.InventoryReceipts.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.MaterialRequestDetail.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Usecases.PurchaseOrders.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Usecases.Suppliers.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.SupplyRequests.RepositoriesContracts;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Core.ServiceContracts;
@@ -19,7 +21,6 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IRequestMaterialRepository RequestMaterialRepository { get; }
         public IApprovalHistoryMaterialRepository ApprovalHistoryMaterialRepository { get; }
         public ISupplyRequestsMaterialDatumRepository SupplyRequestsMaterialDatumRepository { get; }
-        public IInventoryReceiptsRepository InventoryReceiptsRepository { get; }
         public IEmployeesCommonRepository EmployeesCommonRepository { get; }
 
         public IApprovalRepository ApprovalRepository { get; }
@@ -27,6 +28,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IMaterialsRepository MaterialsRepository { get; }
         public IMaterialRequestDetailRepository MaterialRequestDetailRepository { get; }
         public IInventoryReceiptRepository InventoryReceiptRepository { get; }
+        public IPurchaseOrderDetailsRepository PurchaseOrderDetailsRepository { get; }
+        public IPurchaseOrdersRepository PurchaseOrdersRepository { get; }
+        public ISupplierRepository SupplierRepository { get; }
 
         /// <summary>
         /// Khởi tạo UnitOfWork
@@ -41,25 +45,29 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             , IRequestMaterialRepository requestMaterialRepository
             , IApprovalHistoryMaterialRepository approvalHistoryMaterialRepository
             , ISupplyRequestsMaterialDatumRepository supplyRequestsMaterialDatumRepository
-            , IInventoryReceiptsRepository inventoryReceiptsRepository
             , IEmployeesCommonRepository employeesCommonRepository
             , IApprovalRepository approvalRepository
             , ISupplyRequestRepository supplyRequestRepository
             , IMaterialsRepository materialsRepository
             , IMaterialRequestDetailRepository materialRequestDetailRepository
-            , IInventoryReceiptRepository inventoryReceiptRepository)
+            , IInventoryReceiptRepository inventoryReceiptRepository
+            , IPurchaseOrdersRepository purchaseOrdersRepository
+            , IPurchaseOrderDetailsRepository purchaseOrderDetailsRepository
+            , ISupplierRepository supplierRepository)
         {
             _context = context;
             RequestMaterialRepository = requestMaterialRepository;
             ApprovalHistoryMaterialRepository = approvalHistoryMaterialRepository;
             SupplyRequestsMaterialDatumRepository = supplyRequestsMaterialDatumRepository;
-            InventoryReceiptsRepository = inventoryReceiptsRepository;
             EmployeesCommonRepository = employeesCommonRepository;
             ApprovalRepository = approvalRepository;
             SupplyRequestRepository = supplyRequestRepository;
             MaterialsRepository = materialsRepository;
             MaterialRequestDetailRepository = materialRequestDetailRepository;
             InventoryReceiptRepository = inventoryReceiptRepository;
+            PurchaseOrdersRepository = purchaseOrdersRepository;
+            PurchaseOrderDetailsRepository = purchaseOrderDetailsRepository;
+            SupplierRepository = supplierRepository;
         }
         /// <summary>
         /// Bắt đầu một transaction

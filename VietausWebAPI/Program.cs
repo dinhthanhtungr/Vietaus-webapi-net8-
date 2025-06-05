@@ -15,8 +15,10 @@ using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Infrastructure.Repositories;
 using VietausWebAPI.WebAPI;
 using VietausWebAPI.WebAPI.Hubs;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseWebRoot("wwwroot");
 //Add services to the container.
 
 //builder.Services.AddControllers();
@@ -64,6 +66,7 @@ builder.Services.AddCors(options =>
 });
 
 
+QuestPDF.Settings.License = LicenseType.Community;
 
 
 builder.Services.AddTransient<IJwtService, JwtService>();

@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.DTOs.MaterialRequestDetails;
+using VietausWebAPI.Core.Application.DTOs.MaterialRequestDetails.Query;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.DTO.QueryObject;
 
 namespace VietausWebAPI.Core.Application.Usecases.MaterialRequestDetail.ServiceContracts
 {
@@ -18,6 +20,8 @@ namespace VietausWebAPI.Core.Application.Usecases.MaterialRequestDetail.ServiceC
         Task AddRequestDetailServiceAsync(MaterialRequestDetailGetDTO MaterialRequestDetailGetDTO );
 
         Task<IEnumerable<MaterialRequestDetailPostDTO>> GetRequestDetailServieAsync(string requestId);
+
+        Task<PagedResult<POMaterialRequestDetailPostDTO>> GetRequestMaterialStatusPayService(CreatePOQuery createPOQuery);
 
     }
 }

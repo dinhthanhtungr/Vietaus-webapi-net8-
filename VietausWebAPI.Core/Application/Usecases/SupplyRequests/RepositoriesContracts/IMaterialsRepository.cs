@@ -10,5 +10,6 @@ namespace VietausWebAPI.Core.Application.Usecases.SupplyRequests.RepositoriesCon
     public interface IMaterialsRepository
     {
         Task <List<MaterialsMaterialDatum>> SearchByNameAsync(string name, Guid materialGroupId);
+        Task CreateMaterialAsync(List<MaterialsMaterialDatum> material);
     }
 }

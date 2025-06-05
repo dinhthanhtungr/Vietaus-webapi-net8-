@@ -13,5 +13,7 @@ namespace VietausWebAPI.Core.DTO.GetDTO
         public DateTime RequestDate { get; set; }
 
         public string RequestStatus { get; set; } = null!;
+        public string fullName { get; set; } = null!;
+        public string partName { get; set; } = null!;
     }
 }

@@ -9,6 +9,8 @@ using VietausWebAPI.Core.Application.Usecases.MaterialRequestDetail.Repositories
 using VietausWebAPI.Core.Application.Usecases.SupplyRequests.RepositoriesContracts;
 using VietausWebAPI.Core.ServiceContracts;
 using VietausWebAPI.Core.Application.Usecases.InventoryReceipts.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Usecases.PurchaseOrders.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Usecases.Suppliers.RepositoriesContracts;
 
 namespace VietausWebAPI.Core.Repositories_Contracts
 {
@@ -17,7 +19,6 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         IRequestMaterialRepository RequestMaterialRepository { get; }
         IApprovalHistoryMaterialRepository ApprovalHistoryMaterialRepository { get; }
         ISupplyRequestsMaterialDatumRepository SupplyRequestsMaterialDatumRepository { get; }
-        IInventoryReceiptsRepository InventoryReceiptsRepository { get; }
         IEmployeesCommonRepository EmployeesCommonRepository { get; }
 
         IApprovalRepository ApprovalRepository { get; }
@@ -25,6 +26,9 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         IMaterialsRepository MaterialsRepository { get; }
         IMaterialRequestDetailRepository MaterialRequestDetailRepository { get; }
         IInventoryReceiptRepository InventoryReceiptRepository { get; }
+        IPurchaseOrderDetailsRepository PurchaseOrderDetailsRepository { get; }
+        IPurchaseOrdersRepository PurchaseOrdersRepository { get; }
+        ISupplierRepository SupplierRepository { get; }
 
         // Thêm các repository khác nếu cần
         Task<IDbContextTransaction> BeginTransactionAsync();

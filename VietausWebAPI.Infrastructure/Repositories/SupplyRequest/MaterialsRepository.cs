@@ -43,5 +43,10 @@ namespace VietausWebAPI.Infrastructure.Repositories.SupplyRequest
                 .Take(10)
                 .ToListAsync();
         }
+
+        public async Task CreateMaterialAsync(List<MaterialsMaterialDatum> material)
+        {
+            await _context.MaterialsMaterialData.AddRangeAsync(material);
+        }
     }
 }

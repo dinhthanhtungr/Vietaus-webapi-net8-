@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.DotNet.Scaffolding.Shared.Messaging;
+using VietausWebAPI.Core.Application.DTOs.MaterialRequestDetails.Query;
 using VietausWebAPI.Core.Application.Usecases.MaterialRequestDetail.ServiceContracts;
 using VietausWebAPI.Core.DTO.PostDTO;
 using VietausWebAPI.Core.Repositories_Contracts;
@@ -19,7 +20,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
         /// Constructor
         /// </summary>
         /// <param name="requestDetailMaterialService"></param>
-        public RequestDetailMaterialController (IRequestDetailMaterialService requestDetailMaterialService, IMaterialRequestDetailService materialRequestDetailService)
+        public RequestDetailMaterialController(IRequestDetailMaterialService requestDetailMaterialService, IMaterialRequestDetailService materialRequestDetailService)
         {
             _requestDetailMaterialService = requestDetailMaterialService;
             _materialRequestDetailService = materialRequestDetailService;
@@ -52,11 +53,18 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
         //    var result = await _requestDetailMaterialService.GetSearchRequestDetailServiceAsync(requestId);
         //    return Ok(result);
         //}        
-        
+
         [HttpGet("GetSearch")]
         public async Task<IActionResult> GetSearchRequestDetailMaterial(string requestId)
         {
             var result = await _materialRequestDetailService.GetRequestDetailServieAsync(requestId);
+            return Ok(result);
+        }
+
+        [HttpGet("GetRequestMaterialStatusPay")]
+        public async Task<IActionResult> GetRequestMaterialStatusPay([FromQuery] CreatePOQuery createPOQuery)
+        {
+            var result = await _materialRequestDetailService.GetRequestMaterialStatusPayService(createPOQuery);
             return Ok(result);
         }
     }

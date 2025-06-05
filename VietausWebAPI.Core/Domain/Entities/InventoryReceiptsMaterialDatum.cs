@@ -11,15 +11,19 @@ public partial class InventoryReceiptsMaterialDatum
 
     public DateTime? ReceiptDate { get; set; }
 
-    public int? ReceivedQuantity { get; set; }
-
     public decimal? UnitPrice { get; set; }
-
-    public decimal? TotalPrice { get; set; }
 
     public string? Note { get; set; }
 
     public Guid MaterialId { get; set; }
+
+    public int? DetailId { get; set; }
+
+    public int? ReceiptQty { get; set; }
+
+    public decimal? TotalPrice { get; set; }
+
+    public virtual RequestDetailMaterialDatum? Detail { get; set; }
 
     public virtual MaterialsMaterialDatum Material { get; set; } = null!;
 

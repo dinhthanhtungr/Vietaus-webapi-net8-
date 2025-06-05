@@ -15,7 +15,15 @@ public partial class RequestDetailMaterialDatum
 
     public string? Note { get; set; }
 
+    public int? PurchasedQuantity { get; set; }
+
+    public int? ReceivedQuantity { get; set; }
+
+    public virtual ICollection<InventoryReceiptsMaterialDatum> InventoryReceiptsMaterialData { get; set; } = new List<InventoryReceiptsMaterialDatum>();
+
     public virtual MaterialsMaterialDatum Material { get; set; } = null!;
+
+    public virtual ICollection<PurchaseOrderDetailsMaterialDatum> PurchaseOrderDetailsMaterialData { get; set; } = new List<PurchaseOrderDetailsMaterialDatum>();
 
     public virtual SupplyRequestsMaterialDatum Request { get; set; } = null!;
 }

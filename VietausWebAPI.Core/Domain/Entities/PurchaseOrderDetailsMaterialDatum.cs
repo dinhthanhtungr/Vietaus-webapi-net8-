@@ -17,6 +17,12 @@ public partial class PurchaseOrderDetailsMaterialDatum
 
     public string? Note { get; set; }
 
+    public int Quantity { get; set; }
+
+    public int? DetailId { get; set; }
+
+    public virtual RequestDetailMaterialDatum? Detail { get; set; }
+
     public virtual MaterialsMaterialDatum? Material { get; set; }
 
     public virtual PurchaseOrdersMaterialDatum? Po { get; set; }

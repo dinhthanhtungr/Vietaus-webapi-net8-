@@ -9,6 +9,7 @@ namespace VietausWebAPI.Core.Application.DTOs.SupplyRequests
 {
     public class SupplyRequestsQuery : PaginationQuery
     {
+        public string materialName { get; set; } = string.Empty;
         public DateTime? RequestDateFrom { get; set; }
         public DateTime? RequestDateTo { get; set; }
         public string KeyWord { get; set; } = string.Empty;

@@ -11,7 +11,7 @@ namespace VietausWebAPI.Core.Application.DTOs.MaterialRequestDetails
         public string RequestId { get; set; } = null!;
 
         public int? RequestedQuantity { get; set; }
-
+        public int? DetailId { get; set; }
         public Guid MaterialId { get; set; }
         public string? MaterialName { get; set; }
         public string? Unit { get; set; }

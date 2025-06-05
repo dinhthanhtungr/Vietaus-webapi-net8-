@@ -8,6 +8,9 @@ namespace VietausWebAPI.Core.DTO.QueryObject
 {
     public class SupplyRequestQuery : PaginationQuery
     {
+        public string? materialName { get; set; }
+        public Guid? materialGroupId { get; set; }
+        public Guid? supplierId { get; set; }
         public DateTime? RequestDate { get; set; }
         public DateTime? RequestDateFrom { get; set; }
         public DateTime? RequestDateTo { get; set; }
