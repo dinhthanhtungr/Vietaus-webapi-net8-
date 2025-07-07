@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
+using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.Approvals.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.InventoryReceipts.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.MaterialRequestDetail.RepositoriesContracts;
@@ -32,6 +33,11 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IPurchaseOrdersRepository PurchaseOrdersRepository { get; }
         public ISupplierRepository SupplierRepository { get; }
 
+        // Labs
+        public IProductStandardRepository ProductStandardRepository { get; }
+        public IProductInspectionRepository ProductInspectionRepository { get; }
+        public IProductTestRepository ProductTestRepository { get; }
+        public IMfgProductionOrdersPlanRepository MfgProductionOrdersPlanRepository { get; }
         /// <summary>
         /// Khởi tạo UnitOfWork
         /// </summary>
@@ -53,7 +59,11 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             , IInventoryReceiptRepository inventoryReceiptRepository
             , IPurchaseOrdersRepository purchaseOrdersRepository
             , IPurchaseOrderDetailsRepository purchaseOrderDetailsRepository
-            , ISupplierRepository supplierRepository)
+            , ISupplierRepository supplierRepository
+            , IProductStandardRepository productStandardRepository
+            , IProductInspectionRepository productInspectionRepository
+            , IProductTestRepository productTestRepository
+            , IMfgProductionOrdersPlanRepository mfgProductionOrdersPlanRepository)
         {
             _context = context;
             RequestMaterialRepository = requestMaterialRepository;
@@ -68,6 +78,12 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             PurchaseOrdersRepository = purchaseOrdersRepository;
             PurchaseOrderDetailsRepository = purchaseOrderDetailsRepository;
             SupplierRepository = supplierRepository;
+
+            // Labs
+            ProductStandardRepository = productStandardRepository;
+            ProductInspectionRepository = productInspectionRepository;
+            ProductTestRepository = productTestRepository;
+            MfgProductionOrdersPlanRepository = mfgProductionOrdersPlanRepository;
         }
         /// <summary>
         /// Bắt đầu một transaction

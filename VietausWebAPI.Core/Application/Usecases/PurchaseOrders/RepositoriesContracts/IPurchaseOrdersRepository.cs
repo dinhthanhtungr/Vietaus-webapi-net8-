@@ -5,8 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.DTOs.PurchaseOrders;
 using VietausWebAPI.Core.Application.DTOs.PurchaseOrders.Query;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.Core.DTO.QueryObject;
 
 namespace VietausWebAPI.Core.Application.Usecases.PurchaseOrders.RepositoriesContracts
 {

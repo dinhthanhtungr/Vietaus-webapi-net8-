@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 using AutoMapper;
 using VietausWebAPI.Core.Application.DTOs.MaterialRequestDetails;
 using VietausWebAPI.Core.Application.DTOs.MaterialRequestDetails.Query;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Application.Usecases.MaterialRequestDetail.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.MaterialRequestDetail.ServiceContracts;
 using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.Core.DTO.QueryObject;
 using VietausWebAPI.Core.Repositories_Contracts;
 
 namespace VietausWebAPI.Core.Application.Usecases.MaterialRequestDetail.Services

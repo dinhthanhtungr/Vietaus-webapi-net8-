@@ -70,7 +70,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
         public virtual DbSet<MaterialsMaterialDatum> MaterialsMaterialData { get; set; }
 
         public virtual DbSet<MaterialsSuppliersMaterialDatum> MaterialsSuppliersMaterialData { get; set; }
-
+        public virtual DbSet<MfgProductionOrdersPlan> MfgProductionOrdersPlans { get; set; }
         public virtual DbSet<NewMakingHistory> NewMakingHistories { get; set; }
 
         public virtual DbSet<NewMakingMaterial> NewMakingMaterials { get; set; }
@@ -108,6 +108,9 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
         public virtual DbSet<ProductionPlanPlpu> ProductionPlanPlpus { get; set; }
 
         public virtual DbSet<ProductionStatus> ProductionStatuses { get; set; }
+        public virtual DbSet<ProductTest> ProductTests { get; set; }
+        public virtual DbSet<ProductStandard> ProductStandards { get; set; }
+        public virtual DbSet<ProductInspection> ProductInspections { get; set; }
 
         public virtual DbSet<PurchaseOrder> PurchaseOrders { get; set; }
 
@@ -150,6 +153,26 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+          
+
+            // Thiết lập khóa chính
+            modelBuilder.Entity<ApplicationUserRole>()
+                .HasKey(ur => new { ur.UserId, ur.RoleId });
+
+            // Thiết lập quan hệ với ApplicationUser
+            modelBuilder.Entity<ApplicationUserRole>()
+                .HasOne(ur => ur.User)
+                .WithMany(u => u.UserRoles)
+                .HasForeignKey(ur => ur.UserId);
+
+            // Thiết lập quan hệ với ApplicationRole
+            modelBuilder.Entity<ApplicationUserRole>()
+                .HasOne(ur => ur.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.RoleId);
+
+
             modelBuilder.Entity<ApprovalHistoryMaterialDatum>(entity =>
             {
                 entity.HasKey(e => e.Id).HasName("PK__Approval__3214EC27ACA7D4C9");
@@ -719,6 +742,11 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasConstraintName("FK__Materials__Mater__6CD828CA");
             });
 
+            modelBuilder.Entity<MfgProductionOrdersPlan>(entity =>
+            {
+                entity.ToTable("MfgProductionOrdersPlan");
+            });
+
             modelBuilder.Entity<MaterialsSuppliersMaterialDatum>(entity =>
             {
                 entity.HasKey(e => e.MaterialsSuppliersId).HasName("PK__Material__4F13EDBB9241ABE2");
@@ -1265,6 +1293,26 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.ProductionCode).HasMaxLength(50);
                 entity.Property(e => e.RequestDate).HasColumnType("datetime");
             });
+
+            modelBuilder.Entity<ProductTest>(entity =>
+            {
+                entity.ToTable("ProductTest");
+            });
+
+            modelBuilder.Entity<ProductStandard>(entity =>
+            {
+
+                entity.ToTable("ProductStandard");
+
+            });
+
+            modelBuilder.Entity<ProductInspection>(entity =>
+            {
+
+                entity.ToTable("ProductInspection");
+
+            });
+
 
             modelBuilder.Entity<PurchaseOrder>(entity =>
             {

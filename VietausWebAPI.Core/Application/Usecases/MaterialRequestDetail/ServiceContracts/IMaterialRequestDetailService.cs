@@ -5,8 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.DTOs.MaterialRequestDetails;
 using VietausWebAPI.Core.Application.DTOs.MaterialRequestDetails.Query;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.Core.DTO.QueryObject;
 
 namespace VietausWebAPI.Core.Application.Usecases.MaterialRequestDetail.ServiceContracts
 {

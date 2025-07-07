@@ -2,9 +2,9 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using VietausWebAPI.Core.Application.DTOs.Approval;
 using VietausWebAPI.Core.Application.DTOs.SupplyRequests;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Application.Usecases.Approvals.ServiceContracts;
 using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.Core.DTO.QueryObject;
 using VietausWebAPI.Core.Repositories_Contracts;
 
 namespace VietausWebAPI.Core.Application.Usecases.Approvals.Services

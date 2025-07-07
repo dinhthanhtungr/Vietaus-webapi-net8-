@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.DTOs.Approval;
 using VietausWebAPI.Core.Application.DTOs.SupplyRequests;
-using VietausWebAPI.Core.DTO.QueryObject;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 
 namespace VietausWebAPI.Core.Application.Usecases.Approvals.ServiceContracts
 {

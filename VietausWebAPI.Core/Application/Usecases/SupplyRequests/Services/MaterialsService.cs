@@ -39,7 +39,8 @@ namespace VietausWebAPI.Core.Application.Usecases.SupplyRequests.Services
                 Name = m.Name,
                 Unit = m.Unit,
                 CreateDate = m.CreateDate,
-                EmployeeId = m.EmployeeId
+                EmployeeId = m.EmployeeId,
+                MaterialGroupId = m.MaterialGroupId,
             }).ToList();
 
             await _unitOfWork.MaterialsRepository.CreateMaterialAsync(materialData);

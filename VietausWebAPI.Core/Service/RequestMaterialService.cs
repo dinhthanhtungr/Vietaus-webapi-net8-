@@ -10,6 +10,7 @@ using VietausWebAPI.Core.DTO.QueryObject;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Core.ServiceContracts;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 
 namespace VietausWebAPI.Core.Service
 {

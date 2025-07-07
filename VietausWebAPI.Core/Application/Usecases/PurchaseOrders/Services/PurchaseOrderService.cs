@@ -7,9 +7,9 @@ using AutoMapper;
 using VietausWebAPI.Core.Application.DTOs.MaterialRequestDetails;
 using VietausWebAPI.Core.Application.DTOs.PurchaseOrders;
 using VietausWebAPI.Core.Application.DTOs.PurchaseOrders.Query;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Application.Usecases.PurchaseOrders.ServiceContracts;
 using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.Core.DTO.QueryObject;
 using VietausWebAPI.Core.Repositories_Contracts;
 
 namespace VietausWebAPI.Core.Application.Usecases.PurchaseOrders.Services

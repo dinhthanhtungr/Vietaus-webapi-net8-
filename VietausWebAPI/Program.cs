@@ -16,6 +16,7 @@ using VietausWebAPI.Infrastructure.Repositories;
 using VietausWebAPI.WebAPI;
 using VietausWebAPI.WebAPI.Hubs;
 using QuestPDF.Infrastructure;
+using QuestPDF.Drawing;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseWebRoot("wwwroot");
@@ -65,7 +66,8 @@ builder.Services.AddCors(options =>
                     .AllowAnyHeader());
 });
 
-
+var fontPath = Path.Combine("wwwroot", "Fonts", "OpenSans-Regular.ttf");
+FontManager.RegisterFont(File.OpenRead(fontPath));
 QuestPDF.Settings.License = LicenseType.Community;
 
 

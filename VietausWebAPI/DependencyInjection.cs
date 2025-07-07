@@ -1,4 +1,7 @@
-﻿using VietausWebAPI.Core.Application.Usecases.Approvals.RepositoriesContracts;
+﻿using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Labs.Services;
+using VietausWebAPI.Core.Application.Usecases.Approvals.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.Approvals.ServiceContracts;
 using VietausWebAPI.Core.Application.Usecases.Approvals.Services;
 using VietausWebAPI.Core.Application.Usecases.InventoryReceipts.RepositoriesContracts;
@@ -23,6 +26,7 @@ using VietausWebAPI.Infrastructure.DataUnitOfWork;
 using VietausWebAPI.Infrastructure.Repositories;
 using VietausWebAPI.Infrastructure.Repositories.Approval;
 using VietausWebAPI.Infrastructure.Repositories.InventoryReceipts;
+using VietausWebAPI.Infrastructure.Repositories.Labs;
 using VietausWebAPI.Infrastructure.Repositories.MaterialRequestDetail;
 using VietausWebAPI.Infrastructure.Repositories.PurchaseOrders;
 using VietausWebAPI.Infrastructure.Repositories.Supplier;
@@ -90,6 +94,21 @@ namespace VietausWebAPI.WebAPI
             //Inventory
             services.AddScoped<IInventoryReceiptService, InventoryReceiptService>();
             services.AddScoped<IInventoryReceiptRepository, InventoryReceiptRepository>();
+
+            //Labs
+            //ProductStandard
+            services.AddScoped<IProductStandardRepository, ProductStandardRepository>();
+            services.AddScoped<IProductStandardService, ProductStandardService>();
+            //ProductInspection
+            services.AddScoped<IProductInspectionRepository, ProductInspectionRepository>();
+            services.AddScoped<IProductInspectionService, ProductInspectionService>();
+            //ProductTest
+            services.AddScoped<IProductTestRepository, ProductTestRepository>();
+            services.AddScoped<IProductTestService, ProductTestService>();
+            //MfgProductionOrdersPlanRepository
+            services.AddScoped<IMfgProductionOrdersPlanRepository, MfgProductionOrdersPlanRepository>();
+
+
             return services;
         }
     }

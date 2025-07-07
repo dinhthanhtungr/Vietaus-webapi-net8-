@@ -10,6 +10,7 @@ namespace VietausWebAPI.Core.Identity
     public class ApplicationRole : IdentityRole<Guid>
     {
         //public bool IsActive { get; set; } = true;
-        public virtual ICollection<ApplicationUserRole> UserRoles { get; set; }
+        //public virtual ICollection<ApplicationUserRole> UserRoles { get; set; }
+        public ICollection<ApplicationUserRole> UserRoles { get; set; }
     }
 }

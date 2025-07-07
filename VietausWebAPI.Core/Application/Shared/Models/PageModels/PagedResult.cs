@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VietausWebAPI.Core.DTO.QueryObject
+namespace VietausWebAPI.Core.Application.Shared.Models.PageModels
 {
     public class PagedResult<T>
     {

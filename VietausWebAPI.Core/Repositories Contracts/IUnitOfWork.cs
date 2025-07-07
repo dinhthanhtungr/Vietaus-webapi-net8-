@@ -11,6 +11,7 @@ using VietausWebAPI.Core.ServiceContracts;
 using VietausWebAPI.Core.Application.Usecases.InventoryReceipts.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.PurchaseOrders.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.Suppliers.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts;
 
 namespace VietausWebAPI.Core.Repositories_Contracts
 {
@@ -29,6 +30,13 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         IPurchaseOrderDetailsRepository PurchaseOrderDetailsRepository { get; }
         IPurchaseOrdersRepository PurchaseOrdersRepository { get; }
         ISupplierRepository SupplierRepository { get; }
+
+        // Labs
+        IProductStandardRepository ProductStandardRepository { get; }
+        IProductInspectionRepository ProductInspectionRepository { get; }
+        IProductTestRepository ProductTestRepository { get; }
+        IMfgProductionOrdersPlanRepository MfgProductionOrdersPlanRepository { get; }
+
 
         // Thêm các repository khác nếu cần
         Task<IDbContextTransaction> BeginTransactionAsync();

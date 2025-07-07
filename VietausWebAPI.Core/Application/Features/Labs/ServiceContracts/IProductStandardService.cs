@@ -1,0 +1,25 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductStandardFeature;
+using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductStandardFeature;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
+using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.DTO.QueryObject;
+
+namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts
+{
+    public interface IProductStandardService
+    {
+        Task<PagedResult<ProductStandardSummaryDTO>> GetProductStandardsPagedAsync(ProductStandardQuery? query);
+        Task<ProductStandardInformation> GetProductStandardIdAsync(Guid id);
+        Task<ProductStandardInformation> GetProductStandardProductIdAsync(Guid id);
+  
+        Task<OperationResult> PostProductStandardService(ProductStandardInformation productStandard);
+
+        Task<OperationResult> UpdateProductStandardService(Guid id, ProductStandardInformation productStandard);
+        Task<OperationResult> DeleteProductStandardService(Guid id);
+    }
+}

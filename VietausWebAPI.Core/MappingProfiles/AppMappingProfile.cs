@@ -1,10 +1,10 @@
 ﻿using AutoMapper;
 using VietausWebAPI.Core.DTO.GetDTO;
 using VietausWebAPI.Core.DTO.PostDTO;
-using VietausWebAPI.Core.DTO.QueryObject;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Application.DTOs.Approval;
 using VietausWebAPI.Core.DTO;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 
 
 namespace VietausWebAPI.Core.MappingProfiles

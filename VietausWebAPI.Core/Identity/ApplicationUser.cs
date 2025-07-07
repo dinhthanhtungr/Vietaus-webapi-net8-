@@ -12,6 +12,7 @@ namespace VietausWebAPI.Core.Identity
         public string? personName {  get; set; }
         public string? RefreshToken {  get; set; }
         public DateTime RefreshTokenExpirationDateTime {  get; set; }
-        public virtual ICollection<ApplicationUserRole> UserRoles { get; set; }
+        //public virtual ICollection<ApplicationUserRole> UserRoles { get; set; }
+        public ICollection<ApplicationUserRole> UserRoles { get; set; }
     }
 }

@@ -1,0 +1,95 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductInspectionFeature;
+using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductStandardFeature;
+using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
+using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Infrastructure.Utilities;
+using VietausWebAPI.WebAPI.DatabaseContext;
+
+namespace VietausWebAPI.Infrastructure.Repositories.Labs
+{
+    public class ProductInspectionRepository : IProductInspectionRepository
+    {
+        private readonly ApplicationDbContext _context;
+        public ProductInspectionRepository(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task DeleteCOARepository(Guid id)
+        {
+            var coa = await _context.ProductInspections.FirstOrDefaultAsync(x => x.Id == id);
+            if (coa == null)
+            {
+                throw new InvalidOperationException($"COA with ID {id} not found.");
+            }
+            _context.ProductInspections.Remove(coa);
+        }
+
+        public async Task<string?> GetLatestExternalIdStartsWithAsync(string prefix)
+        {
+            return await _context.ProductInspections
+                .Where(p => p.ExternalId.StartsWith(prefix))
+                .OrderByDescending(p => p.ExternalId)
+                .Select(p => p.ExternalId)
+                .FirstOrDefaultAsync();
+        }
+
+        //public async Task<ProductInspection> GeneralPdf(Guid id)
+        //{
+        //    var productInspection = await _context.ProductInspections
+        //        .AsNoTracking()
+        //        .FirstOrDefaultAsync(x => x.Id == id);
+        //    if (productInspection == null)
+        //    {
+        //        return new ProductInspection(); // Return an empty ProductInspection if not found
+        //    }
+
+        //    return productInspection;
+        //}
+
+        public async Task<ProductInspection> GetProductInspectionByIdAsync(Guid id)
+        {
+            var productInspection = await _context.ProductInspections
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            // Ensure the method never returns null to match the interface contract
+            if (productInspection == null)
+            {
+                return new ProductInspection(); // Return an empty ProductInspection if not found
+            }
+
+            return productInspection;
+        }
+
+        public async Task<PagedResult<ProductInspection>> GetProductInspectionPagedAsync(ProductInspectionQuery? query)
+        {
+            var queryable = _context.ProductInspections
+                .AsNoTracking()
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query.keyword))
+            {
+                string keyword = query.keyword.ToLower();
+                queryable = queryable.Where(x =>
+                    x.BatchId != null && EF.Functions.Collate(x.BatchId, "Latin1_General_CI_AI").ToLower().Contains(keyword) ||
+                    x.ProductCode != null && EF.Functions.Collate(x.ProductCode, "Latin1_General_CI_AI").ToLower().Contains(keyword));
+            }
+            query.PageSize = 15;
+            queryable = queryable.OrderByDescending(x => x.CreateDate);
+            return await QueryableExtensions.GetPagedAsync(queryable, query);
+        }
+
+        public async Task PostProductInspectionAsync(ProductInspection productInspection)
+        {
+            await _context.ProductInspections.AddAsync(productInspection);
+        }
+    }
+}

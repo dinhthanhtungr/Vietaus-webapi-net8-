@@ -1,5 +1,6 @@
 ﻿
 
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.DTO.QueryObject;
 
