@@ -28,15 +28,15 @@ namespace VietausWebAPI.Core.Domain.Entities
 
         public bool? Product_RohsStandard { get; set; }
 
-        public float? Product_RecycleRate { get; set; }
+        public double? Product_RecycleRate { get; set; }
 
-        public float? Product_Weight { get; set; }
+        public double? Product_Weight { get; set; }
 
         public string? Product_CustomerExternalId { get; set; }
 
-        public float? Product_MaxTemp { get; set; }
+        public double? Product_MaxTemp { get; set; }
 
-        public float? Product_AddRate { get; set; }
+        public double? Product_AddRate { get; set; }
 
         public Guid Product_Id { get; set; }
     }

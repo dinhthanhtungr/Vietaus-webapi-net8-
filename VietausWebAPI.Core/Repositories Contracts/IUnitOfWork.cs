@@ -12,6 +12,8 @@ using VietausWebAPI.Core.Application.Usecases.InventoryReceipts.RepositoriesCont
 using VietausWebAPI.Core.Application.Usecases.PurchaseOrders.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.Suppliers.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 
 namespace VietausWebAPI.Core.Repositories_Contracts
 {
@@ -35,7 +37,15 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         IProductStandardRepository ProductStandardRepository { get; }
         IProductInspectionRepository ProductInspectionRepository { get; }
         IProductTestRepository ProductTestRepository { get; }
-        IMfgProductionOrdersPlanRepository MfgProductionOrdersPlanRepository { get; }
+        //IMfgProductionOrdersPlanRepository MfgProductionOrdersPlanRepository { get; }
+        IQCDetailRepository IQCDetailRepository { get; }
+
+        //Planning
+        IScheduealRepository ScheduealRepository { get; }
+
+
+        // MfgProductionOrder
+        IMfgProductionOrdersPlanRepository IMfgProductionOrdersPlanRepository { get; }
 
 
         // Thêm các repository khác nếu cần

@@ -15,6 +15,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductInspectionFea
         public string? Status { get; set; }           // Trạng thái (VD: Trộn hàng)
 
         public bool? Result { get; set; }           // Kết quả (VD: Giao hàng)
+        public string? Types { get; set; }  
+        public Guid? QCId { get; set; } = Guid.Empty;
+        public string? MachineId { get; set; }  
         public DateTime CreateDate { get; set; }  // Ngày tạo
         public string? CreatedBy { get; set; }        // Người kiểm (VD: Mai Thị Hằng)
     }

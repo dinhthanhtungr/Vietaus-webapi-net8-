@@ -78,6 +78,7 @@ namespace VietausWebAPI.Core.Domain.Entities
         public bool? Defect_ShortFiber { get; set; }
         public bool? Defect_Moist { get; set; }
         public bool? Defect_Dusty { get; set; }
+        public bool? Defect_WrongColor { get; set; }
 
         // V. KẾT LUẬN
         public bool? DeliveryAccepted { get; set; }
@@ -86,5 +87,9 @@ namespace VietausWebAPI.Core.Domain.Entities
 
         public DateTime CreateDate { get; set; } = DateTime.UtcNow;
         public string? CreatedBy { get; set; }
+        public string? Types { get; set; }
+
+
+        public QCDetail? QCDetail { get; set; }
     }
 }

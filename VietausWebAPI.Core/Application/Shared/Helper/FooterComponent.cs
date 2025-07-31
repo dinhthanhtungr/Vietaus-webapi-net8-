@@ -32,11 +32,12 @@ namespace VietausWebAPI.Core.Application.Shared.Helper
 
                 });
 
-                // Logo
+                // Logo 17ece7c7-9afc-478d-0acd-08ddbe89253f
                 col.Item().PaddingTop(10).Row(row =>
                 {
                     var imagePath = "wwwroot/images/Iso/bureau-veritas.png";
                     var imageQrPath = "wwwroot/images/Iso/QR.png";
+                    var imageGrsPath = "wwwroot/images/Iso/GRS.png";
 
                     row.RelativeItem().AlignCenter().AlignMiddle().Element(e => e.Row(innerRow =>
                     {
@@ -48,13 +49,23 @@ namespace VietausWebAPI.Core.Application.Shared.Helper
                             });
                         }
 
+                        if (System.IO.File.Exists(imageGrsPath))
+                        {
+                            innerRow.ConstantItem(80).PaddingRight(10).Element(img =>
+                            {
+                                img.AlignMiddle().Image(imageGrsPath).FitWidth();
+                            });
+                        }
+
                         if (System.IO.File.Exists(imageQrPath))
                         {
-                            innerRow.ConstantItem(30).Height(30).Element(img =>
+                            innerRow.ConstantItem(45).PaddingRight(10).Element(img =>
                             {
                                 img.AlignMiddle().Image(imageQrPath).FitWidth();
                             });
                         }
+                        
+
                     }));
                 });
 

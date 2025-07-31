@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductInspectionFeature;
@@ -17,5 +19,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts
         Task<string?> GetLatestExternalIdStartsWithAsync(string prefix);
         Task DeleteCOARepository(Guid id);
         //Task<ProductInspection> GeneralPdf(Guid id);
+        Task<int> CountAsync(Expression<Func<ProductInspection, bool>> predicate);
     }
 }

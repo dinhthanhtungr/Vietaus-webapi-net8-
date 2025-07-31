@@ -5,6 +5,7 @@ using VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductStandardFeature;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductInspectionFeature;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Labs.Services;
+using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1.Labs
 {
@@ -21,7 +22,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs
         }
 
         [HttpPost("Post")]
-        public async Task<IActionResult> PostProductInspection([FromBody] ProductInspectionInformation ProductInspection)
+        public async Task<IActionResult> PostProductInspection([FromBody] PostProductInspectionRequest ProductInspection)
         {
             if (ProductInspection == null)
             {

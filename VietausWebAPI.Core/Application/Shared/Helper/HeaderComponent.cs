@@ -15,7 +15,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper
                 column.Item().Row(row =>
                 {
                     // Logo (1 phần)
-                    row.RelativeItem(1).Height(50).AlignMiddle().AlignLeft().Element(e =>
+                    row.RelativeItem(1).Height(60).AlignMiddle().AlignLeft().Element(e =>
                     {
                         var imagePath = "wwwroot/images/Logos/VietAusLogo.png";
                         if (File.Exists(imagePath))
@@ -25,24 +25,51 @@ namespace VietausWebAPI.Core.Application.Shared.Helper
                     });
 
                     // Thông tin công ty (2 phần)
-                    row.RelativeItem(2).AlignRight().AlignMiddle().Element(e =>
+                    row.RelativeItem(1).AlignMiddle().Element(e =>
                     {
-                        e.Border(1).PaddingRight(5).PaddingBottom(5).PaddingLeft(5).Column(col =>
-                        {
-                            col.Item().Text("VIETAUS POLYMER CO., LTD.")
-                                .FontFamily("Open Sans").FontSize(9).Bold();
+                        e.Border(1)
+                         .PaddingLeft(5) // ← chỉ cần Padding trái
+                         .PaddingBottom(2)
+                         .PaddingTop(2) // thêm nếu muốn cân đối
+                         .Column(col =>
+                         {
+                             //col.Item().Text("VIETAUS POLYMER CO., LTD.")
+                             //    .FontFamily("Open Sans").FontSize(9).Bold();
 
-                            col.Item().Text("Address:  No.296, Trung Thang, Binh Thang ward,\nDĩ An City, Binh Duong Province, Vietnam.")
-                                .FontFamily("Open Sans").FontSize(7);
+                             // Factory 01
+                             col.Item().Row(row =>
+                             {
+                                 row.RelativeItem(1).Text("Factory 01:")
+                                     .FontFamily("Open Sans").FontSize(7);
+                                 row.RelativeItem(3).Text("No.296, Trung Thang, Dong Hoa ward,\nHo Chi Minh city, Vietnam.")
+                                     .FontFamily("Open Sans").FontSize(7);
+                             });
 
-                            col.Item().Text("Tel: (84). 28. 730 99 369     Fax: (84) 274 3 800 037")
-                                .FontFamily("Open Sans").FontSize(7);
+                             // Factory 02
+                             col.Item().Row(row =>
+                             {
+                                 row.RelativeItem(1).Text("Factory 02:")
+                                     .FontFamily("Open Sans").FontSize(7);
+                                 row.RelativeItem(3).Text("Industrial park slope 47, Long Khanh 2 quarter,\nTam Phuoc ward, Bien Hoa city, Dong Nai, Vietnam.")
+                                     .FontFamily("Open Sans").FontSize(7);
+                             });
 
-                            col.Item().Text("Website: https://vietaus.com")
-                                .FontFamily("Open Sans").FontSize(7)
-                                .FontColor(Colors.Blue.Medium);
-                        });
+                             // Tel & Fax
+                             col.Item().Row(row =>
+                             {
+                                 row.RelativeItem(1).Text("Tel:")
+                                     .FontFamily("Open Sans").FontSize(7);
+                                 row.RelativeItem(3).Text("(84). 28. 730 99 369        Fax: (84) 274 3 800 037")
+                                     .FontFamily("Open Sans").FontSize(7);
+                             });
+
+                             // Website
+                             col.Item().Text("Website: https://vietaus.com")
+                                 .FontFamily("Open Sans").FontSize(7)
+                                 .FontColor(Colors.Blue.Medium);
+                         });
                     });
+
 
 
                 });

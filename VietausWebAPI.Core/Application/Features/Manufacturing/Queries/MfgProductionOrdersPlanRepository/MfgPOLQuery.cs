@@ -5,11 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 
-namespace VietausWebAPI.Core.Application.Features.Labs.Queries.ProductInspectionFeature
+namespace VietausWebAPI.Core.Application.Features.Manufacturing.Queries.MfgProductionOrdersPlanRepository
 {
-    public class ProductInspectionQuery : PaginationQuery
+    public class MfgPOLQuery : PaginationQuery
     {
         public string? keyword { get; set; } = null;
-        public string? types { get; set; } = null;
     }
 }

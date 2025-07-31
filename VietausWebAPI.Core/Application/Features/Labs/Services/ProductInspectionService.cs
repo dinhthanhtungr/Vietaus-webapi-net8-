@@ -108,15 +108,16 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services
             return fullDocument.GeneratePdf();
         }
 
-        public Task<ProductInspection> GetProductInspectionByIdAsync(Guid id)
+        public async Task<ProductInspectionInformation> GetProductInspectionByIdAsync(Guid id)
         {
-            var productInspection = _unitOfWork.ProductInspectionRepository.GetProductInspectionByIdAsync(id);
+            var productInspection = await _unitOfWork.ProductInspectionRepository.GetProductInspectionByIdAsync(id);
+            var result = _mapper.Map<ProductInspectionInformation>(productInspection);
             // Ensure the method never returns null to match the interface contract
             if (productInspection == null)
             {
                 throw new InvalidOperationException($"ProductInspection with ID {id} not found.");
             }
-            return productInspection;
+            return result;
         }
 
         public async Task<PagedResult<ProductInspectionSummary>> GetProductInspectionPagedAsync(ProductInspectionQuery? query)
@@ -127,36 +128,49 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services
             return pagedResultMapped;
         }
 
-        public async Task<OperationResult> PostProductInspectionServiceAsync(ProductInspectionInformation productInspection)
+        public async Task<OperationResult> PostProductInspectionServiceAsync(PostProductInspectionRequest productInspection)
         {
             await _unitOfWork.BeginTransactionAsync();
             try
             {
                 // Sinh ExternalId nếu chưa có
-                if (string.IsNullOrWhiteSpace(productInspection.ExternalId))
+                if (string.IsNullOrWhiteSpace(productInspection.ProductInspection.ExternalId))
                 {
-                    productInspection.ExternalId = await ExternalIdGenerator.GenerateExternalId(
+                    productInspection.ProductInspection.ExternalId = await ExternalIdGenerator.GenerateExternalId(
                         "KSP",
                         prefix => _unitOfWork.ProductInspectionRepository.GetLatestExternalIdStartsWithAsync(prefix)
-                        );
+                    );
                 }
 
-                // Map DTO to Entity
-                var productInspectionEntity = _mapper.Map<ProductInspection>(productInspection);
-                // Add Product Inspection
+                // Gán Types nếu là QCOUTPUT -> dạng QCOUT_x
+                if (productInspection.ProductInspection.Types == "QCOUT_")
+                {
+                    var count = await _unitOfWork.ProductInspectionRepository
+                        .CountAsync(x => x.BatchId == productInspection.ProductInspection.BatchId
+                                      && x.Types.StartsWith("QCOUT_"));
+
+                    productInspection.ProductInspection.Types = $"QCOUT_{count + 1}";
+                }
+
+                // Map và lưu ProductInspection
+                //productInspection.QCDetail = null; // Xoá navigation nếu có
+                var productInspectionEntity = _mapper.Map<ProductInspection>(productInspection.ProductInspection);
                 await _unitOfWork.ProductInspectionRepository.PostProductInspectionAsync(productInspectionEntity);
-                // Save changes
+
+                // Nếu có QCDetail -> map và lưu
+                if (productInspection.QCDetail != null)
+                {
+                    var map = _mapper.Map<QCDetail>(productInspection.QCDetail);
+                    map.BatchId = productInspectionEntity.Id;
+                    await _unitOfWork.IQCDetailRepository.AddQCDetail(map);
+                }
+
                 var affected = await _unitOfWork.SaveChangesAsync();
-                // Commit transaction
                 await _unitOfWork.CommitTransactionAsync();
-                if (affected > 0)
-                {
-                    return OperationResult.Ok("Tạo thành công");
-                }
-                else
-                {
-                    return OperationResult.Fail("Thất bại.");
-                }
+
+                return affected > 0
+                    ? OperationResult.Ok("Tạo thành công")
+                    : OperationResult.Fail("Thất bại.");
             }
             catch (Exception ex)
             {

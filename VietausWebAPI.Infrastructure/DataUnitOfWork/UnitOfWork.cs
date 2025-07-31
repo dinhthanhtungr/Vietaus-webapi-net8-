@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.Approvals.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.InventoryReceipts.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.MaterialRequestDetail.RepositoriesContracts;
@@ -38,6 +40,15 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IProductInspectionRepository ProductInspectionRepository { get; }
         public IProductTestRepository ProductTestRepository { get; }
         public IMfgProductionOrdersPlanRepository MfgProductionOrdersPlanRepository { get; }
+        public IQCDetailRepository IQCDetailRepository { get; }
+
+
+        // Planning
+        public IScheduealRepository ScheduealRepository { get; }
+
+        //MfgProductOrder
+        public IMfgProductionOrdersPlanRepository IMfgProductionOrdersPlanRepository { get; }
+
         /// <summary>
         /// Khởi tạo UnitOfWork
         /// </summary>
@@ -63,7 +74,10 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             , IProductStandardRepository productStandardRepository
             , IProductInspectionRepository productInspectionRepository
             , IProductTestRepository productTestRepository
-            , IMfgProductionOrdersPlanRepository mfgProductionOrdersPlanRepository)
+            , IMfgProductionOrdersPlanRepository mfgProductionOrdersPlanRepository
+            , IQCDetailRepository iQCDetailRepository
+            , IScheduealRepository scheduealRepository
+            , IMfgProductionOrdersPlanRepository iMfgProductionOrdersPlanRepository)
         {
             _context = context;
             RequestMaterialRepository = requestMaterialRepository;
@@ -84,6 +98,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             ProductInspectionRepository = productInspectionRepository;
             ProductTestRepository = productTestRepository;
             MfgProductionOrdersPlanRepository = mfgProductionOrdersPlanRepository;
+            IQCDetailRepository = iQCDetailRepository;
+            ScheduealRepository = scheduealRepository;
+            IMfgProductionOrdersPlanRepository = iMfgProductionOrdersPlanRepository;
         }
         /// <summary>
         /// Bắt đầu một transaction

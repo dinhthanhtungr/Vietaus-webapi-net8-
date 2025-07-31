@@ -77,9 +77,12 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductInspectionFea
         public bool? Defect_ShortFiber { get; set; }
         public bool? Defect_Moist { get; set; }
         public bool? Defect_Dusty { get; set; }
+        public bool? Defect_WrongColor { get; set; }
 
         // V. KẾT LUẬN
+        public string? Types { get; set; } // Loại
         public bool? DeliveryAccepted { get; set; }
+        public string? machineId { get; set; }
 
         public string? Notes { get; set; }
 

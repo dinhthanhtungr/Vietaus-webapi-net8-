@@ -29,8 +29,10 @@ namespace VietausWebAPI.Core.Application.Usecases.Approvals.Services
 
             try
             {
+                var approvalRequest = _mapper.Map<ApprovalHistoryMaterialDatum>(approvalHistoryAndInventoryRequestDTO);
+                await _unitOfWork.ApprovalRepository.SaveApprovalHistoryHandler(approvalRequest);
                 // Cập nhật trạng thái đề xuất
-                await _unitOfWork.SupplyRequestsMaterialDatumRepository.UpdateRequestStatusAsyncRepository(approvalHistoryAndInventoryRequestDTO.RequestId, approvalHistoryAndInventoryRequestDTO.status);
+                await _unitOfWork.SupplyRequestsMaterialDatumRepository.UpdateRequestStatusAsyncRepository(approvalHistoryAndInventoryRequestDTO.requestId, approvalHistoryAndInventoryRequestDTO.requestStatus);
                 // Thêm mới phiếu nhập kho
                 var inventoryReceipts = _mapper.Map<List<InventoryReceiptsMaterialDatum>>(approvalHistoryAndInventoryRequestDTO.Items);
                 await _unitOfWork.InventoryReceiptRepository.AddInventoryReceiptsRepositoryAsync(inventoryReceipts);

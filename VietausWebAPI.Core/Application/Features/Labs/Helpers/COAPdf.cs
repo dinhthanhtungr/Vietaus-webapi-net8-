@@ -39,7 +39,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
 
                 
 
-                if (_result.bagType == "Bao Long Giang")
+                if (_result.bagType?.ToLower().Replace("_", " ").Contains("long giang") == true)
                 {
                     page.Header().Component(new LGHeaderComponent());
                 }
@@ -70,7 +70,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                     // I. THÔNG TIN SẢN PHẨM
 
 
-                    if (_result.bagType == "Bao Long Giang")
+                    if (_result.bagType?.ToLower().Replace("_", " ").Contains("long giang") == true)
                     {
                         column.Item().Row(row =>
                         {
@@ -282,9 +282,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                 });
 
                 // Footer
-                if (_result.bagType == "Bao Long Giang")
+                if (_result.bagType?.ToLower().Replace("_", " ").Contains("long giang") == true)
                 {
-                    page.Header().Component(new LGFooterComponent());
+                    page.Footer().Component(new LGFooterComponent());
                 }
 
                 else

@@ -7,8 +7,9 @@ using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts
 {
-    public interface IMfgProductionOrdersPlanRepository
+    public interface IQCDetailRepository
     {
-        Task<MfgProductionOrdersPlan> GetMfgProductionOrdersPlanByIdAsync(Guid id);
+        Task AddQCDetail(QCDetail qCDetail);
+        //Task DeleteQcOutput(QCDetail qCDetail);
     }
 }

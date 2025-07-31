@@ -12,10 +12,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts
 {
     public interface IProductInspectionService
     {
-        Task<OperationResult> PostProductInspectionServiceAsync(ProductInspectionInformation productInspection);
+        Task<OperationResult> PostProductInspectionServiceAsync(PostProductInspectionRequest productInspection);
         Task<PagedResult<ProductInspectionSummary>> GetProductInspectionPagedAsync(ProductInspectionQuery? query);
 
-        Task<ProductInspection> GetProductInspectionByIdAsync(Guid id);
+        Task<ProductInspectionInformation> GetProductInspectionByIdAsync(Guid id);
         Task DeleteCOAService(Guid id);
         Task<byte[]> GeneralPdfService(Guid id);
     }

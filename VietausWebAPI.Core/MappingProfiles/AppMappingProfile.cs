@@ -56,6 +56,7 @@ namespace VietausWebAPI.Core.MappingProfiles
             CreateMap<ProgressTimeLineDTO, SupplyRequestsMaterialDatum>().ReverseMap()
                 .ForMember(d => d.fullName, opt => opt.MapFrom(src => src.Employee.FullName))
                 .ForMember(d => d.partName, opt => opt.MapFrom(src => src.Employee.Part.PartName))
+                .ForMember(d => d.Note, opt => opt.MapFrom(src => src.Note))
                 .ReverseMap();
 
             CreateMap<ApprovalRequestDTO, ApprovalHistoryMaterialDatum>().ReverseMap();

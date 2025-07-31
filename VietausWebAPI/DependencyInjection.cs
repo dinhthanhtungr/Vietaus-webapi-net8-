@@ -1,6 +1,10 @@
 ﻿using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Labs.Services;
+using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Planning.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Planning.Services;
 using VietausWebAPI.Core.Application.Usecases.Approvals.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.Approvals.ServiceContracts;
 using VietausWebAPI.Core.Application.Usecases.Approvals.Services;
@@ -28,6 +32,7 @@ using VietausWebAPI.Infrastructure.Repositories.Approval;
 using VietausWebAPI.Infrastructure.Repositories.InventoryReceipts;
 using VietausWebAPI.Infrastructure.Repositories.Labs;
 using VietausWebAPI.Infrastructure.Repositories.MaterialRequestDetail;
+using VietausWebAPI.Infrastructure.Repositories.Planning.Schedueal;
 using VietausWebAPI.Infrastructure.Repositories.PurchaseOrders;
 using VietausWebAPI.Infrastructure.Repositories.Supplier;
 using VietausWebAPI.Infrastructure.Repositories.SupplyRequest;
@@ -107,7 +112,15 @@ namespace VietausWebAPI.WebAPI
             services.AddScoped<IProductTestService, ProductTestService>();
             //MfgProductionOrdersPlanRepository
             services.AddScoped<IMfgProductionOrdersPlanRepository, MfgProductionOrdersPlanRepository>();
+            
+            //QC 
+            services.AddScoped<IQCDetailRepository, QCDetailRepository>();
+            services.AddScoped<IQCOutputService, QCOutputService>();
 
+            //Planning
+            //Schedual
+            services.AddScoped<IScheduealService, ScheduealService>();
+            services.AddScoped<IScheduealRepository, ScheduealRepository>();
 
             return services;
         }
