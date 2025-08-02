@@ -1,10 +1,12 @@
-﻿using System;
+﻿using AutoMapper;
+using PuppeteerSharp;
+using PuppeteerSharp.Media;
+using QuestPDF.Fluent;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using AutoMapper;
-using QuestPDF.Fluent;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductInspectionFeature;
 using VietausWebAPI.Core.Application.Features.Labs.Helpers;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductInspectionFeature;
@@ -21,7 +23,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public ProductInspectionService(IUnitOfWork unitOfWork, IMapper mapper)
+        public ProductInspectionService(IUnitOfWork unitOfWork, IMapper mapper )
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -107,6 +109,46 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services
 
             return fullDocument.GeneratePdf();
         }
+        public async Task<byte[]> GeneralQCPdfService(StatisticalReportQuery query)
+        {
+            var datum = await _unitOfWork.ProductInspectionRepository.GetProductInspectionListAsync(query);
+
+            var htmlContent = GenerateQCHtmlFromData.Generate(datum);
+
+            var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+            {
+                Headless = true,
+                ExecutablePath = @"C:\Program Files\Google\Chrome\Application\chrome.exe"
+            });
+
+            using var page = await browser.NewPageAsync();
+            await page.SetContentAsync(htmlContent, new NavigationOptions { WaitUntil = new[] { WaitUntilNavigation.Load } });
+
+            var pdfBytes = await page.PdfDataAsync(new PdfOptions
+            {
+                Format = PaperFormat.A4,
+                PrintBackground = true,
+                MarginOptions = new MarginOptions { Top = "10mm", Bottom = "10mm", Left = "10mm", Right = "10mm" }
+            });
+
+            await browser.CloseAsync();
+
+            return pdfBytes;
+        }
+
+
+
+
+        /// <summary>
+        /// Taoj pdf tổng thể cho QC (Quality Control) dựa trên thông tin kiểm tra sản phẩm.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        //public async Task<byte[]> GeneralQCPdfService(StatisticalReportQuery query)
+        //{
+
+        //}
 
         public async Task<ProductInspectionInformation> GetProductInspectionByIdAsync(Guid id)
         {

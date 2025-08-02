@@ -1,0 +1,851 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <title>Phiếu kết quả kiểm tra chất lượng thành phẩm</title>
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            font-size: 11px;
+            margin: 20px;
+            color: #000;
+        }
+
+        .container {
+            width: 100%;
+            margin: auto;
+        }
+
+        .subtitle {
+            font-style: italic;
+            font-size: 12px;
+            margin-top: -5px;
+            margin-bottom: 15px;
+            text-align: center; /* 👉 Canh giữa dòng chữ */
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Khoảng cách giữa logo và chữ */
+            margin-bottom: 5px;
+        }
+
+            header img {
+                width: 60px;
+                height: auto;
+                margin-right: 10px;
+            }
+
+            header h1 {
+                font-weight: bold;
+                font-size: 18px;
+                flex: 1;
+                text-align: center;
+                margin: 0;
+                letter-spacing: 0.5px;
+            }
+
+            header .subtitle {
+                font-style: italic;
+                font-size: 12px;
+                text-align: center;
+                margin-top: -5px;
+                margin-bottom: 3px;
+            }
+
+        table {
+            border-collapse: collapse;
+            table-layout: auto;
+            width: 100%;
+            word-wrap: break-word;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        th, td {
+            padding: 5px 6px;
+            vertical-align: middle;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        /* Left side vertical header */
+        .vertical-header {
+            writing-mode: vertical-rl; /* Xoay chữ dọc từ dưới lên */
+            transform: rotate(180deg); /* Đảo ngược lại thành trên xuống */
+            white-space: nowrap; /* Không cho xuống hàng */
+            text-align: center;
+            vertical-align: middle;
+            font-weight: bold;
+            font-size: 11px;
+            padding: 5px 2px;
+            line-height: 1;
+        }
+
+        /* Bold-left aligned text in some left cells */
+        .left-bold {
+            text-align: left;
+            font-weight: bold;
+            padding-left: 6px;
+            vertical-align: middle;
+        }
+
+        /* Italic style */
+        .italic {
+            font-style: italic;
+            font-size: 11px;
+            text-align: left;
+            padding-left: 6px;
+        }
+
+        /* Narrow column for checkboxes container */
+        .checkbox-cell {
+            width: 30px;
+            white-space: nowrap;
+            text-align: center;
+            padding: 0;
+        }
+
+        /* Small checkbox with label spacing */
+        label {
+            user-select: none;
+            margin-right: 6px;
+            font-weight: normal;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            transform: scale(0.9);
+            margin-right: 3px;
+            vertical-align: middle;
+            cursor: pointer;
+        }
+
+        /* Inputs full cell for date and codes */
+        .full-input-cell {
+            padding-left: 5px;
+            text-align: left;
+            font-weight: normal;
+        }
+
+        /* Fixed small widths to align columns */
+        .fixed-40 {
+            width: 40px;
+        }
+
+        .fixed-50 {
+            width: 50px;
+        }
+
+        .fixed-60 {
+            width: 60px;
+        }
+
+        /* Last row KẾT QUẢ multi-column no border on right of last */
+        .result-section {
+            font-weight: bold;
+            text-align: left;
+            padding-left: 6px;
+            width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+
+            <img src="https://vietaus.com/wp-content/uploads/2023/09/cropped-Logo-Vietaus-Polymer.png" alt="Logo" />
+            <h1>PHIẾU KẾT QUẢ KIỂM TRA CHẤT LƯỢNG THÀNH PHẨM</h1>
+        </header>
+        <div class="subtitle">
+            Trong đó: - Y: Đạt &nbsp;&nbsp;&nbsp;&nbsp; - N: Không đạt
+        </div>
+
+        <table>
+            <tbody>
+                <tr>
+                    <td colspan="4" class="left-bold" style="width: 70px;">Ngày:</td>
+                    <td colspan="7" class="full-input-cell">{{ManufacturingDate}}</td>
+                </tr>
+                <tr>
+                    <td colspan="4" class="left-bold">Mã hàng:</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{ExternalId1}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{ExternalId2}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{ExternalId3}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{ExternalId4}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{ExternalId5}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{ExternalId6}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{ExternalId7}}</td>
+                </tr>
+                <tr>
+                    <td colspan="4" class="left-bold">Lot no:</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="4" class="left-bold">Thành phẩm đạt (Kg)</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{Weight1}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{Weight2}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{Weight3}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{Weight4}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{Weight5}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{Weight6}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{Weight7}}</td>
+                </tr>
+                <tr>
+                    <td colspan="4" class="left-bold">Thành phẩm không đạt (Kg)</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{RejectedWeight1}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{RejectedWeight2}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{RejectedWeight3}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{RejectedWeight4}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{RejectedWeight5}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{RejectedWeight6}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{RejectedWeight7}}</td>
+                </tr>
+
+                <!-- Phần kiểm tra lại -->
+                <tr>
+                    <!-- Cột trái: rowspan = tổng số dòng kiểm tra tiếp theo -->
+                    <td rowspan="2" class="vertical-header" style="width:30px;">Kiểm tra lại</td>
+                    <td colspan="3" class="left-bold">
+                        Loại lưới <span style="font-weight: normal; font-style: italic;">(Nếu có)</span>
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{MeshType1}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{MeshType2}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{MeshType3}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{MeshType4}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{MeshType5}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{MeshType6}}</td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">{{MeshType7}}</td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="left-bold">Gắn lưới</td>
+                    <td class="checkbox-cell">{{MeshAttached1}}</td>
+                    <td class="checkbox-cell">{{MeshAttached2}}</td>
+                    <td class="checkbox-cell">{{MeshAttached3}}</td>
+                    <td class="checkbox-cell">{{MeshAttached4}}</td>
+                    <td class="checkbox-cell">{{MeshAttached5}}</td>
+                    <td class="checkbox-cell">{{MeshAttached6}}</td>
+                    <td class="checkbox-cell">{{MeshAttached7}}</td>
+                    </td>
+                </tr>
+                <!-- Remaining rows with similar pattern -->
+                <!-- Kiểm tra ngoại quan và màu sắc -->
+                <tr>
+                    <!-- Cột trái: rowspan = tổng số dòng kiểm tra tiếp theo -->
+                    <td rowspan="10" class="vertical-header" style="width:30px; Height: 10">Kiểm tra ngoại quan và màu sắc</td>
+                </tr>
+
+                <tr>
+                    <td colspan="3" class="left-bold">Không bể bụi</td>
+                    <td class="checkbox-cell">{{Defect_Dusty1}}</td>
+                    <td class="checkbox-cell">{{Defect_Dusty2}}</td>
+                    <td class="checkbox-cell">{{Defect_Dusty3}}</td>
+                    <td class="checkbox-cell">{{Defect_Dusty4}}</td>
+                    <td class="checkbox-cell">{{Defect_Dusty5}}</td>
+                    <td class="checkbox-cell">{{Defect_Dusty6}}</td>
+                    <td class="checkbox-cell">{{Defect_Dusty7}}</td>
+                </tr>
+
+                <tr>
+                    <td colspan="3" class="left-bold">Không tạp chất</td>
+                    <td class="checkbox-cell">{{Defect_Impurity1}}</td>
+                    <td class="checkbox-cell">{{Defect_Impurity2}}</td>
+                    <td class="checkbox-cell">{{Defect_Impurity3}}</td>
+                    <td class="checkbox-cell">{{Defect_Impurity4}}</td>
+                    <td class="checkbox-cell">{{Defect_Impurity5}}</td>
+                    <td class="checkbox-cell">{{Defect_Impurity6}}</td>
+                    <td class="checkbox-cell">{{Defect_Impurity7}}</td>
+                </tr>
+
+                <tr>
+                    <td colspan="3" class="left-bold">Không ngắn dài</td>
+                    <td class="checkbox-cell">{{NoShortLong1}}</td>
+                    <td class="checkbox-cell">{{NoShortLong2}}</td>
+                    <td class="checkbox-cell">{{NoShortLong3}}</td>
+                    <td class="checkbox-cell">{{NoShortLong4}}</td>
+                    <td class="checkbox-cell">{{NoShortLong5}}</td>
+                    <td class="checkbox-cell">{{NoShortLong6}}</td>
+                    <td class="checkbox-cell">{{NoShortLong7}}</td>
+                </tr>
+
+                <tr>
+                    <td colspan="3" class="left-bold">Không chấm đen</td>
+                    <td class="checkbox-cell">{{NoBlackDot1}}</td>
+                    <td class="checkbox-cell">{{NoBlackDot2}}</td>
+                    <td class="checkbox-cell">{{NoBlackDot3}}</td>
+                    <td class="checkbox-cell">{{NoBlackDot4}}</td>
+                    <td class="checkbox-cell">{{NoBlackDot5}}</td>
+                    <td class="checkbox-cell">{{NoBlackDot6}}</td>
+                    <td class="checkbox-cell">{{NoBlackDot7}}</td>
+                </tr>
+
+
+                <tr>
+                    <td colspan="3" class="left-bold">Ngoại quan màu</td>
+                    <td class="checkbox-cell">{{ColorAppearance1}}</td>
+                    <td class="checkbox-cell">{{ColorAppearance2}}</td>
+                    <td class="checkbox-cell">{{ColorAppearance3}}</td>
+                    <td class="checkbox-cell">{{ColorAppearance4}}</td>
+                    <td class="checkbox-cell">{{ColorAppearance5}}</td>
+                    <td class="checkbox-cell">{{ColorAppearance6}}</td>
+                    <td class="checkbox-cell">{{ColorAppearance7}}</td>
+                </tr>
+
+                <!-- New vertical header for 'Kiểm tra ngoại quan & màu sắc' rowspan -->
+                <!-- We skip recreating vertical headers to keep space but you can add them similarly -->
+                <!-- Kiểm tra màu sắc row with instructions in bold italic -->
+                <tr>
+                    <td colspan="10" class="left-bold" style="text-align:left;">
+                        Kiểm tra màu sắc (Chọn 1 trong 2 cách dưới, tùy theo yêu cầu KH)
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="3" class="left-bold" style="width: 90px;">Bằng mắt</td>
+                    <td class="checkbox-cell"><label><input type="checkbox" />Y</label><label><input type="checkbox" />N</label></td>
+                    <td class="checkbox-cell"><label><input type="checkbox" />Y</label><label><input type="checkbox" />N</label></td>
+                    <td class="checkbox-cell"><label><input type="checkbox" />Y</label><label><input type="checkbox" />N</label></td>
+                    <td class="checkbox-cell"><label><input type="checkbox" />Y</label><label><input type="checkbox" />N</label></td>
+                    <td class="checkbox-cell"><label><input type="checkbox" />Y</label><label><input type="checkbox" />N</label></td>
+                    <td class="checkbox-cell"><label><input type="checkbox" />Y</label><label><input type="checkbox" />N</label></td>
+                    <td class="checkbox-cell"><label><input type="checkbox" />Y</label><label><input type="checkbox" />N</label></td>
+                </tr>
+
+                <!-- Dòng checkbox Y/N -->
+                <tr>
+                    <td colspan="3" class="left-bold" rowspan="2">Bằng mắt deltaE</td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                </tr>
+
+                <!-- Dòng ghi số -->
+                <tr>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                </tr>
+
+                <!-- Kiểm tra các tiêu chí khác -->
+                <tr>
+                    <!-- Cột trái: rowspan = tổng số dòng kiểm tra tiếp theo -->
+                    <td rowspan="16" class="vertical-header" style="width:30px; Height: 10">Kiểm tra các tiêu chí khác (nếu KH yêu cầu)</td>
+                </tr>
+
+                <!-- More rows with same checkbox pattern -->
+                <tr>
+                    <td colspan="3" class="left-bold" rowspan="2">Chỉ số chảy</td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                </tr>
+
+                <!-- Dòng ghi số -->
+                <tr>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="3" class="left-bold" rowspan="2">Độ ẩm</td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                </tr>
+
+                <!-- Dòng ghi số -->
+                <tr>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="3" class="left-bold" rowspan="2">Độ va đập</td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                </tr>
+
+                <!-- Dòng ghi số -->
+                <tr>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="3" class="left-bold" rowspan="2">Độ cứng</td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                </tr>
+
+                <!-- Dòng ghi số -->
+                <tr>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="3" class="left-bold" rowspan="2">Độ kéo uốn</td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                </tr>
+
+                <!-- Dòng ghi số -->
+                <tr>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="3" class="left-bold" rowspan="2">Tỷ trọng</td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                </tr>
+
+                <!-- Dòng ghi số -->
+                <tr>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="3" class="left-bold" rowspan="2">Tĩnh điện</td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                    <td class="checkbox-cell">
+                        <label><input type="checkbox" />Y</label>
+                        <label><input type="checkbox" />N</label>
+                    </td>
+                </tr>
+
+                <!-- Dòng ghi số -->
+                <tr>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                    <td colspan="1" class="left-bold" style="text-align:left;">
+                        <input type="text" style="width: 100%; border: none;" />
+                    </td>
+                </tr>
+
+                <tr>
+                </tr>
+
+<td colspan="4" class="left-bold">Trộn hàng</td>
+            <td class="checkbox-cell"><label><input type="checkbox" />Y</label><label><input type="checkbox" />N</label></td>
+            <td class="checkbox-cell"><label><input type="checkbox" />Y</label><label><input type="checkbox" />N</label></td>
+            <td class="checkbox-cell"><label><input type="checkbox" />Y</label><label><input type="checkbox" />N</label></td>
+            <td class="checkbox-cell"><label><input type="checkbox" />Y</label><label><input type="checkbox" />N</label></td>
+            <td class="checkbox-cell"><label><input type="checkbox" />Y</label><label><input type="checkbox" />N</label></td>
+            <td class="checkbox-cell"><label><input type="checkbox" />Y</label><label><input type="checkbox" />N</label></td>
+            <td class="checkbox-cell"><label><input type="checkbox" />Y</label><label><input type="checkbox" />N</label></td>
+
+            <!-- Final KẾT QUẢ section, presumably with Giao hàng and Không giao hàng etc -->
+
+            <tr>
+                <td colspan="4" rowspan"2" class="result-section">KẾT QUẢ</td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                    <label><input type="checkbox" />Giao hàng</label>
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                    <label><input type="checkbox" />Giao hàng</label>
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                    <label><input type="checkbox" />Giao hàng</label>
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                    <label><input type="checkbox" />Giao hàng</label>
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                    <label><input type="checkbox" />Giao hàng</label>
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                    <label><input type="checkbox" />Giao hàng</label>
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                    <label><input type="checkbox" />Giao hàng</label>
+                </td>
+            </tr>
+
+            <tr>
+                <td colspan="4" rowspan"2" class="result-section">Nhân viên QC</td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                </td>
+            </tr>
+
+            <tr>
+                <td colspan="4" rowspan"2" class="result-section">Ghi chú</td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                </td>
+                <td colspan="1" class="left-bold" style="text-align:left;">
+                </td>
+            </tr>
+
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

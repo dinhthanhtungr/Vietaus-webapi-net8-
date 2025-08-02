@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductInspectionFeature;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductStandardFeature;
+using VietausWebAPI.Core.Application.Features.Labs.Helpers;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductInspectionFeature;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Labs.Services;
@@ -101,6 +102,13 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs
             {
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
+        }
+
+        [HttpGet("export-pdf")]
+        public async Task<IActionResult> ExportPDF([FromQuery] StatisticalReportQuery query)
+        {
+            var pdfBytes = await _productInspectionService.GeneralQCPdfService(query);
+            return File(pdfBytes, "application/pdf", "phieu-kiem-tra-chat-luong.pdf");
         }
     }
 }

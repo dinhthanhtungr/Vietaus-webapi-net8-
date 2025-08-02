@@ -16,6 +16,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts
         Task PostProductInspectionAsync(ProductInspection productInspection);
         Task<PagedResult<ProductInspection>> GetProductInspectionPagedAsync(ProductInspectionQuery? query);  
         Task<ProductInspection> GetProductInspectionByIdAsync(Guid id);
+        Task<List<ProductInspection>> GetProductInspectionListAsync(StatisticalReportQuery query);
         Task<string?> GetLatestExternalIdStartsWithAsync(string prefix);
         Task DeleteCOARepository(Guid id);
         //Task<ProductInspection> GeneralPdf(Guid id);

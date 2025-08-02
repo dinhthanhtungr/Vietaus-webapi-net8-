@@ -104,5 +104,32 @@ namespace VietausWebAPI.Infrastructure.Repositories.Labs
         {
             return await _context.ProductInspections.CountAsync(predicate);
         }
+
+        public Task<List<ProductInspection>> GetProductInspectionListAsync(StatisticalReportQuery query)
+        {
+            var queryable = _context.ProductInspections
+                .AsNoTracking()
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query.productCode))
+            {
+                queryable = queryable.Where(x => x.ProductCode != null && EF.Functions.Collate(x.ProductCode, "Latin1_General_CI_AI").ToLower().Contains(query.productCode.ToLower()));
+            }
+            if (query.fromDate.HasValue)
+            {
+                queryable = queryable.Where(x => x.CreateDate >= query.fromDate.Value);
+            }
+            if (query.toDate.HasValue)
+            {
+                queryable = queryable.Where(x => x.CreateDate <= query.toDate.Value);
+            }
+            if (!string.IsNullOrWhiteSpace(query.types))
+            {
+                queryable = queryable.Where(x => x.Types.Contains(query.types));
+            }
+
+            queryable = queryable.OrderByDescending(x => x.CreateDate);
+            return queryable.ToListAsync();
+        }
     }
 }

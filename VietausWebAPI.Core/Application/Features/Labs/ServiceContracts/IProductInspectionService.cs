@@ -18,5 +18,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts
         Task<ProductInspectionInformation> GetProductInspectionByIdAsync(Guid id);
         Task DeleteCOAService(Guid id);
         Task<byte[]> GeneralPdfService(Guid id);
+        Task<byte[]> GeneralQCPdfService(StatisticalReportQuery query);
     }
 }

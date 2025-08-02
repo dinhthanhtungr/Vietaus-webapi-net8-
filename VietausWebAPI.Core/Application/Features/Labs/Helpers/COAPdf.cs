@@ -221,58 +221,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                             if (showNo)
                                 lastTestItem = r.TestItem;
                         }
-
-
-
-
-                        //var groupedRows = rows.GroupBy(r => r.TestItem).ToList();
-                        //int index = 1;
-
-                        //foreach (var group in groupedRows)
-                        //{
-                        //    var groupRows = group.ToList();
-
-                        //    for (int i = 0; i < groupRows.Count; i++)
-                        //    {
-                        //        var row = groupRows[i];
-                        //        bool isFirst = i == 0;
-
-                        //        // No
-                        //        if (isFirst)
-                        //            borderStyle(table.Cell()).AlignCenter().Element(c => c.Text(index++.ToString()));
-                        //        else
-                        //            table.Cell().Border(0).AlignCenter().Text("");
-
-                        //        // Test Item
-                        //        if (isFirst)
-                        //            borderStyle(table.Cell()).AlignCenter().Element(c => c.Text(row.TestItem ?? ""));
-                        //        else
-                        //            table.Cell().Border(0).AlignCenter().Text("");
-
-                        //        // Spec
-                        //        var specCell = table.Cell();
-                        //        var methodCell = table.Cell();
-                        //        var unitCell = table.Cell();
-                        //        var resultCell = table.Cell();
-
-                        //        if (isFirst)
-                        //        {
-                        //            borderStyle(specCell).AlignCenter().Element(c => c.Text(row.Specification));
-                        //            borderStyle(methodCell).AlignCenter().Element(c => c.Text(row.Method));
-                        //            borderStyle(unitCell).AlignCenter().Element(c => c.Text(row.Unit));
-                        //            borderStyle(resultCell).AlignCenter().Element(c => c.Text(row.Result ?? "-"));
-                        //        }
-                        //        else
-                        //        {
-                        //            // KHÔNG dùng lại Border(1), mà tự set từng cạnh
-                        //            specCell.BorderLeft(1).BorderRight(1).BorderTop(0).AlignCenter().Element(c => c.Text(row.Specification));
-                        //            methodCell.BorderLeft(1).BorderRight(1).BorderTop(0).AlignCenter().Element(c => c.Text(row.Method));
-                        //            unitCell.BorderLeft(1).BorderRight(1).BorderTop(0).AlignCenter().Element(c => c.Text(row.Unit));
-                        //            resultCell.BorderLeft(1).BorderRight(1).BorderTop(0).AlignCenter().Element(c => c.Text(row.Result ?? "-"));
-                        //        }
-                        //    }
-                        //}
-
                     });
 
                     // Dòng xác nhận

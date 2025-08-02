@@ -1,8 +1,4 @@
 ﻿//using Asp.Versioning;
-using VietausWebAPI.WebAPI.DatabaseContext;
-using VietausWebAPI.Core.Identity;
-using VietausWebAPI.Core.Service;
-using VietausWebAPI.Core.ServiceContracts;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -10,13 +6,19 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using PuppeteerSharp;
+using QuestPDF.Drawing;
+using QuestPDF.Infrastructure;
 using System.Text;
+using VietausWebAPI.Core.Application.Features.Labs.Helpers;
+using VietausWebAPI.Core.Identity;
 using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Service;
+using VietausWebAPI.Core.ServiceContracts;
 using VietausWebAPI.Infrastructure.Repositories;
 using VietausWebAPI.WebAPI;
+using VietausWebAPI.WebAPI.DatabaseContext;
 using VietausWebAPI.WebAPI.Hubs;
-using QuestPDF.Infrastructure;
-using QuestPDF.Drawing;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseWebRoot("wwwroot");
@@ -115,6 +117,13 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+
+
+//
+
+
+
+
 
 //JWT
 builder.Services.AddAuthentication(options =>

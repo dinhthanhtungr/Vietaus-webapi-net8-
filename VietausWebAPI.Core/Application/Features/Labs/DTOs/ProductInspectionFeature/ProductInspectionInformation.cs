@@ -67,6 +67,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductInspectionFea
         public string? StorageCondition { get; set; }
         public bool? IsStorageConditionPass { get; set; }
 
+        public string? MeshType { get; set; }
+        public bool? IsMeshAttached { get; set; }
+
         public bool? DwellTime { get; set; }
 
         // IV. NGOẠI QUAN ĐẶC BIỆT
