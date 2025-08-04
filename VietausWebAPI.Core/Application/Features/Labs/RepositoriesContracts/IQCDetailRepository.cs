@@ -9,7 +9,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts
 {
     public interface IQCDetailRepository
     {
-        Task AddQCDetail(QCDetail qCDetail);
+        Task AddQCDetail(Qcdetail qCDetail);
         //Task DeleteQcOutput(QCDetail qCDetail);
     }
 }

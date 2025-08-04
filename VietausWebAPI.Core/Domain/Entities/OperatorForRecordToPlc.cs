@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 namespace VietausWebAPI.Core.Domain.Entities;
 
-
 public partial class OperatorForRecordToPlc
 {
     public int? D0 { get; set; }

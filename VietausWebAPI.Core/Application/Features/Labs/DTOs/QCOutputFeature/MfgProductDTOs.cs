@@ -11,12 +11,12 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.QCOutputFeature
         public Guid Id { get; set; }
 
         public string? ExternalId { get; set; }
-        public string? product_name { get; set; }
-        public string? Product_ExternalId { get; set; }
-        public string? Product_CustomerExternalId { get; set; }
+        public string? ProductName { get; set; }
+        public string? ProductExternalId { get; set; }
+        public string? ProductCustomerExternalId { get; set; }
         public string? requirement { get; set; }
-        public string? Product_Package { get; set; }
-        public int? Product_Weight { get; set; }
-        public Guid Product_Id { get; set; }
+        public string? ProductPackage { get; set; }
+        public int? ProductWeight { get; set; }
+        public Guid ProductId { get; set; }
     }
 }

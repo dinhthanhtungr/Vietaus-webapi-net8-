@@ -83,14 +83,14 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services
                 }
 
                 // Lấy thông tin bao bì từ ProductTestRepository
-                var bagtype = await _unitOfWork.ProductTestRepository.GetPagedByIdAsync(inspection.BatchId);
+                var bagtype = await _unitOfWork.IMfgProductionOrdersPlanRepository.GetPagedByIdAsync(inspection.BatchId);
 
                 if (bagtype == null)
                 {
                     throw new InvalidOperationException($"No ProductTest found for BatchId {inspection.BatchId}.");
                 }
 
-                inspectionMapped.bagType = bagtype.Product_Package;
+                inspectionMapped.bagType = bagtype.ProductPackage;
 
                 var document = new COAPdf(inspectionMapped);
                 return document.GeneratePdf();
@@ -165,9 +165,18 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services
         public async Task<PagedResult<ProductInspectionSummary>> GetProductInspectionPagedAsync(ProductInspectionQuery? query)
         {
             var pagedResult = await _unitOfWork.ProductInspectionRepository.GetProductInspectionPagedAsync(query);
-            var pagedResultMapped = _mapper.Map<PagedResult<ProductInspectionSummary>>(pagedResult);
+            try
+            {
+                var pagedResultMapped = _mapper.Map<PagedResult<ProductInspectionSummary>>(pagedResult);
+                return pagedResultMapped;
+            }
 
-            return pagedResultMapped;
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error mapping paged result: {ex.Message}");
+            }
+
+            
         }
 
         public async Task<OperationResult> PostProductInspectionServiceAsync(PostProductInspectionRequest productInspection)
@@ -202,7 +211,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services
                 // Nếu có QCDetail -> map và lưu
                 if (productInspection.QCDetail != null)
                 {
-                    var map = _mapper.Map<QCDetail>(productInspection.QCDetail);
+                    var map = _mapper.Map<Qcdetail>(productInspection.QCDetail);
                     map.BatchId = productInspectionEntity.Id;
                     await _unitOfWork.IQCDetailRepository.AddQCDetail(map);
                 }

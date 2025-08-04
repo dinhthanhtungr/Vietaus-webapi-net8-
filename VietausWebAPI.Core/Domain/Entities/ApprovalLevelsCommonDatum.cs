@@ -10,4 +10,6 @@ public partial class ApprovalLevelsCommonDatum
     public string LevelName { get; set; } = null!;
 
     public string? Description { get; set; }
+
+    public virtual ICollection<EmployeesCommonDatum> EmployeesCommonData { get; set; } = new List<EmployeesCommonDatum>();
 }

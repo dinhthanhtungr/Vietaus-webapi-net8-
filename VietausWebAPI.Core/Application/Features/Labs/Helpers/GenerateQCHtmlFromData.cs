@@ -17,7 +17,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
             var first = data.FirstOrDefault();
             if (first == null) return template;
 
-            template = template.Replace("{{ManufacturingDate}}", first.CreateDate.ToString("dd/MM/yyyy") ?? "");
+            template = template.Replace("{{ManufacturingDate}}", first.CreateDate.HasValue
+                                            ? first.CreateDate.Value.ToString("dd/MM/yyyy")
+                                            : ""
+                                        );
             for (int i = 0; i < 7; i++)
             {
                 var ExternalId = data.Count > i ? data[i].BatchId ?? "" : "";
@@ -44,8 +47,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                 template = template.Replace($"{{{{MeshAttached{i + 1}}}}}", isMesh);
 
                 // Nếu bạn có field tên là IsCrackFree
-                var Defect_Dusty = data.Count > i && data[i].Defect_Dusty.HasValue
-                    ? data[i].Defect_Dusty.Value
+                var Defect_Dusty = data.Count > i && data[i].DefectDusty.HasValue
+                    ? data[i].DefectDusty.Value
                         ? @"<label><input type='checkbox' checked />Y</label><label><input type='checkbox' />N</label>"
                         : @"<label><input type='checkbox' />Y</label><label><input type='checkbox' checked />N</label>"
                     : @"<label><input type='checkbox' />Y</label><label><input type='checkbox' />N</label>";
@@ -53,7 +56,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                 template = template.Replace($"{{{{Defect_Dusty{i + 1}}}}}", Defect_Dusty);
 
 
-                var isImpurityFree = data.Count > i ? data[i].Defect_Impurity : null;
+                var isImpurityFree = data.Count > i ? data[i].DefectImpurity : null;
                 var Defect_Impurity = isImpurityFree.HasValue
                     ? (isImpurityFree.Value
                         ? @"<label><input type='checkbox' checked />Y</label><label><input type='checkbox' />N</label>"
@@ -63,7 +66,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                 template = template.Replace($"{{{{Defect_Impurity{i + 1}}}}}", Defect_Impurity);
 
 
-                var isPass = data.Count > i ? data[i].Defect_ShortFiber : null;
+                var isPass = data.Count > i ? data[i].DefectShortFiber : null;
                 var Defect_ShortFiber = isPass.HasValue
                     ? (isPass.Value
                         ? @"<label><input type='checkbox' checked />Y</label><label><input type='checkbox' />N</label>"
@@ -73,7 +76,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                 template = template.Replace($"{{{{NoShortLong{i + 1}}}}}", Defect_ShortFiber);
 
 
-                var isPassDefect_BlackDot = data.Count > i ? data[i].Defect_BlackDot : null;
+                var isPassDefect_BlackDot = data.Count > i ? data[i].DefectBlackDot : null;
                 var Defect_BlackDot = isPassDefect_BlackDot.HasValue
                     ? (isPassDefect_BlackDot.Value
                         ? @"<label><input type='checkbox' checked />Y</label><label><input type='checkbox' />N</label>"
@@ -83,7 +86,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                 template = template.Replace($"{{{{NoBlackDot{i + 1}}}}}", Defect_BlackDot);
 
 
-                var value = data.Count > i ? data[i].Defect_WrongColor : null;
+                var value = data.Count > i ? data[i].DefectWrongColor : null;
 
                 var html = value.HasValue
                     ? (value.Value

@@ -23,6 +23,8 @@ public partial class InventoryReceiptsMaterialDatum
 
     public decimal? TotalPrice { get; set; }
 
+    public int ExportedQty { get; set; }
+
     public virtual RequestDetailMaterialDatum? Detail { get; set; }
 
     public virtual MaterialsMaterialDatum Material { get; set; } = null!;

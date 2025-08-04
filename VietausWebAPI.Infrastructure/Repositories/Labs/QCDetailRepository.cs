@@ -18,9 +18,9 @@ namespace VietausWebAPI.Infrastructure.Repositories.Labs
             _context = context;
         }
 
-        public async Task AddQCDetail(QCDetail qCDetail)
+        public async Task AddQCDetail(Qcdetail qCDetail)
         {
-            await _context.QCDetails.AddAsync(qCDetail);
+            await _context.Qcdetails.AddAsync(qCDetail);
         }
     }
 }

@@ -30,12 +30,13 @@ namespace VietausWebAPI.Infrastructure.Repositories.PurchaseOrders
 
         public async Task<SequencePoMaterialDatum?> GetLastPurchaseOrderIdRepositoryAsync(int year)
         {
-            return await _context.SequencePoMaterialData.FirstOrDefaultAsync(s => s.Year == year);
+            //return await _context.SequencePoMaterialData.FirstOrDefaultAsync(s => s.Year == year);
+            return null;
         }
 
         public async Task AddNewNumber(SequencePoMaterialDatum sequencePoMaterialDatum)
         {
-            await _context.SequencePoMaterialData.AddAsync(sequencePoMaterialDatum);
+            //await _context.SequencePoMaterialData.AddAsync(sequencePoMaterialDatum);
         }
 
         public async Task<PagedResult<PurchaseOrdersMaterialDatum>> GetPurchaseOrdersRepositoryAsync(GetPOQuery query)

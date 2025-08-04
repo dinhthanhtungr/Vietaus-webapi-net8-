@@ -44,7 +44,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Labs
                 string keyword = query.keyword.ToLower();
                 queryAble = queryAble.Where(x =>
                     x.ExternalId != null && EF.Functions.Collate(x.ExternalId, "Latin1_General_CI_AI").ToLower().Contains(keyword) ||
-                    x.Product_ExternalId != null && EF.Functions.Collate(x.Product_ExternalId, "Latin1_General_CI_AI").ToLower().Contains(keyword));
+                    x.ProductExternalId != null && EF.Functions.Collate(x.ProductExternalId, "Latin1_General_CI_AI").ToLower().Contains(keyword));
             }
 
             query.PageSize = 15;
@@ -52,14 +52,27 @@ namespace VietausWebAPI.Infrastructure.Repositories.Labs
             return await QueryableExtensions.GetPagedAsync(queryAble, query);
         }
 
+        public async Task<MfgProductionOrdersPlan> GetPagedByIdAsync(string id)
+        {
+            var queryAble = await _context.MfgProductionOrdersPlans
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.ExternalId == id);
+
+            if (queryAble == null)
+            {
+                throw new InvalidOperationException($"MfgProductionOrdersPlan with ID {id} not found.");
+            }
+            return  queryAble;
+        }
+
         public async Task UpdateProductNameInPlansAsync(Guid productId, string newProductName)
         {
             var item = await _context.MfgProductionOrdersPlans
-                .FirstOrDefaultAsync(x => x.Product_Id == productId);
+                .FirstOrDefaultAsync(x => x.ProductId == productId);
 
             if (item != null)
             {
-                item.Product_Name = newProductName;
+                item.ProductName = newProductName;
                 await _context.SaveChangesAsync();
             }
 

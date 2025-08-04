@@ -1,24 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace VietausWebAPI.Core.Domain.Entities
+namespace VietausWebAPI.Core.Domain.Entities;
+
+public partial class Qcdetail
 {
-    public class QCDetail
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid Id { get; set; }
 
-        public string? BatchExternalId { get; set; }
+    public string? BatchExternalId { get; set; }
 
-        [ForeignKey("ProductInspection")]
-        public Guid? BatchId { get; set; }
+    public Guid? BatchId { get; set; }
 
-        public string MachineExternalId { get; set; } = default!;
+    public string MachineExternalId { get; set; } = null!;
 
-        // Navigation
-        public virtual ProductInspection ProductInspection { get; set; } = null!;
-    }
+    public virtual ProductInspection? Batch { get; set; }
 }

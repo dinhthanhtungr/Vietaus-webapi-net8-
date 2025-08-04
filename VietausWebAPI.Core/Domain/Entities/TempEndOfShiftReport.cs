@@ -26,6 +26,4 @@ public partial class TempEndOfShiftReport
     public decimal? ProducingErrKg { get; set; }
 
     public decimal? UnfinishedProductKg { get; set; }
-
-    public string? Note { get; set; }
 }

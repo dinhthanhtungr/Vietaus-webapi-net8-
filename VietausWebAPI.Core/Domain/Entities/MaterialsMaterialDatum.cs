@@ -19,6 +19,8 @@ public partial class MaterialsMaterialDatum
 
     public Guid? MaterialGroupId { get; set; }
 
+    public Guid? SupplierId { get; set; }
+
     public virtual EmployeesCommonDatum? Employee { get; set; }
 
     public virtual ICollection<InventoryReceiptsMaterialDatum> InventoryReceiptsMaterialData { get; set; } = new List<InventoryReceiptsMaterialDatum>();

@@ -20,5 +20,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesCont
         /// <param name="newProductName"></param>
         /// <returns></returns>
         Task UpdateProductNameInPlansAsync(Guid productId, string newProductName);
+        Task<MfgProductionOrdersPlan> GetPagedByIdAsync(string id);
     }
 }

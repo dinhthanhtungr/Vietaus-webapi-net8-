@@ -23,8 +23,6 @@ public partial class SuppliersMaterialDatum
 
     public virtual ICollection<PriceHistoryMaterialDatum> PriceHistoryMaterialData { get; set; } = new List<PriceHistoryMaterialDatum>();
 
-    public virtual ICollection<PurchaseOrder> PurchaseOrders { get; set; } = new List<PurchaseOrder>();
-
     public virtual ICollection<PurchaseOrdersMaterialDatum> PurchaseOrdersMaterialData { get; set; } = new List<PurchaseOrdersMaterialDatum>();
 
     public virtual ICollection<SupplierAddressesMaterialDatum> SupplierAddressesMaterialData { get; set; } = new List<SupplierAddressesMaterialDatum>();

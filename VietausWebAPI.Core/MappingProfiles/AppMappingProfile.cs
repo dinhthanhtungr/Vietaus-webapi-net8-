@@ -73,7 +73,7 @@ namespace VietausWebAPI.Core.MappingProfiles
                     dest.TotalAmount = src.PurchaseOrderDetailsMaterialData
                         .Sum(item => item.Quantity * item.UnitPrice.GetValueOrDefault());
 
-                    dest.GrandTotal = dest.TotalAmount * (1 + (src.VAT / 100.0m));
+                    //dest.GrandTotal = dest.TotalAmount * (1 + (src.Vat / 100.0m));
                 }); 
         }
     }

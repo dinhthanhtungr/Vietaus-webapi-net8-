@@ -1,43 +1,39 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace VietausWebAPI.Core.Domain.Entities
+namespace VietausWebAPI.Core.Domain.Entities;
+
+public partial class MfgProductionOrdersPlan
 {
-    public class MfgProductionOrdersPlan
-    {
-        public Guid Id { get; set; }
+    public Guid Id { get; set; }
 
-        public string Requirement { get; set; } = default!;
+    public string? Requirement { get; set; }
 
-        public DateTime? ExpiryDate { get; set; }
+    public DateTime? ExpiryDate { get; set; }
 
-        public DateTime? CreatedDate { get; set; }
+    public DateTime? CreatedDate { get; set; }
 
-        public string? ExternalId { get; set; }
+    public string? ExternalId { get; set; }
 
-        public string? Product_ExternalId { get; set; }
+    public string? ProductExternalId { get; set; }
 
-        public string? Product_Name { get; set; }
+    public string? ProductName { get; set; }
 
-        public string? Product_ExpiryType { get; set; }
+    public string? ProductExpiryType { get; set; }
 
-        public string? Product_Package { get; set; }
+    public string? ProductPackage { get; set; }
 
-        public bool? Product_RohsStandard { get; set; }
+    public bool? ProductRohsStandard { get; set; }
 
-        public double? Product_RecycleRate { get; set; }
+    public double? ProductRecycleRate { get; set; }
 
-        public double? Product_Weight { get; set; }
+    public double? ProductWeight { get; set; }
 
-        public string? Product_CustomerExternalId { get; set; }
+    public string? ProductCustomerExternalId { get; set; }
 
-        public double? Product_MaxTemp { get; set; }
+    public double? ProductMaxTemp { get; set; }
 
-        public double? Product_AddRate { get; set; }
+    public double? ProductAddRate { get; set; }
 
-        public Guid Product_Id { get; set; }
-    }
+    public Guid? ProductId { get; set; }
 }

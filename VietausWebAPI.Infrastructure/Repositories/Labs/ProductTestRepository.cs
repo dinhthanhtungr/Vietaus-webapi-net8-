@@ -31,7 +31,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Labs
                 string keyword = productTest.keyword.ToLower();
                 queryAble = queryAble.Where(x =>
                     x.ExternalId != null && EF.Functions.Collate(x.ExternalId, "Latin1_General_CI_AI").ToLower().Contains(keyword) ||
-                    x.Product_ExternalId != null && EF.Functions.Collate(x.Product_ExternalId, "Latin1_General_CI_AI").ToLower().Contains(keyword));
+                    x.ProductExternalId != null && EF.Functions.Collate(x.ProductExternalId, "Latin1_General_CI_AI").ToLower().Contains(keyword));
             }
 
             productTest.PageSize = 15;

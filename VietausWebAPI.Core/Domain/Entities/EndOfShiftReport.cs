@@ -27,5 +27,5 @@ public partial class EndOfShiftReport
 
     public decimal? UnfinishedProductKg { get; set; }
 
-    public string? Note { get; set; }
+    public string? StatusReport { get; set; }
 }

@@ -58,7 +58,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Labs
         public async Task<ProductInspection> GetProductInspectionByIdAsync(Guid id)
         {
             var productInspection = await _context.ProductInspections
-                .Include(p => p.QCDetail)
+                .Include(p => p.Qcdetails)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id);
 
@@ -74,7 +74,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Labs
         public async Task<PagedResult<ProductInspection>> GetProductInspectionPagedAsync(ProductInspectionQuery? query)
         {
             var queryable = _context.ProductInspections
-                .Include(p => p.QCDetail)
+                .Include(p => p.Qcdetails)
                 .AsNoTracking()
                 .AsQueryable();
 
