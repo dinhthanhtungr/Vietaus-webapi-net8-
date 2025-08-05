@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
+using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
@@ -24,7 +25,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IRequestMaterialRepository RequestMaterialRepository { get; }
         public IApprovalHistoryMaterialRepository ApprovalHistoryMaterialRepository { get; }
         public ISupplyRequestsMaterialDatumRepository SupplyRequestsMaterialDatumRepository { get; }
-        public IEmployeesCommonRepository EmployeesCommonRepository { get; }
+        public IEmployeesRepository EmployeesCommonRepository { get; }
 
         public IApprovalRepository ApprovalRepository { get; }
         public ISupplyRequestRepository SupplyRequestRepository { get; }
@@ -34,6 +35,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IPurchaseOrderDetailsRepository PurchaseOrderDetailsRepository { get; }
         public IPurchaseOrdersRepository PurchaseOrdersRepository { get; }
         public ISupplierRepository SupplierRepository { get; }
+
+        // HR
+        public IEmployeesRepository EmployeesRepository { get; }
 
         // Labs
         public IProductStandardRepository ProductStandardRepository { get; }
@@ -62,7 +66,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             , IRequestMaterialRepository requestMaterialRepository
             , IApprovalHistoryMaterialRepository approvalHistoryMaterialRepository
             , ISupplyRequestsMaterialDatumRepository supplyRequestsMaterialDatumRepository
-            , IEmployeesCommonRepository employeesCommonRepository
+            , IEmployeesRepository employeesCommonRepository
             , IApprovalRepository approvalRepository
             , ISupplyRequestRepository supplyRequestRepository
             , IMaterialsRepository materialsRepository
@@ -77,7 +81,8 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             , IMfgProductionOrdersPlanRepository mfgProductionOrdersPlanRepository
             , IQCDetailRepository iQCDetailRepository
             , IScheduealRepository scheduealRepository
-            , IMfgProductionOrdersPlanRepository iMfgProductionOrdersPlanRepository)
+            , IMfgProductionOrdersPlanRepository iMfgProductionOrdersPlanRepository
+            , IEmployeesRepository employeesRepository)
         {
             _context = context;
             RequestMaterialRepository = requestMaterialRepository;
@@ -101,6 +106,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             IQCDetailRepository = iQCDetailRepository;
             ScheduealRepository = scheduealRepository;
             IMfgProductionOrdersPlanRepository = iMfgProductionOrdersPlanRepository;
+            EmployeesRepository = employeesRepository;
         }
         /// <summary>
         /// Bắt đầu một transaction

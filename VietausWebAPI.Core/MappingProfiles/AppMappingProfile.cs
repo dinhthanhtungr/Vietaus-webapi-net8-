@@ -5,6 +5,7 @@ using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Application.DTOs.Approval;
 using VietausWebAPI.Core.DTO;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
+using VietausWebAPI.Core.Application.Features.HR.DTOs;
 
 
 namespace VietausWebAPI.Core.MappingProfiles

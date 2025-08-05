@@ -1,4 +1,7 @@
-﻿using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts;
+﻿using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.HR.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.HR.Services;
+using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Labs.Services;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
@@ -29,6 +32,7 @@ using VietausWebAPI.Core.ServiceContracts;
 using VietausWebAPI.Infrastructure.DataUnitOfWork;
 using VietausWebAPI.Infrastructure.Repositories;
 using VietausWebAPI.Infrastructure.Repositories.Approval;
+using VietausWebAPI.Infrastructure.Repositories.HR;
 using VietausWebAPI.Infrastructure.Repositories.InventoryReceipts;
 using VietausWebAPI.Infrastructure.Repositories.Labs;
 using VietausWebAPI.Infrastructure.Repositories.MaterialRequestDetail;
@@ -56,11 +60,13 @@ namespace VietausWebAPI.WebAPI
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IApprovalHistoryMaterialRepository, ApprovalHistoryMaterialRepository>();
             services.AddScoped<IApprovalHistoryMaterialService, ApprovalHistoryMaterialService>();
-            services.AddScoped<IEmployeesCommonRepository, EmployeesCommonRepository>();
-            services.AddScoped<IEmployeesCommonService, EmployeesCommonService>();
+            services.AddScoped<IEmployeesRepository, EmployeesRepository>();
+            services.AddScoped<IEmployeesService, EmployeesService>();
             services.AddScoped<IMaterialGroupsService, MaterialGroupsService>();
             services.AddScoped<IMaterialGroupsRepository, MaterialGroupsRepository>();
-
+            // HR
+            services.AddScoped<IEmployeesRepository, EmployeesRepository>();
+            services.AddScoped<IEmployeesService, EmployeesService>();
             // Approval
             services.AddScoped<IApprovalService, ApprovalService>();
             services.AddScoped<IApprovalRepository, ApprovalRepository>();

@@ -77,6 +77,8 @@ public partial class Employee
 
     public virtual ICollection<MerchandiseOrder> MerchandiseOrderUpdatedByNavigations { get; set; } = new List<MerchandiseOrder>();
 
+    public virtual Part? Part { get; set; }
+
     public virtual ICollection<PriceHistory1> PriceHistory1CreatedByNavigations { get; set; } = new List<PriceHistory1>();
 
     public virtual ICollection<PriceHistory1> PriceHistory1UpdatedByNavigations { get; set; } = new List<PriceHistory1>();

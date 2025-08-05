@@ -150,6 +150,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
         public virtual DbSet<OperatorForRecordToPlc> OperatorForRecordToPlcs { get; set; }
 
+        public virtual DbSet<Part> Parts { get; set; }
         public virtual DbSet<OtherMaintenanceHistory> OtherMaintenanceHistories { get; set; }
 
         public virtual DbSet<OtherMaintenanceMaterial> OtherMaintenanceMaterials { get; set; }
@@ -579,6 +580,10 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasMaxLength(20)
                     .IsUnicode(false);
                 entity.Property(e => e.Status).HasMaxLength(50);
+
+                entity.HasOne(d => d.Part).WithMany(p => p.Employees)
+                    .HasForeignKey(d => d.PartId)
+                    .HasConstraintName("FK_Employees_Parts");
             });
 
             modelBuilder.Entity<EmployeesCommonDatum>(entity =>
@@ -1906,6 +1911,24 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_MachineAssignments_Machines");
             });
+
+
+            modelBuilder.Entity<Part>(entity =>
+            {
+                entity.HasKey(e => e.PartId).HasName("PK__Parts__7C3F0D30F786F0A7");
+
+                entity.ToTable("Parts", "hr");
+
+                entity.Property(e => e.PartId)
+                    .HasDefaultValueSql("(newid())")
+                    .HasColumnName("PartID");
+                entity.Property(e => e.ExternalId)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("ExternalID");
+                entity.Property(e => e.PartName).HasMaxLength(255);
+            });
+
 
             modelBuilder.Entity<PartsCommonDatum>(entity =>
             {

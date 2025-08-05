@@ -14,6 +14,7 @@ using VietausWebAPI.Core.Application.Usecases.Suppliers.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 
 namespace VietausWebAPI.Core.Repositories_Contracts
 {
@@ -22,7 +23,7 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         IRequestMaterialRepository RequestMaterialRepository { get; }
         IApprovalHistoryMaterialRepository ApprovalHistoryMaterialRepository { get; }
         ISupplyRequestsMaterialDatumRepository SupplyRequestsMaterialDatumRepository { get; }
-        IEmployeesCommonRepository EmployeesCommonRepository { get; }
+        IEmployeesRepository EmployeesCommonRepository { get; }
 
         IApprovalRepository ApprovalRepository { get; }
         ISupplyRequestRepository SupplyRequestRepository { get; }
@@ -32,6 +33,9 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         IPurchaseOrderDetailsRepository PurchaseOrderDetailsRepository { get; }
         IPurchaseOrdersRepository PurchaseOrdersRepository { get; }
         ISupplierRepository SupplierRepository { get; }
+
+        //HR
+        IEmployeesRepository EmployeesRepository { get; }
 
         // Labs
         IProductStandardRepository ProductStandardRepository { get; }
