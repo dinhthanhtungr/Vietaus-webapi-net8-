@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.HR.DTOs;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Identity;
 
 namespace VietausWebAPI.Core.Application.Features.HR
 {
@@ -17,6 +18,9 @@ namespace VietausWebAPI.Core.Application.Features.HR
             CreateMap<Employee, EmployeeSummary>()
                 .ForMember(x => x.PartName, opt => opt.MapFrom(src => src.Part.PartName))
                 .ReverseMap();
+
+            CreateMap<AccountDTOs, ApplicationUser>().ReverseMap();
+                //.ForMember(x => x.)
         }
     }
 }

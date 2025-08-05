@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.HR.Querys;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Identity;
 
 namespace VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts
 {
@@ -33,10 +34,17 @@ namespace VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts
         Task<string?> GetLatestExternalIdStartsWithAsync(string prefix);
 
         /// <summary>
-        /// 
+        /// Lấy danh sach nhân viên phân trang
         /// </summary>
         /// <param name="keyword"></param>
         /// <returns></returns>
         Task<PagedResult<Employee>> GetPagedAsync(EmployeeQuery? keyword);
+
+        /// <summary>
+        /// láy danh sách nhân viên có tài khoản
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <returns></returns>
+        Task<PagedResult<ApplicationUser>> GetPagedAccoutAsync(EmployeeQuery? keyword);
     }
 }

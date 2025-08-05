@@ -8,6 +8,7 @@ using VietausWebAPI.Core.Application.Features.HR.Querys;
 using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Identity;
 using VietausWebAPI.Infrastructure.Utilities;
 using VietausWebAPI.WebAPI.DatabaseContext;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
@@ -44,6 +45,25 @@ namespace VietausWebAPI.Infrastructure.Repositories.HR
                 .OrderByDescending(e => e.ExternalId)
                 .Select(e => e.ExternalId)
                 .FirstOrDefaultAsync();
+        }
+
+        public async Task<PagedResult<ApplicationUser>> GetPagedAccoutAsync(EmployeeQuery? query)
+        {
+            var queryable = _context.Users
+                .AsNoTracking()
+                .AsQueryable();
+            if (!string.IsNullOrWhiteSpace(query.keyword))
+            {
+                string keywordLower = query.keyword.ToLower();
+                queryable = queryable.Where(x =>
+                    x.personName != null && EF.Functions.Collate(x.personName, "Latin1_General_CI_AI").ToLower().Contains(keywordLower) ||
+                    x.Email != null && EF.Functions.Collate(x.Email, "Latin1_General_CI_AI").ToLower().Contains(keywordLower) ||
+                    x.UserName != null && EF.Functions.Collate(x.UserName, "Latin1_General_CI_AI").ToLower().Contains(keywordLower));
+            }
+
+            query.PageSize = 15;
+            queryable = queryable.OrderByDescending(x => x.UserName);
+            return await QueryableExtensions.GetPagedAsync(queryable, query);
         }
 
         public async Task<PagedResult<Employee>> GetPagedAsync(EmployeeQuery? query)

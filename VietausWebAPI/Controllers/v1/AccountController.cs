@@ -174,10 +174,6 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
 
             return Ok(user);
 
-            //else
-            //{
-            //    return Ok(false);
-            //}
         }
 
         /// <summary>

@@ -268,6 +268,21 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
         {
             base.OnModelCreating(modelBuilder);
 
+            // Thiết lập khóa chính
+            modelBuilder.Entity<ApplicationUserRole>()
+                .HasKey(ur => new { ur.UserId, ur.RoleId });
+
+            // Thiết lập quan hệ với ApplicationUser
+            modelBuilder.Entity<ApplicationUserRole>()
+                .HasOne(ur => ur.User)
+                .WithMany(u => u.UserRoles)
+                .HasForeignKey(ur => ur.UserId);
+
+            // Thiết lập quan hệ với ApplicationRole
+            modelBuilder.Entity<ApplicationUserRole>()
+                .HasOne(ur => ur.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.RoleId);
 
 
             // Thiết lập khóa chính

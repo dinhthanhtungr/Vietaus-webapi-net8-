@@ -7,6 +7,7 @@ using VietausWebAPI.Core.Application.Features.HR.DTOs;
 using VietausWebAPI.Core.Application.Features.HR.Querys;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Identity;
 
 namespace VietausWebAPI.Core.Application.Features.HR.ServiceContracts
 {
@@ -32,5 +33,11 @@ namespace VietausWebAPI.Core.Application.Features.HR.ServiceContracts
         /// <param name="query"></param>
         /// <returns></returns>
         Task<PagedResult<EmployeeSummary>> GetPagedAsync(EmployeeQuery? query);
+        /// <summary>
+        /// láy danh sách nhân viên có tài khoản
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <returns></returns>
+        Task<PagedResult<AccountDTOs>> GetPagedAccoutAsync(EmployeeQuery? keyword);
     }
 }

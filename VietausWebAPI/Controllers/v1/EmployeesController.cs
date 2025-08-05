@@ -51,5 +51,12 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
                 return BadRequest(result.Message);
             }
         }
+
+        [HttpGet("GetPagedAccount")]
+        public async Task<IActionResult> GetPagedAccount([FromQuery] EmployeeQuery? query)
+        {
+            var result = await _employeesService.GetPagedAccoutAsync(query);
+            return Ok(result);
+        }
     }
 }

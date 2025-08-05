@@ -10,7 +10,9 @@ using VietausWebAPI.Core.Application.Features.HR.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Identity;
 using VietausWebAPI.Core.Repositories_Contracts;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace VietausWebAPI.Core.Application.Features.HR.Services
 {
@@ -39,6 +41,20 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
         {
             var employees = await _unitOfWork.EmployeesCommonRepository.GetEmployeesWithIdRepositoryAsync(EmployeeId);
             return _mapper.Map<IEnumerable<EmployeesCommonDatumDTO>>(employees);
+        }
+
+        public async Task<PagedResult<AccountDTOs>> GetPagedAccoutAsync(EmployeeQuery? query)
+        {
+            var pagedResult = await _unitOfWork.EmployeesRepository.GetPagedAccoutAsync(query);
+            try
+            {
+                var pagedResultMapped = _mapper.Map<PagedResult<AccountDTOs>>(pagedResult);
+                return pagedResultMapped;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi lấy danh sách nhân viên: {ex.Message}", ex);
+            }
         }
 
         public async Task<PagedResult<EmployeeSummary>> GetPagedAsync(EmployeeQuery? query)
