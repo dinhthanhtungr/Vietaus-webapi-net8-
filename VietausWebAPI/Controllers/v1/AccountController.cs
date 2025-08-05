@@ -64,58 +64,84 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
         //[Authorize(Roles = "Admin")]
         public async Task<ActionResult<ApplicationUser>> PostRegister(RegisterDTO registerDTO)
         {
-            // Validate request model
-            if (!ModelState.IsValid)
+            try
             {
-                string errorMessage = string.Join(" | ",
-                ModelState.Values.SelectMany(v => v.Errors).Select(e =>
-                e.ErrorMessage));
-                return Problem(errorMessage);
-            }
-
-            // Create a new user object
-            ApplicationUser user = new ApplicationUser()
-            {
-                Email = registerDTO.Email,
-                //PhoneNumber = registerDTO.Phone,
-                UserName = registerDTO.UserName, // Using UserName as the username
-                personName = registerDTO.PersonName
-            };
-
-            IdentityResult result = await _UserManager.CreateAsync
-            (user, registerDTO.Password);
-
-            // Attempt to create the user
-            if (result.Succeeded)
-            {
-                string defaultRole = "User";
-                if (!await _RoleManager.RoleExistsAsync(defaultRole))
+                // Validate request model
+                if (!ModelState.IsValid)
                 {
-                    await _RoleManager.CreateAsync(new ApplicationRole { Name = defaultRole });
+                    string errorMessage = string.Join(" | ",
+                    ModelState.Values.SelectMany(v => v.Errors).Select(e =>
+                    e.ErrorMessage));
+                    return Problem(errorMessage);
                 }
 
-                var role = await _RoleManager.FindByNameAsync(defaultRole);
-
-                //await _UserManager.AddToRoleAsync(user, defaultRole);
-
-                await _context.UserRoles.AddAsync(new ApplicationUserRole { UserId = user.Id, RoleId = role.Id });
-                await _context.SaveChangesAsync();
-                if (result != null)
+                // Create a new user object
+                ApplicationUser user = new ApplicationUser()
                 {
-                    return Ok($"Assigned {role.Name} to {user.Email}");
+                    Email = registerDTO.Email,
+                    //PhoneNumber = registerDTO.Phone,
+                    UserName = registerDTO.UserName, // Using UserName as the username
+                    personName = registerDTO.PersonName
+                };
+
+                IdentityResult result = await _UserManager.CreateAsync
+                (user, registerDTO.Password);
+
+                // Attempt to create the user
+                if (result.Succeeded)
+                {
+                    string defaultRole = "User";
+                    //if (!await _RoleManager.RoleExistsAsync(defaultRole))
+                    //{
+                    //await _RoleManager.CreateAsync(new ApplicationRole { Name = defaultRole });
+                    //}
+
+                    //var role = await _RoleManager.FindByNameAsync(defaultRole);
+
+                    if (!await _RoleManager.RoleExistsAsync(defaultRole))
+                    {
+                        await _RoleManager.CreateAsync(new ApplicationRole { Name = defaultRole });
+
+                    }
+
+
+                    var role = await _RoleManager.FindByNameAsync(defaultRole);
+
+                    if (role == null)
+                    {
+                        return Problem("Không tìm thấy role mặc định.");
+                    }
+
+
+                    //await _UserManager.AddToRoleAsync(user, defaultRole);
+
+                    await _context.UserRoles.AddAsync(new ApplicationUserRole { UserId = user.Id, RoleId = role.Id });
+                    await _context.SaveChangesAsync();
+                    if (result != null)
+                    {
+                        return Ok($"Assigned {role.Name} to {user.Email}");
+                    }
+
+
+                    return Ok("Register succeeded: " + defaultRole);
                 }
 
-
-                return Ok("Register succeeded: " + defaultRole);
+                else
+                {
+                    // Return any errors encountered during registration
+                    string errorMessage = string.Join(" | ",
+                    result.Errors.Select(e => e.Description)); //Error 1 | Error 2
+                    return Problem(errorMessage);
+                }
             }
 
-            else
+            catch (Exception ex)
             {
-                // Return any errors encountered during registration
-                string errorMessage = string.Join(" | ",
-                result.Errors.Select(e => e.Description)); //Error 1 | Error 2
-                return Problem(errorMessage);
+                // Log the exception (optional)
+                // _logger.LogError(ex, "An error occurred while registering a new user.");
+                return Problem("An error occurred while registering a new user: " + ex.Message);
             }
+
         }
 
         // Existing code...
@@ -193,22 +219,28 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
             //var roles = await _UserManager.GetRolesAsync(user);
             var roles = await _context.UserRoles.
                 Where(ur => ur.UserId == user.Id && ur.IsActive).
-                Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name).
+                Join(_context.Roles, 
+                    ur => ur.RoleId, 
+                    r => r.Id, 
+                    (ur, r) => r.Name).
                 ToListAsync();
 
-            var department = await _context.EmployeesCommonData
+            var department = await _context.Employees
                 .Where(e => e.Email == user.Email)
-                .Select(e => e.PartId)
+                .Join(_context.Parts,
+                      emp => emp.PartId,
+                      part => part.PartId,
+                      (emp, part) => part.ExternalId)
                 .FirstOrDefaultAsync();
 
-            var EmployeeId = await _context.EmployeesCommonData
+            var EmployeeId = await _context.Employees
                 .Where(e => e.Email == user.Email)
-                .Select(e => e.EmployeeId)
+                .Select(e => e.ExternalId)
                 .FirstOrDefaultAsync();
 
-            var departmentName = await _context.EmployeesCommonData
+            var departmentName = await _context.Employees
                 .Where(e => e.Email == user.Email)
-                .Join(_context.PartsCommonData,
+                .Join(_context.Parts,
                       emp => emp.PartId,
                       part => part.PartId,
                       (emp, part) => part.PartName)

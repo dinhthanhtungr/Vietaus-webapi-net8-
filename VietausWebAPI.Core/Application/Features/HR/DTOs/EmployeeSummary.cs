@@ -8,11 +8,14 @@ namespace VietausWebAPI.Core.Application.Features.HR.DTOs
 {
     public class EmployeeSummary
     {
+        public Guid EmployeeId { get; set; }
         public string? ExternalId { get; set; }
 
         public string FullName { get; set; } = null!;
         public string? Email { get; set; }
         public string? Gender { get; set; }
         public string? PartName { get; set; }
+        public string? PhoneNumber { get; set; }
+        public DateTime? DateHired { get; set; }
     }
 }
