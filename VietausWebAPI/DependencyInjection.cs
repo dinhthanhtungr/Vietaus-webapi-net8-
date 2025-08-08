@@ -67,6 +67,8 @@ namespace VietausWebAPI.WebAPI
             // HR
             services.AddScoped<IEmployeesRepository, EmployeesRepository>();
             services.AddScoped<IEmployeesService, EmployeesService>();
+            services.AddScoped<IGroupRepository, GroupRepository>();
+
             // Approval
             services.AddScoped<IApprovalService, ApprovalService>();
             services.AddScoped<IApprovalRepository, ApprovalRepository>();

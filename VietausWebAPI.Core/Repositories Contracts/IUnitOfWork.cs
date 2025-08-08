@@ -15,6 +15,7 @@ using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
+using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.Core.Repositories_Contracts
 {
@@ -36,7 +37,7 @@ namespace VietausWebAPI.Core.Repositories_Contracts
 
         //HR
         IEmployeesRepository EmployeesRepository { get; }
-
+        IGroupRepository GroupRepository { get; }
         // Labs
         IProductStandardRepository ProductStandardRepository { get; }
         IProductInspectionRepository ProductInspectionRepository { get; }

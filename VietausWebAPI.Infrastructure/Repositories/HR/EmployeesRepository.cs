@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using VietausWebAPI.Core.Application.Features.HR.Querys;
+using VietausWebAPI.Core.Application.Features.HR.Querys.Employees;
 using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
@@ -50,6 +50,8 @@ namespace VietausWebAPI.Infrastructure.Repositories.HR
         public async Task<PagedResult<ApplicationUser>> GetPagedAccoutAsync(EmployeeQuery? query)
         {
             var queryable = _context.Users
+                .Include(u => u.UserRoles)         // ✅ Bỏ Where!
+                    .ThenInclude(ur => ur.Role)    // ✅ Đảm bảo load được Role.Name
                 .AsNoTracking()
                 .AsQueryable();
             if (!string.IsNullOrWhiteSpace(query.keyword))

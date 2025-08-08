@@ -11,5 +11,9 @@ public partial class MemberInGroup
 
     public Guid? Profile { get; set; }
 
-    public virtual Employee? ProfileNavigation { get; set; }
+    public Guid GroupId { get; set; }
+
+    public virtual Group Group { get; set; } = null!;
+
+    public virtual Employee? ProfileNavigation { get; set; } 
 }

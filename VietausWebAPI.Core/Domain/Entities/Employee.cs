@@ -59,8 +59,6 @@ public partial class Employee
 
     public virtual ICollection<Group> GroupCreatedByNavigations { get; set; } = new List<Group>();
 
-    public virtual ICollection<Group> GroupMembers { get; set; } = new List<Group>();
-
     public virtual ICollection<Group> GroupUpdatedByNavigations { get; set; } = new List<Group>();
 
     public virtual ICollection<Material1> Material1CreatedByNavigations { get; set; } = new List<Material1>();

@@ -25,7 +25,7 @@ namespace VietausWebAPI.Core.Service
         /// </summary>
         /// <param name = "user" > ApplicationUser oject</param>
         /// <returns>AuthenticationResponse that includes token</returns>
-        public AuthenticationResponse CreateJwtJoken(ApplicationUser user, string partId, string departmentName, string employeeId, IList<string> roles = null)
+        AuthenticationResponse CreateJwtJoken(ApplicationUser user, string partId, string departmentName, string EmployeeId, Guid Id, IList<string> roles = null)
         {
             // Create a DateTime ojcet representing the token 
             // expiration time by adding the number of minutes specified
@@ -43,7 +43,8 @@ namespace VietausWebAPI.Core.Service
                     new Claim(ClaimTypes.NameIdentifier,user.Email), // Unique name identifier of the user (Email)
                     new Claim(ClaimTypes.Name,user.personName), // Name of the user
                     new Claim("partId", partId), // Part ID of the user
-                    new Claim("employeeId", employeeId), // Employee ID of the user
+                    new Claim("employeeId", EmployeeId), // Employee ID of the user
+                    new Claim("Id", Id.ToString()),
                     new Claim("departmentName", departmentName), // Department name of the user
             };
 
@@ -154,6 +155,11 @@ namespace VietausWebAPI.Core.Service
             randomNumberGenerator.GetBytes(bytes);
             Convert.ToBase64String(bytes);
             return Convert.ToBase64String(bytes);
+        }
+
+        AuthenticationResponse IJwtService.CreateJwtJoken(ApplicationUser user, string partId, string departmentName, string EmployeeId, Guid Id, IList<string> roles)
+        {
+            return CreateJwtJoken(user, partId, departmentName, EmployeeId, Id, roles);
         }
     }
 }

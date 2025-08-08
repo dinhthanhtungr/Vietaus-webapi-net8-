@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using VietausWebAPI.Core.Application.Features.HR.DTOs;
-using VietausWebAPI.Core.Application.Features.HR.Querys;
+using VietausWebAPI.Core.Application.Features.HR.DTOs.Employees;
+using VietausWebAPI.Core.Application.Features.HR.DTOs.Groups;
+using VietausWebAPI.Core.Application.Features.HR.Querys.Employees;
+using VietausWebAPI.Core.Application.Features.HR.Querys.Groups;
 using VietausWebAPI.Core.Application.Features.HR.ServiceContracts;
 
-namespace VietausWebAPI.WebAPI.Controllers.v1
+namespace VietausWebAPI.WebAPI.Controllers.v1.HR
 {
     [ApiController]
     [Route("api/Employees")]
@@ -58,5 +60,57 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
             var result = await _employeesService.GetPagedAccoutAsync(query);
             return Ok(result);
         }
+
+        [HttpGet("GetAllGroups")]
+        public async Task<IActionResult> GetAllGroups([FromQuery] GroupQuery? query)
+        {
+            var result = await _employeesService.GetAllGroupsAsync(query);
+            return Ok(result);
+        }
+        [HttpPost("CreateNewGroup")]
+        public async Task<IActionResult> CreateNewGroup([FromBody] PostGroupDTOs group)
+        {
+            if (group == null)
+            {
+                return BadRequest("Group data is required.");
+            }
+            var result = await _employeesService.CreateNewGroupAsync(group);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            else
+            {
+                return BadRequest(result.Message);
+            }
+        }
+
+        [HttpPost("AddMembersInGroup")]
+        public async Task<IActionResult> AddMembersInGroup([FromBody] IEnumerable<PostMemberDTO> members)
+        {
+            if (!members.Any())
+            {
+                return BadRequest("Thêm thành viên không thành công.");
+            }
+
+            var result = await _employeesService.AddMembers(members);
+
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            else
+            {
+                return BadRequest(result.Message);
+            }
+        }
+
+        [HttpGet("GetAllMembers")]
+        public async Task<IActionResult> GetAllMembers([FromQuery] Guid Id)
+        {
+            var res = await _employeesService.AllMembers(Id);
+            return Ok(res);
+        }
+
     }
 }

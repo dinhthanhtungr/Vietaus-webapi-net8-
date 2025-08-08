@@ -234,6 +234,11 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
                 .Select(e => e.ExternalId)
                 .FirstOrDefaultAsync();
 
+            var Id = await _context.Employees
+                .Where(e => e.Email == user.Email)
+                .Select(e => e.EmployeeId)
+                .FirstOrDefaultAsync();
+
             var departmentName = await _context.Employees
                 .Where(e => e.Email == user.Email)
                 .Join(_context.Parts,
@@ -249,7 +254,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
             }
             //var roles = await GetActiveRolesForUser(user, _context);
             // Generate JWT token
-            AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(user, department, departmentName, EmployeeId, roles);
+            AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(user, department, departmentName, EmployeeId, Id, roles);
             // Store refresh token for future authentication
             user.RefreshToken = authenticationResponse.RefreshToken;
             user.RefreshTokenExpirationDateTime =
@@ -376,32 +381,40 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
 
             var roles = await _context.UserRoles.
                 Where(ur => ur.UserId == user.Id && ur.IsActive).
-                Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name).
+                Join(_context.Roles,
+                    ur => ur.RoleId,
+                    r => r.Id,
+                    (ur, r) => r.Name).
                 ToListAsync();
 
-            var department = await _context.EmployeesCommonData
+            var department = await _context.Employees
                 .Where(e => e.Email == user.Email)
-                .Select(e => e.PartId)
+                .Join(_context.Parts,
+                      emp => emp.PartId,
+                      part => part.PartId,
+                      (emp, part) => part.ExternalId)
                 .FirstOrDefaultAsync();
 
+            var EmployeeId = await _context.Employees
+                .Where(e => e.Email == user.Email)
+                .Select(e => e.ExternalId)
+                .FirstOrDefaultAsync();
 
-            var EmployeeId = await _context.EmployeesCommonData
+            var Id = await _context.Employees
                 .Where(e => e.Email == user.Email)
                 .Select(e => e.EmployeeId)
                 .FirstOrDefaultAsync();
 
-            var departmentName = await _context.EmployeesCommonData
+            var departmentName = await _context.Employees
                 .Where(e => e.Email == user.Email)
-                .Join(_context.PartsCommonData,
+                .Join(_context.Parts,
                       emp => emp.PartId,
                       part => part.PartId,
                       (emp, part) => part.PartName)
                 .FirstOrDefaultAsync();
 
-
-
             // Generate new JWT token
-            AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(user, department, departmentName, EmployeeId, roles);
+            AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(user, department, departmentName, EmployeeId, Id, roles);
 
             // Update Refresh Token buy not change expirationDatetime 
             user.RefreshToken = authenticationResponse.RefreshToken;

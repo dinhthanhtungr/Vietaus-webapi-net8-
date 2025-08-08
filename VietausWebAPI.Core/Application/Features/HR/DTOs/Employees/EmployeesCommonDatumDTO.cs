@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VietausWebAPI.Core.Application.Features.HR.DTOs
+namespace VietausWebAPI.Core.Application.Features.HR.DTOs.Employees
 {
     public class EmployeesCommonDatumDTO
     {

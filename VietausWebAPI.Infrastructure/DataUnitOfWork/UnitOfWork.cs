@@ -38,6 +38,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
 
         // HR
         public IEmployeesRepository EmployeesRepository { get; }
+        public IGroupRepository GroupRepository { get; }
 
         // Labs
         public IProductStandardRepository ProductStandardRepository { get; }
@@ -82,7 +83,8 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             , IQCDetailRepository iQCDetailRepository
             , IScheduealRepository scheduealRepository
             , IMfgProductionOrdersPlanRepository iMfgProductionOrdersPlanRepository
-            , IEmployeesRepository employeesRepository)
+            , IEmployeesRepository employeesRepository
+            , IGroupRepository groupRepository)
         {
             _context = context;
             RequestMaterialRepository = requestMaterialRepository;
@@ -107,6 +109,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             ScheduealRepository = scheduealRepository;
             IMfgProductionOrdersPlanRepository = iMfgProductionOrdersPlanRepository;
             EmployeesRepository = employeesRepository;
+            GroupRepository = groupRepository;
         }
         /// <summary>
         /// Bắt đầu một transaction

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 
-namespace VietausWebAPI.Core.Application.Features.HR.Querys
+namespace VietausWebAPI.Core.Application.Features.HR.Querys.Employees
 {
     public class EmployeeQuery : PaginationQuery
     {

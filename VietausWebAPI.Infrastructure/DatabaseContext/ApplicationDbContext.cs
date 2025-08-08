@@ -858,10 +858,6 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasForeignKey(d => d.CreatedBy)
                     .HasConstraintName("FK_Groups_CreatedBy");
 
-                entity.HasOne(d => d.Member).WithMany(p => p.GroupMembers)
-                    .HasForeignKey(d => d.MemberId)
-                    .HasConstraintName("FK_Groups_MemberId");
-
                 entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.GroupUpdatedByNavigations)
                     .HasForeignKey(d => d.UpdatedBy)
                     .HasConstraintName("FK_Groups_UpdatedBy");
@@ -1515,6 +1511,11 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.Property(e => e.MemberId).HasDefaultValueSql("(newid())");
                 entity.Property(e => e.IsAdmin).HasDefaultValue(false);
+
+                entity.HasOne(d => d.Group).WithMany(p => p.MemberInGroups)
+                    .HasForeignKey(d => d.GroupId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_MemberInGroup_Groups");
 
                 entity.HasOne(d => d.ProfileNavigation).WithMany(p => p.MemberInGroups)
                     .HasForeignKey(d => d.Profile)

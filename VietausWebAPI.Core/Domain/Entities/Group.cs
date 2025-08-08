@@ -13,8 +13,6 @@ public partial class Group
 
     public string? Name { get; set; }
 
-    public Guid? MemberId { get; set; }
-
     public DateTime? CreatedDate { get; set; }
 
     public Guid? CreatedBy { get; set; }
@@ -29,7 +27,7 @@ public partial class Group
 
     public virtual Employee? CreatedByNavigation { get; set; }
 
-    public virtual Employee? Member { get; set; }
+    public virtual ICollection<MemberInGroup> MemberInGroups { get; set; } = new List<MemberInGroup>();
 
     public virtual Employee? UpdatedByNavigation { get; set; }
 }
