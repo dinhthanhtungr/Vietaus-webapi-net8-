@@ -1,13 +1,15 @@
 ﻿using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.HR.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.HR.Services;
-using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Labs.Services;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Planning.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Planning.Services;
+using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
+using VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.CustomerFeatures;
+using VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeatures;
 using VietausWebAPI.Core.Application.Usecases.Approvals.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.Approvals.ServiceContracts;
 using VietausWebAPI.Core.Application.Usecases.Approvals.Services;
@@ -34,12 +36,20 @@ using VietausWebAPI.Infrastructure.Repositories;
 using VietausWebAPI.Infrastructure.Repositories.Approval;
 using VietausWebAPI.Infrastructure.Repositories.HR;
 using VietausWebAPI.Infrastructure.Repositories.InventoryReceipts;
+using VietausWebAPI.Infrastructure.Repositories.Labs.QAQC;
 using VietausWebAPI.Infrastructure.Repositories.Labs;
 using VietausWebAPI.Infrastructure.Repositories.MaterialRequestDetail;
 using VietausWebAPI.Infrastructure.Repositories.Planning.Schedueal;
 using VietausWebAPI.Infrastructure.Repositories.PurchaseOrders;
+using VietausWebAPI.Infrastructure.Repositories.Sales;
 using VietausWebAPI.Infrastructure.Repositories.Supplier;
 using VietausWebAPI.Infrastructure.Repositories.SupplyRequest;
+using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.QAQCFeature;
+using VietausWebAPI.Infrastructure.Repositories.Share.SampleRequestFeature;
+using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
+using VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFeature;
+using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRequestFeature;
+using VietausWebAPI.Infrastructure.Repositories.Labs.QAQCFeature;
 
 namespace VietausWebAPI.WebAPI
 {
@@ -68,6 +78,18 @@ namespace VietausWebAPI.WebAPI
             services.AddScoped<IEmployeesRepository, EmployeesRepository>();
             services.AddScoped<IEmployeesService, EmployeesService>();
             services.AddScoped<IGroupRepository, GroupRepository>();
+            services.AddScoped<IMemberInGroupRepository, MemberInGroupRepository>();
+
+            // Sale
+            services.AddScoped<ICustomerRepository, CustomerRepository>();
+            services.AddScoped<ICustomerService, CustomerService>();
+            services.AddScoped<ITransferCustomerService, TransferCustomerService>();
+            services.AddScoped<ITransferCustomerRepository, TransferCustomerRepository>();
+            services.AddScoped<ICustomerTransferLogRepository, CustomerTransferLogRepository>();
+            services.AddScoped<ICustomerAssignmentRepository, CustomerAssignmentRepository>();
+            //services.AddScoped<ITransferCustomerRepository, TransferCustomerRepository>();
+            //services.AddScoped<ITransferCustomerRepository, TransferCustomerRepository>();
+
 
             // Approval
             services.AddScoped<IApprovalService, ApprovalService>();
@@ -111,6 +133,7 @@ namespace VietausWebAPI.WebAPI
             //Labs
             //ProductStandard
             services.AddScoped<IProductStandardRepository, ProductStandardRepository>();
+
             services.AddScoped<IProductStandardService, ProductStandardService>();
             //ProductInspection
             services.AddScoped<IProductInspectionRepository, ProductInspectionRepository>();
@@ -120,7 +143,14 @@ namespace VietausWebAPI.WebAPI
             services.AddScoped<IProductTestService, ProductTestService>();
             //MfgProductionOrdersPlanRepository
             services.AddScoped<IMfgProductionOrdersPlanRepository, MfgProductionOrdersPlanRepository>();
-            
+
+            //SampleRequest
+            services.AddScoped<ISampleRequestService, SampleRequestService>();
+            services.AddScoped<ISampleRequestRepository, SampleRequestRepository>();
+
+            //Product
+            services.AddScoped<IProductRepository, ProductRepository>();
+            services.AddScoped<IProductService, ProductService>();
             //QC 
             services.AddScoped<IQCDetailRepository, QCDetailRepository>();
             services.AddScoped<IQCOutputService, QCOutputService>();

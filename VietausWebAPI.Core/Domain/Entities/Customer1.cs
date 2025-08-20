@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 
 namespace VietausWebAPI.Core.Domain.Entities;
 
@@ -11,7 +12,7 @@ public partial class Customer1
 
     public string? CustomerName { get; set; }
 
-    public Guid? EmployeeId { get; set; }
+    //public Guid? EmployeeId { get; set; }
 
     public string? CustomerGroup { get; set; }
 
@@ -35,6 +36,16 @@ public partial class Customer1
 
     public Guid? CompanyId { get; set; }
 
+    public DateTime? IssueDate { get; set; }
+
+    public string? IssuedPlace { get; set; }
+
+    public string? FaxNumber { get; set; }
+
+    public string? Product { get; set; }
+
+    public bool? IsActive { get; set; }
+
     public virtual ICollection<Address> Addresses { get; set; } = new List<Address>();
 
     public virtual Company? Company { get; set; }
@@ -43,7 +54,11 @@ public partial class Customer1
 
     public virtual Employee? CreatedByNavigation { get; set; }
 
-    public virtual Employee? Employee { get; set; }
+    public virtual ICollection<CustomerAssignment> CustomerAssignments { get; set; } = new List<CustomerAssignment>();
+
+    public virtual ICollection<DetailCustomerTransfer> DetailCustomerTransfers { get; set; } = new List<DetailCustomerTransfer>();
+
+    //public virtual Employee? Employee { get; set; }
 
     public virtual ICollection<MerchandiseOrder> MerchandiseOrders { get; set; } = new List<MerchandiseOrder>();
 

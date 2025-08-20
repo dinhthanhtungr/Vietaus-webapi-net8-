@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductInspectionFeature;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductInspectionFeature;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
 {

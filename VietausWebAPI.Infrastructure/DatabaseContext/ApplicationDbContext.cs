@@ -30,6 +30,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
         public virtual DbSet<ApprovalHistoryMaterialDatum> ApprovalHistoryMaterialData { get; set; }
 
         public virtual DbSet<ApprovalLevelsCommonDatum> ApprovalLevelsCommonData { get; set; }
+
         public virtual DbSet<AssignTask> AssignTasks { get; set; }
 
         public virtual DbSet<Branch> Branches { get; set; }
@@ -46,7 +47,13 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
         public virtual DbSet<Customer1> Customers1 { get; set; }
 
+        public virtual DbSet<CustomerAssignment> CustomerAssignments { get; set; }
+
         public virtual DbSet<CustomerLabelOverride> CustomerLabelOverrides { get; set; }
+
+        public virtual DbSet<CustomerTransferLog> CustomerTransferLogs { get; set; }
+
+        public virtual DbSet<DetailCustomerTransfer> DetailCustomerTransfers { get; set; }
 
         public virtual DbSet<Employee> Employees { get; set; }
 
@@ -150,12 +157,13 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
         public virtual DbSet<OperatorForRecordToPlc> OperatorForRecordToPlcs { get; set; }
 
-        public virtual DbSet<Part> Parts { get; set; }
         public virtual DbSet<OtherMaintenanceHistory> OtherMaintenanceHistories { get; set; }
 
         public virtual DbSet<OtherMaintenanceMaterial> OtherMaintenanceMaterials { get; set; }
 
         public virtual DbSet<ParameterStandardMd> ParameterStandardMds { get; set; }
+
+        public virtual DbSet<Part> Parts { get; set; }
 
         public virtual DbSet<PartsCommonDatum> PartsCommonData { get; set; }
 
@@ -527,9 +535,15 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.CustomerGroup).HasMaxLength(100);
                 entity.Property(e => e.CustomerName).HasMaxLength(200);
                 entity.Property(e => e.ExternalId).HasMaxLength(100);
+                entity.Property(e => e.FaxNumber)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.IssueDate).HasColumnType("datetime");
+                entity.Property(e => e.IssuedPlace).HasMaxLength(255);
                 entity.Property(e => e.Phone)
                     .HasMaxLength(20)
                     .IsUnicode(false);
+                entity.Property(e => e.Product).HasMaxLength(255);
                 entity.Property(e => e.RegistrationNumber)
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -549,14 +563,66 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasForeignKey(d => d.CreatedBy)
                     .HasConstraintName("FK_Groups_CreatedBy");
 
-                entity.HasOne(d => d.Employee).WithMany(p => p.Customer1Employees)
-                    .HasForeignKey(d => d.EmployeeId)
-                    .HasConstraintName("FK_Customer_EmployeeId");
+                //entity.HasOne(d => d.Employee).WithMany(p => p.Customer1Employees)
+                //    .HasForeignKey(d => d.EmployeeId)
+                //    .HasConstraintName("FK_Customer_EmployeeId");
 
                 entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.Customer1UpdatedByNavigations)
                     .HasForeignKey(d => d.UpdatedBy)
                     .HasConstraintName("FK_Groups_UpdatedBy");
             });
+
+            modelBuilder.Entity<CustomerAssignment>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK__Customer__3214EC279397A842");
+
+                entity.ToTable("CustomerAssignment", "sales");
+
+                entity.Property(e => e.Id)
+                    .HasDefaultValueSql("(newid())")
+                    .HasColumnName("ID");
+                entity.Property(e => e.CompanyId).HasColumnName("companyId");
+                entity.Property(e => e.CreatedBy).HasColumnName("createdBy");
+                entity.Property(e => e.CreatedDate)
+                    .HasDefaultValueSql("(sysutcdatetime())")
+                    .HasColumnType("datetime")
+                    .HasColumnName("createdDate");
+                entity.Property(e => e.CustomerId).HasColumnName("CustomerID");
+                entity.Property(e => e.EmployeeId).HasColumnName("EmployeeID");
+                entity.Property(e => e.GroupId).HasColumnName("GroupID");
+                entity.Property(e => e.UpdatedBy).HasColumnName("updatedBy");
+                entity.Property(e => e.UpdatedDate)
+                    .HasDefaultValueSql("(sysutcdatetime())")
+                    .HasColumnType("datetime")
+                    .HasColumnName("updatedDate");
+
+                entity.HasOne(d => d.Company).WithMany(p => p.CustomerAssignments)
+                    .HasForeignKey(d => d.CompanyId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CustomerAssignment_Company");
+
+                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.CustomerAssignmentCreatedByNavigations)
+                    .HasForeignKey(d => d.CreatedBy)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CustomerAssignment_CreatedBy");
+
+                entity.HasOne(d => d.Customer).WithMany(p => p.CustomerAssignments)
+                    .HasForeignKey(d => d.CustomerId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CustomerAssignment_Customer");
+
+                entity.HasOne(d => d.Employee).WithMany(p => p.CustomerAssignmentEmployees)
+                    .HasForeignKey(d => d.EmployeeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CustomerAssignment_EmployeeID");
+
+                entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.CustomerAssignmentUpdatedByNavigations)
+                    .HasForeignKey(d => d.UpdatedBy)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CustomerAssignment_updatedBy");
+            });
+
+
 
             modelBuilder.Entity<CustomerLabelOverride>(entity =>
             {
@@ -568,6 +634,74 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasColumnName("CustomerID");
                 entity.Property(e => e.LabelType).HasMaxLength(100);
                 entity.Property(e => e.ProductCode).HasMaxLength(100);
+            });
+
+            modelBuilder.Entity<CustomerTransferLog>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK__Customer__3214EC276977D605");
+
+                entity.ToTable("CustomerTransferLog", "sales");
+
+                entity.Property(e => e.Id)
+                    .HasDefaultValueSql("(newid())")
+                    .HasColumnName("ID");
+                entity.Property(e => e.CompanyId).HasColumnName("companyId");
+                entity.Property(e => e.CreatedBy).HasColumnName("createdBy");
+                entity.Property(e => e.CreatedDate)
+                    .HasDefaultValueSql("(sysutcdatetime())")
+                    .HasColumnType("datetime")
+                    .HasColumnName("createdDate");
+
+                entity.HasOne(d => d.Company).WithMany(p => p.CustomerTransferLogs)
+                    .HasForeignKey(d => d.CompanyId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CustomerTransferLog_Company");
+
+                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.CustomerTransferLogCreatedByNavigations)
+                    .HasForeignKey(d => d.CreatedBy)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CustomerTransferLog_CreatedBy");
+
+                entity.HasOne(d => d.FromEmployee).WithMany(p => p.CustomerTransferLogFromEmployees)
+                    .HasForeignKey(d => d.FromEmployeeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CustomerTransferLog_FromEmployeeId");
+
+                entity.HasOne(d => d.FromGroup).WithMany(p => p.CustomerTransferLogFromGroups)
+                    .HasForeignKey(d => d.FromGroupId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CustomerTransferLog_FromGroupId");
+
+                entity.HasOne(d => d.ToEmployee).WithMany(p => p.CustomerTransferLogToEmployees)
+                    .HasForeignKey(d => d.ToEmployeeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CustomerTransferLog_ToEmployeeId");
+
+                entity.HasOne(d => d.ToGroup).WithMany(p => p.CustomerTransferLogToGroups)
+                    .HasForeignKey(d => d.ToGroupId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CustomerTransferLog_ToGroupId");
+            });
+
+            modelBuilder.Entity<DetailCustomerTransfer>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK__DetailCu__3214EC273B3F47A0");
+
+                entity.ToTable("DetailCustomerTransfer", "sales");
+
+                entity.Property(e => e.Id).HasColumnName("ID");
+                entity.Property(e => e.CustomerId).HasColumnName("CustomerID");
+                entity.Property(e => e.LogId).HasColumnName("LogID");
+
+                entity.HasOne(d => d.Customer).WithMany(p => p.DetailCustomerTransfers)
+                    .HasForeignKey(d => d.CustomerId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_DetailCustomerTransfer_CustomerID");
+
+                entity.HasOne(d => d.Log).WithMany(p => p.DetailCustomerTransfers)
+                    .HasForeignKey(d => d.LogId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_DetailCustomerTransfer_LogID");
             });
 
             modelBuilder.Entity<Employee>(entity =>
@@ -600,6 +734,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasForeignKey(d => d.PartId)
                     .HasConstraintName("FK_Employees_Parts");
             });
+
 
             modelBuilder.Entity<EmployeesCommonDatum>(entity =>
             {
@@ -1511,6 +1646,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.Property(e => e.MemberId).HasDefaultValueSql("(newid())");
                 entity.Property(e => e.IsAdmin).HasDefaultValue(false);
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
 
                 entity.HasOne(d => d.Group).WithMany(p => p.MemberInGroups)
                     .HasForeignKey(d => d.GroupId)

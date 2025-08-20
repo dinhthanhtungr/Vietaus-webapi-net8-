@@ -33,5 +33,32 @@ namespace VietausWebAPI.Core.Application.Shared.Helper
             string nextId = $"{basePrefix}{nextIdNumber:D5}"; // Ensure 5 digits for the number part
             return nextId;
         }
+
+        public static async Task<string> GenerateCode(
+            string prefix,
+            Func<string, Task<string?>> getLatestCodeFunc)
+        {
+            // Tạo basePrefix: ví dụ "CUS_"
+            var basePrefix = $"{prefix}_";
+
+            // Lấy mã cuối cùng từ DB theo tiền tố
+            string? lastCode = await getLatestCodeFunc(basePrefix);
+
+            int nextNumber = 1;
+
+            if (!string.IsNullOrWhiteSpace(lastCode) && lastCode.StartsWith(basePrefix))
+            {
+                // Tách phần số ra
+                string numberPart = lastCode.Substring(basePrefix.Length);
+
+                if (int.TryParse(numberPart, out int lastNumber))
+                {
+                    nextNumber = lastNumber + 1;
+                }
+            }
+
+            return $"{basePrefix}{nextNumber}";
+        }
+
     }
 }

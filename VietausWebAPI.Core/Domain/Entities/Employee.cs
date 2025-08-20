@@ -45,9 +45,21 @@ public partial class Employee
 
     public virtual ICollection<Customer1> Customer1CreatedByNavigations { get; set; } = new List<Customer1>();
 
-    public virtual ICollection<Customer1> Customer1Employees { get; set; } = new List<Customer1>();
+    //public virtual ICollection<Customer1> Customer1Employees { get; set; } = new List<Customer1>();
 
     public virtual ICollection<Customer1> Customer1UpdatedByNavigations { get; set; } = new List<Customer1>();
+
+    public virtual ICollection<CustomerAssignment> CustomerAssignmentCreatedByNavigations { get; set; } = new List<CustomerAssignment>();
+
+    public virtual ICollection<CustomerAssignment> CustomerAssignmentEmployees { get; set; } = new List<CustomerAssignment>();
+
+    public virtual ICollection<CustomerAssignment> CustomerAssignmentUpdatedByNavigations { get; set; } = new List<CustomerAssignment>();
+
+    public virtual ICollection<CustomerTransferLog> CustomerTransferLogCreatedByNavigations { get; set; } = new List<CustomerTransferLog>();
+
+    public virtual ICollection<CustomerTransferLog> CustomerTransferLogFromEmployees { get; set; } = new List<CustomerTransferLog>();
+
+    public virtual ICollection<CustomerTransferLog> CustomerTransferLogToEmployees { get; set; } = new List<CustomerTransferLog>();
 
     public virtual ICollection<Formula> FormulaCreatedByNavigations { get; set; } = new List<Formula>();
 

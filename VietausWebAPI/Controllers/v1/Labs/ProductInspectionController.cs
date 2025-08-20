@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductInspectionFeature;
-using VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductStandardFeature;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductInspectionFeature;
 using VietausWebAPI.Core.Application.Features.Labs.Helpers;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductInspectionFeature;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts;

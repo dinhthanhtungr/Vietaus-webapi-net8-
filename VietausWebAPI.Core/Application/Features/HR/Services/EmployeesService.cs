@@ -183,18 +183,89 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
             }
         }
 
-        public async Task<IEnumerable<GetMemberDTO>> AllMembers(Guid Id)
+        public async Task<GetGroupInfor> AllMembers(Guid Id, string? keywork = null)
         {
-            var pagedResult = await _unitOfWork.GroupRepository.AllMembers(Id);
+            var pagedResult = await _unitOfWork.GroupRepository.AllMembers(Id, keywork);
             try
             {
+                var result = new GetGroupInfor();
+
                 var pagedResultMapped = _mapper.Map<IEnumerable<GetMemberDTO>>(pagedResult);
-                return pagedResultMapped;
+                result.members = pagedResultMapped;
+
+                var group = await _unitOfWork.GroupRepository.GetGroupByIdAsync(Id);
+                result.ExternalId = group.ExternalId;
+                result.GroupId = group.GroupId;
+                result.Name = group.Name;
+
+                return result;
             }
             catch (Exception ex)
             {
                 throw new Exception($"Lỗi khi lấy danh sách nhân viên: {ex.Message}", ex);
             }
+        }
+
+        public async Task<OperationResult> changeLeaderStatus(GroupMemberQuery query)
+        {
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var affected = await _unitOfWork.GroupRepository.changeLeaderStatus(query);
+
+                await _unitOfWork.CommitTransactionAsync();
+
+                return affected > 0
+                    ? OperationResult.Ok("Thay đổi thành công")
+                    : OperationResult.Fail("Thay đổi thất bại");
+            }
+
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw new Exception($"Lỗi khi Thay đổi: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<OperationResult> DeleteMemberInGroupAsync(GroupMemberQuery query)
+        {
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var affected = await _unitOfWork.GroupRepository.DeleteMemberInGroupAsync(query);
+
+                await _unitOfWork.CommitTransactionAsync();
+
+
+                return affected > 0
+                    ? OperationResult.Ok("Thay đổi thành công")
+                    : OperationResult.Fail("Thay đổi thất bại");
+            }
+
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw new Exception($"Lỗi khi Thay đổi: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<PagedResult<EmployeeGroupDTO>> GetEmployeesWithGroupsAsync(GetEmployeesWithGroupsQuery query, CancellationToken ct = default)
+        {
+            var paged = await _unitOfWork.EmployeesRepository.GetPagedWithGroupsAsync(query);
+
+            // Map list
+            var items = _mapper.Map<List<EmployeeGroupDTO>>(paged.Items);
+
+            // (tuỳ chọn) loại trùng group nếu dữ liệu membership có thể bị double
+            foreach (var e in items)
+            {
+                e.Groups = e.Groups
+                    .GroupBy(g => new { g.GroupId, g.IsAdmin }) // hoặc chỉ GroupId tuỳ mong muốn
+                    .Select(g => g.First())
+                    .ToList();
+            }
+
+            return new PagedResult<EmployeeGroupDTO>(items, paged.TotalCount, paged.Page, paged.PageSize);
         }
         // Implement methods from IEmployeesCommonService here
     }

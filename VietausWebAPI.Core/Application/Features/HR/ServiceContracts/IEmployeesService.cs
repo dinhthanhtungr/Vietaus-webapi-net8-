@@ -68,6 +68,29 @@ namespace VietausWebAPI.Core.Application.Features.HR.ServiceContracts
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
-        Task<IEnumerable<GetMemberDTO>> AllMembers(Guid Id);
+        Task<GetGroupInfor> AllMembers(Guid Id, string? keywork = null);
+
+        /// <summary>
+        /// Xóa một nhân viên ra khỏi group
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        Task<OperationResult> DeleteMemberInGroupAsync(GroupMemberQuery query);
+
+        /// <summary>
+        /// Đổi trạng thái leader
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        Task<OperationResult> changeLeaderStatus(GroupMemberQuery query);
+
+
+        /// <summary>
+        /// Lấy danh sách nhân viên có nhóm
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<PagedResult<EmployeeGroupDTO>> GetEmployeesWithGroupsAsync(GetEmployeesWithGroupsQuery query, CancellationToken ct = default);
     }
 }

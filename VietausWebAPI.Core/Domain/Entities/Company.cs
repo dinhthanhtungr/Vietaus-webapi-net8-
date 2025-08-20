@@ -27,6 +27,10 @@ public partial class Company
 
     public virtual ICollection<Customer1> Customer1s { get; set; } = new List<Customer1>();
 
+    public virtual ICollection<CustomerAssignment> CustomerAssignments { get; set; } = new List<CustomerAssignment>();
+
+    public virtual ICollection<CustomerTransferLog> CustomerTransferLogs { get; set; } = new List<CustomerTransferLog>();
+
     public virtual ICollection<Formula> Formulas { get; set; } = new List<Formula>();
 
     public virtual ICollection<Group> Groups { get; set; } = new List<Group>();

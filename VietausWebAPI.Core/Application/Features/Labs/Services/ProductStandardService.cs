@@ -7,10 +7,10 @@ using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Repositories_Contracts;
 using AutoMapper;
 using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductStandardFeature;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductStandardFeature;
 using VietausWebAPI.Core.Application.Shared.Helper;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductStandardFeature;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.Services
 {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.HR.Querys.Employees;
+using VietausWebAPI.Core.Application.Features.HR.Querys.Groups;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Identity;
@@ -46,5 +47,12 @@ namespace VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts
         /// <param name="keyword"></param>
         /// <returns></returns>
         Task<PagedResult<ApplicationUser>> GetPagedAccoutAsync(EmployeeQuery? keyword);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        Task<PagedResult<Employee>> GetPagedWithGroupsAsync(GetEmployeesWithGroupsQuery query);
     }
 }

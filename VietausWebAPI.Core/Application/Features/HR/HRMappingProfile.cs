@@ -38,20 +38,36 @@ namespace VietausWebAPI.Core.Application.Features.HR
             CreateMap<MemberInGroup, GetMemberDTO>()
                 .ForMember(x => x.MemberName, opt => opt.MapFrom(src => src.ProfileNavigation.FullName))
                 .ForMember(x => x.ExternalId, opt => opt.MapFrom(src => src.ProfileNavigation.ExternalId))
+                .ForMember(x => x.EmployeeId, opt => opt.MapFrom(src => src.ProfileNavigation.EmployeeId))
                 .ReverseMap();
-
             CreateMap<Group, GetGroupDTOs>()
                 .ForMember(dest => dest.LeaderName, opt => opt.MapFrom(src =>
                     src.MemberInGroups
                         .Where(m => m.IsAdmin == true)
-                        .Select(m => m.ProfileNavigation.FullName) // hoặc tên nếu có
+                        .Select(m => m.ProfileNavigation.FullName)
                         .FirstOrDefault()
                 ))
-                .ForMember(x => x.MemberCount, opt => opt.MapFrom(src => src.MemberInGroups.Count));
-                
+                .ForMember(dest => dest.MemberCount, opt => opt.MapFrom(src =>
+                    src.MemberInGroups.Count(m => m.IsActive == true)
+                ));
 
 
             CreateMap<Group, PostGroupDTOs>().ReverseMap();
+
+
+            // Map MemberInGroup -> GroupLiteDTO
+            CreateMap<MemberInGroup, GroupLiteDTO>()
+                .ForMember(d => d.GroupId, opt => opt.MapFrom(s => s.Group.GroupId))
+                .ForMember(d => d.GroupCode, opt => opt.MapFrom(s => s.Group.ExternalId))
+                .ForMember(d => d.GroupName, opt => opt.MapFrom(s => s.Group.Name))
+                .ForMember(d => d.GroupType, opt => opt.MapFrom(s => s.Group.GroupType))
+                .ForMember(d => d.IsAdmin, opt => opt.MapFrom(s => s.IsAdmin ?? false));
+
+            // Map Employee -> EmployeeGroupDTO
+            // Chú ý: Groups sẽ tự động map nhờ ICollection<MemberInGroup>
+            CreateMap<Employee, EmployeeGroupDTO>()
+                .ForMember(d => d.EmployeeCode, opt => opt.MapFrom(s => s.ExternalId))
+                .ForMember(d => d.Groups, opt => opt.MapFrom(s => s.MemberInGroups));
 
         }
     }

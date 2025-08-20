@@ -1,8 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
 using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
-using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.QAQCFeature;
+using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
+using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRequestFeature;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
 using VietausWebAPI.Core.Application.Usecases.Approvals.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.InventoryReceipts.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.MaterialRequestDetail.RepositoriesContracts;
@@ -11,6 +14,8 @@ using VietausWebAPI.Core.Application.Usecases.Suppliers.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Usecases.SupplyRequests.RepositoriesContracts;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Core.ServiceContracts;
+using VietausWebAPI.Infrastructure.Repositories.Sales;
+using VietausWebAPI.Infrastructure.Repositories.Share.SampleRequestFeature;
 using VietausWebAPI.WebAPI.DatabaseContext;
 
 
@@ -39,6 +44,13 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         // HR
         public IEmployeesRepository EmployeesRepository { get; }
         public IGroupRepository GroupRepository { get; }
+        public IMemberInGroupRepository MemberInGroupRepository { get; }
+        
+        // Sale
+        public ICustomerRepository CustomerRepository { get; }
+        public ITransferCustomerRepository TransferCustomerRepository { get; }
+        public ICustomerAssignmentRepository CustomerAssignmentRepository { get; }
+        public ICustomerTransferLogRepository CustomerTransferLogRepository { get; }
 
         // Labs
         public IProductStandardRepository ProductStandardRepository { get; }
@@ -46,8 +58,8 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IProductTestRepository ProductTestRepository { get; }
         public IMfgProductionOrdersPlanRepository MfgProductionOrdersPlanRepository { get; }
         public IQCDetailRepository IQCDetailRepository { get; }
-
-
+        public IProductRepository ProductRepository { get; }
+        public ISampleRequestRepository SampleRequestRepository { get; }
         // Planning
         public IScheduealRepository ScheduealRepository { get; }
 
@@ -84,7 +96,14 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             , IScheduealRepository scheduealRepository
             , IMfgProductionOrdersPlanRepository iMfgProductionOrdersPlanRepository
             , IEmployeesRepository employeesRepository
-            , IGroupRepository groupRepository)
+            , IGroupRepository groupRepository
+            , ICustomerRepository customerRepository
+            , ITransferCustomerRepository transferCustomerRepository
+            , ICustomerAssignmentRepository customerAssignmentRepository
+            , ICustomerTransferLogRepository customerTransferLogRepository
+            , IMemberInGroupRepository memberInGroupRepository
+            , ISampleRequestRepository sampleRequestRepository
+            , IProductRepository productRepository)
         {
             _context = context;
             RequestMaterialRepository = requestMaterialRepository;
@@ -110,6 +129,13 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             IMfgProductionOrdersPlanRepository = iMfgProductionOrdersPlanRepository;
             EmployeesRepository = employeesRepository;
             GroupRepository = groupRepository;
+            CustomerRepository = customerRepository;
+            TransferCustomerRepository = transferCustomerRepository;
+            CustomerAssignmentRepository = customerAssignmentRepository;
+            CustomerTransferLogRepository = customerTransferLogRepository;
+            MemberInGroupRepository = memberInGroupRepository;
+            SampleRequestRepository = sampleRequestRepository;
+            ProductRepository = productRepository;
         }
         /// <summary>
         /// Bắt đầu một transaction

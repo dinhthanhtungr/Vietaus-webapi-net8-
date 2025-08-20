@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper.Execution;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +13,7 @@ using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Infrastructure.Utilities;
 using VietausWebAPI.WebAPI.DatabaseContext;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace VietausWebAPI.Infrastructure.Repositories.HR
 {
@@ -81,21 +84,63 @@ namespace VietausWebAPI.Infrastructure.Repositories.HR
             await _context.MemberInGroups.AddRangeAsync(members);
         }
 
-        public async Task<IEnumerable<MemberInGroup>> AllMembers(Guid Id)
+        public async Task<IEnumerable<MemberInGroup>> AllMembers(Guid Id, string? keywork = null)
         {
             var queryAble = _context.MemberInGroups
                 .Include(x => x.ProfileNavigation)
                 .AsNoTracking()
                 .AsQueryable();
 
-            queryAble = queryAble.Where(x => x.GroupId == Id);
+            queryAble = queryAble.Where(x => x.GroupId == Id && x.IsActive == true);
 
+            if (!string.IsNullOrWhiteSpace(keywork))
+            {
+                string keywordLower = keywork.ToLower();
+                queryAble = queryAble.Where(x =>
+                    x.ProfileNavigation.FullName != null && EF.Functions.Collate(x.ProfileNavigation.FullName, "Latin1_General_CI_AI").ToLower().Contains(keywordLower) ||
+                    x.ProfileNavigation.ExternalId != null && EF.Functions.Collate(x.ProfileNavigation.Email, "Latin1_General_CI_AI").ToLower().Contains(keywordLower));
+            }
             return await queryAble.ToListAsync();
         }
 
-        public Task setChangeLeader(Guid Id)
+        public async Task<int> changeLeaderStatus(GroupMemberQuery query)
         {
-            throw new NotImplementedException();
+            // Gỡ quyền admin các thành viên trong group
+            await _context.MemberInGroups
+                .Where(m => m.GroupId == query.GroupId && m.MemberId != query.MemberId)
+                .ExecuteUpdateAsync(setters =>
+                    setters.SetProperty(m => m.IsAdmin, false)
+                );
+
+            // Cấp quyền admin cho thành viên được chọn
+            int affected = await _context.MemberInGroups
+                .Where(m => m.GroupId == query.GroupId && m.MemberId == query.MemberId)
+                .ExecuteUpdateAsync(setters =>
+                    setters.SetProperty(m => m.IsAdmin, true)
+                );
+
+            return affected; // tổng số dòng bị ảnh hưởng
+        }
+
+        public async Task<Group> GetGroupByIdAsync(Guid groupId)
+        {
+            var group = await _context.Groups
+                .Where(e => e.GroupId == groupId)
+                .FirstOrDefaultAsync();
+
+            if (group == null)
+                throw new Exception("Group not found."); // hoặc return default / log...
+
+            return group;
+        }
+
+        public async Task<int> DeleteMemberInGroupAsync(GroupMemberQuery query)
+        {
+            return await _context.MemberInGroups
+                .Where(m => m.GroupId == query.GroupId && m.MemberId == query.MemberId)
+                .ExecuteUpdateAsync(setters =>
+                    setters.SetProperty(m => m.IsActive, false)
+                );
         }
     }
 }

@@ -23,6 +23,12 @@ namespace VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts
         /// <returns></returns>
         Task<PagedResult<Group>> GetAllGroupsAsync(GroupQuery? query);
         /// <summary>
+        /// Lấy thông tin cụ thể một group
+        /// </summary>
+        /// <param name="groupId"></param>
+        /// <returns></returns>
+        Task<Group> GetGroupByIdAsync(Guid groupId);
+        /// <summary>
         /// Xóa nhóm
         /// </summary>
         /// <param name="groupName"></param>
@@ -34,20 +40,27 @@ namespace VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts
         /// <param name="members"></param>
         /// <returns></returns>
         Task AddMembers(IEnumerable<MemberInGroup> members);
-        
+
         /// <summary>
         /// Lấy danh sách tất cả thành viên trong group
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
-        Task<IEnumerable<MemberInGroup>> AllMembers(Guid Id);
+        Task<IEnumerable<MemberInGroup>> AllMembers(Guid Id, string? keywork = null);
 
         /// <summary>
-        /// Chỉnh thành leader
+        /// Đổi trạng thái leader
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
-        Task setChangeLeader(Guid Id); 
+        Task<int> changeLeaderStatus(GroupMemberQuery query);
+
+        /// <summary>
+        /// Xóa thành viên trong nhóm cụ thể
+        /// </summary>
+        /// <param name="groupName"></param>
+        /// <returns></returns>
+        Task<int> DeleteMemberInGroupAsync(GroupMemberQuery query);
 
         /// <summary>
         /// Lấy ID cuối cùng
@@ -55,5 +68,7 @@ namespace VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts
         /// <param name="prefix"></param>
         /// <returns></returns>
         Task<string?> GetLatestExternalIdStartsWithAsync(string prefix);
+
+
     }
 }

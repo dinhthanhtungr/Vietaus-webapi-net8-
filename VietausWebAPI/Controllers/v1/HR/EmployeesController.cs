@@ -5,6 +5,7 @@ using VietausWebAPI.Core.Application.Features.HR.DTOs.Groups;
 using VietausWebAPI.Core.Application.Features.HR.Querys.Employees;
 using VietausWebAPI.Core.Application.Features.HR.Querys.Groups;
 using VietausWebAPI.Core.Application.Features.HR.ServiceContracts;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1.HR
 {
@@ -21,6 +22,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.HR
         public EmployeesController(IEmployeesService employeesCommonService)
         {
             _employeesService = employeesCommonService;
+
         }
         [HttpGet("Get")]
         public async Task<IActionResult> GetAllEmployeesCommon([FromQuery] string? Email)
@@ -85,6 +87,21 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.HR
             }
         }
 
+        //[HttpDelete("DeleteGroup/{id}")]
+        //public async Task<IActionResult> DeleteGroup([FromBody] Guid id)
+        //{
+        //    var result = await _employeesService.changeLeaderStatus(id);
+
+        //    if (result.Success)
+        //    {
+        //        return Ok(result);
+        //    }
+        //    else
+        //    {
+        //        return BadRequest(result.Message);
+        //    }
+        //}
+
         [HttpPost("AddMembersInGroup")]
         public async Task<IActionResult> AddMembersInGroup([FromBody] IEnumerable<PostMemberDTO> members)
         {
@@ -106,11 +123,51 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.HR
         }
 
         [HttpGet("GetAllMembers")]
-        public async Task<IActionResult> GetAllMembers([FromQuery] Guid Id)
+        public async Task<IActionResult> GetAllMembers([FromQuery] Guid Id , string? keywork)
         {
-            var res = await _employeesService.AllMembers(Id);
+            var res = await _employeesService.AllMembers(Id, keywork);
             return Ok(res);
         }
 
+
+
+        [HttpPatch("leader")]
+        public async Task<IActionResult> ChangeLeaderStatus([FromQuery] GroupMemberQuery query)
+        {
+            var result = await _employeesService.changeLeaderStatus(query);
+
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            else
+            {
+                return BadRequest(result.Message);
+            }
+        }
+
+        [HttpPatch("DeleteMemberInGroup")]
+        public async Task<IActionResult> DeleteMemberInGroup([FromQuery] GroupMemberQuery query)
+        {
+            var result = await _employeesService.DeleteMemberInGroupAsync(query);
+
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            else
+            {
+                return BadRequest(result.Message);
+            }
+        }
+
+        [HttpGet("with-groups")]
+        public async Task<ActionResult<PagedResult<EmployeeGroupDTO>>> Get(
+    [FromQuery] GetEmployeesWithGroupsQuery query,
+    CancellationToken ct = default)
+        {
+            var result = await _employeesService.GetEmployeesWithGroupsAsync(query, ct);
+            return Ok(result);
+        }
     }
 }

@@ -18,6 +18,7 @@ public partial class Contact
     public string? Phone { get; set; }
 
     public string? Email { get; set; }
+    public bool? IsPrimary { get; set; }
 
     public virtual Customer1 Customer { get; set; } = null!;
 }

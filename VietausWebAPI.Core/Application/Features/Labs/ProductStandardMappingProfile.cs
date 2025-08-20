@@ -1,9 +1,12 @@
 ﻿
 using AutoMapper;
-using VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductInspectionFeature;
-using VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductStandardFeature;
-using VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductTestFeature;
-using VietausWebAPI.Core.Application.Features.Labs.DTOs.QCOutputFeature;
+using Microsoft.AspNetCore.Routing;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductInspectionFeature;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductStandardFeature;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductTestFeature;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.QCOutputFeature;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.ProductFeature;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.SampleRequest;
 using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.Core.Application.Features.Labs
@@ -71,6 +74,24 @@ namespace VietausWebAPI.Core.Application.Features.Labs
             //QC Detail
             CreateMap<QCDetailDTO, Qcdetail>().ReverseMap();
 
+            //SampleRequest
+            CreateMap<CreateSampleRequest, SampleRequest>()
+                // Audit/Server fields: KHÔNG nhận từ client
+                .ForMember(d => d.SampleRequestId, opt => opt.Ignore())
+                .ForMember(d => d.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
+                .ForMember(d => d.UpdatedDate, opt => opt.Ignore())
+                .ForMember(d => d.UpdatedBy, opt => opt.Ignore());
+
+            CreateMap<SampleRequest, SampleRequestDTO>().ReverseMap();
+
+            //Product
+            CreateMap<CreateProductRequest, Product>()
+                .ForMember(d => d.ProductId, opt => opt.Ignore())
+                .ForMember(d => d.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
+                .ForMember(d => d.UpdatedDate, opt => opt.Ignore())
+                .ForMember(d => d.UpdatedBy, opt => opt.Ignore());// Chặn map
+
+            CreateMap<Product, ProductDTO>().ReverseMap();
         }
     }
 }

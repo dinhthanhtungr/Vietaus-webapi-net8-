@@ -8,6 +8,7 @@ public partial class MemberInGroup
     public Guid MemberId { get; set; }
 
     public bool? IsAdmin { get; set; }
+    public bool? IsActive { get; set; }
 
     public Guid? Profile { get; set; }
 

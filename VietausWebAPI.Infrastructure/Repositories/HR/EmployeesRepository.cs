@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.HR.Querys.Employees;
+using VietausWebAPI.Core.Application.Features.HR.Querys.Groups;
 using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
@@ -92,5 +93,49 @@ namespace VietausWebAPI.Infrastructure.Repositories.HR
         {
             await _context.Employees.AddAsync(employee);
         }
+
+
+
+        public async Task<PagedResult<Employee>> GetPagedWithGroupsAsync(GetEmployeesWithGroupsQuery query)
+        {
+            // Base: Employees + navigation cần cho Groups
+            var q = _context.Employees
+                   .AsNoTracking()
+                   .Include(e => e.MemberInGroups
+                       .Where(m => !query.OnlyActiveMembership || m.IsActive == true)
+                       .Where(m => !query.CompanyId.HasValue || m.Group.CompanyId == query.CompanyId)
+                       .Where(m => string.IsNullOrWhiteSpace(query.GroupType) || m.Group.GroupType.Contains(query.GroupType))
+                   )
+                       .ThenInclude(m => m.Group)
+                   .AsQueryable();
+
+            // Keyword (không đụng tới group để khỏi loại nhân viên không có group)
+            if (!string.IsNullOrWhiteSpace(query.Keyword))
+            {
+                string kw = query.Keyword.ToLower();
+                q = q.Where(e =>
+                    (e.FullName != null && EF.Functions.Collate(e.FullName, "Latin1_General_CI_AI").ToLower().Contains(kw)) ||
+                    (e.Email != null && EF.Functions.Collate(e.Email, "Latin1_General_CI_AI").ToLower().Contains(kw)) ||
+                    (e.ExternalId != null && EF.Functions.Collate(e.ExternalId, "Latin1_General_CI_AI").ToLower().Contains(kw)));
+            }
+
+            if (!string.IsNullOrEmpty(query.GroupType))
+            {
+                q = q.Where(e => e.MemberInGroups.Any(m => m.Group.GroupType.Contains(query.GroupType)));
+            }
+
+            if (!string.IsNullOrEmpty(query.ExternalId))
+            {
+                q = q.Where(e => e.Part.ExternalId != null && EF.Functions.Collate(e.Part.ExternalId, "Latin1_General_CI_AI").ToLower().Contains(query.ExternalId));
+            }
+
+
+
+            // KHÔNG .Where(e => e.MemberInGroups.Any(...)) nữa, để không loại nhân viên không có group
+            q = q.OrderBy(e => e.FullName);
+
+            return await QueryableExtensions.GetPagedAsync(q, query);
+        }
+
     }
 }

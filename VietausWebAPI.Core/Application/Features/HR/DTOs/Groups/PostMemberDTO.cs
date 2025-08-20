@@ -10,6 +10,6 @@ namespace VietausWebAPI.Core.Application.Features.HR.DTOs.Groups
     {
         public Guid? GroupId { get; set; }
         public Guid? Profile { get; set; }
-        public bool? IsAdmin { get; set; }
+        public bool? IsAdmin { get; set; } = false;
     }
 }

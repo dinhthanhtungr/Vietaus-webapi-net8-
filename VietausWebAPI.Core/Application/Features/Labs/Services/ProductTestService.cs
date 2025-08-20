@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
-using VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductTestFeature;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductTestFeature;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductTestFeature;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts;
