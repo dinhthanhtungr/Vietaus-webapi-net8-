@@ -30,7 +30,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
         public int? Branch { get; set; }
         public string? Status { get; set; }
         public string? Package { get; set; }
-        public Guid CompanyId { get; set; }                 // bắt buộc
+        public Guid CompanyId { get; set; }                  // bắt buộc
         public Guid CreatedBy { get; set; }                 // bắt buộc
     }
 }
