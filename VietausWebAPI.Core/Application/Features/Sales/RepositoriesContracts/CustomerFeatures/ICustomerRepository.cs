@@ -17,13 +17,13 @@ namespace VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.Cu
         /// </summary>
         /// <param name="query"></param>
         /// <returns></returns>
-        Task<PagedResult<Customer1>> GetAllAsync(CustomerQuery? query);
+        Task<PagedResult<Customer>> GetAllAsync(CustomerQuery? query);
         /// <summary>
         /// Thêm khách hàng mới
         /// </summary>
         /// <param name="customer"></param>
         /// <returns></returns>
-        Task AddNewCustomer(Customer1 customer);
+        Task AddNewCustomer(Customer customer);
 
         /// <summary>
         /// Lấy thông tin khách hàng theo ID
@@ -41,7 +41,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.Cu
 
         Task<bool> UpdateCustomerAsync(PatchCustomer customer);
 
-        IQueryable<Customer1> Query();
+        IQueryable<Customer> Query();
 
         /// <summary>
         /// lấy sô cuối cùng của code

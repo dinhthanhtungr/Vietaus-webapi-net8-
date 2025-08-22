@@ -29,11 +29,11 @@ namespace VietausWebAPI.Core.Application.Usecases.Suppliers.Services
             return result;
         }
 
-        public async Task<IEnumerable<SupplierAddressDTO>> GetSupplierAddress(Guid supplierId)
-        {
-            var supplierAddresses = await _unitOfWork.SupplierRepository.GetSupplierAddress(supplierId);
-            var result = _mapper.Map<IEnumerable<SupplierAddressDTO>>(supplierAddresses);
-            return result;
-        }
+        //public async Task<IEnumerable<SupplierAddressDTO>> GetSupplierAddress(Guid supplierId)
+        //{
+        //    var supplierAddresses = await _unitOfWork.SupplierRepository.GetSupplierAddress(supplierId);
+        //    var result = _mapper.Map<IEnumerable<SupplierAddressDTO>>(supplierAddresses);
+        //    return result;
+        //}
     }
 }

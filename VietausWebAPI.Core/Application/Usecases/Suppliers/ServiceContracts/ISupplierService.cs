@@ -10,6 +10,6 @@ namespace VietausWebAPI.Core.Application.Usecases.Suppliers.ServiceContracts
     public interface ISupplierService
     {
         Task<List<SupplierInformationsDTO>> GetAllSupplierName();
-        Task<IEnumerable<SupplierAddressDTO>> GetSupplierAddress(Guid supplierId);
+        //Task<IEnumerable<SupplierAddressDTO>> GetSupplierAddress(Guid supplierId);
     }
 }

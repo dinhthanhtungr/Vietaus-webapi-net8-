@@ -82,7 +82,13 @@ namespace VietausWebAPI.Core.Application.Features.Labs
                 .ForMember(d => d.UpdatedDate, opt => opt.Ignore())
                 .ForMember(d => d.UpdatedBy, opt => opt.Ignore());
 
-            CreateMap<SampleRequest, SampleRequestDTO>().ReverseMap();
+            CreateMap<SampleRequest, SampleRequestSummaryDTO>()
+                .ForMember(d => d.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+                .ForMember(d => d.ColourCode, opt => opt.MapFrom(src => src.Product.ColourCode))
+                .ForMember(d => d.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(d => d.CustomerName, opt => opt.MapFrom(src => src.Customer.CustomerName))
+                .ForMember(d => d.LabName, opt => opt.MapFrom(src => src.Product.CreatedBy))
+                .ReverseMap();
 
             //Product
             CreateMap<CreateProductRequest, Product>()

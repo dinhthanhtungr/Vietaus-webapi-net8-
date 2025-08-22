@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace VietausWebAPI.Core.Domain.Entities;
+ namespace VietausWebAPI.Core.Domain.Entities;
 
 public partial class CustomerTransferLog
 {
@@ -14,6 +14,7 @@ public partial class CustomerTransferLog
     public Guid FromGroupId { get; set; }
 
     public Guid ToGroupId { get; set; }
+
     public string? Note { get; set; }
 
     public DateTime CreatedDate { get; set; }
@@ -35,5 +36,4 @@ public partial class CustomerTransferLog
     public virtual Employee ToEmployee { get; set; } = null!;
 
     public virtual Group ToGroup { get; set; } = null!;
-
 }

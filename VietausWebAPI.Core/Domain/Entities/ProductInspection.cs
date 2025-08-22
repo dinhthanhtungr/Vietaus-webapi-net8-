@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace VietausWebAPI.Core.Domain.Entities;
+ namespace VietausWebAPI.Core.Domain.Entities;
 
 public partial class ProductInspection
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid Id { get; set; }
 
     public string? BatchId { get; set; }
 
@@ -99,7 +99,7 @@ public partial class ProductInspection
 
     public string? Notes { get; set; }
 
-    public DateTime? CreateDate { get; set; } = DateTime.UtcNow;
+    public DateTime? CreateDate { get; set; }
 
     public string? CreatedBy { get; set; }
 
@@ -117,5 +117,5 @@ public partial class ProductInspection
 
     public bool? IsMeshAttached { get; set; }
 
-    public virtual Qcdetail? Qcdetails { get; set; }
+    public virtual Qcdetail Qcdetails { get; set; } = new Qcdetail();
 }

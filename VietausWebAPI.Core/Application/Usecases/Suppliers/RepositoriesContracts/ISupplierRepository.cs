@@ -11,6 +11,5 @@ namespace VietausWebAPI.Core.Application.Usecases.Suppliers.RepositoriesContract
     public interface ISupplierRepository
     {
         Task<List<SuppliersMaterialDatum>> GetAllNameSupplierRepository();
-        Task<IEnumerable<SupplierAddressesMaterialDatum>> GetSupplierAddress(Guid supplierId);
     }
 }

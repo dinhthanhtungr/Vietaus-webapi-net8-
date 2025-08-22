@@ -20,14 +20,14 @@ namespace VietausWebAPI.Core.Application.Features.Sales
             CreateMap<PostCustomerAssignment, CustomerAssignment>();
 
             // Customer: Entity -> DTO
-            CreateMap<Customer1, GetCustomer>()
+            CreateMap<Customer, GetCustomer>()
                 .ForMember(d => d.Addresses, opt => opt.MapFrom(s => s.Addresses))
                 .ForMember(d => d.Contacts, opt => opt.MapFrom(s => s.Contacts))
                 .ForMember(d => d.CompanyName, opt => opt.MapFrom(s => s.Company.Name));
             // (Nếu cần chiều ngược lại:) CreateMap<GetCustomer, Customer1>(); // tùy nhu cầu
 
             // Customer: DTO -> Entity
-            CreateMap<PostCustomer, Customer1>()
+            CreateMap<PostCustomer, Customer>()
                 .ForMember(d => d.CustomerId, opt => opt.Ignore())
                 .ForMember(d => d.Addresses, opt => opt.MapFrom(s => s.Addresses))
                 .ForMember(d => d.Contacts, opt => opt.MapFrom(s => s.Contacts))
@@ -37,12 +37,16 @@ namespace VietausWebAPI.Core.Application.Features.Sales
                         ? new[] { s.CustomerAssignment }
                         : Array.Empty<PostCustomerAssignment>()))
 
-                
+
                 // Nếu DTO không gửi IsActive, set mặc định:
-                .ForMember(d => d.IsActive, opt => opt.MapFrom(_ => true));
+                .ForMember(d => d.IsActive, o => o.MapFrom(_ => true))
+                // ⬇️ không nhận thời gian từ client
+                .ForMember(d => d.CreatedDate, o => o.Ignore())
+                .ForMember(d => d.UpdatedDate, o => o.Ignore())
+                .ForMember(d => d.IssueDate, o => o.Ignore());
 
             // Review DTO
-            CreateMap<Customer1, GetReviewCustomer>()
+            CreateMap<Customer, GetReviewCustomer>()
                 .ForMember(d => d.Name, opt => opt.MapFrom(s => s.CustomerName))
                 .ForMember(d => d.RegNo, opt => opt.MapFrom(s => s.RegistrationNumber))
                 .ForMember(d => d.Phone, opt => opt.MapFrom(s => s.Phone))
@@ -59,7 +63,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales
                 
 
             // Patch
-            CreateMap<PatchCustomer, Customer1>().ReverseMap();
+            CreateMap<PatchCustomer, Customer>().ReverseMap();
         }
     }
 }

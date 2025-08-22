@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace VietausWebAPI.Core.Domain.Entities;
+ namespace VietausWebAPI.Core.Domain.Entities;
 
 public partial class EmployeesCommonDatum
 {
@@ -36,8 +36,6 @@ public partial class EmployeesCommonDatum
     public virtual ApprovalLevelsCommonDatum? Level { get; set; }
 
     public virtual ICollection<MaterialsMaterialDatum> MaterialsMaterialData { get; set; } = new List<MaterialsMaterialDatum>();
-
-    public virtual ICollection<ParameterStandardMd> ParameterStandardMds { get; set; } = new List<ParameterStandardMd>();
 
     public virtual PartsCommonDatum Part { get; set; } = null!;
 

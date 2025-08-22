@@ -89,7 +89,7 @@ namespace VietausWebAPI.Core.Service
                 PersonName = user.personName,
                 Expiration = expiration,
                 RefreshToken = GenerateRefreshToken(),
-                RefreshTokenExpirationDateTime = DateTime.Now.AddMinutes
+                RefreshTokenExpirationDateTime = DateTime.UtcNow.AddMinutes
                 (Convert.ToInt32(_configuration["RefreshToken:EXPIRATION_MINUTES"]))
             };
         }

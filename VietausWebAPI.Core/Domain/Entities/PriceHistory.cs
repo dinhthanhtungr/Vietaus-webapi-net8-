@@ -31,7 +31,7 @@ public partial class PriceHistory
 
     public virtual Employee? CreatedByNavigation { get; set; }
 
-    public virtual Material1 Material { get; set; } = null!;
+    public virtual Material Material { get; set; } = null!;
 
     public virtual Supplier Supplier { get; set; } = null!;
 

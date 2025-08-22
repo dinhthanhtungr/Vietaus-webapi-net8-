@@ -118,35 +118,40 @@ namespace VietausWebAPI.Core.Application.Usecases.PurchaseOrders.Services
             return result;
         }
 
-
+        /// <summary>
+        /// Sau này quay lại sửa lại để lấy số PO theo năm và số thứ tự
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public async Task<string> GeneratePONumberAsync()
         {
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var currentYear = DateTime.Now.Year;
-                var seq = await _unitOfWork.PurchaseOrdersRepository.GetLastPurchaseOrderIdRepositoryAsync(currentYear);
+                var currentYear = DateTime.UtcNow.Year;
+                //var seq = await _unitOfWork.PurchaseOrdersRepository.GetLastPurchaseOrderIdRepositoryAsync(currentYear);
 
-                if (seq == null)
-                {
-                    seq = new SequencePoMaterialDatum
-                    {
-                        Year = currentYear,
-                        LastNumber = 1
-                    };
+                //if (seq == null)
+                //{
+                //    seq = new SequencePoMaterialDatum
+                //    {
+                //        Year = currentYear,
+                //        LastNumber = 1
+                //    };
 
-                    await _unitOfWork.PurchaseOrdersRepository.AddNewNumber(seq);
-                }
+                //    await _unitOfWork.PurchaseOrdersRepository.AddNewNumber(seq);
+                //}
 
-                else
-                {
-                    seq.LastNumber++;
-                }
+                //else
+                //{
+                //    seq.LastNumber++;
+                //}
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
-                return $"PO-{currentYear}-{seq.LastNumber:D5}";
+                //return $"PO-{currentYear}-{seq.LastNumber:D5}";
+                return $"PO-{currentYear}";
             }
 
             catch (Exception ex)

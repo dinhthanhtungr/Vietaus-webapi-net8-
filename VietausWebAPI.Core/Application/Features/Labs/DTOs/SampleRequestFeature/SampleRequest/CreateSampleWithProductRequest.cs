@@ -13,6 +13,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
     {
         public Guid? ProductId { get; set; }                  // case 1
         public CreateProductRequest? Product { get; set; }    // case 2
-        public required CreateSampleRequest Sample { get; set; }
+        public CreateSampleRequest? Sample { get; set; }
     }
 }

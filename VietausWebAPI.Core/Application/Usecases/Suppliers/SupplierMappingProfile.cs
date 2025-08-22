@@ -15,7 +15,7 @@ namespace VietausWebAPI.Core.Application.Usecases.Suppliers
         {
             CreateMap<SupplierInformationsDTO, SuppliersMaterialDatum>().ReverseMap()
                 .ForMember(x => x.VendorPhone, opt => opt.MapFrom(src => src.Phone));
-            CreateMap<SupplierAddressDTO, SupplierAddressesMaterialDatum>().ReverseMap();
+            //CreateMap<SupplierAddressDTO, SupplierAddressesMaterialDatum>().ReverseMap();
         }
     }
 }

@@ -22,13 +22,14 @@ public partial class CustomerAssignment
     public Guid UpdatedBy { get; set; }
 
     public Guid CompanyId { get; set; }
-    public bool IsActive { get; set; } = true;
+
+    public bool IsActive { get; set; }
 
     public virtual Company Company { get; set; } = null!;
 
     public virtual Employee CreatedByNavigation { get; set; } = null!;
 
-    public virtual Customer1 Customer { get; set; } = null!;
+    public virtual Customer Customer { get; set; } = null!;
 
     public virtual Employee Employee { get; set; } = null!;
 

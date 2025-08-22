@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace VietausWebAPI.Core.Domain.Entities;
+ namespace VietausWebAPI.Core.Domain.Entities;
 
 public partial class Address
 {
@@ -23,5 +23,5 @@ public partial class Address
 
     public string? PostalCode { get; set; }
 
-    public virtual Customer1 Customer { get; set; } = null!;
+    public virtual Customer Customer { get; set; } = null!;
 }

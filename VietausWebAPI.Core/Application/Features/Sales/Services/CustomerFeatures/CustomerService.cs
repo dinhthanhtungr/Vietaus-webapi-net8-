@@ -57,7 +57,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
 
                 customer.CustomerAssignment.GroupId = groupId;
 
-                var customerEntity = _mapper.Map<Customer1>(customer);
+                var customerEntity = _mapper.Map<Customer>(customer);
 
                 await _unitOfWork.CustomerRepository.AddNewCustomer(customerEntity);
 
@@ -120,7 +120,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
             if (pageSize <= 0) pageSize = 15;
 
             // Base query: khách hàng có ít nhất 1 assignment thuộc employeeId
-            IQueryable<Customer1> q = _unitOfWork.CustomerRepository.Query(); // nhớ AsNoTracking() trong repo cho nhẹ
+            IQueryable<Customer> q = _unitOfWork.CustomerRepository.Query(); // nhớ AsNoTracking() trong repo cho nhẹ
 
             // Nếu là admin, lấy tất cả khách hàng thuộc group của admin
 

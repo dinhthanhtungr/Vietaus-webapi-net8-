@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.SampleRequest;
+using VietausWebAPI.Core.Application.Features.Labs.Queries.CreateSampleRequest;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRequestFeature;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.SampleRequest
@@ -24,8 +25,8 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.SampleRequest
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost("Create")]
-        [ProducesResponseType(typeof(SampleRequestDTO), StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        //[ProducesResponseType(typeof(SampleRequestDTO), StatusCodes.Status201Created)]
+        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateSampleRequest([FromBody] CreateSampleWithProductRequest request)
         {
             if (request == null)
@@ -40,6 +41,21 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.SampleRequest
             catch (ArgumentException ex)
             {
                 return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
+        [HttpGet("GetAll")]
+        public async Task<IActionResult> GetAllSampleRequests([FromQuery]SampleRequestQuery query, CancellationToken ct = default)
+        {
+            try
+            {
+                var result = await _sampleRequestService.GetAllAsync(query, ct);
+                return Ok(result);
             }
             catch (Exception ex)
             {

@@ -73,26 +73,34 @@ namespace VietausWebAPI.Infrastructure.Repositories.Labs.QAQC
 
         public async Task<PagedResult<ProductInspection>> GetProductInspectionPagedAsync(ProductInspectionQuery? query)
         {
-            var queryable = _context.ProductInspections
-                .Include(p => p.Qcdetails)
-                .AsNoTracking()
-                .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(query.keyword))
+            try
             {
-                string keyword = query.keyword.ToLower();
-                queryable = queryable.Where(x =>
-                    x.BatchId != null && EF.Functions.Collate(x.BatchId, "Latin1_General_CI_AI").ToLower().Contains(keyword) ||
-                    x.ProductCode != null && EF.Functions.Collate(x.ProductCode, "Latin1_General_CI_AI").ToLower().Contains(keyword));
-            }
+                var queryable = _context.ProductInspections
+                    .Include(p => p.Qcdetails)
+                    .AsNoTracking()
+                    .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(query.types))
-            {
-                queryable = queryable.Where(x => x.Types.Contains(query.types));
+                if (!string.IsNullOrWhiteSpace(query.keyword))
+                {
+                    string keyword = query.keyword.ToLower();
+                    queryable = queryable.Where(x =>
+                        x.BatchId != null && EF.Functions.Collate(x.BatchId, "Latin1_General_CI_AI").ToLower().Contains(keyword) ||
+                        x.ProductCode != null && EF.Functions.Collate(x.ProductCode, "Latin1_General_CI_AI").ToLower().Contains(keyword));
+                }
+
+                if (!string.IsNullOrWhiteSpace(query.types))
+                {
+                    queryable = queryable.Where(x => x.Types.Contains(query.types));
+                }
+                query.PageSize = 15;
+                queryable = queryable.OrderByDescending(x => x.CreateDate);
+                return await QueryableExtensions.GetPagedAsync(queryable, query);
             }
-            query.PageSize = 15;
-            queryable = queryable.OrderByDescending(x => x.CreateDate);
-            return await QueryableExtensions.GetPagedAsync(queryable, query);
+            catch (Exception ex)
+            {
+                // Log the exception (if logging is set up)
+                throw new InvalidOperationException("An error occurred while retrieving paged product inspections.", ex);
+            }
         }
 
         public async Task PostProductInspectionAsync(ProductInspection productInspection)

@@ -24,11 +24,5 @@ namespace VietausWebAPI.Infrastructure.Repositories.Supplier
             return await _context.SuppliersMaterialData.ToListAsync();
         }
 
-        public async Task<IEnumerable<SupplierAddressesMaterialDatum>> GetSupplierAddress(Guid supplierId)
-        {
-            return await _context.SupplierAddressesMaterialData.Where(x => x.SupplierId == supplierId).Include(x => x.Supplier)
-                .AsNoTracking()
-                .ToListAsync();
-        }
     }
 }

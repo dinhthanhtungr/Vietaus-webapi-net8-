@@ -21,7 +21,7 @@ public partial class PurchaseOrderDetail
 
     public string? Note { get; set; }
 
-    public virtual Material1 Material { get; set; } = null!;
+    public virtual Material Material { get; set; } = null!;
 
     public virtual PurchaseOrder PurchaseOrder { get; set; } = null!;
 }

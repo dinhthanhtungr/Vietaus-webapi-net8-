@@ -12,10 +12,8 @@ namespace VietausWebAPI.Core.Application.Usecases.PurchaseOrders.RepositoriesCon
 {
     public interface IPurchaseOrdersRepository
     {
-        Task<SequencePoMaterialDatum> GetLastPurchaseOrderIdRepositoryAsync(int year);
         Task<PagedResult<PurchaseOrdersMaterialDatum>> GetPurchaseOrdersRepositoryAsync(GetPOQuery query);
         Task CreatePurchaseOrdersRepositoryAsync(PurchaseOrdersMaterialDatum purchaseOrder);
-        Task AddNewNumber(SequencePoMaterialDatum sequencePoMaterialDatum);
         Task<PurchaseOrdersMaterialDatum> GetByIdAsync(Guid poid);
         Task DeleteAsync(PurchaseOrdersMaterialDatum po);
 

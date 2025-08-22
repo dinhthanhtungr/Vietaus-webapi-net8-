@@ -9,7 +9,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
     public class CreateProductRequest
     {
         public string? ColourCode { get; set; }
-        public string Name { get; set; } = default!;        // bắt buộc
+        public string? Name { get; set; } = string.Empty;        // bắt buộc
         public string? ColourName { get; set; }
         public string? Additive { get; set; }
         public float? UsageRate { get; set; }

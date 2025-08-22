@@ -22,26 +22,26 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
             _context = context;
         }
 
-        public async Task AddNewCustomer(Customer1 customer)
+        public async Task AddNewCustomer(Customer customer)
         {
-            await _context.Customers1.AddAsync(customer);
+            await _context.Customers.AddAsync(customer);
         }
 
         public async Task<bool> DeleteCustomerByIdAsync(Guid id)
         {
-            var customer = await _context.Customers1.FindAsync(id);
+            var customer = await _context.Customers.FindAsync(id);
             if (customer == null)
             {
                 return false; // Không tìm thấy khách hàng
             }
             customer.IsActive = false; // Đánh dấu là không hoạt động
-            _context.Customers1.Update(customer);
+            _context.Customers.Update(customer);
             return true;
         }
 
-        public async Task<PagedResult<Customer1>> GetAllAsync(CustomerQuery? query)
+        public async Task<PagedResult<Customer>> GetAllAsync(CustomerQuery? query)
         {
-            var queryAble = _context.Customers1
+            var queryAble = _context.Customers
                 .Where(x => x.IsActive == true) // Chỉ lấy khách hàng đang hoạt động
                 .Include(c => c.CustomerAssignments)
                     .ThenInclude(ca => ca.Employee)
@@ -55,12 +55,11 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
             {
                 string keywordLower = query.keyword.ToLower();
                 queryAble = queryAble.Where(x =>
-                    x.CustomerName != null && x.ApplicationName != null &&
-                    EF.Functions.Collate(x.ApplicationName, "Latin1_General_CI_AI").ToLower().Contains(keywordLower)
-                    ||
-                    x.ExternalId != null && EF.Functions.Collate(x.ExternalId, "Latin1_General_CI_AI").ToLower().Contains(keywordLower)
+                    (x.ApplicationName != null && x.ApplicationName.ToLower().Contains(keywordLower)) ||
+                    (x.ExternalId != null && x.ExternalId.ToLower().Contains(keywordLower))
                 );
             }
+
 
             queryAble = queryAble.OrderByDescending(x => x.UpdatedDate);
 
@@ -70,7 +69,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
 
         public async Task<GetCustomer?> GetCustomerByIdAsync(Guid id)
         {
-            return await _context.Customers1
+            return await _context.Customers
                    .AsNoTracking()
                    .Where(c => c.CustomerId == id)
                    .Select(c => new GetCustomer
@@ -133,7 +132,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
 
         public async Task<string?> GetLatestExternalIdStartsWithAsync(string prefix)
         {
-            return await _context.Customers1
+            return await _context.Customers
                 .Where(e => e.ExternalId.StartsWith(prefix))
                 .OrderByDescending(e => e.ExternalId.Length)   // dài hơn => số lớn hơn
                 .ThenByDescending(e => e.ExternalId)           // cùng độ dài thì so chuỗi
@@ -141,14 +140,14 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
                 .FirstOrDefaultAsync();
         }
 
-        public IQueryable<Customer1> Query()
+        public IQueryable<Customer> Query()
         {
-            return _context.Customers1.AsNoTracking();
+            return _context.Customers.AsNoTracking();
         }
 
         public async Task<bool> UpdateCustomerAsync(PatchCustomer customer)
         {
-            var existingCustomer = await _context.Customers1
+            var existingCustomer = await _context.Customers
                 .Include(c => c.Addresses)
                 .Include(c => c.Contacts)
                 .FirstOrDefaultAsync(c => c.CustomerId == customer.CustomerId);

@@ -22,19 +22,19 @@ namespace VietausWebAPI.WebAPI.Controllers.v1
             return Ok(result);
         }
 
-        [HttpGet("GetSupplierAddress/{supplierId}")]
-        public async Task<IActionResult> GetSupplierAddress(Guid supplierId)
-        {
-            if (supplierId == Guid.Empty)
-            {
-                return BadRequest("Invalid supplier ID.");
-            }
-            var result = await _supplierService.GetSupplierAddress(supplierId);
-            if (result == null || !result.Any())
-            {
-                return NotFound("No addresses found for the specified supplier.");
-            }
-            return Ok(result);
-        }
+        //[HttpGet("GetSupplierAddress/{supplierId}")]
+        //public async Task<IActionResult> GetSupplierAddress(Guid supplierId)
+        //{
+        //    if (supplierId == Guid.Empty)
+        //    {
+        //        return BadRequest("Invalid supplier ID.");
+        //    }
+        //    var result = await _supplierService.GetSupplierAddress(supplierId);
+        //    if (result == null || !result.Any())
+        //    {
+        //        return NotFound("No addresses found for the specified supplier.");
+        //    }
+        //    return Ok(result);
+        //}
     }
 }

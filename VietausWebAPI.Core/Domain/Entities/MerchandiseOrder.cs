@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace VietausWebAPI.Core.Domain.Entities;
+ namespace VietausWebAPI.Core.Domain.Entities;
 
 public partial class MerchandiseOrder
 {
@@ -47,7 +47,7 @@ public partial class MerchandiseOrder
 
     public virtual Employee? CreatedByNavigation { get; set; }
 
-    public virtual Customer1? Customer { get; set; }
+    public virtual Customer? Customer { get; set; }
 
     public virtual Employee? ManagerBy { get; set; }
 

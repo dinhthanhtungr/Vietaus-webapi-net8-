@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VietausWebAPI.WebAPI.DatabaseContext;
@@ -11,9 +12,11 @@ using VietausWebAPI.WebAPI.DatabaseContext;
 namespace VietausWebAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250820063152_initial")]
+    partial class initial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -166,7 +169,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("ApprovalID");
 
                     b.Property<DateTime?>("ApprovalDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("ApprovalStatus")
                         .HasMaxLength(16)
@@ -204,7 +207,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("ApprovalDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("EmployeeId")
                         .IsRequired()
@@ -277,7 +280,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<bool?>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -292,7 +295,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.HasKey("BranchId")
                         .HasName("PK__Branches__A1682FC5D195FBDD");
@@ -359,7 +362,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -370,7 +373,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.HasKey("CompanyId")
                         .HasName("PK__Companie__2D971CAC11C45530");
@@ -443,7 +446,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("CustomerGroup")
                         .HasMaxLength(100)
@@ -466,7 +469,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<DateTime?>("IssueDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("IssuedPlace")
                         .HasMaxLength(255)
@@ -495,7 +498,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("Website")
                         .HasMaxLength(200)
@@ -532,9 +535,9 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedDate")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("timestamp")
                         .HasColumnName("createdDate")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid>("CustomerId")
                         .HasColumnType("uuid")
@@ -557,9 +560,9 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Property<DateTime>("UpdatedDate")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("timestamp")
                         .HasColumnName("updatedDate")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.HasKey("Id")
                         .HasName("PK__Customer__3214EC279397A842");
@@ -595,9 +598,9 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedDate")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("timestamp")
                         .HasColumnName("createdDate")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid>("FromEmployeeId")
                         .HasColumnType("uuid");
@@ -672,10 +675,10 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("character varying(500)");
 
                     b.Property<DateTime?>("DateHired")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<DateTime?>("DateOfBirth")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("Email")
                         .HasMaxLength(50)
@@ -741,10 +744,10 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("character varying(500)");
 
                     b.Property<DateTime?>("DateHired")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<DateTime?>("DateOfBirth")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("Email")
                         .HasMaxLength(50)
@@ -814,7 +817,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("ExternalId")
                         .HasMaxLength(50)
@@ -832,7 +835,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("SentDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<decimal?>("TotalPrice")
                         .HasColumnType("decimal(16, 2)");
@@ -841,13 +844,13 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<Guid?>("VerifiedBy")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("VerifiedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.HasKey("FormulaId")
                         .HasName("PK__Formulas__227429A55C6F1195");
@@ -928,7 +931,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("ExternalId")
                         .IsRequired()
@@ -947,7 +950,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.HasKey("GroupId")
                         .HasName("PK__Groups__149AF36A3DC9A844");
@@ -1007,7 +1010,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("ReceiptDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<int?>("ReceiptQty")
                         .HasColumnType("integer");
@@ -1113,7 +1116,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("CustomCode")
                         .HasMaxLength(50)
@@ -1153,7 +1156,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<double?>("Weight")
                         .HasColumnType("double precision");
@@ -1229,7 +1232,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<DateTime?>("CreateDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("EmployeeId")
                         .HasMaxLength(16)
@@ -1302,7 +1305,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.HasKey("MaterialsSuppliersId")
                         .HasName("PK__Material__4F13EDBB73A34869");
@@ -1356,7 +1359,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("supplierId");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("timestamp")
                         .HasColumnName("updatedDate");
 
                     b.HasKey("MaterialsSuppliersId")
@@ -1413,7 +1416,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreateDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uuid");
@@ -1440,7 +1443,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("PaymentDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("PaymentType")
                         .HasMaxLength(50)
@@ -1467,7 +1470,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<int?>("Vat")
                         .HasColumnType("integer")
@@ -1502,7 +1505,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("DeliveryDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<double?>("ExpectedQuantity")
                         .HasColumnType("double precision");
@@ -1542,10 +1545,10 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<DateTime>("DeliveryDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<Guid>("MerchandiseOrderId")
                         .HasColumnType("uuid");
@@ -1572,11 +1575,11 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("id");
 
                     b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("timestamp")
                         .HasColumnName("createdDate");
 
                     b.Property<DateTime?>("ExpiryDate")
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("timestamp")
                         .HasColumnName("expiryDate");
 
                     b.Property<string>("ExternalId")
@@ -1700,7 +1703,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<DateTime?>("CreateDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uuid");
@@ -1711,7 +1714,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("character varying(10)");
 
                     b.Property<DateTime?>("EndDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<bool?>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -1734,7 +1737,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.HasKey("PriceHistoryId")
                         .HasName("PK__PriceHis__A927CACB4B3A2EAC");
@@ -1759,7 +1762,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("Currency")
                         .HasMaxLength(10)
@@ -1767,7 +1770,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("character varying(10)");
 
                     b.Property<DateTime?>("EndDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<decimal?>("Price")
                         .HasColumnType("decimal(16, 2)");
@@ -1776,13 +1779,13 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("StartDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.HasKey("PriceHistoryId")
                         .HasName("PK__PriceHis__A927CACB8B375541");
@@ -1837,7 +1840,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("updatedBy");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("timestamp")
                         .HasColumnName("updatedDate");
 
                     b.HasKey("PriceHistoryId")
@@ -1891,7 +1894,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<double?>("DeltaE")
                         .HasColumnType("double precision");
@@ -1971,7 +1974,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<double?>("UsageRate")
                         .HasColumnType("double precision");
@@ -2022,7 +2025,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("FieldChanged")
                         .HasMaxLength(100)
@@ -2075,7 +2078,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("character varying(50)");
 
                     b.Property<DateTime?>("CreateDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(50)
@@ -2122,7 +2125,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("character varying(50)");
 
                     b.Property<DateTime?>("ExpiryDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("ExternalId")
                         .HasMaxLength(50)
@@ -2200,7 +2203,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<DateTime?>("ManufacturingDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("MeshType")
                         .HasMaxLength(100)
@@ -2297,7 +2300,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("CustomerExternalId")
                         .HasMaxLength(50)
@@ -2425,7 +2428,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreateDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uuid");
@@ -2524,7 +2527,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<int?>("Weight")
                         .HasColumnType("integer");
@@ -2550,7 +2553,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("id");
 
                     b.Property<DateTime?>("ExpiryDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("ExternalId")
                         .HasMaxLength(50)
@@ -2559,7 +2562,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("externalId");
 
                     b.Property<DateTime?>("ManufacturingDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("ProductCustomerExternalId")
                         .HasMaxLength(50)
@@ -2609,7 +2612,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreateDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uuid");
@@ -2658,7 +2661,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<int?>("Vat")
                         .HasColumnType("integer")
@@ -2687,7 +2690,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PurchaseOrderDetailId"));
 
                     b.Property<DateTime?>("DeliveryDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<Guid?>("ExternalId")
                         .HasColumnType("uuid");
@@ -2727,7 +2730,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<DateTime?>("DeliveryDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<int?>("DetailId")
                         .HasColumnType("integer")
@@ -2772,7 +2775,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("StatusHistoryId"));
 
                     b.Property<DateTime?>("ChangedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<Guid?>("EmployeeId")
                         .HasColumnType("uuid");
@@ -2811,7 +2814,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<DateTime?>("ChangedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("EmployeeId")
                         .HasMaxLength(50)
@@ -2864,7 +2867,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("character varying(255)");
 
                     b.Property<DateTime?>("DeliveryDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("EmployeeId")
                         .HasMaxLength(16)
@@ -2883,7 +2886,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("note");
 
                     b.Property<DateTime?>("OrderDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("Packaging")
                         .HasMaxLength(100)
@@ -2943,10 +2946,10 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<DateTime?>("DeliveryDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("Note")
                         .HasMaxLength(255)
@@ -3103,19 +3106,19 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<Guid>("CustomerId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("ExpectedDeliveryDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<decimal?>("ExpectedPrice")
                         .HasColumnType("decimal(18, 4)");
 
                     b.Property<DateTime?>("ExpectedPriceQuoteDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<double?>("ExpectedQuantity")
                         .HasColumnType("double precision");
@@ -3151,13 +3154,10 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("RealDeliveryDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<DateTime?>("RealPriceQuoteDate")
-                        .HasColumnType("timestamptz");
-
-                    b.Property<DateTime?>("RequestDeliveryDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("RequestType")
                         .HasMaxLength(100)
@@ -3174,7 +3174,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.HasKey("SampleRequestId")
                         .HasName("PK__SampleRe__6F83B553A1A0D2A8");
@@ -3215,7 +3215,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("timestamp")
                         .HasColumnName("createdDate");
 
                     b.Property<string>("CustomerExternalId")
@@ -3224,13 +3224,13 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("character varying(50)");
 
                     b.Property<DateTime?>("CustomerRequiredDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<DateTime?>("ExpectedCompletionDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<DateTime?>("ExpectedDeliveryDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("ExternalId")
                         .HasMaxLength(50)
@@ -3249,7 +3249,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("PlanDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("Qcstatus")
                         .HasMaxLength(50)
@@ -3293,7 +3293,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("ExternalId")
                         .HasMaxLength(50)
@@ -3496,7 +3496,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("ExternalId")
                         .HasMaxLength(16)
@@ -3521,7 +3521,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.HasKey("RequestId")
                         .HasName("PK__SupplyRe__33A8519A7A78FE1B");
@@ -3557,7 +3557,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("RequestDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("RequestStatus")
                         .IsRequired()
@@ -3583,7 +3583,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamp");
 
                     b.Property<string>("ExternalId")
                         .HasMaxLength(50)

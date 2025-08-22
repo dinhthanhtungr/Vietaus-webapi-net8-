@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace VietausWebAPI.Core.Domain.Entities;
+ namespace VietausWebAPI.Core.Domain.Entities;
 
 public partial class Employee
 {
@@ -43,23 +43,21 @@ public partial class Employee
 
     public virtual ICollection<Company> CompanyUpdatedByNavigations { get; set; } = new List<Company>();
 
-    public virtual ICollection<Customer1> Customer1CreatedByNavigations { get; set; } = new List<Customer1>();
-
-    //public virtual ICollection<Customer1> Customer1Employees { get; set; } = new List<Customer1>();
-
-    public virtual ICollection<Customer1> Customer1UpdatedByNavigations { get; set; } = new List<Customer1>();
-
     public virtual ICollection<CustomerAssignment> CustomerAssignmentCreatedByNavigations { get; set; } = new List<CustomerAssignment>();
 
     public virtual ICollection<CustomerAssignment> CustomerAssignmentEmployees { get; set; } = new List<CustomerAssignment>();
 
     public virtual ICollection<CustomerAssignment> CustomerAssignmentUpdatedByNavigations { get; set; } = new List<CustomerAssignment>();
 
+    public virtual ICollection<Customer> CustomerCreatedByNavigations { get; set; } = new List<Customer>();
+
     public virtual ICollection<CustomerTransferLog> CustomerTransferLogCreatedByNavigations { get; set; } = new List<CustomerTransferLog>();
 
     public virtual ICollection<CustomerTransferLog> CustomerTransferLogFromEmployees { get; set; } = new List<CustomerTransferLog>();
 
     public virtual ICollection<CustomerTransferLog> CustomerTransferLogToEmployees { get; set; } = new List<CustomerTransferLog>();
+
+    public virtual ICollection<Customer> CustomerUpdatedByNavigations { get; set; } = new List<Customer>();
 
     public virtual ICollection<Formula> FormulaCreatedByNavigations { get; set; } = new List<Formula>();
 
@@ -73,9 +71,9 @@ public partial class Employee
 
     public virtual ICollection<Group> GroupUpdatedByNavigations { get; set; } = new List<Group>();
 
-    public virtual ICollection<Material1> Material1CreatedByNavigations { get; set; } = new List<Material1>();
+    public virtual ICollection<Material> MaterialCreatedByNavigations { get; set; } = new List<Material>();
 
-    public virtual ICollection<Material1> Material1UpdatedByNavigations { get; set; } = new List<Material1>();
+    public virtual ICollection<Material> MaterialUpdatedByNavigations { get; set; } = new List<Material>();
 
     public virtual ICollection<MaterialsSupplier> MaterialsSuppliers { get; set; } = new List<MaterialsSupplier>();
 

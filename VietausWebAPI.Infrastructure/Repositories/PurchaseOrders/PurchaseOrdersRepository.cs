@@ -10,7 +10,6 @@ using VietausWebAPI.Core.Application.DTOs.PurchaseOrders.Query;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Application.Usecases.PurchaseOrders.RepositoriesContracts;
 using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.Infrastructure.Migrations;
 using VietausWebAPI.Infrastructure.Utilities;
 using VietausWebAPI.WebAPI.DatabaseContext;
 
@@ -28,16 +27,6 @@ namespace VietausWebAPI.Infrastructure.Repositories.PurchaseOrders
             await _context.PurchaseOrdersMaterialData.AddAsync(purchaseOrder);
         }
 
-        public async Task<SequencePoMaterialDatum?> GetLastPurchaseOrderIdRepositoryAsync(int year)
-        {
-            //return await _context.SequencePoMaterialData.FirstOrDefaultAsync(s => s.Year == year);
-            return null;
-        }
-
-        public async Task AddNewNumber(SequencePoMaterialDatum sequencePoMaterialDatum)
-        {
-            //await _context.SequencePoMaterialData.AddAsync(sequencePoMaterialDatum);
-        }
 
         public async Task<PagedResult<PurchaseOrdersMaterialDatum>> GetPurchaseOrdersRepositoryAsync(GetPOQuery query)
         {

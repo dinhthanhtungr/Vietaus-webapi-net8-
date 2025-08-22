@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using PuppeteerSharp;
 using QuestPDF.Drawing;
@@ -19,6 +21,7 @@ using VietausWebAPI.Infrastructure.Repositories;
 using VietausWebAPI.WebAPI;
 using VietausWebAPI.WebAPI.DatabaseContext;
 using VietausWebAPI.WebAPI.Hubs;
+
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseWebRoot("wwwroot");
@@ -39,7 +42,16 @@ builder.Services.AddControllers(options =>
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Version = "v1",
+        Title = "Your API Name",
+        Description = "Your API Description"
+    });
+});
+
 
 //CORS: localhost: 4200, localhost: 4100
 builder.Services.AddCors(options =>
@@ -75,11 +87,12 @@ QuestPDF.Settings.License = LicenseType.Community;
 
 builder.Services.AddTransient<IJwtService, JwtService>();
 
+
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("AppDbConnectinString"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("AppDbConnectionString"));
 });
 
 builder.Services.AddApplicationServices();
@@ -119,8 +132,34 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
 
-//
+// Thử nghiệp phải xóa đi kkhi build trương trình
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = false; // mặc định là false, chỉ để nhấn mạnh
+});
+// Thử nghiệp phải xóa đi kkhi build trương trình
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .Where(e => e.Value.Errors.Count > 0)
+            .Select(e => new
+            {
+                Field = e.Key,
+                Errors = e.Value.Errors.Select(er => er.ErrorMessage).ToArray()
+            });
 
+        var json = System.Text.Json.JsonSerializer.Serialize(errors);
+        Console.WriteLine("❌ Model binding errors: " + json);
+
+        return new BadRequestObjectResult(context.ModelState);
+    };
+});
+// Thử nghiệp phải xóa đi kkhi build trương trình
+builder.Logging.ClearProviders();
+// Thử nghiệp phải xóa đi kkhi build trương trình
+builder.Logging.AddConsole();
 
 
 
@@ -176,15 +215,18 @@ app.UseCors("AllowAllOrigins");
 //app.UseCors("AllowFrontend");
 
 // Configure the HTTP request pipeline.
-//if (app.Environment.IsDevelopment())
-//{
+
 app.UseSwagger();
-app.UseSwaggerUI();
-//}
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Your API V1");
+});
 
 //app.UseHttpsRedirection();
 
 //app.UseRouting();
+
+app.UseRouting(); // 🚨 BẮT BUỘC
 
 app.UseAuthentication();
 

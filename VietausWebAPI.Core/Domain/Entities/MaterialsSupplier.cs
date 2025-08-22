@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace VietausWebAPI.Core.Domain.Entities;
+ namespace VietausWebAPI.Core.Domain.Entities;
 
 public partial class MaterialsSupplier
 {
@@ -25,7 +25,7 @@ public partial class MaterialsSupplier
 
     public bool? IsPreferred { get; set; }
 
-    public virtual Material1 Material { get; set; } = null!;
+    public virtual Material Material { get; set; } = null!;
 
     public virtual Supplier Supplier { get; set; } = null!;
 

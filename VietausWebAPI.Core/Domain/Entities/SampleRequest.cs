@@ -18,6 +18,7 @@ public partial class SampleRequest
     public DateTime? RealDeliveryDate { get; set; }
 
     public DateTime? ExpectedDeliveryDate { get; set; }
+    public DateTime? RequestDeliveryDate { get; set; }
 
     public DateTime? RealPriceQuoteDate { get; set; }
 
@@ -63,7 +64,7 @@ public partial class SampleRequest
 
     public virtual Employee? CreatedByNavigation { get; set; }
 
-    public virtual Customer1 Customer { get; set; } = null!;
+    public virtual Customer Customer { get; set; } = null!;
 
     public virtual Formula? Formula { get; set; }
 

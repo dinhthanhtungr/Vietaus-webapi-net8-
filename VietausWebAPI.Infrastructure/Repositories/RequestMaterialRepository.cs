@@ -101,6 +101,18 @@ namespace VietausWebAPI.Infrastructure.Repositories
                 .Include(r => r.Employee.Part)
                 .AsQueryable();
 
+            //if (!string.IsNullOrWhiteSpace(query.KeyWord))
+            //{
+            //    string keyword = query.KeyWord.ToLower();
+
+            //    queryable = queryable.Where(x =>
+            //        (x.RequestId != null && x.RequestId.ToLower().Contains(keyword)) ||
+            //        (x.RequestStatus != null && x.RequestStatus.ToLower().Contains(keyword)) ||
+            //        (x.Employee != null && EF.Functions.Collate(x.Employee.FullName, "Latin1_General_CI_AI").ToLower().Contains(keyword)) ||
+            //        (x.EmployeeId != null && x.EmployeeId.ToLower().Contains(keyword)) 
+            //    );
+            //}
+
             if (!string.IsNullOrWhiteSpace(query.KeyWord))
             {
                 string keyword = query.KeyWord.ToLower();
@@ -108,10 +120,11 @@ namespace VietausWebAPI.Infrastructure.Repositories
                 queryable = queryable.Where(x =>
                     (x.RequestId != null && x.RequestId.ToLower().Contains(keyword)) ||
                     (x.RequestStatus != null && x.RequestStatus.ToLower().Contains(keyword)) ||
-                    (x.Employee != null && EF.Functions.Collate(x.Employee.FullName, "Latin1_General_CI_AI").ToLower().Contains(keyword)) ||
-                    (x.EmployeeId != null && x.EmployeeId.ToLower().Contains(keyword)) 
+                    (x.Employee != null && x.Employee.FullName != null && x.Employee.FullName.ToLower().Contains(keyword)) ||
+                    (x.EmployeeId != null && x.EmployeeId.ToLower().Contains(keyword))
                 );
             }
+
 
             if (query.PartId != null && query.PartId.Any())
             {
@@ -193,12 +206,21 @@ namespace VietausWebAPI.Infrastructure.Repositories
             {
                 string keyword = query.KeyWord.ToLower();
 
+                //queryable = queryable.Where(x =>
+                //    (x.RequestId != null && x.RequestId.ToLower().Contains(keyword)) ||
+                //    (x.RequestStatus != null && x.RequestStatus.ToLower().Contains(keyword)) ||
+                //    (x.Employee != null && EF.Functions.Collate(x.Employee.FullName, "Latin1_General_CI_AI").ToLower().Contains(keyword)) ||
+                //    (x.EmployeeId != null && x.EmployeeId.ToLower().Contains(keyword)) 
+                //);
+
+
                 queryable = queryable.Where(x =>
                     (x.RequestId != null && x.RequestId.ToLower().Contains(keyword)) ||
                     (x.RequestStatus != null && x.RequestStatus.ToLower().Contains(keyword)) ||
-                    (x.Employee != null && EF.Functions.Collate(x.Employee.FullName, "Latin1_General_CI_AI").ToLower().Contains(keyword)) ||
-                    (x.EmployeeId != null && x.EmployeeId.ToLower().Contains(keyword)) 
+                    (x.Employee != null && x.Employee.FullName != null && x.Employee.FullName.ToLower().Contains(keyword)) ||
+                    (x.EmployeeId != null && x.EmployeeId.ToLower().Contains(keyword))
                 );
+
             }
 
             // Lọc theo khoản thời gian
@@ -226,24 +248,43 @@ namespace VietausWebAPI.Infrastructure.Repositories
             }
 
 
-                var flatQuery = queryable
-                    .SelectMany(request =>
-                        request.RequestDetailMaterialData
-                            .Where(detail =>
-                                string.IsNullOrWhiteSpace(query.KeyWord) ||
-                                (detail.Request.Employee != null && EF.Functions.Collate(detail.Request.Employee.FullName, "Latin1_General_CI_AI").ToLower().Contains(query.KeyWord.ToLower())) ||
-                                (detail.Request.EmployeeId != null && detail.Request.EmployeeId.ToLower().Contains(query.KeyWord.ToLower())) ||
-                                (detail.RequestId != null && detail.RequestId.ToLower().Contains(query.KeyWord.ToLower()))
+            //var flatQuery = queryable
+            //    .SelectMany(request =>
+            //        request.RequestDetailMaterialData
+            //            .Where(detail =>
+            //                string.IsNullOrWhiteSpace(query.KeyWord) ||
+            //                (detail.Request.Employee != null && EF.Functions.Collate(detail.Request.Employee.FullName, "Latin1_General_CI_AI").ToLower().Contains(query.KeyWord.ToLower())) ||
+            //                (detail.Request.EmployeeId != null && detail.Request.EmployeeId.ToLower().Contains(query.KeyWord.ToLower())) ||
+            //                (detail.RequestId != null && detail.RequestId.ToLower().Contains(query.KeyWord.ToLower()))
 
-                                ),
-                                (request, detail) => new FlatRequestMaterialDto
-                                {
-                                    RequestId = request.RequestId,
-                                    RequestDate = request.RequestDate,
-                                    RequestStatus = request.RequestStatus,
-                                    EmployeeId = request.EmployeeId,
-                                    EmployeeName = request.Employee.FullName,
-                                });
+            //                ),
+            //                (request, detail) => new FlatRequestMaterialDto
+            //                {
+            //                    RequestId = request.RequestId,
+            //                    RequestDate = request.RequestDate,
+            //                    RequestStatus = request.RequestStatus,
+            //                    EmployeeId = request.EmployeeId,
+            //                    EmployeeName = request.Employee.FullName,
+            //                });
+            var flatQuery = queryable
+                .SelectMany(request =>
+                    request.RequestDetailMaterialData
+                        .Where(detail =>
+                            string.IsNullOrWhiteSpace(query.KeyWord) ||
+                            (detail.Request.Employee != null && EF.Functions.ILike(detail.Request.Employee.FullName, $"%{query.KeyWord}%")) ||
+                            (detail.Request.EmployeeId != null && detail.Request.EmployeeId.ToLower().Contains(query.KeyWord.ToLower())) ||
+                            (detail.RequestId != null && detail.RequestId.ToLower().Contains(query.KeyWord.ToLower()))
+
+                            ),
+                            (request, detail) => new FlatRequestMaterialDto
+                            {
+                                RequestId = request.RequestId,
+                                RequestDate = request.RequestDate,
+                                RequestStatus = request.RequestStatus,
+                                EmployeeId = request.EmployeeId,
+                                EmployeeName = request.Employee.FullName,
+                            });
+
 
             return await QueryableExtensions.GetPagedAsync(flatQuery, query);
         }

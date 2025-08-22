@@ -17,7 +17,7 @@ public partial class RequestDetail
 
     public string? Note { get; set; }
 
-    public virtual Material1? Material { get; set; }
+    public virtual Material? Material { get; set; }
 
     public virtual SupplyRequest? Request { get; set; }
 }

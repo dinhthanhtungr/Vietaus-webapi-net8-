@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace VietausWebAPI.Core.Domain.Entities;
+ namespace VietausWebAPI.Core.Domain.Entities;
 
 public partial class DetailCustomerTransfer
 {
@@ -11,7 +11,7 @@ public partial class DetailCustomerTransfer
 
     public Guid LogId { get; set; }
 
-    public virtual Customer1 Customer { get; set; } = null!;
+    public virtual Customer Customer { get; set; } = null!;
 
     public virtual CustomerTransferLog Log { get; set; } = null!;
 }
