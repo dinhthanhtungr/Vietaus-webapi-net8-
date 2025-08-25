@@ -52,6 +52,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.Custome
         Task<PagedResult<GetReviewCustomer>> GetCustomerByEmployeeAssignment(
                     bool isAdmin,
                     Guid employeeId,
+                    Guid? customerId = null,
                     string? keyword = null,
                     int pageNumber = 1,
                     int pageSize = 15,

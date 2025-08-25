@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Helpers;
 using System;
@@ -9,9 +10,11 @@ using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.SampleRequest;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.CreateSampleRequest;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRequestFeature;
+using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFeature
 {
@@ -39,6 +42,12 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             {
                 Guid productId;
 
+                req.Sample.ExternalId = await ExternalIdGenerator.GenerateCode(
+                    "TP",
+                    prefix => _unitOfWork.SampleRequestRepository.GetLatestExternalIdStartsWithAsync(prefix)
+                );
+                
+
                 // Case1:  Tạo mới sản phẩm
                 if (req.ProductId.HasValue)
                 {
@@ -54,8 +63,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     var product = _mapper.Map<Product>(req.Product);
 
                     // (tuỳ chọn) nếu muốn đồng bộ tenant/audit với Sample:
-                    product.CompanyId ??= req.Sample.CompanyId;
-                    product.CreatedBy ??= req.Sample.CreatedBy;
+                    //product.CompanyId ??= req.Sample.CompanyId;
+                    //product.CreatedBy ??= req.Sample.CreatedBy;
 
                     await _unitOfWork.ProductRepository.AddAsync(product, ct);
                     affected = await _unitOfWork.SaveChangesAsync();
@@ -86,6 +95,28 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
 
         }
 
+        public async Task<OperationResult> DeleteSampleRequestAsync(Guid id)
+        {
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var affected = await _unitOfWork.SampleRequestRepository.DeleteSampleRequestAsync(id);
+
+                await _unitOfWork.CommitTransactionAsync();
+
+
+                return affected > 0
+                    ? OperationResult.Ok("Thay đổi thành công")
+                    : OperationResult.Fail("Thay đổi thất bại");
+            }
+
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw new Exception($"Lỗi khi Thay đổi: {ex.Message}", ex);
+            }
+        }
+
         public async Task<PagedResult<SampleRequestSummaryDTO>> GetAllAsync(SampleRequestQuery query, CancellationToken ct = default)
         {
             try
@@ -93,7 +124,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 if (query.PageNumber <= 0) query.PageNumber = 1;
                 if (query.PageSize <= 0) query.PageSize = 15;
 
-                var result = _unitOfWork.SampleRequestRepository.Query().AsNoTracking();
+                var result = _unitOfWork.SampleRequestRepository.Query();
 
                 if (!string.IsNullOrWhiteSpace(query.Keyword))
                 {
@@ -116,34 +147,56 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
 
                 int totalCount = await result.CountAsync(ct);
 
-                List<SampleRequestSummaryDTO> items = await result
-                    .OrderBy(c => c.ExternalId)
-                    .Skip((query.PageNumber - 1) * query.PageSize)
-                    .Take(query.PageSize)
-                    .Select(c => new SampleRequestSummaryDTO
-                    {
-                        SampleRequestId = c.SampleRequestId,
-                        ExternalId = c.ExternalId,
-                        ProductId = c.ProductId,
-                        ColourCode = c.Product.ColourCode,
-                        Status = c.Status,
-                        CustomerName = c.Customer.CustomerName,
-                        LabName = c.Product.CreatedByNavigation != null ? c.Product.CreatedByNavigation.FullName : null,
-                        CreatedBy = c.CreatedByNavigation != null ? c.CreatedByNavigation.FullName : null,
-                        CreatedDate = c.CreatedDate,
-                        ExpectedDeliveryDate = c.ExpectedDeliveryDate,
-                        RequestDeliveryDate = c.RequestDeliveryDate,
-                        RealDeliveryDate = c.RealDeliveryDate,
-                        RealPriceQuoteDate = c.RealPriceQuoteDate,
-                        ExpectedPriceQuoteDate = c.ExpectedPriceQuoteDate
-                    }).ToListAsync(ct);
-
+                List<SampleRequestSummaryDTO> items =  await result 
+                    .Where(c => c.IsActive == true)
+                    .ProjectTo<SampleRequestSummaryDTO>(_mapper.ConfigurationProvider) //ProjectTo sẽ dịch mapping sang SQL luôn, EF Core chỉ lấy đúng cột cần thiết về, tránh load dư dữ liệu
+                    .OrderByDescending(c => c.ExternalId)
+                    .ToListAsync(ct);
                 return new PagedResult<SampleRequestSummaryDTO>(items, totalCount, query.PageNumber, query.PageSize);
             }
             catch (Exception ex)
             {
                 throw new Exception($"Lỗi khi lấy danh sách mẫu: {ex.Message}", ex);
             }
+        }
+
+        public async Task<GetSampleWithProductRequest> GetByIdAsync(Guid id, CancellationToken ct = default)
+        {
+            var dto = await _unitOfWork.SampleRequestRepository.Query()
+                .AsNoTracking()
+                .Where(c => c.SampleRequestId == id && c.IsActive == true)
+                .ProjectTo<GetSampleWithProductRequest>(_mapper.ConfigurationProvider)
+                .SingleOrDefaultAsync(ct);
+
+            if (dto is null) throw new KeyNotFoundException($"SampleRequest {id} not found");
+            return dto;
+        }
+
+        public async Task<OperationResult> UpdateSampleRequestAsync(UpdateSampleRequest sampleRequest, CancellationToken ct = default)
+        {
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var res = _mapper.Map<SampleRequest>(sampleRequest);
+
+                var affected = await _unitOfWork.SampleRequestRepository.UpdateSampleRequestAsync(res, ct);
+
+                await _unitOfWork.CommitTransactionAsync();
+
+                await _unitOfWork.SaveChangesAsync();
+                return affected > 0
+                    ? OperationResult.Ok("Thay đổi thành công")
+                    : OperationResult.Fail("Thay đổi thất bại");
+
+
+            }
+
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw new Exception($"Lỗi khi Thay đổi: {ex.Message}", ex);
+            }
+
         }
     }
 }

@@ -36,6 +36,10 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.SampleRequest
             try
             {
                 var result = await _sampleRequestService.CreateAsync(request);
+                if (!result.Success)
+                {
+                    return BadRequest(result.Message);
+                }
                 return Ok(result);
             }
             catch (ArgumentException ex)
@@ -50,11 +54,81 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.SampleRequest
         }
 
         [HttpGet("GetAll")]
-        public async Task<IActionResult> GetAllSampleRequests([FromQuery]SampleRequestQuery query, CancellationToken ct = default)
+        //[Authorize(Roles = "Admin")] // chỉ Admin/SaleManager
+        public async Task<IActionResult> GetAllSampleRequests([FromQuery] SampleRequestQuery query, CancellationToken ct = default)
         {
             try
             {
                 var result = await _sampleRequestService.GetAllAsync(query, ct);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
+        [HttpGet("GetById/{id}")]
+        public async Task<IActionResult> GetSampleRequestById(Guid id, CancellationToken ct = default)
+        {
+            if (id == Guid.Empty)
+            {
+                return BadRequest("Invalid ID.");
+            }
+            try
+            {
+                var result = await _sampleRequestService.GetByIdAsync(id, ct);
+                if (result == null)
+                {
+                    return NotFound("Sample request not found.");
+                }
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
+        [HttpPatch("Delete/{id}")]
+        public async Task<IActionResult> DeleteSampleRequest(Guid id)
+        {
+            if (id == Guid.Empty)
+            {
+                return BadRequest("Invalid ID.");
+            }
+            try
+            {
+                var result = await _sampleRequestService.DeleteSampleRequestAsync(id);
+                if (!result.Success)
+                {
+                    return BadRequest(result.Message);
+                }
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
+        [HttpPatch]
+        public async Task<IActionResult> UpdateSampleRequest([FromBody] UpdateSampleRequest id, CancellationToken ct = default)
+        {
+            if (id.SampleRequestId == Guid.Empty)
+            {
+                return BadRequest("Invalid ID.");
+            }
+            try
+            {
+                var result = await _sampleRequestService.UpdateSampleRequestAsync(id, default);
+                if (!result.Success)
+                {
+                    return BadRequest(result.Message);
+                }
                 return Ok(result);
             }
             catch (Exception ex)

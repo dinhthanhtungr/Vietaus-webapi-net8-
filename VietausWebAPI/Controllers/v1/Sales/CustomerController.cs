@@ -93,7 +93,8 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
         public async Task<IActionResult> GetCustomerByEmployeeAssignment(
             bool isAdmin,
             Guid employeeId,
-            string? keyword ,
+            Guid? customerId = null,
+            string? keyword = null ,
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 15,
             CancellationToken ct = default)
@@ -102,7 +103,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
             {
                 return BadRequest("Invalid employee ID.");
             }
-            var result = await _customerService.GetCustomerByEmployeeAssignment(isAdmin, employeeId, keyword,pageNumber, pageSize, ct);
+            var result = await _customerService.GetCustomerByEmployeeAssignment(isAdmin, employeeId, customerId , keyword,pageNumber, pageSize, ct);
             return Ok(result);
         }
     }

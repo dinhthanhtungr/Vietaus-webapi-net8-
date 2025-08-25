@@ -3136,6 +3136,11 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<bool?>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
                     b.Property<Guid>("ManagerBy")
                         .HasColumnType("uuid");
 
@@ -3159,9 +3164,15 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Property<DateTime?>("RequestDeliveryDate")
                         .HasColumnType("timestamptz");
 
+                    b.Property<DateTime?>("RequestTestSampleDate")
+                        .HasColumnType("timestamptz");
+
                     b.Property<string>("RequestType")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("ResponseDeliveryDate")
+                        .HasColumnType("timestamptz");
 
                     b.Property<double?>("SampleQuantity")
                         .HasColumnType("double precision");
@@ -4473,11 +4484,13 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
                         .WithMany("ProductCreatedByNavigations")
                         .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("FK_Products_CreatedBy");
 
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "UpdatedByNavigation")
                         .WithMany("ProductUpdatedByNavigations")
                         .HasForeignKey("UpdatedBy")
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("FK_Products_UpdatedBy");
 
                     b.Navigation("Category");

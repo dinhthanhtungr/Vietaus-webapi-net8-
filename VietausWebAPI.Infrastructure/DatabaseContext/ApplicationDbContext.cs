@@ -15,6 +15,9 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
     // Scaffold-DbContext "Server=DESKTOP-BL5L5IM;Database=VietausDb;Trusted_Connection=True;TrustServerCertificate=True;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Models -context ApplicationDbContext
 
 
+    //Scaffold-DbContext "Host=Localhost;Port=5432;Database=VietausDb;Username=postgres;Password=qazwsxedc123@" 
+
+
     //namespace VietausWebAPI.Core.Domain.Entities;
 
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid,
@@ -1310,12 +1313,18 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasForeignKey(d => d.CompanyId)
                     .HasConstraintName("FK_Products_Company");
 
-                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.ProductCreatedByNavigations)
+                entity.HasOne(d => d.CreatedByNavigation)
+                    .WithMany(p => p.ProductCreatedByNavigations)
                     .HasForeignKey(d => d.CreatedBy)
+                    .IsRequired(false)                          // ✅ optional
+                    .OnDelete(DeleteBehavior.SetNull)
                     .HasConstraintName("FK_Products_CreatedBy");
 
-                entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.ProductUpdatedByNavigations)
+                entity.HasOne(d => d.UpdatedByNavigation)
+                    .WithMany(p => p.ProductUpdatedByNavigations)
                     .HasForeignKey(d => d.UpdatedBy)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.SetNull)
                     .HasConstraintName("FK_Products_UpdatedBy");
             });
 
@@ -1899,10 +1908,15 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.AdditionalComment).HasMaxLength(500);
                 entity.Property(e => e.Comment).HasColumnType("text");
                 entity.Property(e => e.CreatedDate).HasColumnType("timestamptz");
+                entity.Property(e => e.RealDeliveryDate).HasColumnType("timestamptz");
+                entity.Property(e => e.RequestTestSampleDate).HasColumnType("timestamptz");
                 entity.Property(e => e.ExpectedDeliveryDate).HasColumnType("timestamptz");
                 entity.Property(e => e.RequestDeliveryDate).HasColumnType("timestamptz");
+                entity.Property(e => e.ResponseDeliveryDate).HasColumnType("timestamptz");
+                entity.Property(e => e.RealPriceQuoteDate).HasColumnType("timestamptz");
                 entity.Property(e => e.ExpectedPrice).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.ExpectedPriceQuoteDate).HasColumnType("timestamptz");
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
                 entity.Property(e => e.ExternalId)
                     .HasMaxLength(50)
                     .IsUnicode(false);

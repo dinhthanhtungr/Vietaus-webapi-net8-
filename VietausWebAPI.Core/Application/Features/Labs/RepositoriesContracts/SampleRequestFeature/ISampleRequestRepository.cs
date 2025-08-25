@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.HR.Querys.Groups;
 using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature
@@ -22,5 +23,26 @@ namespace VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.Sam
         /// <param name="ct"></param>
         /// <returns></returns>
         Task AddAsync(SampleRequest sampleRequest, CancellationToken ct = default);
+        /// <summary>
+        /// lấy sô cuối cùng của code
+        /// </summary>
+        /// <param name="prefix"></param>
+        /// <returns></returns>
+        Task<string?> GetLatestExternalIdStartsWithAsync(string prefix);
+
+        /// <summary>
+        /// Xóa mẫu theo điều kiện
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        Task<int> DeleteSampleRequestAsync(Guid id);
+
+        /// <summary>
+        /// Thay đổi thông tin của một yêu cầu mẫu đã tồn tại.
+        /// </summary>
+        /// <param name="sampleRequest"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<int> UpdateSampleRequestAsync(SampleRequest sampleRequest, CancellationToken ct = default);
     }
 }

@@ -16,9 +16,10 @@ public partial class SampleRequest
     public Guid ProductId { get; set; }
 
     public DateTime? RealDeliveryDate { get; set; }
-
+    public DateTime? RequestTestSampleDate { get; set; }
     public DateTime? ExpectedDeliveryDate { get; set; }
     public DateTime? RequestDeliveryDate { get; set; }
+    public DateTime? ResponseDeliveryDate { get; set; }
 
     public DateTime? RealPriceQuoteDate { get; set; }
 
@@ -59,6 +60,7 @@ public partial class SampleRequest
     public Guid? UpdatedBy { get; set; }
 
     public Guid? CompanyId { get; set; }
+    public bool? IsActive { get; set; }
 
     public virtual Company? Company { get; set; }
 

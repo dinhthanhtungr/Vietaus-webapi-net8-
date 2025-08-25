@@ -111,6 +111,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
         public async Task<PagedResult<GetReviewCustomer>> GetCustomerByEmployeeAssignment(
             bool isAdmin,
             Guid employeeId,
+            Guid? customerId = null,
             string? keyword = null,
             int pageNumber = 1,
             int pageSize = 15,
@@ -168,6 +169,11 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                         )
                     )
                 );
+            }
+
+            if (customerId != null)
+            {
+                q = q.Where(c => c.CustomerId == customerId.Value);
             }
             // Tổng trước khi paging
             int total = await q.CountAsync(ct);

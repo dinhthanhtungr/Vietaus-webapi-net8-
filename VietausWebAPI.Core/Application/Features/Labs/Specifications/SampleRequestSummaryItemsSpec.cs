@@ -10,7 +10,10 @@ using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.Specifications
 {
-    public sealed class SampleRequestSummaryItemsSpec : Specification<SampleRequest, SampleRequestSummaryItemsSpec>
+    /// <summary>
+    /// Thử nghiệp sử dụng Specification Pattern nhưng không dùng để lấy tổng số lượng
+    /// </summary>
+    public sealed class SampleRequestSummaryItemsSpec : Specification<SampleRequest, SampleRequestSummaryDTO>
     {
         public SampleRequestSummaryItemsSpec(SampleRequestQuery q)
         {

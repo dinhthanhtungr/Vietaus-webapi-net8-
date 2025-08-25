@@ -39,6 +39,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
         public float? Weight { get; set; }
         public string? Unit { get; set; }
         public Guid CompanyId { get; set; }                 // bắt buộc
-        public Guid CreatedBy { get; set; }                 // bắt buộc
+        public Guid? CreatedBy { get; set; }                 
     }
 }

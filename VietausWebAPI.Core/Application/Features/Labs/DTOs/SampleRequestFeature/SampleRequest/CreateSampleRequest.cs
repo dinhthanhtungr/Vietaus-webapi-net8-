@@ -14,8 +14,13 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
         public Guid? ManagerBy { get; set; }
         public Guid? ProductId { get; set; }
         public DateTime? RealDeliveryDate { get; set; }
+        public DateTime? RequestTestSampleDate { get; set; }
         public DateTime? ExpectedDeliveryDate { get; set; }
+        public DateTime? RequestDeliveryDate { get; set; }
+        public DateTime? ResponseDeliveryDate { get; set; }
+
         public DateTime? RealPriceQuoteDate { get; set; }
+
         public DateTime? ExpectedPriceQuoteDate { get; set; }
         public string? AdditionalComment { get; set; }
         public string? RequestType { get; set; }
