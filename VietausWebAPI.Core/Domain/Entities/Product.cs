@@ -23,7 +23,7 @@ public partial class Product
 
     public string? ExpiryType { get; set; }
 
-    public string? StorageCondition { get; set; }
+    public bool? StorageCondition { get; set; }
 
     public string? LabComment { get; set; }
 
@@ -87,11 +87,7 @@ public partial class Product
 
     public virtual ICollection<MerchandiseOrderDetail> MerchandiseOrderDetails { get; set; } = new List<MerchandiseOrderDetail>();
 
-    public virtual ICollection<PriceHistory1> PriceHistory1s { get; set; } = new List<PriceHistory1>();
-
     public virtual ICollection<ProductChangedHistory> ProductChangedHistories { get; set; } = new List<ProductChangedHistory>();
-
-    public virtual ICollection<ProductStandard1> ProductStandard1s { get; set; } = new List<ProductStandard1>();
 
     public virtual ICollection<SampleRequest> SampleRequests { get; set; } = new List<SampleRequest>();
 

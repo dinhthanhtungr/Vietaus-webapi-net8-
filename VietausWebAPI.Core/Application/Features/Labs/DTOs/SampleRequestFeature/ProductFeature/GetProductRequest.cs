@@ -16,7 +16,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
         public double? DeltaE { get; set; }
         public string? Requirement { get; set; }
         public string? ExpiryType { get; set; }
-        public string? StorageCondition { get; set; }
+        public bool? StorageCondition { get; set; }
         public string? LabComment { get; set; }
         public string? ProductType { get; set; }
         public string? Procedure { get; set; }

@@ -147,10 +147,11 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
 
                 int totalCount = await result.CountAsync(ct);
 
-                List<SampleRequestSummaryDTO> items =  await result 
+                var items = await result
                     .Where(c => c.IsActive == true)
-                    .ProjectTo<SampleRequestSummaryDTO>(_mapper.ConfigurationProvider) //ProjectTo sẽ dịch mapping sang SQL luôn, EF Core chỉ lấy đúng cột cần thiết về, tránh load dư dữ liệu
-                    .OrderByDescending(c => c.ExternalId)
+                    .OrderByDescending(c => c.ExternalId.Substring(3).PadLeft(10, '0')) // "1" -> "0000000001"
+                    .ThenByDescending(c => c.ExternalId.Substring(0, 3))                // nếu cần giữ nhóm theo prefix
+                    .ProjectTo<SampleRequestSummaryDTO>(_mapper.ConfigurationProvider)
                     .ToListAsync(ct);
                 return new PagedResult<SampleRequestSummaryDTO>(items, totalCount, query.PageNumber, query.PageSize);
             }
@@ -162,14 +163,22 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
 
         public async Task<GetSampleWithProductRequest> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
-            var dto = await _unitOfWork.SampleRequestRepository.Query()
-                .AsNoTracking()
-                .Where(c => c.SampleRequestId == id && c.IsActive == true)
-                .ProjectTo<GetSampleWithProductRequest>(_mapper.ConfigurationProvider)
-                .SingleOrDefaultAsync(ct);
+            try
+            {
+                var dto = await _unitOfWork.SampleRequestRepository.Query()
+                    .AsNoTracking()
+                    .Where(c => c.SampleRequestId == id && c.IsActive == true)
+                    .ProjectTo<GetSampleWithProductRequest>(_mapper.ConfigurationProvider)
+                    .SingleOrDefaultAsync(ct);
 
-            if (dto is null) throw new KeyNotFoundException($"SampleRequest {id} not found");
-            return dto;
+                if (dto is null) throw new KeyNotFoundException($"SampleRequest {id} not found");
+                return dto;
+            }
+
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi lấy thông tin mẫu: {ex.Message}", ex);
+            }
         }
 
         public async Task<OperationResult> UpdateSampleRequestAsync(UpdateSampleRequest sampleRequest, CancellationToken ct = default)
@@ -177,9 +186,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var res = _mapper.Map<SampleRequest>(sampleRequest);
+                //var res = _mapper.Map<SampleRequest>(sampleRequest);
 
-                var affected = await _unitOfWork.SampleRequestRepository.UpdateSampleRequestAsync(res, ct);
+                var affected = await _unitOfWork.SampleRequestRepository.UpdateSampleRequestAsync(sampleRequest, ct);
 
                 await _unitOfWork.CommitTransactionAsync();
 

@@ -87,9 +87,6 @@ public partial class Employee
 
     public virtual Part? Part { get; set; }
 
-    public virtual ICollection<PriceHistory1> PriceHistory1CreatedByNavigations { get; set; } = new List<PriceHistory1>();
-
-    public virtual ICollection<PriceHistory1> PriceHistory1UpdatedByNavigations { get; set; } = new List<PriceHistory1>();
 
     public virtual ICollection<PriceHistory> PriceHistoryCreatedByNavigations { get; set; } = new List<PriceHistory>();
 
@@ -99,9 +96,6 @@ public partial class Employee
 
     public virtual ICollection<Product> ProductCreatedByNavigations { get; set; } = new List<Product>();
 
-    public virtual ICollection<ProductStandard1> ProductStandard1CreatedByNavigations { get; set; } = new List<ProductStandard1>();
-
-    public virtual ICollection<ProductStandard1> ProductStandard1UpdatedByNavigations { get; set; } = new List<ProductStandard1>();
 
     public virtual ICollection<Product> ProductUpdatedByNavigations { get; set; } = new List<Product>();
 

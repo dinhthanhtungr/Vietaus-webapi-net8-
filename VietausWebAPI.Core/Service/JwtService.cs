@@ -30,7 +30,7 @@ namespace VietausWebAPI.Core.Service
             // Create a DateTime ojcet representing the token 
             // expiration time by adding the number of minutes specified
             // in the configuration to the current UTC time
-            DateTime expiration = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_configuration
+            DateTime expiration = DateTime.Now.AddMinutes(Convert.ToDouble(_configuration
             ["Jwt:EXPIRATION_MINUTES"]));
 
             // Create an array of claim objects representing the user's claims,
@@ -39,7 +39,7 @@ namespace VietausWebAPI.Core.Service
             {
                     new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                     new Claim(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString()), // JWT unique ID
-                    new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
+                    new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.Now.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
                     new Claim(ClaimTypes.NameIdentifier,user.Email), // Unique name identifier of the user (Email)
                     new Claim(ClaimTypes.Name,user.personName), // Name of the user
                     new Claim("partId", partId), // Part ID of the user
@@ -89,7 +89,7 @@ namespace VietausWebAPI.Core.Service
                 PersonName = user.personName,
                 Expiration = expiration,
                 RefreshToken = GenerateRefreshToken(),
-                RefreshTokenExpirationDateTime = DateTime.UtcNow.AddMinutes
+                RefreshTokenExpirationDateTime = DateTime.Now.AddMinutes
                 (Convert.ToInt32(_configuration["RefreshToken:EXPIRATION_MINUTES"]))
             };
         }

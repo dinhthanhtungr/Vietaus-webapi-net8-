@@ -2,20 +2,10 @@
 using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.QAQCFeature;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
-using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRequestFeature;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
-using VietausWebAPI.Core.Application.Usecases.Approvals.RepositoriesContracts;
-using VietausWebAPI.Core.Application.Usecases.InventoryReceipts.RepositoriesContracts;
-using VietausWebAPI.Core.Application.Usecases.MaterialRequestDetail.RepositoriesContracts;
-using VietausWebAPI.Core.Application.Usecases.PurchaseOrders.RepositoriesContracts;
-using VietausWebAPI.Core.Application.Usecases.Suppliers.RepositoriesContracts;
-using VietausWebAPI.Core.Application.Usecases.SupplyRequests.RepositoriesContracts;
 using VietausWebAPI.Core.Repositories_Contracts;
-using VietausWebAPI.Core.ServiceContracts;
-using VietausWebAPI.Infrastructure.Repositories.Sales;
-using VietausWebAPI.Infrastructure.Repositories.Share.SampleRequestFeature;
 using VietausWebAPI.WebAPI.DatabaseContext;
 
 
@@ -27,20 +17,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         /// <summary>
         /// Khai báo các repository
         /// </summary>
-        public IRequestMaterialRepository RequestMaterialRepository { get; }
-        public IApprovalHistoryMaterialRepository ApprovalHistoryMaterialRepository { get; }
-        public ISupplyRequestsMaterialDatumRepository SupplyRequestsMaterialDatumRepository { get; }
         public IEmployeesRepository EmployeesCommonRepository { get; }
-
-        public IApprovalRepository ApprovalRepository { get; }
-        public ISupplyRequestRepository SupplyRequestRepository { get; }
-        public IMaterialsRepository MaterialsRepository { get; }
-        public IMaterialRequestDetailRepository MaterialRequestDetailRepository { get; }
-        public IInventoryReceiptRepository InventoryReceiptRepository { get; }
-        public IPurchaseOrderDetailsRepository PurchaseOrderDetailsRepository { get; }
-        public IPurchaseOrdersRepository PurchaseOrdersRepository { get; }
-        public ISupplierRepository SupplierRepository { get; }
-
         // HR
         public IEmployeesRepository EmployeesRepository { get; }
         public IGroupRepository GroupRepository { get; }
@@ -60,6 +37,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IQCDetailRepository IQCDetailRepository { get; }
         public IProductRepository ProductRepository { get; }
         public ISampleRequestRepository SampleRequestRepository { get; }
+        public ISampleRequestImageRepository SampleRequestImageRepository { get; }
         // Planning
         public IScheduealRepository ScheduealRepository { get; }
 
@@ -76,18 +54,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         /// <param name="inventoryReceiptsRepository"></param>
         /// <param name="employeesCommonRepository"></param>
         public UnitOfWork(ApplicationDbContext context
-            , IRequestMaterialRepository requestMaterialRepository
-            , IApprovalHistoryMaterialRepository approvalHistoryMaterialRepository
-            , ISupplyRequestsMaterialDatumRepository supplyRequestsMaterialDatumRepository
             , IEmployeesRepository employeesCommonRepository
-            , IApprovalRepository approvalRepository
-            , ISupplyRequestRepository supplyRequestRepository
-            , IMaterialsRepository materialsRepository
-            , IMaterialRequestDetailRepository materialRequestDetailRepository
-            , IInventoryReceiptRepository inventoryReceiptRepository
-            , IPurchaseOrdersRepository purchaseOrdersRepository
-            , IPurchaseOrderDetailsRepository purchaseOrderDetailsRepository
-            , ISupplierRepository supplierRepository
             , IProductStandardRepository productStandardRepository
             , IProductInspectionRepository productInspectionRepository
             , IProductTestRepository productTestRepository
@@ -103,21 +70,10 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             , ICustomerTransferLogRepository customerTransferLogRepository
             , IMemberInGroupRepository memberInGroupRepository
             , ISampleRequestRepository sampleRequestRepository
-            , IProductRepository productRepository)
+            , IProductRepository productRepository
+            , ISampleRequestImageRepository sampleRequestImageRepository)
         {
             _context = context;
-            RequestMaterialRepository = requestMaterialRepository;
-            ApprovalHistoryMaterialRepository = approvalHistoryMaterialRepository;
-            SupplyRequestsMaterialDatumRepository = supplyRequestsMaterialDatumRepository;
-            EmployeesCommonRepository = employeesCommonRepository;
-            ApprovalRepository = approvalRepository;
-            SupplyRequestRepository = supplyRequestRepository;
-            MaterialsRepository = materialsRepository;
-            MaterialRequestDetailRepository = materialRequestDetailRepository;
-            InventoryReceiptRepository = inventoryReceiptRepository;
-            PurchaseOrdersRepository = purchaseOrdersRepository;
-            PurchaseOrderDetailsRepository = purchaseOrderDetailsRepository;
-            SupplierRepository = supplierRepository;
 
             // Labs
             ProductStandardRepository = productStandardRepository;
@@ -136,6 +92,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             MemberInGroupRepository = memberInGroupRepository;
             SampleRequestRepository = sampleRequestRepository;
             ProductRepository = productRepository;
+            SampleRequestImageRepository = sampleRequestImageRepository;
         }
         /// <summary>
         /// Bắt đầu một transaction

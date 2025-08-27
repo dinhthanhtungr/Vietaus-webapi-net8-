@@ -26,6 +26,7 @@ public partial class SampleRequest
     public DateTime? ExpectedPriceQuoteDate { get; set; }
 
     public string? AdditionalComment { get; set; }
+    public string? CustomerProductCode { get; set; }
 
     public string? RequestType { get; set; }
 
@@ -75,4 +76,5 @@ public partial class SampleRequest
     public virtual Product Product { get; set; } = null!;
 
     public virtual Employee? UpdatedByNavigation { get; set; }
+    public virtual ICollection<SampleRequestImage> SampleRequestImages { get; set; } = new List<SampleRequestImage>();
 }

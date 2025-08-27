@@ -12,10 +12,12 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.SampleRequest
     public class SampleRequestController : Controller
     {
         private readonly ISampleRequestService _sampleRequestService;
+        private readonly ISampleRequestImageService _sampleRequestImageService;
 
-        public SampleRequestController(ISampleRequestService sampleRequestService)
+        public SampleRequestController(ISampleRequestService sampleRequestService, ISampleRequestImageService sampleRequestImageService)
         {
             _sampleRequestService = sampleRequestService;
+            _sampleRequestImageService = sampleRequestImageService;
         }
 
         /// <summary>
@@ -137,5 +139,20 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.SampleRequest
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
+
+        [HttpPost("UploadImage/{sampleRequestId}")]
+        [RequestSizeLimit(50 * 1024 * 1024)] // Giới hạn kích thước upload tối đa 10MB
+
+        public async Task<IActionResult> Upload(Guid sampleRequestId, IFormFile file, CancellationToken ct)
+        {
+            if (file is null || file.Length == 0) return BadRequest("File rỗng.");
+            var res = await _sampleRequestImageService.UploadAsync(sampleRequestId, file.FileName, file.ContentType, file.Length, file.OpenReadStream(), ct);
+            return Ok(res);
+        }
+
+        [HttpGet]
+        public Task<List<SampleRequestImageDto>> List(Guid sampleRequestId, CancellationToken ct)
+        => _sampleRequestImageService.ListAsync(sampleRequestId, ct);
+
     }
 }

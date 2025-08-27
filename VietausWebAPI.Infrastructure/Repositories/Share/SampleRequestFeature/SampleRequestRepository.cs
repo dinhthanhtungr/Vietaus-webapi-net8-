@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.SampleRequest;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.WebAPI.DatabaseContext;
@@ -70,32 +71,46 @@ namespace VietausWebAPI.Infrastructure.Repositories.Share.SampleRequestFeature
             return _context.SampleRequests.AsNoTracking();
         }
 
-        public async Task<int> UpdateSampleRequestAsync(SampleRequest sampleRequest, CancellationToken ct = default)
+        public async Task<int> UpdateSampleRequestAsync(UpdateSampleRequest sampleRequest, CancellationToken ct = default)
         {
+
+            static DateTime? AsUnspecified(DateTime? dt)
+                    => dt.HasValue ? DateTime.SpecifyKind(dt.Value, DateTimeKind.Unspecified) : null;
+
+
             var sampleRequestInt = await _context.SampleRequests
                 .Where(e => e.SampleRequestId == sampleRequest.SampleRequestId)
                 .ExecuteUpdateAsync(setters => setters
                     //.SetProperty(e => e.ProductId, e => sampleRequest.ProductId )
                     .SetProperty(e => e.CustomerId, e => sampleRequest.CustomerId)
-                    .SetProperty(e => e.RealDeliveryDate, e => sampleRequest.RealDeliveryDate ?? e.RealDeliveryDate)
-                    .SetProperty(e => e.RequestTestSampleDate, e => sampleRequest.RequestTestSampleDate ?? e.RequestTestSampleDate)
-                    .SetProperty(e => e.ExpectedDeliveryDate, e => sampleRequest.ExpectedDeliveryDate ?? e.ExpectedDeliveryDate)
-                    .SetProperty(e => e.RequestDeliveryDate, e => sampleRequest.RequestDeliveryDate ?? e.RequestDeliveryDate)
-                    .SetProperty(e => e.ResponseDeliveryDate, e => sampleRequest.ResponseDeliveryDate ?? e.ResponseDeliveryDate)
-                    .SetProperty(e => e.RealPriceQuoteDate, e => sampleRequest.RealPriceQuoteDate ?? e.RealPriceQuoteDate)
+                    //.SetProperty(e => e.RealDeliveryDate, e => sampleRequest.RealDeliveryDate ?? e.RealDeliveryDate)
+                    //.SetProperty(e => e.RequestTestSampleDate, e => sampleRequest.RequestTestSampleDate ?? e.RequestTestSampleDate)
+                    //.SetProperty(e => e.ExpectedDeliveryDate, e => sampleRequest.ExpectedDeliveryDate ?? e.ExpectedDeliveryDate)
+                    //.SetProperty(e => e.RequestDeliveryDate, e => sampleRequest.RequestDeliveryDate ?? e.RequestDeliveryDate)
+                    //.SetProperty(e => e.ResponseDeliveryDate, e => sampleRequest.ResponseDeliveryDate ?? e.ResponseDeliveryDate)
+                    //.SetProperty(e => e.RealPriceQuoteDate, e => sampleRequest.RealPriceQuoteDate ?? e.RealPriceQuoteDate)
+                    .SetProperty(e => e.RealDeliveryDate, e => sampleRequest.RealDeliveryDate)
+                    .SetProperty(e => e.RequestTestSampleDate, e => sampleRequest.RequestTestSampleDate )
+                    .SetProperty(e => e.ExpectedDeliveryDate, e => sampleRequest.ExpectedDeliveryDate )
+                    .SetProperty(e => e.RequestDeliveryDate, e => sampleRequest.RequestDeliveryDate )
+                    .SetProperty(e => e.ResponseDeliveryDate, e => sampleRequest.ResponseDeliveryDate)
+                    .SetProperty(e => e.RealPriceQuoteDate, e => sampleRequest.RealPriceQuoteDate )
+                    .SetProperty(e => e.ExpectedPriceQuoteDate, e => sampleRequest.ExpectedPriceQuoteDate)
                     .SetProperty(e => e.AdditionalComment, e => sampleRequest.AdditionalComment ?? e.AdditionalComment)
+                    .SetProperty(e => e.Status, e => sampleRequest.Status ?? e.Status)
                     .SetProperty(e => e.RequestType, e => sampleRequest.RequestType ?? e.RequestType)
                     .SetProperty(e => e.ExpectedQuantity, e => sampleRequest.ExpectedQuantity ?? e.ExpectedQuantity)
                     .SetProperty(e => e.ExpectedPrice, e => sampleRequest.ExpectedPrice ?? e.ExpectedPrice)
                     .SetProperty(e => e.SampleQuantity, e => sampleRequest.SampleQuantity ?? e.SampleQuantity)
                     .SetProperty(e => e.OtherComment, e => sampleRequest.OtherComment ?? e.OtherComment)
                     .SetProperty(e => e.InfoType, e => sampleRequest.InfoType ?? e.InfoType)
+                    .SetProperty(e => e.CustomerProductCode, e => sampleRequest.CustomerProductCode ?? e.CustomerProductCode)
                     .SetProperty(e => e.FormulaId, e => sampleRequest.FormulaId ?? e.FormulaId)
                     .SetProperty(e => e.Comment, e => sampleRequest.Comment ?? e.Comment)
                     .SetProperty(e => e.Branch, e => sampleRequest.Branch ?? e.Branch)
                     .SetProperty(e => e.Package, e => sampleRequest.Package ?? e.Package)
                     .SetProperty(e => e.UpdatedBy, e => sampleRequest.UpdatedBy ?? e.UpdatedBy)
-                    .SetProperty(e => e.UpdatedDate, e => DateTime.UtcNow)
+                    .SetProperty(e => e.UpdatedDate, e => DateTime.Now)
                 , ct);
 
             var ProductInt = await _context.Products
@@ -135,7 +150,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Share.SampleRequestFeature
                     .SetProperty(p => p.CategoryId, p => sampleRequest.Product.CategoryId ?? p.CategoryId)
                     // ====== Audit ======
                     .SetProperty(p => p.UpdatedBy, p => sampleRequest.UpdatedBy ?? p.UpdatedBy)
-                    .SetProperty(p => p.UpdatedDate, p => DateTime.UtcNow) // dùng UTC để tránh Unspecified
+                    .SetProperty(p => p.UpdatedDate, p => DateTime.Now) // dùng UTC để tránh Unspecified
                 , ct);
 
 

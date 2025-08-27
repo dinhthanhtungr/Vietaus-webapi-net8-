@@ -13,6 +13,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
         public string? ExternalId { get; set; }
 
         public string? CustomerName { get; set; }
+        public string? CustomerCode { get; set; }
         public Guid? CustomerId { get; set; }
 
         public string? ManagerName { get; set; }
@@ -24,12 +25,14 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
         public DateTime? ExpectedDeliveryDate { get; set; }
         public DateTime? RequestDeliveryDate { get; set; }
         public DateTime? RequestTestSampleDate { get; set; }
-        public DateTime? ResponseDeliveyDate { get; set; }
+        public DateTime? ResponseDeliveryDate { get; set; }
         public DateTime? RealPriceQuoteDate { get; set; }
 
         public DateTime? ExpectedPriceQuoteDate { get; set; }
 
         public string? AdditionalComment { get; set; }
+        public string? CustomerProductCode { get; set; }
+
 
         public string? RequestType { get; set; }
 

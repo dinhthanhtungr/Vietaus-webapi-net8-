@@ -13,11 +13,11 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs
 
         public Guid? GroupId { get; set; }
 
-        public DateTime? CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime? CreatedDate { get; set; } = DateTime.Now;
 
         public Guid? CreatedBy { get; set; }
 
-        public DateTime? UpdatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedDate { get; set; } = DateTime.Now;
 
         public Guid? UpdatedBy { get; set; } 
 

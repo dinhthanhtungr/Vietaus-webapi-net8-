@@ -20,6 +20,9 @@
     <Folder Include="Application\Features\Manufacturing\DTOs\" />
     <Folder Include="Application\Features\Manufacturing\Services\" />
     <Folder Include="Application\Features\Manufacturing\ServiceContracts\" />
+    <Folder Include="Application\Features\MaterialFeatures\DTOs\Supplier\" />
+    <Folder Include="Application\Features\MaterialFeatures\Querys\Supplier\" />
+    <Folder Include="Application\Features\MaterialFeatures\Services\" />
   </ItemGroup>
 
 </Project>

@@ -12,7 +12,7 @@ namespace VietausWebAPI.Core.Application.DTOs.Materials
 
         public string? Unit { get; set; }
 
-        public DateTime? CreateDate { get; set; } = DateTime.UtcNow;
+        public DateTime? CreateDate { get; set; } = DateTime.Now;
 
         public string? EmployeeId { get; set; }
         public Guid? MaterialGroupId { get; set; }

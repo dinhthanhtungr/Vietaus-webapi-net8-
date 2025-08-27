@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.HR.Querys.Groups;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.SampleRequest;
 using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature
@@ -43,6 +44,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.Sam
         /// <param name="sampleRequest"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<int> UpdateSampleRequestAsync(SampleRequest sampleRequest, CancellationToken ct = default);
+        Task<int> UpdateSampleRequestAsync(UpdateSampleRequest sampleRequest, CancellationToken ct = default);
     }
 }

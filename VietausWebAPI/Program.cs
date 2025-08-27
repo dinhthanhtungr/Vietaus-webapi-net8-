@@ -24,16 +24,9 @@ using VietausWebAPI.WebAPI.Hubs;
 using AutoMapper; // Add this at the top of the file
 using AutoMapper.Execution;
 using VietausWebAPI.Core.Application.Features.HR;
-using VietausWebAPI.Core.MappingProfiles;
-using VietausWebAPI.Core.Application.Usecases.Approvals;
-using VietausWebAPI.Core.Application.Usecases.InventoryReceipts;
-using VietausWebAPI.Core.Application.Usecases.MaterialRequestDetail;
 using VietausWebAPI.Core.Application.Features.Planning;
 using VietausWebAPI.Core.Application.Features.Labs;
-using VietausWebAPI.Core.Application.Usecases.PurchaseOrders;
 using VietausWebAPI.Core.Application.Features.Sales;
-using VietausWebAPI.Core.Application.Usecases.Suppliers;
-using VietausWebAPI.Core.Application.Usecases.SupplyRequests;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,6 +34,9 @@ builder.WebHost.UseWebRoot("wwwroot");
 //Add services to the container.
 
 //builder.Services.AddControllers();
+
+// Program.cs (đặt ở NHỮNG DÒNG ĐẦU TIÊN)
+//AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 builder.Services.AddControllers(options =>
 {
@@ -104,17 +100,9 @@ builder.Services.AddTransient<IJwtService, JwtService>();
 builder.Services.AddAutoMapper(
     cfg => { },
     typeof(HRMappingProfile).Assembly,   // Infrastructure/Application profile assembly
-    typeof(AppMappingProfile).Assembly,
-    typeof(ApprovalsMappingProfile).Assembly,
-    typeof(InventoryReceiptMappingProfile).Assembly,
-    typeof(MaterialRequestDetailMappingProfile).Assembly,
-    typeof(MaterialsMappingProfile).Assembly,
     typeof(PlanningMappingProfile).Assembly,
     typeof(ProductStandardMappingProfile).Assembly,
-    typeof(PurchaseOrdersMappingProfile).Assembly,
-    typeof(SaleMappingProfile).Assembly,
-    typeof(SupplierMappingProfile).Assembly,
-    typeof(SupplyRequestsMappingProfile).Assembly
+    typeof(SaleMappingProfile).Assembly
 );
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

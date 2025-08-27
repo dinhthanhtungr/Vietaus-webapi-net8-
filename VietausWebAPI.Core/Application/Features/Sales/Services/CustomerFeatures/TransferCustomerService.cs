@@ -38,7 +38,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                 throw new ArgumentException("Source and destination are the same.");
 
             var customerIds = req.CustomerIds.Distinct().ToList();
-            var nowUtc = DateTime.UtcNow;
+            var nowUtc = DateTime.Now;
 
             await using var tx = await _unitOfWork.BeginTransactionAsync();
 

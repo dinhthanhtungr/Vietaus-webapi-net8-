@@ -10,33 +10,11 @@ using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleR
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
-using VietausWebAPI.Core.Application.Features.Sales.Services;
-using VietausWebAPI.Core.Application.Usecases.Approvals.RepositoriesContracts;
-using VietausWebAPI.Core.Application.Usecases.InventoryReceipts.RepositoriesContracts;
-using VietausWebAPI.Core.Application.Usecases.MaterialRequestDetail.RepositoriesContracts;
-using VietausWebAPI.Core.Application.Usecases.PurchaseOrders.RepositoriesContracts;
-using VietausWebAPI.Core.Application.Usecases.Suppliers.RepositoriesContracts;
-using VietausWebAPI.Core.Application.Usecases.SupplyRequests.RepositoriesContracts;
-using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.Core.ServiceContracts;
-
 namespace VietausWebAPI.Core.Repositories_Contracts
 {
     public interface IUnitOfWork : IDisposable
     {
-        IRequestMaterialRepository RequestMaterialRepository { get; }
-        IApprovalHistoryMaterialRepository ApprovalHistoryMaterialRepository { get; }
-        ISupplyRequestsMaterialDatumRepository SupplyRequestsMaterialDatumRepository { get; }
         IEmployeesRepository EmployeesCommonRepository { get; }
-
-        IApprovalRepository ApprovalRepository { get; }
-        ISupplyRequestRepository SupplyRequestRepository { get; }
-        IMaterialsRepository MaterialsRepository { get; }
-        IMaterialRequestDetailRepository MaterialRequestDetailRepository { get; }
-        IInventoryReceiptRepository InventoryReceiptRepository { get; }
-        IPurchaseOrderDetailsRepository PurchaseOrderDetailsRepository { get; }
-        IPurchaseOrdersRepository PurchaseOrdersRepository { get; }
-        ISupplierRepository SupplierRepository { get; }
 
         //HR
         IEmployeesRepository EmployeesRepository { get; }
@@ -55,6 +33,7 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         ISampleRequestRepository SampleRequestRepository { get; }
         //IMfgProductionOrdersPlanRepository MfgProductionOrdersPlanRepository { get; }
         IQCDetailRepository IQCDetailRepository { get; }
+        ISampleRequestImageRepository SampleRequestImageRepository { get; }
 
         //Planning
         IScheduealRepository ScheduealRepository { get; }

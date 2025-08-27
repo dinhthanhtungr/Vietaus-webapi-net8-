@@ -39,8 +39,6 @@ public partial class Company
 
     public virtual ICollection<MerchandiseOrder> MerchandiseOrders { get; set; } = new List<MerchandiseOrder>();
 
-    public virtual ICollection<ProductStandard1> ProductStandard1s { get; set; } = new List<ProductStandard1>();
-
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 
     public virtual ICollection<PurchaseOrder> PurchaseOrders { get; set; } = new List<PurchaseOrder>();

@@ -161,7 +161,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
             existingCustomer.CustomerName = customer.CustomerName;
             existingCustomer.Phone = customer.Phone;
             existingCustomer.Website = customer.Website;
-            existingCustomer.UpdatedDate = DateTime.UtcNow;
+            existingCustomer.UpdatedDate = DateTime.Now;
             existingCustomer.UpdatedBy = customer.UpdatedBy;
             existingCustomer.CustomerGroup = customer.CustomerGroup;
             existingCustomer.ApplicationName = customer.ApplicationName;

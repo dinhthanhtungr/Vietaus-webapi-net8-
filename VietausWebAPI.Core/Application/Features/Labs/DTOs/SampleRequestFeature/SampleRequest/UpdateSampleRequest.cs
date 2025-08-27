@@ -31,6 +31,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
         public DateTime? ExpectedPriceQuoteDate { get; set; }
 
         public string? AdditionalComment { get; set; }
+        public string? CustomerProductCode { get; set; }
+
 
         public string? RequestType { get; set; }
 
@@ -56,11 +58,11 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
 
         public string? Package { get; set; }
 
-        public DateTime? CreatedDate { get; set; }
+        //public DateTime? CreatedDate { get; set; }
 
         public Guid? CreatedBy { get; set; }
 
-        public DateTime? UpdatedDate { get; set; }
+        //public DateTime? UpdatedDate { get; set; }
 
         public Guid? UpdatedBy { get; set; }
 

@@ -22,6 +22,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
         public DateTime? RealPriceQuoteDate { get; set; }
 
         public DateTime? ExpectedPriceQuoteDate { get; set; }
+        public string? CustomerProductCode { get; set; }
         public string? AdditionalComment { get; set; }
         public string? RequestType { get; set; }
         public float? ExpectedQuantity { get; set; }

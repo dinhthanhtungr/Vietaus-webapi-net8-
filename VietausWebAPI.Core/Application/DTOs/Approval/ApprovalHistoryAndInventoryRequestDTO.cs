@@ -12,7 +12,7 @@ namespace VietausWebAPI.Core.Application.DTOs.Approval
         public string requestStatus { get; set; } = string.Empty;
         public string requestId { get; set; } = string.Empty;
         public string employeeId { get; set; } = string.Empty;
-        public DateTime approvalDate { get; set; } = DateTime.UtcNow;
+        public DateTime approvalDate { get; set; } = DateTime.Now;
         public string note { get; set; } = string.Empty;
         public List<InventoryReceiptsMaterialDTO> Items { get; set; } = new List<InventoryReceiptsMaterialDTO>();
     }

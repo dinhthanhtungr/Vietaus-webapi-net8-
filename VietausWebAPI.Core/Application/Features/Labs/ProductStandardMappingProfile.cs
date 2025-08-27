@@ -79,35 +79,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs
             CreateMap<CreateSampleRequest, SampleRequest>()
                 // Audit/Server fields: KHÔNG nhận từ client
                 .ForMember(d => d.SampleRequestId, opt => opt.Ignore())
-                .ForMember(d => d.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(d => d.ExpectedDeliveryDate,
-                        o => o.MapFrom(s => s.ExpectedDeliveryDate.HasValue
-                            ? s.ExpectedDeliveryDate.Value.ToUniversalTime()
-                            : (DateTime?)null))
-                .ForMember(d => d.RequestDeliveryDate,
-                    o => o.MapFrom(s => s.RequestDeliveryDate.HasValue
-                        ? s.RequestDeliveryDate.Value.ToUniversalTime()
-                        : (DateTime?)null))
-                .ForMember(d => d.RealPriceQuoteDate,
-                    o => o.MapFrom(s => s.RealPriceQuoteDate.HasValue
-                        ? s.RealPriceQuoteDate.Value.ToUniversalTime()
-                        : (DateTime?)null))
-                .ForMember(d => d.ResponseDeliveryDate,
-                    o => o.MapFrom(s => s.ResponseDeliveryDate.HasValue
-                        ? s.ResponseDeliveryDate.Value.ToUniversalTime()
-                        : (DateTime?)null))
-                .ForMember(d => d.ExpectedPriceQuoteDate,
-                    o => o.MapFrom(s => s.ExpectedPriceQuoteDate.HasValue
-                        ? s.ExpectedPriceQuoteDate.Value.ToUniversalTime()
-                        : (DateTime?)null))
-                .ForMember(d => d.RealDeliveryDate,
-                    o => o.MapFrom(s => s.RealDeliveryDate.HasValue
-                        ? s.RealDeliveryDate.Value.ToUniversalTime()
-                        : (DateTime?)null))
-                .ForMember(d => d.RequestTestSampleDate,
-                    o => o.MapFrom(s => s.RequestTestSampleDate.HasValue
-                        ? s.RequestTestSampleDate.Value.ToUniversalTime()
-                        : (DateTime?)null))
+                .ForMember(d => d.CreatedDate, opt => opt.MapFrom(_ => DateTime.Now))
                 .ForMember(d => d.UpdatedDate, opt => opt.Ignore())
                 .ForMember(d => d.UpdatedBy, opt => opt.Ignore());
 
@@ -122,6 +94,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs
 
             CreateMap<SampleRequest, GetSampleRequest>()
                 .ForMember(d => d.CustomerName, o => o.MapFrom(s => s.Customer.CustomerName))
+                .ForMember(d => d.CustomerCode, o => o.MapFrom(s => s.Customer.ExternalId))
                 .ForMember(d => d.ManagerName, o => o.MapFrom(s => s.CreatedByNavigation.FullName))
                 .ForMember(d => d.ProductId, o => o.MapFrom(s => s.ProductId)) // tránh map nhầm ColourCode
                 .ForMember(d => d.CreatedDate, o => o.MapFrom(s => s.CreatedDate))
@@ -130,45 +103,16 @@ namespace VietausWebAPI.Core.Application.Features.Labs
                 .ForMember(d => d.RequestDeliveryDate, o => o.MapFrom(s => s.RequestDeliveryDate))
                 .ForMember(d => d.RequestTestSampleDate, o => o.MapFrom(s => s.RequestTestSampleDate))
                 .ForMember(d => d.RealPriceQuoteDate, o => o.MapFrom(s => s.RealPriceQuoteDate))
-                .ForMember(d => d.ResponseDeliveyDate, o => o.MapFrom(s => s.ResponseDeliveryDate))
+                .ForMember(d => d.ResponseDeliveryDate, o => o.MapFrom(s => s.ResponseDeliveryDate))
                 .ForMember(d => d.ExpectedPriceQuoteDate, o => o.MapFrom(s => s.ExpectedPriceQuoteDate));
 
 
             CreateMap<UpdateSampleRequest, SampleRequest>()
-                .ForMember(d => d.SampleRequestId, opt => opt.Ignore())
-                .ForMember(d => d.ExpectedDeliveryDate,
-                        o => o.MapFrom(s => s.ExpectedDeliveryDate.HasValue
-                            ? s.ExpectedDeliveryDate.Value.ToUniversalTime()
-                            : (DateTime?)null))
-                .ForMember(d => d.RequestDeliveryDate,
-                    o => o.MapFrom(s => s.RequestDeliveryDate.HasValue
-                        ? s.RequestDeliveryDate.Value.ToUniversalTime()
-                        : (DateTime?)null))
-                .ForMember(d => d.RealPriceQuoteDate,
-                    o => o.MapFrom(s => s.RealPriceQuoteDate.HasValue
-                        ? s.RealPriceQuoteDate.Value.ToUniversalTime()
-                        : (DateTime?)null))
-                .ForMember(d => d.ResponseDeliveryDate,
-                    o => o.MapFrom(s => s.ResponseDeliveryDate.HasValue
-                        ? s.ResponseDeliveryDate.Value.ToUniversalTime()
-                        : (DateTime?)null))
-                .ForMember(d => d.ExpectedPriceQuoteDate,
-                    o => o.MapFrom(s => s.ExpectedPriceQuoteDate.HasValue
-                        ? s.ExpectedPriceQuoteDate.Value.ToUniversalTime()
-                        : (DateTime?)null))
-                .ForMember(d => d.RealDeliveryDate,
-                    o => o.MapFrom(s => s.RealDeliveryDate.HasValue
-                        ? s.RealDeliveryDate.Value.ToUniversalTime()
-                        : (DateTime?)null))
-                .ForMember(d => d.RequestTestSampleDate,
-                    o => o.MapFrom(s => s.RequestTestSampleDate.HasValue
-                        ? s.RequestTestSampleDate.Value.ToUniversalTime()
-                        : (DateTime?)null))
-                .ForMember(d => d.UpdatedBy, opt => opt.Ignore());
+                .ForMember(d => d.SampleRequestId, opt => opt.Ignore());
             //Product
             CreateMap<CreateProductRequest, Product>()
                 .ForMember(d => d.ProductId, opt => opt.Ignore())
-                .ForMember(d => d.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
+                .ForMember(d => d.CreatedDate, opt => opt.MapFrom(_ => DateTime.Now))
                 .ForMember(d => d.UpdatedDate, opt => opt.Ignore())
                 .ForMember(d => d.UpdatedBy, opt => opt.Ignore());// Chặn map
 

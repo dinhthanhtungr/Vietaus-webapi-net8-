@@ -12,7 +12,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper
             string prefix,
             Func<string, Task<string?>> getLatestIdFunc)
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var year = now.ToString("yy");
             var month = now.ToString("MM");
 
