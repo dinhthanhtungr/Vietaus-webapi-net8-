@@ -7,7 +7,6 @@ using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductStand
 using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductStandardFeature;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.Core.DTO.QueryObject;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts
 {
