@@ -840,7 +840,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.HasIndex(e => e.CreatedBy, "IX_Materials_CreatedBy");
 
-                entity.HasIndex(e => e.UnitId, "IX_Materials_UnitId");
+                //entity.HasIndex(e => e.UnitId, "IX_Materials_UnitId");
 
                 entity.HasIndex(e => e.UpdatedBy, "IX_Materials_UpdatedBy");
 
@@ -867,11 +867,6 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.MaterialCreatedByNavigations)
                     .HasForeignKey(d => d.CreatedBy)
                     .HasConstraintName("FK_Materials_CreatedBy");
-
-                entity.HasOne(d => d.Unit).WithMany(p => p.Materials)
-                    .HasForeignKey(d => d.UnitId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Materials_Unit");
 
                 entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.MaterialUpdatedByNavigations)
                     .HasForeignKey(d => d.UpdatedBy)
@@ -969,6 +964,12 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasForeignKey(d => d.UpdatedBy)
                     .HasConstraintName("FK_MaterialsSuppliers_UpdatedBy");
             });
+
+            // 1 supplier preferred duy nhất cho mỗi material (PostgreSQL partial index)
+            modelBuilder.Entity<MaterialsSupplier>()
+                .HasIndex(x => new { x.MaterialId, x.IsPreferred })
+                .HasFilter("\"IsPreferred\" = TRUE")
+                .IsUnique();
 
             modelBuilder.Entity<MaterialsSuppliersMaterialDatum>(entity =>
             {
@@ -1235,6 +1236,11 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasConstraintName("FK_PriceHistory_UpdatedBy");
             });
 
+            //PriceHistory: chỉ 1 bản ghi IsActive = true cho (MaterialId, SupplierId):
+            //modelBuilder.Entity<PriceHistory>()
+            //    .HasIndex(x => new { x.MaterialId, x.SupplierId, x.IsActive })
+            //    .HasFilter("\"IsActive\" = TRUE")
+            //    .IsUnique();    
 
             modelBuilder.Entity<PriceHistoryMaterialDatum>(entity =>
             {
@@ -1871,26 +1877,28 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.HasIndex(e => e.CreatedBy, "IX_Suppliers_CreatedBy");
 
                 entity.Property(e => e.SupplierId).HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.Application).HasMaxLength(100);
                 entity.Property(e => e.ExternalId).HasMaxLength(50);
-                entity.Property(e => e.Group).HasMaxLength(100);
-                entity.Property(e => e.LogoUrl).HasMaxLength(300);
-                entity.Property(e => e.Name).HasMaxLength(200);
+                entity.Property(e => e.IssuedPlace).HasColumnType("citext");
+                entity.Property(e => e.SupplierName).HasMaxLength(200);
                 entity.Property(e => e.Note).HasMaxLength(500);
                 entity.Property(e => e.Phone).HasMaxLength(20);
-                entity.Property(e => e.RegNo).HasMaxLength(50);
-                entity.Property(e => e.Status).HasMaxLength(50);
-                entity.Property(e => e.TaxNo).HasMaxLength(50);
+                entity.Property(e => e.RegistrationNumber).HasMaxLength(50);
                 entity.Property(e => e.Website).HasMaxLength(200);
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
 
                 entity.HasOne(d => d.Company).WithMany(p => p.Suppliers)
                     .HasForeignKey(d => d.CompanyId)
                     .HasConstraintName("FK_Suppliers_Company");
 
-                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.Suppliers)
+                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.SupplierCreatedByNavigations)
                     .HasForeignKey(d => d.CreatedBy)
                     .HasConstraintName("FK_Suppliers_CreatedBy");
+
+                entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.SupplierUpdatedByNavigations)
+                    .HasForeignKey(d => d.UpdatedBy)
+                    .HasConstraintName("FK_Supplier_UpdatedBy");
             });
+
 
             modelBuilder.Entity<SupplierAddress>(entity =>
             {

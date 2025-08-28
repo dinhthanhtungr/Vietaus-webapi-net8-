@@ -24,6 +24,10 @@ using VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFeature
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRequestFeature;
 using VietausWebAPI.Infrastructure.Repositories.Labs.QAQCFeature;
 using VietausWebAPI.Core.Application.Features.Labs.Helpers.ImageStorage;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts;
+using VietausWebAPI.Infrastructure.Repositories.Materials;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.Services;
 
 namespace VietausWebAPI.WebAPI
 {
@@ -88,6 +92,15 @@ namespace VietausWebAPI.WebAPI
             //Schedual
             services.AddScoped<IScheduealService, ScheduealService>();
             services.AddScoped<IScheduealRepository, ScheduealRepository>();
+
+
+            //Material
+            services.AddScoped<ISupplierRepository, SupplierRepository>();
+            services.AddScoped<ISupplierService, SupplierService>();
+            services.AddScoped<IMaterialRepository, MaterialsRepository>();
+            services.AddScoped<IMaterialService, MaterialService>();
+            services.AddScoped<ICategoryRepository, CategoryRepository>();
+            //services.AddScoped<IMaterialService, MaterialService>
 
             return services;
         }

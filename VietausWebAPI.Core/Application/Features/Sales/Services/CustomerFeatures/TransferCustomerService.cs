@@ -267,6 +267,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                         })
                         .ToList()
                 })
+                .AsNoTracking()
                 .ToListAsync(ct);
 
             // 6) Kết quả chuẩn theo model của bạn

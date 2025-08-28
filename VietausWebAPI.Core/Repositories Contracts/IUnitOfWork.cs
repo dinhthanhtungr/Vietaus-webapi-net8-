@@ -8,6 +8,7 @@ using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.QAQCFeature;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
 namespace VietausWebAPI.Core.Repositories_Contracts
@@ -41,6 +42,11 @@ namespace VietausWebAPI.Core.Repositories_Contracts
 
         // MfgProductionOrder
         IMfgProductionOrdersPlanRepository IMfgProductionOrdersPlanRepository { get; }
+
+        // Material
+        IMaterialRepository MaterialRepository { get; }
+        ISupplierRepository SupplierRepository { get; }
+        ICategoryRepository CategoryRepository { get; }
 
 
         // Thêm các repository khác nếu cần

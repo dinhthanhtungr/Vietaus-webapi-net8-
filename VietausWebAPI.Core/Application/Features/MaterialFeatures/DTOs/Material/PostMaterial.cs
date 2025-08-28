@@ -19,7 +19,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
 
         public double? Weight { get; set; }
 
-        public Guid UnitId { get; set; }
+        public string? Unit { get; set; }
 
         public string? Package { get; set; }
 
@@ -43,9 +43,10 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
 
         public Guid? UpdatedBy { get; set; }
 
-        public List<MaterialsSupplier> MaterialsSuppliers { get; set; } = new List<MaterialsSupplier>();
+        //public Guid MaterialsSuppliers { get; set; } 
 
-        public PriceHistory PriceHistories { get; set; } = new PriceHistory();
+        public PostPriceHistory InitialPrice { get; set; } = new PostPriceHistory();
+        public List<PostMaterialSupplier>? Suppliers { get; set; } // nhiều NCC
 
     }
 }

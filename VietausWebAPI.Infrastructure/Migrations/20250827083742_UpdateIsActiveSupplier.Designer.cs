@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VietausWebAPI.WebAPI.DatabaseContext;
@@ -11,9 +12,11 @@ using VietausWebAPI.WebAPI.DatabaseContext;
 namespace VietausWebAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250827083742_UpdateIsActiveSupplier")]
+    partial class UpdateIsActiveSupplier
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1074,8 +1077,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("Unit")
-                        .HasColumnType("text");
+                    b.Property<Guid>("UnitId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid");
@@ -1094,6 +1097,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.HasIndex(new[] { "CompanyId" }, "IX_Materials_CompanyId");
 
                     b.HasIndex(new[] { "CreatedBy" }, "IX_Materials_CreatedBy");
+
+                    b.HasIndex(new[] { "UnitId" }, "IX_Materials_UnitId");
 
                     b.HasIndex(new[] { "UpdatedBy" }, "IX_Materials_UpdatedBy");
 
@@ -1224,10 +1229,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.HasKey("MaterialsSuppliersId")
                         .HasName("PK__Material__4F13EDBB73A34869");
-
-                    b.HasIndex("MaterialId", "IsPreferred")
-                        .IsUnique()
-                        .HasFilter("\"IsPreferred\" = TRUE");
 
                     b.HasIndex(new[] { "MaterialId" }, "IX_Materials_Suppliers_MaterialId");
 
@@ -2924,6 +2925,10 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
 
+                    b.Property<string>("Application")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<Guid?>("CompanyId")
                         .HasColumnType("uuid");
 
@@ -2937,19 +2942,22 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<string>("FaxNumber")
-                        .HasColumnType("text");
+                    b.Property<string>("Group")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<bool?>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
 
-                    b.Property<DateTime?>("IssueDate")
-                        .HasColumnType("timestamp without time zone");
+                    b.Property<string>("LogoUrl")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
 
-                    b.Property<string>("IssuedPlace")
-                        .HasColumnType("citext");
+                    b.Property<string>("Name")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("Note")
                         .HasMaxLength(500)
@@ -2959,25 +2967,17 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<int>("Priority")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("RegistrationNumber")
+                    b.Property<string>("RegNo")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<string>("SupplierName")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                    b.Property<string>("Status")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
-                    b.Property<string>("TaxNumber")
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp without time zone");
+                    b.Property<string>("TaxNo")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Website")
                         .HasMaxLength(200)
@@ -2985,8 +2985,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.HasKey("SupplierId")
                         .HasName("PK__Supplier__4BE666B4029CD1B8");
-
-                    b.HasIndex("UpdatedBy");
 
                     b.HasIndex(new[] { "CompanyId" }, "IX_Suppliers_CompanyId");
 
@@ -3060,9 +3058,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Property<string>("Gender")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
-
-                    b.Property<bool?>("IsPrimary")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("LastName")
                         .HasMaxLength(100)
@@ -3834,6 +3829,12 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasForeignKey("CreatedBy")
                         .HasConstraintName("FK_Materials_CreatedBy");
 
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Unit", "Unit")
+                        .WithMany("Materials")
+                        .HasForeignKey("UnitId")
+                        .IsRequired()
+                        .HasConstraintName("FK_Materials_Unit");
+
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "UpdatedByNavigation")
                         .WithMany("MaterialUpdatedByNavigations")
                         .HasForeignKey("UpdatedBy")
@@ -3844,6 +3845,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("Company");
 
                     b.Navigation("CreatedByNavigation");
+
+                    b.Navigation("Unit");
 
                     b.Navigation("UpdatedByNavigation");
                 });
@@ -4363,20 +4366,13 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasConstraintName("FK_Suppliers_Company");
 
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
-                        .WithMany("SupplierCreatedByNavigations")
+                        .WithMany("Suppliers")
                         .HasForeignKey("CreatedBy")
                         .HasConstraintName("FK_Suppliers_CreatedBy");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "UpdatedByNavigation")
-                        .WithMany("SupplierUpdatedByNavigations")
-                        .HasForeignKey("UpdatedBy")
-                        .HasConstraintName("FK_Supplier_UpdatedBy");
 
                     b.Navigation("Company");
 
                     b.Navigation("CreatedByNavigation");
-
-                    b.Navigation("UpdatedByNavigation");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SupplierAddress", b =>
@@ -4604,9 +4600,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Navigation("SampleRequestUpdatedByNavigations");
 
-                    b.Navigation("SupplierCreatedByNavigations");
-
-                    b.Navigation("SupplierUpdatedByNavigations");
+                    b.Navigation("Suppliers");
 
                     b.Navigation("SupplyRequestCreatedByNavigations");
 
@@ -4787,6 +4781,11 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("InventoryReceiptsMaterialData");
 
                     b.Navigation("RequestDetailMaterialData");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Unit", b =>
+                {
+                    b.Navigation("Materials");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Identity.ApplicationRole", b =>

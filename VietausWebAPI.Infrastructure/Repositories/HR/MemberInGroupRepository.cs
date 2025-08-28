@@ -25,7 +25,8 @@ namespace VietausWebAPI.Infrastructure.Repositories.HR
                 .Include(m => m.Group)
                 .Include(m => m.ProfileNavigation)                // thêm
                     .ThenInclude(e => e.MemberInGroups)           // thêm
-                        .ThenInclude(m => m.Group);               // thêm
+                        .ThenInclude(m => m.Group)
+                        .AsNoTracking();               // thêm
         }
     }
 }

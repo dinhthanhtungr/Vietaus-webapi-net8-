@@ -178,16 +178,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
             var incomingAddresses = customer.Addresses;
             var existingAddresses = existingCustomer.Addresses.ToList();
 
-            // XOÁ các địa chỉ không còn trong incomingAddresses
-
-            //foreach (var existingAddress in existingAddresses)
-            //{
-            //    if (!incomingAddresses.Any(a => a.AddressId == existingAddress.AddressId))
-            //    {
-            //        _context.Addresses.Remove(existingAddress);
-            //    }
-            //}
-
+            // XOÁ các địa chỉ không còn trong incomingAddresse
             var incomingAddressIds = incomingAddresses.Select(a => a.AddressId).ToHashSet();
 
             foreach (var existingAddress in existingAddresses)
@@ -260,15 +251,6 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
             var existingContacts = existingCustomer.Contacts.ToList();
 
             // XOÁ các địa chỉ không còn trong incomingAddresses
-
-            //foreach (var existingContact in existingContacts)
-            //{
-            //    if (!incomingContacts.Any(a => a.ContactId == existingContact.ContactId))
-            //    {
-            //        _context.Contacts.Remove(existingContact);
-            //    }
-            //}
-
             var incomingContectIds = incomingContacts.Select(a => a.ContactId).ToHashSet();
 
             foreach (var existingContact in existingContacts)

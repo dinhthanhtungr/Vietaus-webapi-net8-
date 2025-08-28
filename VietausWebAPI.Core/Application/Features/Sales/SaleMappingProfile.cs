@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.Core.Application.Features.Sales
@@ -64,6 +65,9 @@ namespace VietausWebAPI.Core.Application.Features.Sales
 
             // Patch
             CreateMap<PatchCustomer, Customer>().ReverseMap();
+
+            // Map wrapper PagedResult<Src> -> PagedResult<Dest>
+            CreateMap(typeof(PagedResult<>), typeof(PagedResult<>));
         }
     }
 }

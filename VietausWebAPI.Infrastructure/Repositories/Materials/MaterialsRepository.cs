@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,7 +10,7 @@ using VietausWebAPI.WebAPI.DatabaseContext;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Materials
 {
-    class MaterialsRepository : IMaterialRepository
+    public class MaterialsRepository : IMaterialRepository
     {
         private readonly ApplicationDbContext _context;
 
@@ -18,19 +19,25 @@ namespace VietausWebAPI.Infrastructure.Repositories.Materials
             _context = context;
         }
 
-        public Task AddAsync(Material material, CancellationToken ct = default)
+        public async Task AddAsync(Material material, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            await _context.Materials.AddAsync(material);
         }
 
         public IQueryable<Material> Query()
         {
-            throw new NotImplementedException();
+            return _context.Materials.AsNoTracking();
         }
 
-        //public async Task CreateMaterialAsync(List<MaterialsMaterialDatum> material)
-        //{
-        //    await _context.MaterialsMaterialData.AddRangeAsync(material);
-        //}
+        public async Task<string?> GetLatestExternalIdStartsWithAsync(string prefix)
+        {
+            return await _context.Materials
+                .AsNoTracking()
+                .Where(e => e.ExternalId != null && e.ExternalId.StartsWith(prefix))
+                .OrderByDescending(e => e.ExternalId!.Length)  // số chữ số dài hơn ⇒ lớn hơn
+                .ThenByDescending(e => e.ExternalId)           // cùng độ dài ⇒ so chuỗi
+                .Select(e => e.ExternalId)
+                .FirstOrDefaultAsync();
+        }
     }
 }

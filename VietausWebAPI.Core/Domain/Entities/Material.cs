@@ -17,7 +17,7 @@ public partial class Material
 
     public double? Weight { get; set; }
 
-    public Guid UnitId { get; set; }
+    public string? Unit { get; set; }
 
     public string? Package { get; set; }
 
@@ -56,8 +56,6 @@ public partial class Material
     public virtual ICollection<PurchaseOrderDetail> PurchaseOrderDetails { get; set; } = new List<PurchaseOrderDetail>();
 
     public virtual ICollection<RequestDetail> RequestDetails { get; set; } = new List<RequestDetail>();
-
-    public virtual Unit Unit { get; set; } = null!;
 
     public virtual Employee? UpdatedByNavigation { get; set; }
 }

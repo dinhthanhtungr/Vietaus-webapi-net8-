@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VietausWebAPI.WebAPI.DatabaseContext;
@@ -11,9 +12,11 @@ using VietausWebAPI.WebAPI.DatabaseContext;
 namespace VietausWebAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250828083345_AddIndexPriceHistory")]
+    partial class AddIndexPriceHistory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1644,6 +1647,10 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.HasKey("PriceHistoryId")
                         .HasName("PK__PriceHis__A927CACB4B3A2EAC");
+
+                    b.HasIndex("MaterialId", "SupplierId", "IsActive")
+                        .IsUnique()
+                        .HasFilter("\"IsActive\" = TRUE");
 
                     b.HasIndex(new[] { "CreatedBy" }, "IX_PriceHistory_CreatedBy");
 

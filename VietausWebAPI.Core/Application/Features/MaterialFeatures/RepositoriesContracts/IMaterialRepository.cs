@@ -14,5 +14,12 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesC
 
         // Thêm 1 log (header)
         Task AddAsync(Material material, CancellationToken ct = default);
+
+        /// <summary>
+        /// lấy sô cuối cùng của code
+        /// </summary>
+        /// <param name="prefix"></param>
+        /// <returns></returns>
+        Task<string?> GetLatestExternalIdStartsWithAsync(string prefix);
     }
 }

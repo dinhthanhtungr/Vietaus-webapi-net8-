@@ -111,7 +111,8 @@ public partial class Employee
 
     public virtual ICollection<SampleRequest> SampleRequestUpdatedByNavigations { get; set; } = new List<SampleRequest>();
 
-    public virtual ICollection<Supplier> Suppliers { get; set; } = new List<Supplier>();
+    public virtual ICollection<Supplier> SupplierCreatedByNavigations { get; set; } = new List<Supplier>();
+    public virtual ICollection<Supplier> SupplierUpdatedByNavigations { get; set; } = new List<Supplier>();
 
     public virtual ICollection<SupplyRequest> SupplyRequestCreatedByNavigations { get; set; } = new List<SupplyRequest>();
 

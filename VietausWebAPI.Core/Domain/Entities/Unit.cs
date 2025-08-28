@@ -21,5 +21,4 @@ public partial class Unit
 
     public virtual Employee? CreatedByNavigation { get; set; }
 
-    public virtual ICollection<Material> Materials { get; set; } = new List<Material>();
 }

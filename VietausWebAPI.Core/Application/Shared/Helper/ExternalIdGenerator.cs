@@ -60,5 +60,28 @@ namespace VietausWebAPI.Core.Application.Shared.Helper
             return $"{basePrefix}{nextNumber}";
         }
 
+
+        public static async Task<string> GenerateCode(
+            string prefix,                                // "NVL"
+            string? group,                                // "BB"
+            Func<string, Task<string?>> getLatestCodeFunc,
+            int width = 3)                                // số chữ số đệm
+        {
+            var basePrefix = string.IsNullOrWhiteSpace(group)
+                ? $"{prefix}_"
+                : $"{prefix}_{group}_";                   // "NVL_BB_"
+
+            var lastCode = await getLatestCodeFunc(basePrefix);
+
+            int next = 1;
+            if (!string.IsNullOrWhiteSpace(lastCode) && lastCode.StartsWith(basePrefix))
+            {
+                var numberPart = lastCode.Substring(basePrefix.Length);
+                if (int.TryParse(numberPart, out var last)) next = last + 1;
+            }
+
+            return $"{basePrefix}{next.ToString().PadLeft(width, '0')}";
+        }
+
     }
 }

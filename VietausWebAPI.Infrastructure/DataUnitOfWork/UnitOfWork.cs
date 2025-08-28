@@ -3,6 +3,7 @@ using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.QAQCFeature;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
 using VietausWebAPI.Core.Repositories_Contracts;
@@ -44,6 +45,11 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         //MfgProductOrder
         public IMfgProductionOrdersPlanRepository IMfgProductionOrdersPlanRepository { get; }
 
+        //Material
+        public IMaterialRepository MaterialRepository { get; }
+        public ISupplierRepository SupplierRepository { get; }
+        public ICategoryRepository CategoryRepository { get; }
+
         /// <summary>
         /// Khởi tạo UnitOfWork
         /// </summary>
@@ -71,7 +77,10 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             , IMemberInGroupRepository memberInGroupRepository
             , ISampleRequestRepository sampleRequestRepository
             , IProductRepository productRepository
-            , ISampleRequestImageRepository sampleRequestImageRepository)
+            , ISampleRequestImageRepository sampleRequestImageRepository
+            , IMaterialRepository materialRepository
+            , ISupplierRepository supplierRepository
+            , ICategoryRepository categoryRepository)
         {
             _context = context;
 
@@ -93,6 +102,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             SampleRequestRepository = sampleRequestRepository;
             ProductRepository = productRepository;
             SampleRequestImageRepository = sampleRequestImageRepository;
+            MaterialRepository = materialRepository;
+            SupplierRepository = supplierRepository;
+            CategoryRepository = categoryRepository;
         }
         /// <summary>
         /// Bắt đầu một transaction

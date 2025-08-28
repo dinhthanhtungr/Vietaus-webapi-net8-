@@ -1,4 +1,6 @@
 ﻿//using Asp.Versioning;
+using AutoMapper; // Add this at the top of the file
+using AutoMapper.Execution;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -12,7 +14,12 @@ using PuppeteerSharp;
 using QuestPDF.Drawing;
 using QuestPDF.Infrastructure;
 using System.Text;
+using VietausWebAPI.Core.Application.Features.HR;
+using VietausWebAPI.Core.Application.Features.Labs;
 using VietausWebAPI.Core.Application.Features.Labs.Helpers;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures;
+using VietausWebAPI.Core.Application.Features.Planning;
+using VietausWebAPI.Core.Application.Features.Sales;
 using VietausWebAPI.Core.Identity;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Core.Service;
@@ -21,12 +28,6 @@ using VietausWebAPI.Infrastructure.Repositories;
 using VietausWebAPI.WebAPI;
 using VietausWebAPI.WebAPI.DatabaseContext;
 using VietausWebAPI.WebAPI.Hubs;
-using AutoMapper; // Add this at the top of the file
-using AutoMapper.Execution;
-using VietausWebAPI.Core.Application.Features.HR;
-using VietausWebAPI.Core.Application.Features.Planning;
-using VietausWebAPI.Core.Application.Features.Labs;
-using VietausWebAPI.Core.Application.Features.Sales;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -102,7 +103,9 @@ builder.Services.AddAutoMapper(
     typeof(HRMappingProfile).Assembly,   // Infrastructure/Application profile assembly
     typeof(PlanningMappingProfile).Assembly,
     typeof(ProductStandardMappingProfile).Assembly,
-    typeof(SaleMappingProfile).Assembly
+    typeof(SaleMappingProfile).Assembly,
+    typeof(MaterialMappingProfile).Assembly
+
 );
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -142,6 +145,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 .AddRoleStore<RoleStore<ApplicationRole, ApplicationDbContext, Guid>>()
 .AddSignInManager()
 .AddDefaultTokenProviders();
+
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();

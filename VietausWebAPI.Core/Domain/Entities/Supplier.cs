@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using VietausWebAPI.Core.Domain.Enums;
 
 namespace VietausWebAPI.Core.Domain.Entities;
 
@@ -9,35 +10,38 @@ public partial class Supplier
 
     public string? ExternalId { get; set; }
 
-    public string? Name { get; set; }
+    public string? SupplierName { get; set; }
 
-    public string? Group { get; set; }
+    public string? RegistrationNumber { get; set; }
 
-    public string? Application { get; set; }
-
-    public string? RegNo { get; set; }
-
-    public string? TaxNo { get; set; }
+    public string? TaxNumber { get; set; }
 
     public string? Phone { get; set; }
 
     public string? Website { get; set; }
 
-    public string? Status { get; set; }
-
     public string? Note { get; set; }
 
-    public string? LogoUrl { get; set; }
+    public DateTime? IssueDate { get; set; }
+
+    public string? IssuedPlace { get; set; }
+
+    public string? FaxNumber { get; set; }
 
     public DateTime? CreatedDate { get; set; }
 
     public Guid? CreatedBy { get; set; }
+    public DateTime? UpdatedDate { get; set; }
 
+    public Guid? UpdatedBy { get; set; }
     public Guid? CompanyId { get; set; }
+    public bool? IsActive { get; set; }
+    public SupplierPriority Priority { get; set; } = SupplierPriority.Medium;
 
     public virtual Company? Company { get; set; }
 
     public virtual Employee? CreatedByNavigation { get; set; }
+    public virtual Employee? UpdatedByNavigation { get; set; }
 
     public virtual ICollection<FormulaMaterial> FormulaMaterials { get; set; } = new List<FormulaMaterial>();
 
