@@ -45,7 +45,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
 
         //public Guid MaterialsSuppliers { get; set; } 
 
-        public PostPriceHistory InitialPrice { get; set; } = new PostPriceHistory();
+
         public List<PostMaterialSupplier>? Suppliers { get; set; } // nhiều NCC
 
     }

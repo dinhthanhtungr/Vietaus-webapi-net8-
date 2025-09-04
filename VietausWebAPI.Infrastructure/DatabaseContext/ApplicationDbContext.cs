@@ -641,16 +641,15 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.HasIndex(e => e.ProductId, "IX_Formulas_ProductId");
 
-                entity.HasIndex(e => e.SentBy, "IX_Formulas_SentBy");
-
                 entity.HasIndex(e => e.UpdatedBy, "IX_Formulas_UpdatedBy");
-
-                entity.HasIndex(e => e.VerifiedBy, "IX_Formulas_VerifiedBy");
 
                 entity.Property(e => e.FormulaId).HasDefaultValueSql("gen_random_uuid()");
                 entity.Property(e => e.ExternalId).HasMaxLength(50);
                 entity.Property(e => e.Name).HasMaxLength(200);
                 entity.Property(e => e.TotalPrice).HasPrecision(16, 2);
+                entity.Property(e => e.Status)
+                      .HasMaxLength(32)
+                      .HasDefaultValue("Draft");
 
                 entity.HasOne(d => d.Company).WithMany(p => p.Formulas)
                     .HasForeignKey(d => d.CompanyId)
@@ -665,18 +664,47 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Formulas_Product");
 
-                entity.HasOne(d => d.SentByNavigation).WithMany(p => p.FormulaSentByNavigations)
-                    .HasForeignKey(d => d.SentBy)
-                    .HasConstraintName("FK_Formulas_SentBy");
-
                 entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.FormulaUpdatedByNavigations)
                     .HasForeignKey(d => d.UpdatedBy)
                     .HasConstraintName("FK_Formulas_UpdatedBy");
 
-                entity.HasOne(d => d.VerifiedByNavigation).WithMany(p => p.FormulaVerifiedByNavigations)
-                    .HasForeignKey(d => d.VerifiedBy)
-                    .HasConstraintName("FK_Formulas_VerifiedBy");
             });
+
+
+            modelBuilder.Entity<FormulaStatusLog>(entity =>
+            {
+                entity.HasKey(e => e.LogId).HasName("PK_FormulaStatusLog");
+                entity.ToTable("FormulaStatusLog", "labs");
+
+                // Index như yêu cầu
+                entity.HasIndex(e => e.FormulaId, "IX_FormulaStatusLog_FormulaId");
+                entity.HasIndex(e => e.CreatedDate, "IX_FormulaStatusLog_CreatedAt");
+
+                entity.Property(e => e.LogId)
+                      .HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.OldStatus).HasMaxLength(32);
+                entity.Property(e => e.NewStatus).HasMaxLength(32);
+                entity.Property(e => e.CreateNameSnapShot).HasMaxLength(200);
+                entity.Property(e => e.CreatedDate)
+                      .HasDefaultValueSql("now()"); // mặc định thời điểm ghi log
+
+                entity.HasOne(d => d.Formula).WithMany(p => p.StatusLogs)
+                      .HasForeignKey(d => d.FormulaId)
+                      .OnDelete(DeleteBehavior.Cascade)
+                      .HasConstraintName("FK_FormulaStatusLog_Formula");
+
+                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.FormulaStatusLogCreatedByNavigations)
+                      .HasForeignKey(d => d.CreatedBy)
+                      .HasConstraintName("FK_FormulaStatusLog_CreatedBy");
+
+                // (Khuyến nghị) hợp lệ hoá trạng thái
+                //entity.ToTable(tb => tb.HasCheckConstraint(
+                //    "CK_FormulaStatusLog_Status",
+                //    "(OldStatus IS NULL OR OldStatus IN ('Draft','Sent','Verified','Rejected','Archived')) " +
+                //    "AND (NewStatus IS NULL OR NewStatus IN ('Draft','Sent','Verified','Rejected','Archived'))"
+                //));
+            });
+
 
             modelBuilder.Entity<FormulaMaterial>(entity =>
             {
@@ -688,13 +716,17 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.HasIndex(e => e.MaterialId, "IX_FormulaMaterials_MaterialId");
 
-                entity.HasIndex(e => e.SelectedSupplierId, "IX_FormulaMaterials_SelectedSupplierId");
 
                 entity.Property(e => e.FormulaMaterialId).HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.LotNo).HasMaxLength(50);
-                entity.Property(e => e.MaterialType).HasMaxLength(20);
-                entity.Property(e => e.TotalPrice).HasPrecision(16, 2);
+
+
+                entity.Property(e => e.Quantity).HasPrecision(18, 6);
                 entity.Property(e => e.UnitPrice).HasPrecision(16, 2);
+                entity.Property(e => e.TotalPrice).HasPrecision(16, 2);
+
+                entity.Property(e => e.MaterialNameSnapshot).HasMaxLength(200);
+                entity.Property(e => e.MaterialCodeSnapshot).HasMaxLength(50);
+                entity.Property(e => e.Unit).HasMaxLength(32);
 
                 entity.HasOne(d => d.Formula).WithMany(p => p.FormulaMaterials)
                     .HasForeignKey(d => d.FormulaId)
@@ -706,9 +738,10 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_FormulaMaterials_Material");
 
-                entity.HasOne(d => d.SelectedSupplier).WithMany(p => p.FormulaMaterials)
-                    .HasForeignKey(d => d.SelectedSupplierId)
-                    .HasConstraintName("FK_FormulaMaterials_Supplier");
+                entity.HasOne(d => d.Category).WithMany(p => p.FormulaMaterials)
+                      .HasForeignKey(d => d.CategoryId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_FormulaMaterials_Category");
             });
 
             modelBuilder.Entity<Group>(entity =>
@@ -948,7 +981,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.Currency).HasMaxLength(10);
                 entity.Property(e => e.CurrentPrice).HasPrecision(18, 4);
                 entity.Property(e => e.IsPreferred).HasDefaultValue(false);
-                entity.Property(e => e.LastPrice).HasPrecision(18, 4);
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
 
                 entity.HasOne(d => d.Material).WithMany(p => p.MaterialsSuppliers)
                     .HasForeignKey(d => d.MaterialId)
@@ -960,7 +993,11 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_MaterialsSuppliers_Supplier");
 
-                entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.MaterialsSuppliers)
+                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.MaterialsSupplierCreatedByNavigations)
+                    .HasForeignKey(d => d.CreatedBy)
+                    .HasConstraintName("FK_MaterialsSuppliers_CreatedBy");
+
+                entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.MaterialsSupplierUpdatedByNavigations)
                     .HasForeignKey(d => d.UpdatedBy)
                     .HasConstraintName("FK_MaterialsSuppliers_UpdatedBy");
             });
@@ -1209,8 +1246,6 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.HasIndex(e => e.SupplierId, "IX_PriceHistory_SupplierId");
 
-                entity.HasIndex(e => e.UpdatedBy, "IX_PriceHistory_UpdatedBy");
-
                 entity.Property(e => e.PriceHistoryId).HasDefaultValueSql("gen_random_uuid()");
                 entity.Property(e => e.Currency).HasMaxLength(10);
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
@@ -1231,9 +1266,6 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PriceHistory_Supplier");
 
-                entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.PriceHistoryUpdatedByNavigations)
-                    .HasForeignKey(d => d.UpdatedBy)
-                    .HasConstraintName("FK_PriceHistory_UpdatedBy");
             });
 
             //PriceHistory: chỉ 1 bản ghi IsActive = true cho (MaterialId, SupplierId):

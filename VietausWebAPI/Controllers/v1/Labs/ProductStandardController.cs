@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductStandardFeature;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductStandardFeature;
-using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.QAQCFeatures;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1.Labs
 {

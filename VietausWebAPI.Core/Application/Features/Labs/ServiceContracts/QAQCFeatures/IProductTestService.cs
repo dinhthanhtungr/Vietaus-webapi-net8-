@@ -9,7 +9,7 @@ using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductTestFeature;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 
-namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts
+namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.QAQCFeatures
 {
     public interface IProductTestService
     {

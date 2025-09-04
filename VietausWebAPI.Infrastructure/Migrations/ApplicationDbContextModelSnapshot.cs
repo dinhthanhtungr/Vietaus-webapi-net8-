@@ -766,11 +766,12 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("SentBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("SentDate")
-                        .HasColumnType("timestamp without time zone");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasDefaultValue("Draft");
 
                     b.Property<decimal?>("TotalPrice")
                         .HasPrecision(16, 2)
@@ -782,12 +783,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<Guid?>("VerifiedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("VerifiedDate")
-                        .HasColumnType("timestamp without time zone");
-
                     b.HasKey("FormulaId")
                         .HasName("PK__Formulas__227429A55C6F1195");
 
@@ -797,11 +792,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.HasIndex(new[] { "ProductId" }, "IX_Formulas_ProductId");
 
-                    b.HasIndex(new[] { "SentBy" }, "IX_Formulas_SentBy");
-
                     b.HasIndex(new[] { "UpdatedBy" }, "IX_Formulas_UpdatedBy");
-
-                    b.HasIndex(new[] { "VerifiedBy" }, "IX_Formulas_VerifiedBy");
 
                     b.ToTable("Formulas", "labs");
                 });
@@ -813,44 +804,91 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
 
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("FormulaId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("LotNo")
+                    b.Property<string>("MaterialCodeSnapshot")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
                     b.Property<Guid>("MaterialId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("MaterialType")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                    b.Property<string>("MaterialNameSnapshot")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
-                    b.Property<double?>("Quantity")
-                        .HasColumnType("double precision");
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
 
-                    b.Property<Guid?>("SelectedSupplierId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal?>("TotalPrice")
+                    b.Property<decimal>("TotalPrice")
                         .HasPrecision(16, 2)
                         .HasColumnType("numeric(16,2)");
 
-                    b.Property<decimal?>("UnitPrice")
+                    b.Property<string>("Unit")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<decimal>("UnitPrice")
                         .HasPrecision(16, 2)
                         .HasColumnType("numeric(16,2)");
 
                     b.HasKey("FormulaMaterialId")
                         .HasName("PK__FormulaM__0315C60A1F19742A");
 
+                    b.HasIndex("CategoryId");
+
                     b.HasIndex(new[] { "FormulaId" }, "IX_FormulaMaterials_FormulaId");
 
                     b.HasIndex(new[] { "MaterialId" }, "IX_FormulaMaterials_MaterialId");
 
-                    b.HasIndex(new[] { "SelectedSupplierId" }, "IX_FormulaMaterials_SelectedSupplierId");
-
                     b.ToTable("FormulaMaterials", "labs");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.FormulaStatusLog", b =>
+                {
+                    b.Property<Guid>("LogId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("CreateNameSnapShot")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("FormulaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("NewStatus")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("OldStatus")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.HasKey("LogId")
+                        .HasName("PK_FormulaStatusLog");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex(new[] { "CreatedDate" }, "IX_FormulaStatusLog_CreatedAt");
+
+                    b.HasIndex(new[] { "FormulaId" }, "IX_FormulaStatusLog_FormulaId");
+
+                    b.ToTable("FormulaStatusLog", "labs");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Group", b =>
@@ -1190,6 +1228,12 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("Materials_SuppliersId")
                         .HasDefaultValueSql("gen_random_uuid()");
 
+                    b.Property<DateTime?>("CreateDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Currency")
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
@@ -1198,14 +1242,15 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasPrecision(18, 4)
                         .HasColumnType("numeric(18,4)");
 
+                    b.Property<bool?>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
                     b.Property<bool?>("IsPreferred")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
-
-                    b.Property<decimal?>("LastPrice")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("numeric(18,4)");
 
                     b.Property<Guid>("MaterialId")
                         .HasColumnType("uuid");
@@ -1224,6 +1269,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.HasKey("MaterialsSuppliersId")
                         .HasName("PK__Material__4F13EDBB73A34869");
+
+                    b.HasIndex("CreatedBy");
 
                     b.HasIndex("MaterialId", "IsPreferred")
                         .IsUnique()
@@ -1614,6 +1661,9 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
 
+                    b.Property<Guid?>("EmployeeId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("timestamp without time zone");
 
@@ -1636,22 +1686,16 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Property<Guid>("SupplierId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp without time zone");
-
                     b.HasKey("PriceHistoryId")
                         .HasName("PK__PriceHis__A927CACB4B3A2EAC");
+
+                    b.HasIndex("EmployeeId");
 
                     b.HasIndex(new[] { "CreatedBy" }, "IX_PriceHistory_CreatedBy");
 
                     b.HasIndex(new[] { "MaterialId" }, "IX_PriceHistory_MaterialId");
 
                     b.HasIndex(new[] { "SupplierId" }, "IX_PriceHistory_SupplierId");
-
-                    b.HasIndex(new[] { "UpdatedBy" }, "IX_PriceHistory_UpdatedBy");
 
                     b.ToTable("PriceHistory", "inventory");
                 });
@@ -3692,20 +3736,10 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_Formulas_Product");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "SentByNavigation")
-                        .WithMany("FormulaSentByNavigations")
-                        .HasForeignKey("SentBy")
-                        .HasConstraintName("FK_Formulas_SentBy");
-
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "UpdatedByNavigation")
                         .WithMany("FormulaUpdatedByNavigations")
                         .HasForeignKey("UpdatedBy")
                         .HasConstraintName("FK_Formulas_UpdatedBy");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "VerifiedByNavigation")
-                        .WithMany("FormulaVerifiedByNavigations")
-                        .HasForeignKey("VerifiedBy")
-                        .HasConstraintName("FK_Formulas_VerifiedBy");
 
                     b.Navigation("Company");
 
@@ -3713,15 +3747,17 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Navigation("Product");
 
-                    b.Navigation("SentByNavigation");
-
                     b.Navigation("UpdatedByNavigation");
-
-                    b.Navigation("VerifiedByNavigation");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.FormulaMaterial", b =>
                 {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Category", "Category")
+                        .WithMany("FormulaMaterials")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_FormulaMaterials_Category");
+
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Formula", "Formula")
                         .WithMany("FormulaMaterials")
                         .HasForeignKey("FormulaId")
@@ -3734,16 +3770,30 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_FormulaMaterials_Material");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Supplier", "SelectedSupplier")
-                        .WithMany("FormulaMaterials")
-                        .HasForeignKey("SelectedSupplierId")
-                        .HasConstraintName("FK_FormulaMaterials_Supplier");
+                    b.Navigation("Category");
 
                     b.Navigation("Formula");
 
                     b.Navigation("Material");
+                });
 
-                    b.Navigation("SelectedSupplier");
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.FormulaStatusLog", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
+                        .WithMany("FormulaStatusLogCreatedByNavigations")
+                        .HasForeignKey("CreatedBy")
+                        .HasConstraintName("FK_FormulaStatusLog_CreatedBy");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Formula", "Formula")
+                        .WithMany("StatusLogs")
+                        .HasForeignKey("FormulaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_FormulaStatusLog_Formula");
+
+                    b.Navigation("CreatedByNavigation");
+
+                    b.Navigation("Formula");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Group", b =>
@@ -3867,6 +3917,11 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialsSupplier", b =>
                 {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
+                        .WithMany("MaterialsSupplierCreatedByNavigations")
+                        .HasForeignKey("CreatedBy")
+                        .HasConstraintName("FK_MaterialsSuppliers_CreatedBy");
+
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Material", "Material")
                         .WithMany("MaterialsSuppliers")
                         .HasForeignKey("MaterialId")
@@ -3880,9 +3935,11 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasConstraintName("FK_MaterialsSuppliers_Supplier");
 
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "UpdatedByNavigation")
-                        .WithMany("MaterialsSuppliers")
+                        .WithMany("MaterialsSupplierUpdatedByNavigations")
                         .HasForeignKey("UpdatedBy")
                         .HasConstraintName("FK_MaterialsSuppliers_UpdatedBy");
+
+                    b.Navigation("CreatedByNavigation");
 
                     b.Navigation("Material");
 
@@ -4008,6 +4065,10 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasForeignKey("CreatedBy")
                         .HasConstraintName("FK_PriceHistory_CreatedBy");
 
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", null)
+                        .WithMany("PriceHistoryUpdatedByNavigations")
+                        .HasForeignKey("EmployeeId");
+
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Material", "Material")
                         .WithMany("PriceHistories")
                         .HasForeignKey("MaterialId")
@@ -4020,18 +4081,11 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_PriceHistory_Supplier");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "UpdatedByNavigation")
-                        .WithMany("PriceHistoryUpdatedByNavigations")
-                        .HasForeignKey("UpdatedBy")
-                        .HasConstraintName("FK_PriceHistory_UpdatedBy");
-
                     b.Navigation("CreatedByNavigation");
 
                     b.Navigation("Material");
 
                     b.Navigation("Supplier");
-
-                    b.Navigation("UpdatedByNavigation");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PriceHistoryMaterialDatum", b =>
@@ -4472,6 +4526,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Category", b =>
                 {
+                    b.Navigation("FormulaMaterials");
+
                     b.Navigation("Materials");
 
                     b.Navigation("Products");
@@ -4558,11 +4614,9 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Navigation("FormulaCreatedByNavigations");
 
-                    b.Navigation("FormulaSentByNavigations");
+                    b.Navigation("FormulaStatusLogCreatedByNavigations");
 
                     b.Navigation("FormulaUpdatedByNavigations");
-
-                    b.Navigation("FormulaVerifiedByNavigations");
 
                     b.Navigation("GroupCreatedByNavigations");
 
@@ -4572,7 +4626,9 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Navigation("MaterialUpdatedByNavigations");
 
-                    b.Navigation("MaterialsSuppliers");
+                    b.Navigation("MaterialsSupplierCreatedByNavigations");
+
+                    b.Navigation("MaterialsSupplierUpdatedByNavigations");
 
                     b.Navigation("MemberInGroups");
 
@@ -4633,6 +4689,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("FormulaMaterials");
 
                     b.Navigation("SampleRequests");
+
+                    b.Navigation("StatusLogs");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Group", b =>
@@ -4751,8 +4809,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Supplier", b =>
                 {
-                    b.Navigation("FormulaMaterials");
-
                     b.Navigation("MaterialsSuppliers");
 
                     b.Navigation("PriceHistories");

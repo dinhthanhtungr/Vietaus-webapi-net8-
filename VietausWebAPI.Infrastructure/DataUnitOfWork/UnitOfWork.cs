@@ -49,6 +49,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IMaterialRepository MaterialRepository { get; }
         public ISupplierRepository SupplierRepository { get; }
         public ICategoryRepository CategoryRepository { get; }
+        public IMaterialsSupplierRepository MaterialsSupplierRepository { get; }
+        public IPriceHistorieRepository PriceHistorieRepository { get; }
+
 
         /// <summary>
         /// Khởi tạo UnitOfWork
@@ -80,7 +83,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             , ISampleRequestImageRepository sampleRequestImageRepository
             , IMaterialRepository materialRepository
             , ISupplierRepository supplierRepository
-            , ICategoryRepository categoryRepository)
+            , ICategoryRepository categoryRepository
+            , IMaterialsSupplierRepository materialsSupplierRepository
+            , IPriceHistorieRepository priceHistorieRepository)
         {
             _context = context;
 
@@ -105,6 +110,8 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             MaterialRepository = materialRepository;
             SupplierRepository = supplierRepository;
             CategoryRepository = categoryRepository;
+            MaterialsSupplierRepository = materialsSupplierRepository;
+            PriceHistorieRepository = priceHistorieRepository;
         }
         /// <summary>
         /// Bắt đầu một transaction

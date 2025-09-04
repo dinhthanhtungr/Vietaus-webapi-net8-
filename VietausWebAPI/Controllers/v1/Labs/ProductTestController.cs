@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductTestFeature;
-using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.QAQCFeatures;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1.Labs
 {

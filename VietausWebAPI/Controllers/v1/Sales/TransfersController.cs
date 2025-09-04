@@ -9,13 +9,15 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
 {
     [ApiController]
     [Route("api/transfers")]
-    [AllowAnonymous]
+    //[AllowAnonymous]
     public class TransfersController : Controller
     {
         private readonly ITransferCustomerService _svc;
         public TransfersController(ITransferCustomerService svc) { _svc = svc; }
 
+
         [HttpGet]
+        [Authorize(Roles = "SaleUser")]
         public async Task<ActionResult<PagedResult<TransferCustomerDTO>>> List(
             [FromQuery] CustomerTransferQuery query,
             CancellationToken ct = default)
@@ -25,6 +27,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
         }
 
         [HttpPost]
+        [Authorize(Roles = "SaleUser")]
         public async Task<ActionResult<TransferCustomerDTO>> Create(
             [FromBody] TransferCustomersRequest req,
             CancellationToken ct)
@@ -36,6 +39,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
         [HttpGet("{id:guid}", Name = "GetTransferById")]
         [ProducesResponseType(typeof(TransferCustomerDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [Authorize(Roles = "SaleUser")]
         public async Task<ActionResult<TransferCustomerDTO>> Get(Guid id, CancellationToken ct)
         {
             var dto = await _svc.GetTransferByIdAsync(id, ct);

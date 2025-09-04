@@ -8,6 +8,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
 {
     public class GetMaterialSummary
     {
+        public Guid MaterialId { get; set; }
         public string? ExternalId { get; set; }
 
         public string? CustomCode { get; set; }
@@ -16,6 +17,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
 
         public string? Category { get; set; }
         public double? Weight { get; set; }
+        public string? Package { get; set; }
         public string? Unit { get; set; }
     }
 }

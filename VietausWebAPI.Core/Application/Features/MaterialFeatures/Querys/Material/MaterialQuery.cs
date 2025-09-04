@@ -9,6 +9,11 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Querys.Materi
 {
     public class MaterialQuery : PaginationQuery
     {
-        public string? keyword { get; set; } = string.Empty;
+        public Guid? MaterialId { get; set; }
+        public Guid? CategoryId { get; set; }
+        public string? Keyword { get; set; }
+        public string? Category { get; set; }
+        public DateTime? From { get; set; }
+        public DateTime? To { get; set; }
     }
 }

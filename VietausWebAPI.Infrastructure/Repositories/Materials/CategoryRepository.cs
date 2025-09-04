@@ -19,9 +19,10 @@ namespace VietausWebAPI.Infrastructure.Repositories.Materials
             _context = dbContext;
         }
 
-        public IQueryable<Category> Query()
+        public IQueryable<Category> Query(bool track = false)
         {
-            return _context.Categories.AsNoTracking();               // thêm
+            var db = _context.Categories.AsQueryable();
+            return track ? db : db.AsNoTracking();
         }
     }
 }

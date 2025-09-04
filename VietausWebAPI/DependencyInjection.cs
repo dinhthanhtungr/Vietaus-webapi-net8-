@@ -1,8 +1,6 @@
 ﻿using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.HR.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.HR.Services;
-using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts;
-using VietausWebAPI.Core.Application.Features.Labs.Services;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Planning.ServiceContracts;
@@ -28,6 +26,8 @@ using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContr
 using VietausWebAPI.Infrastructure.Repositories.Materials;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.Services;
+using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.QAQCFeatures;
+using VietausWebAPI.Core.Application.Features.Labs.Services.QAQCFeatures;
 
 namespace VietausWebAPI.WebAPI
 {
@@ -100,6 +100,9 @@ namespace VietausWebAPI.WebAPI
             services.AddScoped<IMaterialRepository, MaterialsRepository>();
             services.AddScoped<IMaterialService, MaterialService>();
             services.AddScoped<ICategoryRepository, CategoryRepository>();
+            services.AddScoped<IMaterialsSupplierRepository, MaterialsSupplierRepository>();
+            services.AddScoped<IPriceHistorieRepository, PriceHistorieRepository>();
+
             //services.AddScoped<IMaterialService, MaterialService>
 
             return services;

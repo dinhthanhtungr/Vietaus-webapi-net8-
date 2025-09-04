@@ -26,9 +26,10 @@ namespace VietausWebAPI.Infrastructure.Repositories.Materials
             await _context.Suppliers.AddAsync(supplier);
         }
 
-        public IQueryable<Supplier> Query()
+        public IQueryable<Supplier> Query(bool track = false)
         {
-            return _context.Suppliers.AsQueryable();
+            var db = _context.Suppliers.AsQueryable();
+            return track ? db : db.AsNoTracking();
         }
 
         public async Task<bool> DeleteSupplierByIdAsync(Guid id)

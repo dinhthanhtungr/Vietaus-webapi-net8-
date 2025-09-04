@@ -7,7 +7,7 @@ using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.QCOutputFeat
 using VietausWebAPI.Core.Application.Features.Manufacturing.Queries.MfgProductionOrdersPlanRepository;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 
-namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts
+namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.QAQCFeatures
 {
     public interface IQCOutputService
     {

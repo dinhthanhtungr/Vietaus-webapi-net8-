@@ -21,10 +21,6 @@ public partial class PriceHistory
 
     public Guid? CreatedBy { get; set; }
 
-    public DateTime? UpdatedDate { get; set; }
-
-    public Guid? UpdatedBy { get; set; }
-
     public DateTime? EndDate { get; set; }
 
     public bool? IsActive { get; set; }
@@ -35,5 +31,4 @@ public partial class PriceHistory
 
     public virtual Supplier Supplier { get; set; } = null!;
 
-    public virtual Employee? UpdatedByNavigation { get; set; }
 }

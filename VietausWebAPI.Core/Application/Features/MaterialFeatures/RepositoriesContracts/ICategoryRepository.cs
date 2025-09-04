@@ -6,6 +6,6 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesC
 {
     public interface ICategoryRepository
     {
-        IQueryable<Category> Query();
+        IQueryable<Category> Query(bool track = false);
     }
 }

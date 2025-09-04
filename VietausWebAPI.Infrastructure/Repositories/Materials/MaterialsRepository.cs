@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.WebAPI.DatabaseContext;
 
@@ -24,9 +25,10 @@ namespace VietausWebAPI.Infrastructure.Repositories.Materials
             await _context.Materials.AddAsync(material);
         }
 
-        public IQueryable<Material> Query()
+        public IQueryable<Material> Query(bool track = false)
         {
-            return _context.Materials.AsNoTracking();
+            var db = _context.Materials.AsQueryable();
+            return track ? db : db.AsNoTracking();
         }
 
         public async Task<string?> GetLatestExternalIdStartsWithAsync(string prefix)
@@ -38,6 +40,19 @@ namespace VietausWebAPI.Infrastructure.Repositories.Materials
                 .ThenByDescending(e => e.ExternalId)           // cùng độ dài ⇒ so chuỗi
                 .Select(e => e.ExternalId)
                 .FirstOrDefaultAsync();
+        }
+
+        public async Task<bool> DeleteMaterialAsync(Guid Id, CancellationToken ct = default)
+        {
+            var material = await _context.Materials.FindAsync(Id); 
+            if (material != null)
+            {
+                material.IsActive = false;
+                _context.Materials.Update(material);
+                return true;
+            }
+
+            return false;
         }
     }
 }

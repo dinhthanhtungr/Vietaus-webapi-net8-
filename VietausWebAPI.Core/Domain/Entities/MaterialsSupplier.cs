@@ -17,17 +17,21 @@ public partial class MaterialsSupplier
 
     public string? Currency { get; set; }
 
-    public decimal? LastPrice { get; set; }
+    public DateTime? CreateDate { get; set; }
+
+    public Guid? CreatedBy { get; set; }
 
     public DateTime? UpdatedDate { get; set; }
 
     public Guid? UpdatedBy { get; set; }
 
     public bool? IsPreferred { get; set; }
+    public bool? IsActive { get; set; }
 
     public virtual Material Material { get; set; } = null!;
 
     public virtual Supplier Supplier { get; set; } = null!;
 
     public virtual Employee? UpdatedByNavigation { get; set; }
+    public virtual Employee? CreatedByNavigation { get; set; }
 }

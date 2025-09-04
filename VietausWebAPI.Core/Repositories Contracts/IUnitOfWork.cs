@@ -47,6 +47,8 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         IMaterialRepository MaterialRepository { get; }
         ISupplierRepository SupplierRepository { get; }
         ICategoryRepository CategoryRepository { get; }
+        IMaterialsSupplierRepository MaterialsSupplierRepository { get; }
+        IPriceHistorieRepository PriceHistorieRepository { get; }
 
 
         // Thêm các repository khác nếu cần

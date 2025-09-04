@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.QAQCFeatures;
 using VietausWebAPI.Core.Application.Features.Manufacturing.Queries.MfgProductionOrdersPlanRepository;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1.Labs

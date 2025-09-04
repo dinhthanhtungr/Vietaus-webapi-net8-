@@ -11,17 +11,15 @@ public partial class Formula
 
     public string? Name { get; set; }
 
+
     public Guid ProductId { get; set; }
 
-    public DateTime? SentDate { get; set; }
+    // Trạng thái hiện tại của công thức
+    public string Status { get; set; } = "Draft";
 
-    public Guid? SentBy { get; set; }
-
-    public DateTime? VerifiedDate { get; set; }
-
-    public Guid? VerifiedBy { get; set; }
 
     public decimal? TotalPrice { get; set; }
+
 
     public DateTime? CreatedDate { get; set; }
 
@@ -33,6 +31,7 @@ public partial class Formula
 
     public Guid? CompanyId { get; set; }
 
+
     public virtual Company? Company { get; set; }
 
     public virtual Employee? CreatedByNavigation { get; set; }
@@ -42,10 +41,8 @@ public partial class Formula
     public virtual Product Product { get; set; } = null!;
 
     public virtual ICollection<SampleRequest> SampleRequests { get; set; } = new List<SampleRequest>();
-
-    public virtual Employee? SentByNavigation { get; set; }
+    public virtual ICollection<FormulaStatusLog> StatusLogs { get; set; } = new List<FormulaStatusLog>();
 
     public virtual Employee? UpdatedByNavigation { get; set; }
 
-    public virtual Employee? VerifiedByNavigation { get; set; }
 }

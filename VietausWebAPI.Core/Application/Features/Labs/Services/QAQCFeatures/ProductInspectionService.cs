@@ -10,13 +10,13 @@ using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductInspectionFeature;
 using VietausWebAPI.Core.Application.Features.Labs.Helpers;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductInspectionFeature;
-using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.QAQCFeatures;
 using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 
-namespace VietausWebAPI.Core.Application.Features.Labs.Services
+namespace VietausWebAPI.Core.Application.Features.Labs.Services.QAQCFeatures
 {
     public class ProductInspectionService : IProductInspectionService
     {

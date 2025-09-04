@@ -61,11 +61,8 @@ public partial class Employee
 
     public virtual ICollection<Formula> FormulaCreatedByNavigations { get; set; } = new List<Formula>();
 
-    public virtual ICollection<Formula> FormulaSentByNavigations { get; set; } = new List<Formula>();
-
     public virtual ICollection<Formula> FormulaUpdatedByNavigations { get; set; } = new List<Formula>();
-
-    public virtual ICollection<Formula> FormulaVerifiedByNavigations { get; set; } = new List<Formula>();
+    public virtual ICollection<FormulaStatusLog> FormulaStatusLogCreatedByNavigations { get; set; } = new List<FormulaStatusLog>();
 
     public virtual ICollection<Group> GroupCreatedByNavigations { get; set; } = new List<Group>();
 
@@ -75,7 +72,8 @@ public partial class Employee
 
     public virtual ICollection<Material> MaterialUpdatedByNavigations { get; set; } = new List<Material>();
 
-    public virtual ICollection<MaterialsSupplier> MaterialsSuppliers { get; set; } = new List<MaterialsSupplier>();
+    public virtual ICollection<MaterialsSupplier> MaterialsSupplierCreatedByNavigations { get; set; } = new List<MaterialsSupplier>();
+    public virtual ICollection<MaterialsSupplier> MaterialsSupplierUpdatedByNavigations { get; set; } = new List<MaterialsSupplier>();
 
     public virtual ICollection<MemberInGroup> MemberInGroups { get; set; } = new List<MemberInGroup>();
 

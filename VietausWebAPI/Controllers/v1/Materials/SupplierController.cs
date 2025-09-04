@@ -10,7 +10,7 @@ using VietausWebAPI.Core.Application.Features.Sales.DTOs.TransferCustomerDTOs;
 namespace VietausWebAPI.WebAPI.Controllers.v1.Materials
 {
     [ApiController]
-    [Route("api/material")]
+    [Route("api/supplier")]
     [AllowAnonymous]
     public class SupplierController : Controller
     {

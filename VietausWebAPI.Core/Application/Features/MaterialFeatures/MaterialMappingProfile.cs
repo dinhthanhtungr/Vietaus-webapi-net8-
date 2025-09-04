@@ -58,12 +58,19 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures
                      .FirstOrDefault()));
 
 
+            // Material summary
+            CreateMap<Material, GetMaterialSummary>()
+                .ForMember(d => d.Category, opt => opt.MapFrom(s => $"{s.Category.Name}"));
+
+            CreateMap<Material, GetMaterial>();
+
+
 
             //PriceHistory
             CreateMap<PostPriceHistory, PriceHistory>()
-                .ForMember(d => d.PriceHistoryId, o => o.Ignore())           // KHÔNG cho DTO ghi đè khóa chính
+                .ForMember(d => d.PriceHistoryId, o => o.Ignore())        // KHÔNG cho DTO ghi đè khóa chính
                 .ForMember(d => d.MaterialId, o => o.Ignore())           // ĐỂ EF tự set từ parent.Material.PriceHistories
-                .ForMember(d => d.Supplier, o => o.Ignore())           // KHÔNG map navigation để tránh EF chèn Supplier mới
+                .ForMember(d => d.Supplier, o => o.Ignore())            // KHÔNG map navigation để tránh EF chèn Supplier mới
                 .ForMember(d => d.IsActive, o => o.MapFrom(_ => true)) // Bản ghi giá mới tạo là "đang hiệu lực"
                 .ForMember(d => d.CreateDate, o => o.MapFrom(_ => DateTime.Now))
                 .ForMember(d => d.EndDate, o => o.MapFrom(_ => (DateTime?)null));
@@ -86,13 +93,13 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures
                 .ForMember(d => d.MaterialsSuppliers, opt => opt.Ignore()) // ⬅️ quan trọng
                 .ForMember(d => d.CreatedDate, opt => opt.MapFrom(_ => DateTime.Now))
                 .ForMember(d => d.UpdatedDate, opt => opt.MapFrom(_ => DateTime.Now))
-                .ForMember(d => d.IsActive, o => o.MapFrom(_ => true))
-                .ForMember(d => d.PriceHistories, o => o.MapFrom((src, dest, _, ctx) =>
-                src.InitialPrice == null
-                    ? new List<PriceHistory>()
-                    : new List<PriceHistory> {
-                        ctx.Mapper.Map<PriceHistory>(src.InitialPrice)
-                    }));
+                .ForMember(d => d.IsActive, o => o.MapFrom(_ => true));
+                //.ForMember(d => d.PriceHistories, o => o.MapFrom((src, dest, _, ctx) =>
+                //src.InitialPrice == null
+                //    ? new List<PriceHistory>()
+                //    : new List<PriceHistory> {
+                //        ctx.Mapper.Map<PriceHistory>(src.InitialPrice)
+                //    }));
 
             //      Logic bên trong
 
@@ -110,9 +117,16 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures
             CreateMap<PostMaterialSupplier, MaterialsSupplier>()
                 .ForMember(d => d.MaterialsSuppliersId, o => o.Ignore())
                 .ForMember(d => d.MaterialId, o => o.Ignore())
-                .ForMember(d => d.LastPrice, o => o.Ignore())
                 .ForMember(d => d.UpdatedDate, o => o.MapFrom(_ => DateTime.Now))
-                .ForMember(d => d.UpdatedBy, o => o.Ignore());
+                .ForMember(d => d.UpdatedBy, o => o.Ignore())                
+                .ForMember(d => d.CreateDate, o => o.MapFrom(_ => DateTime.Now))
+                .ForMember(d => d.CreatedBy, o => o.Ignore());
+
+            CreateMap<MaterialsSupplier, GetMaterialSupplier>()
+                .ForMember(d => d.SupplierName, o => o.MapFrom(s => s.Supplier.SupplierName))
+                .ForMember(d => d.ExternalId, o => o.MapFrom(s => s.Supplier.ExternalId));
+
+
         }
     }
 }

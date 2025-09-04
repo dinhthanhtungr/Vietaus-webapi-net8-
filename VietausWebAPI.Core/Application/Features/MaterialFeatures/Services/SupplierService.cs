@@ -110,7 +110,8 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                 {
                     // Tìm theo tên/mã NV hoặc tên/mã khách trong batch
                     result = result.Where(x =>
-                            x.ExternalId.Contains(query.Keyword)
+                        EF.Functions.ILike(x.ExternalId, $"%{query.Keyword}%") ||
+                        EF.Functions.ILike(x.SupplierName, $"%{query.Keyword}%")    
 
                     );
                 }

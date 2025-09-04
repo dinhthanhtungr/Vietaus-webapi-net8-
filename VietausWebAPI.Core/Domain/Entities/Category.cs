@@ -20,6 +20,7 @@ public partial class Category
     public virtual Company Company { get; set; } = null!;
 
     public virtual ICollection<Material> Materials { get; set; } = new List<Material>();
+    public virtual ICollection<FormulaMaterial> FormulaMaterials { get; set; } = new List<FormulaMaterial>();
 
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 }

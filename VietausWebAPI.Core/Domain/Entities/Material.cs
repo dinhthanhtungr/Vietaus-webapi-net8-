@@ -29,7 +29,7 @@ public partial class Material
 
     public bool? IsActive { get; set; }
 
-    public string? Barcode { get; set; }
+    public string? Barcode { get; set; } //mã “master” để quét ra sản phẩm/vật tư (thường là GTIN/EAN-13).
 
     public string? ImagePath { get; set; }
 

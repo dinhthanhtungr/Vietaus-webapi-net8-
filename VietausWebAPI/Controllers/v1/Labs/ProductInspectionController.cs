@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductInspectionFeature;
 using VietausWebAPI.Core.Application.Features.Labs.Helpers;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductInspectionFeature;
-using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.QAQCFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.Services;
 using VietausWebAPI.Core.Domain.Entities;
 

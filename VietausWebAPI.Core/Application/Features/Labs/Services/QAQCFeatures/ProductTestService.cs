@@ -7,12 +7,12 @@ using AutoMapper;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductTestFeature;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductTestFeature;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts;
-using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.QAQCFeatures;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 
-namespace VietausWebAPI.Core.Application.Features.Labs.Services
+namespace VietausWebAPI.Core.Application.Features.Labs.Services.QAQCFeatures
 {
     public class ProductTestService : IProductTestService
     {

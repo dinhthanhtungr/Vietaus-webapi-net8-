@@ -43,7 +43,6 @@ public partial class Supplier
     public virtual Employee? CreatedByNavigation { get; set; }
     public virtual Employee? UpdatedByNavigation { get; set; }
 
-    public virtual ICollection<FormulaMaterial> FormulaMaterials { get; set; } = new List<FormulaMaterial>();
 
     public virtual ICollection<MaterialsSupplier> MaterialsSuppliers { get; set; } = new List<MaterialsSupplier>();
 

@@ -8,7 +8,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesC
     public interface ISupplierRepository
     {
         Task AddNewSuplier(Supplier supplier);
-        IQueryable<Supplier> Query();
+        IQueryable<Supplier> Query(bool track = false);
         /// <summary>
         /// lấy sô cuối cùng của code
         /// </summary>
