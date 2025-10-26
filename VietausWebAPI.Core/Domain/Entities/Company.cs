@@ -20,6 +20,7 @@ public partial class Company
     public Guid? UpdatedBy { get; set; }
 
     public virtual ICollection<Branch> Branches { get; set; } = new List<Branch>();
+    public virtual ICollection<Employee> Employees { get; set; } = new List<Employee>();
 
     public virtual ICollection<Category> Categories { get; set; } = new List<Category>();
 
@@ -37,6 +38,10 @@ public partial class Company
 
     public virtual ICollection<Material> Materials { get; set; } = new List<Material>();
 
+    public virtual ICollection<MfgProductionOrder> MfgProductionOrders { get; set; } = new List<MfgProductionOrder>();
+
+    public virtual ICollection<ManufacturingFormula> ManufacturingFormulas { get; set; } = new List<ManufacturingFormula>();
+
     public virtual ICollection<MerchandiseOrder> MerchandiseOrders { get; set; } = new List<MerchandiseOrder>();
 
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();
@@ -48,6 +53,9 @@ public partial class Company
     public virtual ICollection<Supplier> Suppliers { get; set; } = new List<Supplier>();
 
     public virtual ICollection<SupplyRequest> SupplyRequests { get; set; } = new List<SupplyRequest>();
+
+    public virtual ICollection<WarehouseShelfStock> WarehouseShelfStocks { get; set; } = new List<WarehouseShelfStock>();
+    public virtual ICollection<WarehouseRequest> WarehouseRequests { get; set; } = new List<WarehouseRequest>();
 
     public virtual Employee? UpdatedByNavigation { get; set; }
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.ProductFeature;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductFeatures;
 using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.SampleRequest
@@ -69,6 +69,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
         public Guid? CompanyId { get; set; }
         public bool? IsActive { get; set; }
 
-        public GetProductRequest Product { get; set; } = null!;
+        public GetProduct Product { get; set; } = null!;
     }
 }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.HR.DTOs.Employees;
 using VietausWebAPI.Core.Application.Features.HR.Querys.Employees;
 using VietausWebAPI.Core.Application.Features.HR.Querys.Groups;
 using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
@@ -30,14 +31,14 @@ namespace VietausWebAPI.Infrastructure.Repositories.HR
         }
 
         // Implement methods from IEmployeesCommonRepository here
-        public async Task<IEnumerable<EmployeesCommonDatum>> GetEmployeesWithIdRepositoryAsync(string EmployeeName)
-        {
-            return await _context.EmployeesCommonData
-                .Include(x => x.Part)
-                .AsNoTracking()
-                .Where(x => x.Email == EmployeeName)
-                .ToListAsync();
-        }
+        //public async Task<IEnumerable<EmployeesCommonDatum>> GetEmployeesWithIdRepositoryAsync(string EmployeeName)
+        //{
+        //    return await _context.EmployeesCommonData
+        //        .Include(x => x.Part)
+        //        .AsNoTracking()
+        //        .Where(x => x.Email == EmployeeName)
+        //        .ToListAsync();
+        //}
 
         public async Task<string?> GetLatestExternalIdStartsWithAsync(string prefix)
         {
@@ -51,42 +52,49 @@ namespace VietausWebAPI.Infrastructure.Repositories.HR
         public async Task<PagedResult<ApplicationUser>> GetPagedAccoutAsync(EmployeeQuery? query)
         {
             var queryable = _context.Users
-                .Include(u => u.UserRoles)         // ✅ Bỏ Where!
-                    .ThenInclude(ur => ur.Role)    // ✅ Đảm bảo load được Role.Name
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
                 .AsNoTracking()
                 .AsQueryable();
-            if (!string.IsNullOrWhiteSpace(query.keyword))
+
+            if (query != null && !string.IsNullOrWhiteSpace(query.keyword))
             {
-                string keywordLower = query.keyword.ToLower();
-                queryable = queryable.Where(x =>
-                    x.personName != null && EF.Functions.Collate(x.personName, "Latin1_General_CI_AI").ToLower().Contains(keywordLower) ||
-                    x.Email != null && EF.Functions.Collate(x.Email, "Latin1_General_CI_AI").ToLower().Contains(keywordLower) ||
-                    x.UserName != null && EF.Functions.Collate(x.UserName, "Latin1_General_CI_AI").ToLower().Contains(keywordLower));
+                var kw = $"%{query.keyword.Trim()}%";
+                queryable = queryable.Where(u =>
+                    (u.personName != null && EF.Functions.ILike(u.personName, kw)) ||
+                    (u.Email != null && EF.Functions.ILike(u.Email, kw)) ||
+                    (u.UserName != null && EF.Functions.ILike(u.UserName, kw))
+                );
             }
 
-            query.PageSize = 15;
+            // PageSize mặc định
+            if (query != null) query.PageSize = 15;
+
             queryable = queryable.OrderByDescending(x => x.UserName);
             return await QueryableExtensions.GetPagedAsync(queryable, query);
         }
 
         public async Task<PagedResult<Employee>> GetPagedAsync(EmployeeQuery? query)
         {
-            var queryable = _context.Employees
+            var q = _context.Employees
                 .Include(e => e.Part)
                 .AsNoTracking()
                 .AsQueryable();
-            if (!string.IsNullOrWhiteSpace(query.keyword))
+
+            if (query != null && !string.IsNullOrWhiteSpace(query.keyword))
             {
-                string keywordLower = query.keyword.ToLower();
-                queryable = queryable.Where(x =>
-                    x.FullName != null && EF.Functions.Collate(x.FullName, "Latin1_General_CI_AI").ToLower().Contains(keywordLower) ||
-                    x.Email != null && EF.Functions.Collate(x.Email, "Latin1_General_CI_AI").ToLower().Contains(keywordLower) ||
-                    x.ExternalId != null && EF.Functions.Collate(x.ExternalId, "Latin1_General_CI_AI").ToLower().Contains(keywordLower));
+                var kw = $"%{query.keyword.Trim()}%";
+                q = q.Where(x =>
+                    (x.FullName != null && EF.Functions.ILike(x.FullName, kw)) ||
+                    (x.Email != null && EF.Functions.ILike(x.Email, kw)) ||
+                    (x.ExternalId != null && EF.Functions.ILike(x.ExternalId, kw))
+                );
             }
 
-            query.PageSize = 15;
-            queryable = queryable.OrderByDescending(x => x.DateHired);
-            return await QueryableExtensions.GetPagedAsync(queryable, query);
+            if (query != null) query.PageSize = 15;
+
+            q = q.OrderByDescending(x => x.DateHired);
+            return await QueryableExtensions.GetPagedAsync(q, query);
         }
 
         public async Task PostEmployees(Employee employee)
@@ -98,44 +106,66 @@ namespace VietausWebAPI.Infrastructure.Repositories.HR
 
         public async Task<PagedResult<Employee>> GetPagedWithGroupsAsync(GetEmployeesWithGroupsQuery query)
         {
-            // Base: Employees + navigation cần cho Groups
+            // Base: Employees + navigation cần cho Groups (filtered include)
             var q = _context.Employees
-                   .AsNoTracking()
-                   .Include(e => e.MemberInGroups
-                       .Where(m => !query.OnlyActiveMembership || m.IsActive == true)
-                       .Where(m => !query.CompanyId.HasValue || m.Group.CompanyId == query.CompanyId)
-                       .Where(m => string.IsNullOrWhiteSpace(query.GroupType) || m.Group.GroupType.Contains(query.GroupType))
-                   )
-                       .ThenInclude(m => m.Group)
-                   .AsQueryable();
+                .AsNoTracking()
+                .Include(e => e.MemberInGroups
+                    .Where(m => !query.OnlyActiveMembership || m.IsActive == true)
+                    .Where(m => !query.CompanyId.HasValue || m.Group.CompanyId == query.CompanyId)
+                    // Dùng ILike thay cho Contains để case-insensitive
+                    .Where(m => string.IsNullOrWhiteSpace(query.GroupType)
+                                || EF.Functions.ILike(m.Group.GroupType, $"%{query.GroupType}%"))
+                )
+                .ThenInclude(m => m.Group)
+                .AsQueryable();
 
             // Keyword (không đụng tới group để khỏi loại nhân viên không có group)
             if (!string.IsNullOrWhiteSpace(query.Keyword))
             {
-                string kw = query.Keyword.ToLower();
+                var kw = $"%{query.Keyword.Trim()}%";
                 q = q.Where(e =>
-                    (e.FullName != null && EF.Functions.Collate(e.FullName, "Latin1_General_CI_AI").ToLower().Contains(kw)) ||
-                    (e.Email != null && EF.Functions.Collate(e.Email, "Latin1_General_CI_AI").ToLower().Contains(kw)) ||
-                    (e.ExternalId != null && EF.Functions.Collate(e.ExternalId, "Latin1_General_CI_AI").ToLower().Contains(kw)));
+                    (e.FullName != null && EF.Functions.ILike(e.FullName, kw)) ||
+                    (e.Email != null && EF.Functions.ILike(e.Email, kw)) ||
+                    (e.ExternalId != null && EF.Functions.ILike(e.ExternalId, kw))
+                );
             }
-
-            if (!string.IsNullOrEmpty(query.GroupType))
-            {
-                q = q.Where(e => e.MemberInGroups.Any(m => m.Group.GroupType.Contains(query.GroupType)));
-            }
-
-            if (!string.IsNullOrEmpty(query.ExternalId))
-            {
-                q = q.Where(e => e.Part.ExternalId != null && EF.Functions.Collate(e.Part.ExternalId, "Latin1_General_CI_AI").ToLower().Contains(query.ExternalId));
-            }
-
-
 
             // KHÔNG .Where(e => e.MemberInGroups.Any(...)) nữa, để không loại nhân viên không có group
+            // (Nếu bạn thực sự muốn lọc ra chỉ những nhân viên thuộc GroupType nào đó,
+            //  bỏ comment dưới và hiểu rằng sẽ loại người không có group phù hợp)
+            // if (!string.IsNullOrWhiteSpace(query.GroupType))
+            // {
+            //     q = q.Where(e => e.MemberInGroups.Any(m => EF.Functions.ILike(m.Group.GroupType, $"%{query.GroupType}%")));
+            // }
+
+            // Lọc theo ExternalId của Part (case-insensitive)
+            if (!string.IsNullOrWhiteSpace(query.ExternalId))
+            {
+                var kw = $"%{query.ExternalId.Trim()}%";
+                q = q.Where(e => e.Part.ExternalId != null && EF.Functions.ILike(e.Part.ExternalId, kw));
+            }
+
+            query.PageSize = 15;
             q = q.OrderBy(e => e.FullName);
 
             return await QueryableExtensions.GetPagedAsync(q, query);
         }
 
+        public IQueryable<Employee> Query(bool track = true)
+        {
+            var db = _context.Employees.AsQueryable();
+            return track ? db : db.AsNoTracking();
+        }
+
+        public async Task<List<RoleDTOs>> GetRoleDTOsAsync(CancellationToken ct = default)
+        {
+            List<RoleDTOs> roles = await _context.Roles
+                .Select(r => new RoleDTOs
+                {
+                    Id = r.Id,
+                    Name = r.Name,
+                }).ToListAsync(ct);
+            return roles;
+        }
     }
 }

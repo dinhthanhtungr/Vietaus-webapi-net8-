@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.SampleRequest
 {
@@ -46,7 +47,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
 
         public string? InfoType { get; set; }
 
-        public Guid? FormulaId { get; set; }
+        public GetSampleFormula? Formula { get; set; }
 
         public string? Comment { get; set; }
 

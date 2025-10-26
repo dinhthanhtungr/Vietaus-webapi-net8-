@@ -12,6 +12,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Querys.Materi
         public Guid? MaterialId { get; set; }
         public Guid? CategoryId { get; set; }
         public string? Keyword { get; set; }
+        public Guid? SupplierId { get; set; }
         public string? Category { get; set; }
         public DateTime? From { get; set; }
         public DateTime? To { get; set; }

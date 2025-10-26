@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Identity;
+using System;
 using System.Collections.Generic;
+using VietausWebAPI.Core.Identity;
 
- namespace VietausWebAPI.Core.Domain.Entities;
+namespace VietausWebAPI.Core.Domain.Entities;
 
 public partial class Employee
 {
@@ -26,12 +28,16 @@ public partial class Employee
     public Guid? PartId { get; set; }
 
     public Guid? LevelId { get; set; }
+    public Guid? CompanyId { get; set; }
 
     public DateTime? DateHired { get; set; }
 
     public string? Status { get; set; }
 
     public DateOnly? EndDate { get; set; }
+    public Company Company { get; set; } = default!;
+
+    public virtual ICollection<ApplicationUser> ApplicationUsers { get; set; } = new List<ApplicationUser>();
 
     public virtual ICollection<ApprovalHistory> ApprovalHistories { get; set; } = new List<ApprovalHistory>();
 
@@ -58,10 +64,14 @@ public partial class Employee
     public virtual ICollection<CustomerTransferLog> CustomerTransferLogToEmployees { get; set; } = new List<CustomerTransferLog>();
 
     public virtual ICollection<Customer> CustomerUpdatedByNavigations { get; set; } = new List<Customer>();
+    public virtual ICollection<DeliveryOrder> DeliveryOrderCreatedByNavigations { get; set; } = new List<DeliveryOrder>();
+    public virtual ICollection<DeliveryOrder> DeliveryOrderUpdatedByNavigations { get; set; } = new List<DeliveryOrder>();
 
     public virtual ICollection<Formula> FormulaCreatedByNavigations { get; set; } = new List<Formula>();
-
     public virtual ICollection<Formula> FormulaUpdatedByNavigations { get; set; } = new List<Formula>();
+    public virtual ICollection<Formula> FormulaCheckByNavigations { get; set; } = new List<Formula>();
+    public virtual ICollection<Formula> FormulaSentByNavigations { get; set; } = new List<Formula>();
+
     public virtual ICollection<FormulaStatusLog> FormulaStatusLogCreatedByNavigations { get; set; } = new List<FormulaStatusLog>();
 
     public virtual ICollection<Group> GroupCreatedByNavigations { get; set; } = new List<Group>();
@@ -75,6 +85,16 @@ public partial class Employee
     public virtual ICollection<MaterialsSupplier> MaterialsSupplierCreatedByNavigations { get; set; } = new List<MaterialsSupplier>();
     public virtual ICollection<MaterialsSupplier> MaterialsSupplierUpdatedByNavigations { get; set; } = new List<MaterialsSupplier>();
 
+    public virtual ICollection<MfgProductionOrder> MfgProductionOrderCreatedByNavigations { get; set; } = new List<MfgProductionOrder>();
+    public virtual ICollection<MfgProductionOrder> MfgProductionOrderUpdatedByNavigations { get; set; } = new List<MfgProductionOrder>();
+
+    public virtual ICollection<MfgProductionOrderLog> MfgProductionOrderLogCreatedByNavigations { get; set; } = new List<MfgProductionOrderLog>();
+
+    public virtual ICollection<ManufacturingFormula> ManufacturingFormulaCreatedByNavigations { get; set; } = new List<ManufacturingFormula>();
+    public virtual ICollection<ManufacturingFormula> ManufacturingFormulaUpdatedByNavigations { get; set; } = new List<ManufacturingFormula>();
+
+    public virtual ICollection<ManufacturingFormulaLog> PerformedByNavigations { get; set; } = new List<ManufacturingFormulaLog>();
+
     public virtual ICollection<MemberInGroup> MemberInGroups { get; set; } = new List<MemberInGroup>();
 
     public virtual ICollection<MerchandiseOrder> MerchandiseOrderCreatedByNavigations { get; set; } = new List<MerchandiseOrder>();
@@ -82,6 +102,8 @@ public partial class Employee
     public virtual ICollection<MerchandiseOrder> MerchandiseOrderManagerBies { get; set; } = new List<MerchandiseOrder>();
 
     public virtual ICollection<MerchandiseOrder> MerchandiseOrderUpdatedByNavigations { get; set; } = new List<MerchandiseOrder>();
+    public virtual ICollection<MerchandiseOrderLog> MerchandiseOrderLogCreatedByNavigations { get; set; } = new List<MerchandiseOrderLog>();
+    public virtual ICollection<OrderAttachment> OrderAttachmentCreatedByNavigations { get; set; } = new List<OrderAttachment>();
 
     public virtual Part? Part { get; set; }
 
@@ -108,6 +130,7 @@ public partial class Employee
     public virtual ICollection<SampleRequest> SampleRequestManagerByNavigations { get; set; } = new List<SampleRequest>();
 
     public virtual ICollection<SampleRequest> SampleRequestUpdatedByNavigations { get; set; } = new List<SampleRequest>();
+    public virtual ICollection<SampleRequest> SampleRequestSendByNavigations { get; set; } = new List<SampleRequest>();
 
     public virtual ICollection<Supplier> SupplierCreatedByNavigations { get; set; } = new List<Supplier>();
     public virtual ICollection<Supplier> SupplierUpdatedByNavigations { get; set; } = new List<Supplier>();
@@ -117,4 +140,9 @@ public partial class Employee
     public virtual ICollection<SupplyRequest> SupplyRequestUpdatedByNavigations { get; set; } = new List<SupplyRequest>();
 
     public virtual ICollection<Unit> Units { get; set; } = new List<Unit>();
+
+    public virtual ICollection<WarehouseTempStock> WarehouseTempStockCreatedByNavigations { get; set; } = new List<WarehouseTempStock>();
+    public virtual ICollection<WarehouseShelfStock> WarehouseShelfStockUpdatedByNavigations { get; set; } = new List<WarehouseShelfStock>();  
+    public virtual ICollection<WarehouseRequest> WarehouseRequestCreatedByNavigations { get; set; } = new List<WarehouseRequest>();
+    public virtual ICollection<WarehouseRequest> WarehouseRequestUpdatedByNavigations { get; set; } = new List<WarehouseRequest>();
 }

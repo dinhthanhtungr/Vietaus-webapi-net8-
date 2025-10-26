@@ -66,9 +66,10 @@ namespace VietausWebAPI.Infrastructure.Repositories.Share.SampleRequestFeature
         /// Tạo lệnh query để truy vấn yêu cầu mẫu từ cơ sở dữ liệu.
         /// </summary>
         /// <returns></returns>
-        public IQueryable<SampleRequest> Query()
+        public IQueryable<SampleRequest> Query(bool track = false)
         {
-            return _context.SampleRequests.AsNoTracking();
+            var db = _context.SampleRequests.AsQueryable();
+            return track ? db : db.AsNoTracking();
         }
 
         public async Task<int> UpdateSampleRequestAsync(UpdateSampleRequest sampleRequest, CancellationToken ct = default)

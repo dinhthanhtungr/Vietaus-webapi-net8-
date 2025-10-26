@@ -21,6 +21,6 @@ public partial class Category
 
     public virtual ICollection<Material> Materials { get; set; } = new List<Material>();
     public virtual ICollection<FormulaMaterial> FormulaMaterials { get; set; } = new List<FormulaMaterial>();
-
+    public virtual ICollection<ManufacturingFormulaMaterial> ManufacturingFormulaMaterials { get; set; } = new List<ManufacturingFormulaMaterial>();
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 }

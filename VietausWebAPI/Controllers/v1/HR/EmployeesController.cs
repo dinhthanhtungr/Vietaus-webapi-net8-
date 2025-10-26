@@ -24,10 +24,18 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.HR
             _employeesService = employeesCommonService;
 
         }
+
         [HttpGet("Get")]
         public async Task<IActionResult> GetAllEmployeesCommon([FromQuery] string? Email)
         {
             var result = await _employeesService.GetEmployeesWithIdServiceAsync(Email);
+            return Ok(result);
+        }
+
+        [HttpGet("GetByIds")]      
+        public async Task<IActionResult> GetEmployeesByIds([FromQuery] Guid id)
+        {
+            var result = await _employeesService.GetEmployeesByIdsAsync(id);
             return Ok(result);
         }
 
@@ -129,8 +137,6 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.HR
             return Ok(res);
         }
 
-
-
         [HttpPatch("leader")]
         public async Task<IActionResult> ChangeLeaderStatus([FromQuery] GroupMemberQuery query)
         {
@@ -163,10 +169,17 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.HR
 
         [HttpGet("with-groups")]
         public async Task<ActionResult<PagedResult<EmployeeGroupDTO>>> Get(
-    [FromQuery] GetEmployeesWithGroupsQuery query,
-    CancellationToken ct = default)
+            [FromQuery] GetEmployeesWithGroupsQuery query,
+            CancellationToken ct = default)
+                {
+                    var result = await _employeesService.GetEmployeesWithGroupsAsync(query, ct);
+                    return Ok(result);
+                }
+
+        [HttpGet("roles")]
+        public async Task<IActionResult> GetRoles(CancellationToken ct = default)
         {
-            var result = await _employeesService.GetEmployeesWithGroupsAsync(query, ct);
+            var result = await _employeesService.GetRoleDTOsAsync(ct);
             return Ok(result);
         }
     }

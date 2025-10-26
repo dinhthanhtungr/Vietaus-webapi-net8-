@@ -15,4 +15,16 @@ namespace VietausWebAPI.Core.Application.Shared.Models.PageModels
         public static OperationResult Fail(string message) => new() { Success = false, Message = message };
 
     }
+
+    // Generic version
+    public class OperationResult<T> : OperationResult
+    {
+        public T? Data { get; set; }
+
+        public static OperationResult<T> Ok(T data, string? message = null)
+            => new() { Success = true, Message = message, Data = data };
+
+        public static new OperationResult<T> Fail(string message)
+            => new() { Success = false, Message = message };
+    }
 }

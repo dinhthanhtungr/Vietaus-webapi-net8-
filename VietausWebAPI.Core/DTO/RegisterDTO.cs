@@ -23,5 +23,7 @@ namespace VietausWebAPI.Core.DTO
         [Required(ErrorMessage = "Confirm Password can't be blank.")]
         [Compare("Password", ErrorMessage = "Confirm Password not correct.")] 
         public string ConfirmPassword { get; set; } = string.Empty;
+
+        public Guid? EmployeeId { get; set; }
     }
 }

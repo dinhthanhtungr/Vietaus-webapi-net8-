@@ -191,6 +191,19 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                     RegNo = c.RegistrationNumber,
                     Phone = c.Phone,
                     Group = c.CustomerGroup,
+                    DeliveryName = c.Contacts != null && c.Contacts.Any()
+                        ? c.Contacts
+                            .OrderByDescending(c => c.IsPrimary)       // nếu dùng IsPrimary/IsDefault thì đổi tên field
+                            .Select(c => ((c.FirstName ?? "") + " " + (c.LastName ?? "")).Trim())
+                            .FirstOrDefault()
+                        : null,
+
+                    Address = c.Addresses != null && c.Addresses.Any()
+                        ? c.Addresses
+                            .OrderByDescending(c => c.IsPrimary)
+                            .Select(c => c.AddressLine)                  // nếu địa chỉ nằm ở field khác thì đổi lại
+                            .FirstOrDefault()
+                        : null,
 
                     EmployeeId = c.CustomerAssignments
                         .Where(a => a.IsActive)

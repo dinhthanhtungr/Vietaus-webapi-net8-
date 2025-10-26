@@ -140,9 +140,10 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
                 .FirstOrDefaultAsync();
         }
 
-        public IQueryable<Customer> Query()
+        public IQueryable<Customer> Query(bool track = false)
         {
-            return _context.Customers.AsNoTracking();
+            var db = _context.Customers.AsQueryable();
+            return track ? db : db.AsNoTracking();
         }
 
         public async Task<bool> UpdateCustomerAsync(PatchCustomer customer)

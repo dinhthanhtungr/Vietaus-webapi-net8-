@@ -3,6 +3,7 @@ using AutoMapper; // Add this at the top of the file
 using AutoMapper.Execution;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
@@ -13,13 +14,16 @@ using Microsoft.IdentityModel.Tokens;
 using PuppeteerSharp;
 using QuestPDF.Drawing;
 using QuestPDF.Infrastructure;
+using System;
 using System.Text;
 using VietausWebAPI.Core.Application.Features.HR;
 using VietausWebAPI.Core.Application.Features.Labs;
 using VietausWebAPI.Core.Application.Features.Labs.Helpers;
+using VietausWebAPI.Core.Application.Features.Manufacturing;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures;
 using VietausWebAPI.Core.Application.Features.Planning;
 using VietausWebAPI.Core.Application.Features.Sales;
+using VietausWebAPI.Core.Application.Shared.Helper.FileStorage;
 using VietausWebAPI.Core.Identity;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Core.Service;
@@ -98,13 +102,15 @@ QuestPDF.Settings.License = LicenseType.Community;
 builder.Services.AddTransient<IJwtService, JwtService>();
 
 
+
 builder.Services.AddAutoMapper(
     cfg => { },
     typeof(HRMappingProfile).Assembly,   // Infrastructure/Application profile assembly
     typeof(PlanningMappingProfile).Assembly,
     typeof(ProductStandardMappingProfile).Assembly,
     typeof(SaleMappingProfile).Assembly,
-    typeof(MaterialMappingProfile).Assembly
+    typeof(MaterialMappingProfile).Assembly,
+    typeof(ManufacturingMappingProfile).Assembly
 
 );
 
@@ -175,12 +181,29 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
         return new BadRequestObjectResult(context.ModelState);
     };
 });
+
+// File storage
+builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("Storage"));
+builder.Services.AddSingleton<IFileShareStorage, FileShareStorage>();
+
+// Cho upload lớn
+builder.Services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = 50_000_000);
+
+
+
+
 // Thử nghiệp phải xóa đi kkhi build trương trình
 builder.Logging.ClearProviders();
 // Thử nghiệp phải xóa đi kkhi build trương trình
 builder.Logging.AddConsole();
 
 
+// 🔽 Ở đây, khi đăng ký DbContext
+builder.Services.AddDbContext<ApplicationDbContext>(opt => opt
+    .UseNpgsql(builder.Configuration.GetConnectionString("AppDbConnectionString"))
+    .EnableDetailedErrors()
+    .EnableSensitiveDataLogging()
+    .LogTo(Console.WriteLine, LogLevel.Information));
 
 
 //JWT
@@ -189,6 +212,7 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
+
 
 //builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
@@ -230,7 +254,7 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
-app.UseCors("AllowAllOrigins");
+
 //app.UseCors("AllowFrontend");
 
 // Configure the HTTP request pipeline.
@@ -246,7 +270,7 @@ app.UseSwaggerUI(c =>
 //app.UseRouting();
 
 app.UseRouting(); // 🚨 BẮT BUỘC
-
+app.UseCors("AllowAllOrigins");
 app.UseAuthentication();
 
 app.UseAuthorization();

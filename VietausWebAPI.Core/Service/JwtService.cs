@@ -25,7 +25,7 @@ namespace VietausWebAPI.Core.Service
         /// </summary>
         /// <param name = "user" > ApplicationUser oject</param>
         /// <returns>AuthenticationResponse that includes token</returns>
-        AuthenticationResponse CreateJwtJoken(ApplicationUser user, string partId, string departmentName, string EmployeeId, Guid Id, IList<string> roles = null)
+        AuthenticationResponse CreateJwtJoken(ApplicationUser user, string partId, string departmentName, string EmployeeId, Guid Id, Guid CompanyId, IList<string> roles = null)
         {
             // Create a DateTime ojcet representing the token 
             // expiration time by adding the number of minutes specified
@@ -46,6 +46,7 @@ namespace VietausWebAPI.Core.Service
                     new Claim("employeeId", EmployeeId), // Employee ID of the user
                     new Claim("Id", Id.ToString()),
                     new Claim("departmentName", departmentName), // Department name of the user
+                    new Claim("CompanyId", CompanyId.ToString()), // Company ID of the user
             };
 
             if (roles != null && roles.Any())
@@ -157,9 +158,9 @@ namespace VietausWebAPI.Core.Service
             return Convert.ToBase64String(bytes);
         }
 
-        AuthenticationResponse IJwtService.CreateJwtJoken(ApplicationUser user, string partId, string departmentName, string EmployeeId, Guid Id, IList<string> roles)
+        AuthenticationResponse IJwtService.CreateJwtJoken(ApplicationUser user, string partId, string departmentName, string EmployeeId, Guid Id, Guid CompanyId, IList<string> roles)
         {
-            return CreateJwtJoken(user, partId, departmentName, EmployeeId, Id, roles);
+            return CreateJwtJoken(user, partId, departmentName, EmployeeId, Id, CompanyId, roles);
         }
     }
 }

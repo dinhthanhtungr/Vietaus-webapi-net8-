@@ -56,6 +56,9 @@ public partial class SampleRequest
 
     public Guid? CreatedBy { get; set; }
 
+    public Guid? SendBy { get; set; }
+    public string? SendByNameSnapshot { get; set; }
+
     public DateTime? UpdatedDate { get; set; }
 
     public Guid? UpdatedBy { get; set; }
@@ -76,5 +79,6 @@ public partial class SampleRequest
     public virtual Product Product { get; set; } = null!;
 
     public virtual Employee? UpdatedByNavigation { get; set; }
+    public virtual Employee? SendByNavigation { get; set; }
     public virtual ICollection<SampleRequestImage> SampleRequestImages { get; set; } = new List<SampleRequestImage>();
 }

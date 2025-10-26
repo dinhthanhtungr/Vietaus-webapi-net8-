@@ -58,6 +58,7 @@ public partial class Product
     public string? VisualTest { get; set; }
 
     public bool? ReturnSample { get; set; }
+    public bool? IsRecycle { get; set; }
 
     public string? OtherComment { get; set; }
 
@@ -83,10 +84,12 @@ public partial class Product
 
     public virtual Employee? CreatedByNavigation { get; set; }
 
+    public virtual ICollection<DeliveryOrderDetail> DeliveryOrderDetails { get; set; } = new List<DeliveryOrderDetail>();
     public virtual ICollection<Formula> Formulas { get; set; } = new List<Formula>();
 
     public virtual ICollection<MerchandiseOrderDetail> MerchandiseOrderDetails { get; set; } = new List<MerchandiseOrderDetail>();
 
+    public virtual ICollection<MfgProductionOrder> MfgProductionOrders { get; set; } = new List<MfgProductionOrder>();
     public virtual ICollection<ProductChangedHistory> ProductChangedHistories { get; set; } = new List<ProductChangedHistory>();
 
     public virtual ICollection<SampleRequest> SampleRequests { get; set; } = new List<SampleRequest>();

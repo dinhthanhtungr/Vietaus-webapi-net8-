@@ -42,11 +42,11 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
         /// </summary>
         /// <param name="EmployeeId"></param>
         /// <returns></returns>
-        public async Task<IEnumerable<EmployeesCommonDatumDTO>> GetEmployeesWithIdServiceAsync(string EmployeeId)
-        {
-            var employees = await _unitOfWork.EmployeesCommonRepository.GetEmployeesWithIdRepositoryAsync(EmployeeId);
-            return _mapper.Map<IEnumerable<EmployeesCommonDatumDTO>>(employees);
-        }
+        //public async Task<IEnumerable<EmployeesCommonDatumDTO>> GetEmployeesWithIdServiceAsync(string EmployeeId)
+        //{
+        //    var employees = await _unitOfWork.EmployeesCommonRepository.GetEmployeesWithIdRepositoryAsync(EmployeeId);
+        //    return _mapper.Map<IEnumerable<EmployeesCommonDatumDTO>>(employees);
+        //}
 
         public async Task<PagedResult<AccountDTOs>> GetPagedAccoutAsync(EmployeeQuery? query)
         {
@@ -266,6 +266,30 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
             }
 
             return new PagedResult<EmployeeGroupDTO>(items, paged.TotalCount, paged.Page, paged.PageSize);
+        }
+
+        public Task<IEnumerable<EmployeesCommonDatumDTO>> GetEmployeesWithIdServiceAsync(string EmployeeId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<EmployeesPostDTOs> GetEmployeesByIdsAsync(Guid EmployeeId)
+        {
+            var result = await _unitOfWork.EmployeesRepository.Query()
+                .Where(e => e.EmployeeId == EmployeeId)
+                .Select(e => _mapper.Map<EmployeesPostDTOs>(e))
+                .FirstOrDefaultAsync();
+
+            if (result == null)
+                throw new InvalidOperationException($"Employee with ID '{EmployeeId}' not found.");
+
+            return result;
+        }
+
+        public async Task<List<RoleDTOs>> GetRoleDTOsAsync(CancellationToken ct = default)
+        {
+            var roles = await _unitOfWork.EmployeesRepository.GetRoleDTOsAsync(ct);
+            return roles;
         }
         // Implement methods from IEmployeesCommonService here
     }

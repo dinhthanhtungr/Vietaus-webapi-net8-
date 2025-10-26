@@ -17,10 +17,4 @@
     <PackageReference Include="QuestPDF" Version="2025.7.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Application\Features\Manufacturing\DTOs\" />
-    <Folder Include="Application\Features\Manufacturing\Services\" />
-    <Folder Include="Application\Features\Manufacturing\ServiceContracts\" />
-  </ItemGroup>
-
 </Project>

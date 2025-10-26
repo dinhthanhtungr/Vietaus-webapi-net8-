@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Routing.Matching;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,13 +38,39 @@ namespace VietausWebAPI.Infrastructure.Repositories.Share.SampleRequestFeature
             return await _context.Products.AsNoTracking().AnyAsync(p => p.ProductId == productId, ct);
         }
 
+        public async Task<string?> GetLatestProductStartsWithAsync(
+                        IQueryable<string> codes, string left, string right, CancellationToken ct = default)
+        {
+            int leftLen = left.Length, rightLen = right.Length;
+
+            var q = await codes
+                .Where(c => c != null
+                         && c.StartsWith(left)
+                         && c.EndsWith(right)
+                         && c.Length > leftLen + rightLen)
+                .Select(c => c.Substring(leftLen, c.Length - leftLen - rightLen))
+                .ToListAsync(ct);
+
+            // CHỈ chấp nhận tail toàn chữ số (loại "[]", "[1]", "01A", ...):
+            var numeric = q.Where(s => !string.IsNullOrEmpty(s) && s.All(char.IsDigit));
+
+            // Lấy lớn nhất: ưu tiên độ dài, rồi tới thứ tự chuỗi
+            return numeric
+                .OrderByDescending(s => s.Length)
+                .ThenByDescending(s => s)
+                .FirstOrDefault();
+
+        }
+
+
         /// <summary>
         /// Tạo lệnh query để truy vấn sản phẩm từ cơ sở dữ liệu.
         /// </summary>
         /// <returns></returns>
-        public IQueryable<Product> Query()
+        public IQueryable<Product> Query(bool track = false)
         {
-            return _context.Products.AsNoTracking();
+            var db = _context.Products.AsQueryable();
+            return track ? db : db.AsNoTracking();
         }
     }
 }

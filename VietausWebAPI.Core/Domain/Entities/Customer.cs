@@ -57,6 +57,8 @@ public partial class Customer
 
     public virtual ICollection<MerchandiseOrder> MerchandiseOrders { get; set; } = new List<MerchandiseOrder>();
 
+    public virtual ICollection<MfgProductionOrder> MfgProductionOrders { get; set; } = new List<MfgProductionOrder>();
+
     public virtual ICollection<SampleRequest> SampleRequests { get; set; } = new List<SampleRequest>();
 
     public virtual Employee? UpdatedByNavigation { get; set; }

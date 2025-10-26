@@ -1,0 +1,23 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs;
+using VietausWebAPI.Core.Application.Features.DeliveryOrders.Queries;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
+
+namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.ServiceContracts
+{
+    public interface IDeliveryOrderService
+    {
+        Task<OperationResult> CreateAsync(PostDeliveryOrder postDeliveryOrder, CancellationToken ct = default);
+        Task<PagedResult<GetSampleDelivery>> GetAllAsync(DeliveryOrderQuery query, CancellationToken ct = default);
+        Task<PagedResult<GetPODeliveryOrder>> GetSelectableLinesAsync(DeliveryOrderQuery query, CancellationToken ct = default);
+        Task<PagedResult<GetDeliverer>> GetAllDelivererAsync (DelivererQuery query, CancellationToken ct = default);
+        Task<GetDeliveryOrder> GetAsync (Guid query, CancellationToken ct = default);
+        Task<OperationResult> UpdateAsync(PatchDeliveryOrder putDeliveryOrder, CancellationToken ct = default);
+        Task<OperationResult> SoftDeleteAsync(Guid id, CancellationToken ct = default);
+        //Task<OperationResult> AssignDeliverersAsync(AssignDeliverersCommand commkand, CancellationToken ct = default);
+    }
+}

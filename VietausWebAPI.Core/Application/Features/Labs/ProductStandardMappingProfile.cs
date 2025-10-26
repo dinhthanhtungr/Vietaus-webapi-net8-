@@ -2,12 +2,14 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Routing;
 using System;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductInspectionFeature;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductStandardFeature;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductTestFeature;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.QCOutputFeature;
-using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.ProductFeature;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.SampleRequest;
+using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOrders;
 using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.Core.Application.Features.Labs
@@ -80,6 +82,16 @@ namespace VietausWebAPI.Core.Application.Features.Labs
                 // Audit/Server fields: KHÔNG nhận từ client
                 .ForMember(d => d.SampleRequestId, opt => opt.Ignore())
                 .ForMember(d => d.CreatedDate, opt => opt.MapFrom(_ => DateTime.Now))
+                .ForMember(d => d.ProductId, opt => opt.Ignore())
+                .ForMember(d => d.ExpectedDeliveryDate, opt => opt.Ignore())
+
+                .ForMember(d => d.ExpectedPriceQuoteDate, opt => opt.Ignore())
+                //.ForMember(d => d.ExternalId, opt => opt.Ignore())
+                .ForMember(d => d.FormulaId, opt => opt.Ignore())
+                .ForMember(d => d.InfoType, opt => opt.Ignore())
+                .ForMember(d => d.RealPriceQuoteDate, opt => opt.Ignore())
+                .ForMember(d => d.ResponseDeliveryDate, opt => opt.Ignore())
+
                 .ForMember(d => d.UpdatedDate, opt => opt.Ignore())
                 .ForMember(d => d.UpdatedBy, opt => opt.Ignore());
 
@@ -113,10 +125,23 @@ namespace VietausWebAPI.Core.Application.Features.Labs
             CreateMap<CreateProductRequest, Product>()
                 .ForMember(d => d.ProductId, opt => opt.Ignore())
                 .ForMember(d => d.CreatedDate, opt => opt.MapFrom(_ => DateTime.Now))
+                
+                .ForMember(d => d.UpdatedDate, opt => opt.Ignore())
+                .ForMember(d => d.Additive, opt => opt.Ignore())
+                .ForMember(d => d.UpdatedDate, opt => opt.Ignore())
+                .ForMember(d => d.CategoryId, opt => opt.Ignore())
+                .ForMember(d => d.ColourCode, opt => opt.Ignore())
+                .ForMember(d => d.ColourName, opt => opt.Ignore())
+                .ForMember(d => d.ExpiryType, opt => opt.Ignore())
+                .ForMember(d => d.LabComment, opt => opt.Ignore())
+                .ForMember(d => d.Name, opt => opt.Ignore())
+                .ForMember(d => d.Requirement, opt => opt.Ignore())
+                .ForMember(d => d.StorageCondition, opt => opt.Ignore())
+                .ForMember(d => d.Weight, opt => opt.Ignore())
                 .ForMember(d => d.UpdatedDate, opt => opt.Ignore())
                 .ForMember(d => d.UpdatedBy, opt => opt.Ignore());// Chặn map
 
-            CreateMap<Product, GetProductRequest>().ReverseMap();
+            CreateMap<Product, GetProduct>().ReverseMap();
                 
 
             CreateMap<Product, ProductDTO>().ReverseMap();
@@ -125,6 +150,39 @@ namespace VietausWebAPI.Core.Application.Features.Labs
             CreateMap<SampleRequest, GetSampleWithProductRequest>()
                 .ForMember(d => d.Product, o => o.MapFrom(s => s.Product)) // dùng map Product->GetProductRequest
                 .ForMember(d => d.Sample, o => o.MapFrom(s => s));        // dùng map SampleRequest->GetSampleRequest
+
+
+            // Formula Mapping
+            CreateMap<PostMaterialFormula, FormulaMaterial>();
+            CreateMap<FormulaMaterial, GetMaterialFormula>();
+
+
+            CreateMap<PostFormula, Formula>()
+                .ForMember(d => d.FormulaId, opt => opt.Ignore())
+                .ForMember(d => d.ExternalId, opt => opt.Ignore())
+                .ForMember(d => d.Name, opt => opt.Ignore())
+                .ForMember(d => d.FormulaMaterials, opt => opt.MapFrom(s => s.materialFormulas))
+                .ForMember(d => d.CreatedDate, opt => opt.MapFrom(_ => DateTime.Now))
+                .ForMember(d => d.UpdatedDate, opt => opt.MapFrom(_ => DateTime.Now));
+
+            CreateMap<Formula, GetFormula>()
+                .ForMember(d => d.CreatedByName, opt => opt.MapFrom(s => s.CreatedByNavigation.FullName))
+                .ForMember(d => d.materialFormulas, opt => opt.MapFrom(s => s.FormulaMaterials))
+                .ForMember(d => d.ProductCode, opt => opt.MapFrom(s => s.Product.ColourCode))
+                    .ForMember(d => d.materialFormulas,
+                            opt => opt.MapFrom(s => s.FormulaMaterials.Where(x => x.IsActive == true    )));
+
+            CreateMap<Formula, GetSampleFormula>()
+                .ForMember(d => d.FormulaId, opt => opt.MapFrom(s => s.FormulaId))
+                .ForMember(d => d.ExternalId, opt => opt.MapFrom(s => s.ExternalId))
+                .ForMember(d => d.Note, opt => opt.MapFrom(s => s.Note))
+                .ForMember(d => d.Name, opt => opt.MapFrom(s => s.Name))
+                .ForMember(d => d.ProductCode, opt => opt.MapFrom(s => s.Product.ColourCode))
+                .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status))
+                .ForMember(d => d.TotalPrice, opt => opt.MapFrom(s => s.TotalPrice));
+
+
+
         }
     }
 }

@@ -49,6 +49,8 @@ public partial class Material
 
     public virtual ICollection<FormulaMaterial> FormulaMaterials { get; set; } = new List<FormulaMaterial>();
 
+    public virtual ICollection<ManufacturingFormulaMaterial> ManufacturingFormulaMaterials { get; set; } = new List<ManufacturingFormulaMaterial>();
+
     public virtual ICollection<MaterialsSupplier> MaterialsSuppliers { get; set; } = new List<MaterialsSupplier>();
 
     public virtual ICollection<PriceHistory> PriceHistories { get; set; } = new List<PriceHistory>();

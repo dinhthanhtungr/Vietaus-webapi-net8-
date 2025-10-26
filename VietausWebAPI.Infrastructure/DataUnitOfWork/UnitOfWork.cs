@@ -1,12 +1,18 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
+using VietausWebAPI.Core.Application.Features.DeliveryOrders.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.QAQCFeature;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.PurchaseFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
+using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.MerchandiseOrderFeatures;
+using VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContracts;
 using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Infrastructure.Repositories.Sales;
 using VietausWebAPI.WebAPI.DatabaseContext;
 
 
@@ -29,7 +35,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public ITransferCustomerRepository TransferCustomerRepository { get; }
         public ICustomerAssignmentRepository CustomerAssignmentRepository { get; }
         public ICustomerTransferLogRepository CustomerTransferLogRepository { get; }
-
+        public IMerchandiseOrderRepository MerchandiseOrderRepository { get; }
+        public IMerchandiseOrderLogRepository MerchandiseOrderLogRepository { get; }
+        public IAttachmentRepository AttachmentRepository { get; }
         // Labs
         public IProductStandardRepository ProductStandardRepository { get; }
         public IProductInspectionRepository ProductInspectionRepository { get; }
@@ -39,6 +47,8 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IProductRepository ProductRepository { get; }
         public ISampleRequestRepository SampleRequestRepository { get; }
         public ISampleRequestImageRepository SampleRequestImageRepository { get; }
+        public IFormulaRepository FormulaRepository { get; }
+        public IFormulaMaterialRepository FormulaMaterialRepository { get; }
         // Planning
         public IScheduealRepository ScheduealRepository { get; }
 
@@ -52,6 +62,30 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IMaterialsSupplierRepository MaterialsSupplierRepository { get; }
         public IPriceHistorieRepository PriceHistorieRepository { get; }
 
+        // Manufacturing
+        public IMfgProductionOrderRepository MfgProductionOrderRepository { get; }
+        public IManufacturingFormulaMaterialRepository ManufacturingFormulaMaterialRepository { get; }
+        public IManufacturingFormulaLogRepository ManufacturingFormulaLogRepository { get; }
+        public IManufacturingFormulaRepository ManufacturingFormulaRepository { get; }
+
+        // Warehouses
+        public IWarehouseShelfStockRepository WarehouseShelfStockRepository { get; }
+        public IWarehouseTempStockRepository WarehouseTempStockRepository { get; }
+        public IWarehouseRequestDetailRepository WarehouseRequestDetailRepository { get; }
+        public IWarehouseRequestRepository WarehouseRequestRepository { get; }
+
+        // Delivery
+        public IDeliveryOrderRepository DeliveryOrderRepository { get; }
+        public IDelivererRepository DelivererRepository { get; }
+        public IDeliveryOrderDetailRepository DeliveryOrderDetailRepository { get; }
+        public IDelivererInforRepository DelivererInforRepository { get; }
+        public IDeliveryOrderPORepository DeliveryOrderPORepository { get; }
+
+        // Purchase
+
+        public IPurchaseOrderRepository PurchaseOrderRepository { get; }
+        public IPurchaseOrderDetailRepository PurchaseOrderDetailRepository { get; }
+        public IPurchaseOrderSnapshotRepository PurchaseOrderSnapshotRepository { get; }
 
         /// <summary>
         /// Khởi tạo UnitOfWork
@@ -85,7 +119,31 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             , ISupplierRepository supplierRepository
             , ICategoryRepository categoryRepository
             , IMaterialsSupplierRepository materialsSupplierRepository
-            , IPriceHistorieRepository priceHistorieRepository)
+            , IPriceHistorieRepository priceHistorieRepository
+            , IFormulaRepository formulaRepository
+            , IFormulaMaterialRepository formulaMaterialRepository
+            , IMerchandiseOrderRepository merchandiseOrderRepository
+            , IMerchandiseOrderLogRepository merchandiseOrderLogRepository
+            , IAttachmentRepository attachmentRepository
+            , IMfgProductionOrderRepository mfgProductionOrderRepository
+            , IManufacturingFormulaMaterialRepository manufacturingFormulaMaterialRepository
+            , IManufacturingFormulaRepository manufacturingFormulaRepository
+            , IManufacturingFormulaLogRepository manufacturingFormulaLogRepository
+            , IWarehouseShelfStockRepository warehouseShelfStockRepository
+            , IWarehouseTempStockRepository warehouseTempStockRepository
+            , IWarehouseRequestDetailRepository warehouseRequestDetailRepository
+            , IWarehouseRequestRepository warehouseRequestRepository
+            , IDeliveryOrderRepository deliveryOrderRepository
+            , IDelivererRepository delivererRepository
+            , IDeliveryOrderDetailRepository deliveryOrderDetailRepository
+            , IDelivererInforRepository delivererInforRepository
+            , IDeliveryOrderPORepository deliveryOrderPORepository
+            , IPurchaseOrderRepository purchaseOrderRepository
+            , IPurchaseOrderDetailRepository purchaseOrderDetailRepository
+            , IPurchaseOrderSnapshotRepository purchaseOrderSnapshotRepository
+
+            )
+
         {
             _context = context;
 
@@ -112,6 +170,31 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             CategoryRepository = categoryRepository;
             MaterialsSupplierRepository = materialsSupplierRepository;
             PriceHistorieRepository = priceHistorieRepository;
+            FormulaRepository = formulaRepository;
+            FormulaMaterialRepository = formulaMaterialRepository;
+            MerchandiseOrderRepository = merchandiseOrderRepository;
+            MerchandiseOrderLogRepository = merchandiseOrderLogRepository;
+            AttachmentRepository = attachmentRepository;
+
+            MfgProductionOrderRepository = mfgProductionOrderRepository;
+            ManufacturingFormulaMaterialRepository = manufacturingFormulaMaterialRepository;
+            ManufacturingFormulaRepository = manufacturingFormulaRepository;
+            ManufacturingFormulaLogRepository = manufacturingFormulaLogRepository;
+
+            WarehouseShelfStockRepository = warehouseShelfStockRepository;
+            WarehouseTempStockRepository = warehouseTempStockRepository;
+            WarehouseRequestDetailRepository = warehouseRequestDetailRepository;
+            WarehouseRequestRepository = warehouseRequestRepository;
+
+            DeliveryOrderRepository = deliveryOrderRepository;
+            DelivererInforRepository = delivererInforRepository;
+            DelivererRepository = delivererRepository;
+            DeliveryOrderDetailRepository = deliveryOrderDetailRepository;
+            DeliveryOrderPORepository = deliveryOrderPORepository;
+
+            PurchaseOrderRepository = purchaseOrderRepository;
+            PurchaseOrderDetailRepository = purchaseOrderDetailRepository;
+            PurchaseOrderSnapshotRepository = purchaseOrderSnapshotRepository;
         }
         /// <summary>
         /// Bắt đầu một transaction

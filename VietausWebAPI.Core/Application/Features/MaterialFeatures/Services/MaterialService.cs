@@ -17,6 +17,8 @@ using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
+using static System.Collections.Specialized.BitVector32;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
 {
@@ -151,21 +153,26 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                 if (query.To.HasValue)
                     result = result.Where(x => x.CreatedDate <= query.To.Value);
 
+                if (query.SupplierId.HasValue)
+                {
+                    result = result.Where(x =>
+                        x.MaterialsSuppliers.Any(ms =>
+                            ms.SupplierId == query.SupplierId.Value
+                        )
+                    );
+                }
+
                 if (!string.IsNullOrWhiteSpace(query.Keyword))
                 {
-                    // Tìm theo tên/mã NV hoặc tên/mã khách trong batch
                     result = result.Where(x =>
-                            x.ExternalId.Contains(query.Keyword)
-
+                        EF.Functions.ILike(x.ExternalId, $"%{query.Keyword}%")
                     );
                 }
 
                 if (!string.IsNullOrWhiteSpace(query.Category))
                 {
-                    // Tìm loại vật tư
                     result = result.Where(x =>
-                            x.Category.ExternalId.Contains(query.Category)
-
+                        EF.Functions.ILike(x.Category.ExternalId, $"%{query.Category}%")
                     );
                 }
 
@@ -264,30 +271,39 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                     .Include(m => m.MaterialsSuppliers)
                     .FirstOrDefaultAsync(m => m.MaterialId == req.MaterialId, ct);
                 if (mat == null) return OperationResult.Fail("Không tìm thấy vật tư");
-                // Replace this line:
-                // if (req.materialSuppliers.Where(x => x.CurrentPrice == null))
 
                 // Kiểm tra nếu có nhà cung cấp nào mà CurrentPrice là null
                 if (req.materialSuppliers.Any(x => x.CurrentPrice == null)) return OperationResult.Fail("Không được để chống giá");
 
 
                 // 1) Cập nhật các field của Material - chỉ khi có gửi và khác giá trị cũ
+                // Dùng cho kiểu Nullable<T> (kiểu giá trị)
+                // incoming: giá trị mới nhận từ request (có thể null).
+                // current(): function trả về giá trị hiện tại trong entity.
+                // apply: action để gán giá trị mới vào entity.
                 void SetIf<T>(T? incoming, Func<T> current, Action<T> apply) where T : struct
                 { if (incoming.HasValue && !EqualityComparer<T>.Default.Equals(incoming.Value, current())) apply(incoming.Value); }
 
+                // Dùng cho string (tham chiếu)
                 void SetIfRef(string? incoming, Func<string?> current, Action<string?> apply)
                 { if (incoming != null && incoming != current()) apply(incoming); }
 
+                //  Nếu req.ExternalId có giá trị(HasValue == true)
+                //  Và khác với mat.ExternalId hiện tại
+                //  Thì gán mat.ExternalId = req.ExternalId.
                 SetIfRef(req.ExternalId, () => mat.ExternalId, v => mat.ExternalId = v);
                 SetIfRef(req.CustomCode, () => mat.CustomCode, v => mat.CustomCode = v);
                 SetIfRef(req.Name, () => mat.Name, v => mat.Name = v);
                 SetIf(req.CategoryId, () => mat.CategoryId, v => mat.CategoryId = v);
-                SetIf(req.Weight.GetValueOrDefault(), () => mat.Weight.GetValueOrDefault(), v => mat.Weight = v);
+                //SetIf(req.Weight.GetValueOrDefault(), () => mat.Weight.GetValueOrDefault(), v => mat.Weight = v);
+                SetIf(req.Weight, () => mat.Weight.GetValueOrDefault(), v => mat.Weight = v);
                 SetIfRef(req.Unit, () => mat.Unit, v => mat.Unit = v);
                 SetIfRef(req.Package, () => mat.Package, v => mat.Package = v);
                 SetIfRef(req.Comment, () => mat.Comment, v => mat.Comment = v);
-                SetIf(req.MinQuantity.GetValueOrDefault(), () => mat.MinQuantity.GetValueOrDefault(), v => mat.MinQuantity = v);
-                SetIf(req.IsActive.GetValueOrDefault(), () => mat.IsActive.GetValueOrDefault(), v => mat.IsActive = v);
+                //SetIf(req.MinQuantity.GetValueOrDefault(), () => mat.MinQuantity.GetValueOrDefault(), v => mat.MinQuantity = v);
+                SetIf(req.MinQuantity, () => mat.MinQuantity.GetValueOrDefault(), v => mat.MinQuantity = v);
+                //SetIf(req.IsActive.GetValueOrDefault(), () => mat.IsActive.GetValueOrDefault(), v => mat.IsActive = v);
+                SetIf(req.IsActive, () => mat.IsActive.GetValueOrDefault(), v => mat.IsActive = v);
                 mat.UpdatedDate = now; mat.UpdatedBy = req.UpdatedBy;
 
                 // 2) Upsert Suppliers
@@ -357,7 +373,6 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                         {
 
                             Console.WriteLine($"Updating Price: {link.CurrentPrice} -> {s.CurrentPrice.Value}");
-                            // Tắt các bản ghi PriceHistory cũ trước khi tạo bản ghi mới
                             // Tắt các bản ghi PriceHistory cũ trước khi tạo bản ghi mới
                             var actives = await _unitOfWork.PriceHistorieRepository.Query(track: true)
                                 .Where(p => p.MaterialId == mat.MaterialId && p.SupplierId == s.SupplierId && p.IsActive == true)

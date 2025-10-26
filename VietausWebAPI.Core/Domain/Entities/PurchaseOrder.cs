@@ -9,25 +9,15 @@ public partial class PurchaseOrder
 
     public string? ExternalId { get; set; }
 
-    public string? RequestSourceType { get; set; }
-
-    public Guid? RequestSourceId { get; set; }
-
     public string? OrderType { get; set; }
 
     public Guid? SupplierId { get; set; }
 
-    public decimal? TotalPrice { get; set; }
-
     public string? Comment { get; set; }
+    public string? PLPUComment { get; set; }
 
-    public string? DeliveryAddress { get; set; }
-
-    public string? PackageType { get; set; }
-
-    public string? PaymentDays { get; set; }
-
-    public int? Vat { get; set; }
+    public DateTime? RequestDeliveryDate { get; set; }
+    public DateTime? RealDeliveryDate { get; set; }
 
     public string? Status { get; set; }
 
@@ -40,12 +30,16 @@ public partial class PurchaseOrder
     public DateTime? UpdatedDate { get; set; }
 
     public Guid? UpdatedBy { get; set; }
+    public Guid? PurchaseOrderSnapshotId { get; set; }
 
+    public bool? IsActive { get; set; } = true;
+    public virtual PurchaseOrderSnapshot? PurchaseOrderSnapshot { get; set; }
     public virtual Company? Company { get; set; }
 
     public virtual Employee? CreatedByNavigation { get; set; }
 
     public virtual ICollection<PurchaseOrderDetail> PurchaseOrderDetails { get; set; } = new List<PurchaseOrderDetail>();
+    public virtual ICollection<PurchaseOrderLink> PurchaseOrderLinks { get; set; } = new List<PurchaseOrderLink>();
 
     public virtual ICollection<PurchaseOrderStatusHistory> PurchaseOrderStatusHistories { get; set; } = new List<PurchaseOrderStatusHistory>();
 

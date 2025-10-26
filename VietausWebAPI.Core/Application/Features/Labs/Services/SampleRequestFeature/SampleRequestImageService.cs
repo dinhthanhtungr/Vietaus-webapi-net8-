@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.SampleRequest;
-using VietausWebAPI.Core.Application.Features.Labs.Helpers.ImageStorage;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRequestFeature;
+using VietausWebAPI.Core.Application.Shared.Helper.ImageStorage;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
 

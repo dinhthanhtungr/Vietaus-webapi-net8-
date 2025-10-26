@@ -6,7 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.SampleRequest;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.CreateSampleRequest;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRequestFeature;
@@ -36,7 +38,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
 
 
             int affected = 0;
-            await using var tx = await _unitOfWork.BeginTransactionAsync();
+                await using var tx = await _unitOfWork.BeginTransactionAsync();
 
             try
             {
@@ -151,6 +153,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     .Where(c => c.IsActive == true)
                     .OrderByDescending(c => c.ExternalId.Substring(3).PadLeft(10, '0')) // "1" -> "0000000001"
                     .ThenByDescending(c => c.ExternalId.Substring(0, 3))                // nếu cần giữ nhóm theo prefix
+                    .Skip((query.PageNumber - 1) * query.PageSize)
+                    .Take(query.PageSize)
                     .ProjectTo<SampleRequestSummaryDTO>(_mapper.ConfigurationProvider)
                     .ToListAsync(ct);
                 return new PagedResult<SampleRequestSummaryDTO>(items, totalCount, query.PageNumber, query.PageSize);
@@ -172,7 +176,31 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     .SingleOrDefaultAsync(ct);
 
                 if (dto is null) throw new KeyNotFoundException($"SampleRequest {id} not found");
-                return dto;
+
+                if (dto.Sample?.Formula?.FormulaId != null)
+                {
+                    dto.Sample.Formula = await _unitOfWork.FormulaRepository.Query()
+                        .Where(f => f.FormulaId == dto.Sample.Formula.FormulaId)
+                        .ProjectTo<GetSampleFormula>(_mapper.ConfigurationProvider)
+                        .SingleOrDefaultAsync(ct);
+                }
+
+                else
+                {
+                    var productId = dto.Product?.ProductId;
+
+                    if (productId != null)
+                    {
+                        dto.Sample.Formula = await _unitOfWork.FormulaRepository.Query()
+                            .Where(f => f.ProductId == productId)
+                            // Nếu bạn CHƯA có ApprovedAt/CreatedAt/VersionNo, tạm xài ExternalId (đã pad cố định)
+                            .OrderByDescending(f => f.ExternalId)
+                            .ProjectTo<GetSampleFormula>(_mapper.ConfigurationProvider)
+                            .FirstOrDefaultAsync(ct);
+
+                    }
+                }
+                    return dto;
             }
 
             catch (Exception ex)
@@ -188,7 +216,44 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             {
                 //var res = _mapper.Map<SampleRequest>(sampleRequest);
 
+                // 1) Xử lý colourCode nếu có template
+                if (sampleRequest.Product?.ColourCode?.Contains('_') == true)
+                {
+                    sampleRequest.Product.ColourCode = await ExternalIdGenerator.GenerateCodeFromTemplateAsync(
+                        template: sampleRequest.Product.ColourCode,
+                        existingCodes: _unitOfWork.ProductRepository.Query().Select(p => p.ColourCode),
+                        getLatestCodeFunc: _unitOfWork.ProductRepository.GetLatestProductStartsWithAsync,
+                        padWidth: 3,
+                        ct: ct);
+                }
+
+
+                // 2) Cập nhật sản phẩm
                 var affected = await _unitOfWork.SampleRequestRepository.UpdateSampleRequestAsync(sampleRequest, ct);
+
+
+                // 3) Lấy thông tin công thức mà sale chọn trong yêu cầu phối mẫu (nếu có)
+                var formulaSelect = await _unitOfWork.FormulaRepository.Query()
+                    .Where(f => f.FormulaId == sampleRequest.FormulaId)
+                    .Select(f => new { f.FormulaId, f.ProductId })
+                    .SingleOrDefaultAsync(ct);
+
+                if (formulaSelect != null)
+                {
+                    // 4) Cập nhật công thức vào sản phẩm (nếu có)
+                    await _unitOfWork.FormulaRepository.Query()
+                        .Where(f => f.ProductId == formulaSelect.ProductId && f.FormulaId != formulaSelect.FormulaId)
+                        .ExecuteUpdateAsync(s => s.SetProperty(f => f.IsSelect, false), ct);
+
+                    // 5) Bật công thức đang chọn
+                    await _unitOfWork.FormulaRepository.Query()
+                        .Where(f => f.FormulaId == formulaSelect.FormulaId)
+                        .ExecuteUpdateAsync(s => s.SetProperty(f => f.IsSelect, true), ct);
+                }
+
+
+
+
 
                 await _unitOfWork.CommitTransactionAsync();
 

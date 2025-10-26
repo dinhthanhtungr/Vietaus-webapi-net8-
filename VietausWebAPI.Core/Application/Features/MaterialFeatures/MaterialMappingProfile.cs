@@ -60,7 +60,11 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures
 
             // Material summary
             CreateMap<Material, GetMaterialSummary>()
-                .ForMember(d => d.Category, opt => opt.MapFrom(s => $"{s.Category.Name}"));
+                .ForMember(d => d.Category, opt => opt.MapFrom(s => $"{s.Category.Name}"))
+                .ForMember(d => d.Price, opt => opt.MapFrom(s => s.MaterialsSuppliers
+                                                        .OrderByDescending(ms => ms.UpdatedDate)
+                                                        .Select(ms => (decimal?)ms.CurrentPrice)
+                                                        .FirstOrDefault()));
 
             CreateMap<Material, GetMaterial>();
 

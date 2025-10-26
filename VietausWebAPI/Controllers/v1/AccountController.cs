@@ -62,77 +62,39 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
         /// <returns>Returns success or error message</returns>
         [HttpPost("Register")]
         //[Authorize(Roles = "Admin")]
-        public async Task<ActionResult<ApplicationUser>> PostRegister(RegisterDTO registerDTO)
+        public async Task<ActionResult<RegisterResultDTO>> PostRegister(RegisterDTO registerDTO)
         {
             try
             {
-                // Validate request model
                 if (!ModelState.IsValid)
-                {
-                    string errorMessage = string.Join(" | ",
-                    ModelState.Values.SelectMany(v => v.Errors).Select(e =>
-                    e.ErrorMessage));
-                    return Problem(errorMessage);
-                }
+                    return Problem(string.Join(" | ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
 
-                // Create a new user object
-                ApplicationUser user = new ApplicationUser()
+                var user = new ApplicationUser
                 {
                     Email = registerDTO.Email,
-                    //PhoneNumber = registerDTO.Phone,
-                    UserName = registerDTO.UserName, // Using UserName as the username
-                    personName = registerDTO.PersonName
+                    UserName = registerDTO.UserName,
+                    personName = registerDTO.PersonName,
+                    EmployeeId = registerDTO.EmployeeId
                 };
 
-                IdentityResult result = await _UserManager.CreateAsync
-                (user, registerDTO.Password);
+                var result = await _UserManager.CreateAsync(user, registerDTO.Password);
+                if (!result.Succeeded)
+                    return Problem(string.Join(" | ", result.Errors.Select(e => e.Description)));
 
-                // Attempt to create the user
-                if (result.Succeeded)
+                const string defaultRole = "User";
+                // Gán role bằng UserManager (đỡ tự chọc DbContext)
+
+                var role = await _RoleManager.FindByNameAsync(defaultRole);
+
+                if (role == null)
                 {
-                    string defaultRole = "User";
-                    //if (!await _RoleManager.RoleExistsAsync(defaultRole))
-                    //{
-                    //await _RoleManager.CreateAsync(new ApplicationRole { Name = defaultRole });
-                    //}
-
-                    //var role = await _RoleManager.FindByNameAsync(defaultRole);
-
-                    if (!await _RoleManager.RoleExistsAsync(defaultRole))
-                    {
-                        await _RoleManager.CreateAsync(new ApplicationRole { Name = defaultRole });
-
-                    }
-
-
-                    var role = await _RoleManager.FindByNameAsync(defaultRole);
-
-                    if (role == null)
-                    {
-                        return Problem("Không tìm thấy role mặc định.");
-                    }
-
-
-                    //await _UserManager.AddToRoleAsync(user, defaultRole);
-
-                    await _context.UserRoles.AddAsync(new ApplicationUserRole { UserId = user.Id, RoleId = role.Id });
-                    await _context.SaveChangesAsync();
-                    if (result != null)
-                    {
-                        return Ok($"Assigned {role.Name} to {user.Email}");
-                    }
-
-
-                    return Ok("Register succeeded: " + defaultRole);
+                    return Problem("Không tìm thấy role mặc định.");
                 }
 
-                else
-                {
-                    // Return any errors encountered during registration
-                    string errorMessage = string.Join(" | ",
-                    result.Errors.Select(e => e.Description)); //Error 1 | Error 2
-                    return Problem(errorMessage);
-                }
+                await _context.UserRoles.AddAsync(new ApplicationUserRole { UserId = user.Id, RoleId = role.Id });
+                await _context.SaveChangesAsync();
+                var resp = new RegisterResultDTO(user.Id, user.UserName!, user.Email!, user.EmployeeId, defaultRole);
+                return Ok(resp);
             }
 
             catch (Exception ex)
@@ -143,6 +105,12 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
             }
 
         }
+
+
+
+
+
+
 
         // Existing code...
 
@@ -183,7 +151,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
         /// <returns>JWT token if authentication is successful</returns>
         [HttpPost("login")]
         [AllowAnonymous]
-        public async Task<ActionResult<ApplicationUser>> PostLogin(LoginDTO loginDTO)
+        public async Task<ActionResult<RegisterResultDTO>> PostLogin(LoginDTO loginDTO)
         {
             // Validate input model
             if (!ModelState.IsValid)
@@ -221,30 +189,15 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
                     (ur, r) => r.Name).
                 ToListAsync();
 
-            var department = await _context.Employees
-                .Where(e => e.Email == user.Email)
-                .Join(_context.Parts,
-                      emp => emp.PartId,
-                      part => part.PartId,
-                      (emp, part) => part.ExternalId)
-                .FirstOrDefaultAsync();
-
-            var EmployeeId = await _context.Employees
-                .Where(e => e.Email == user.Email)
-                .Select(e => e.ExternalId)
-                .FirstOrDefaultAsync();
-
-            var Id = await _context.Employees
-                .Where(e => e.Email == user.Email)
-                .Select(e => e.EmployeeId)
-                .FirstOrDefaultAsync();
-
-            var departmentName = await _context.Employees
-                .Where(e => e.Email == user.Email)
-                .Join(_context.Parts,
-                      emp => emp.PartId,
-                      part => part.PartId,
-                      (emp, part) => part.PartName)
+            var info = await _context.Employees
+                .Where(e => e.EmployeeId == user.EmployeeId)
+                .Select(e => new
+                {
+                    Department = e.Part != null ? e.Part.ExternalId : null,
+                    EmployeeId = e.ExternalId,
+                    DepartmentName = e.Part != null ? e.Part.PartName : null,
+                    CompanyId = e.CompanyId
+                })
                 .FirstOrDefaultAsync();
 
 
@@ -254,7 +207,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
             }
             //var roles = await GetActiveRolesForUser(user, _context);
             // Generate JWT token
-            AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(user, department, departmentName, EmployeeId, Id, roles);
+            AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(user, info.Department, info.DepartmentName, info.EmployeeId, user.EmployeeId.GetValueOrDefault(), info.CompanyId.GetValueOrDefault(), roles);
             // Store refresh token for future authentication
             user.RefreshToken = authenticationResponse.RefreshToken;
             user.RefreshTokenExpirationDateTime =
@@ -299,10 +252,13 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
         /// <param name="roleName"></param>
         /// <returns></returns>
         [HttpPost("assign-role")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> AssignRole(string email, string roleName)
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AssignRole(Guid employeeId,string roleName)
         {
-            var user = await _UserManager.FindByEmailAsync(email);
+            //var user = await _UserManager.FindByEmailAsync(email);
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == employeeId);
+
             if (user == null)
             {
                 return NotFound("User not found");
@@ -324,7 +280,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
             await _context.SaveChangesAsync();
             if (result != null)
             {
-                return Ok($"Assigned {roleName} to {email}");
+                return Ok($"Assigned {roleName} to {user.personName}");
             }
 
             //return BadRequest(string.Join(" | ", result.Select(e => e.Description)));
@@ -336,7 +292,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
         /// </summary>
         /// <returns></returns>
         [HttpGet("logout")]
-        public async Task<ActionResult<ApplicationUser>> GetLogout()
+        public async Task<ActionResult<RegisterResultDTO>> GetLogout()
         {
             await _SignInManager.SignOutAsync();
 
@@ -387,34 +343,19 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
                     (ur, r) => r.Name).
                 ToListAsync();
 
-            var department = await _context.Employees
-                .Where(e => e.Email == user.Email)
-                .Join(_context.Parts,
-                      emp => emp.PartId,
-                      part => part.PartId,
-                      (emp, part) => part.ExternalId)
-                .FirstOrDefaultAsync();
-
-            var EmployeeId = await _context.Employees
-                .Where(e => e.Email == user.Email)
-                .Select(e => e.ExternalId)
-                .FirstOrDefaultAsync();
-
-            var Id = await _context.Employees
-                .Where(e => e.Email == user.Email)
-                .Select(e => e.EmployeeId)
-                .FirstOrDefaultAsync();
-
-            var departmentName = await _context.Employees
-                .Where(e => e.Email == user.Email)
-                .Join(_context.Parts,
-                      emp => emp.PartId,
-                      part => part.PartId,
-                      (emp, part) => part.PartName)
+            var info = await _context.Employees
+                .Where(e => e.EmployeeId == user.EmployeeId)
+                .Select(e => new
+                {
+                    Department = e.Part != null ? e.Part.ExternalId : null,
+                    EmployeeId = e.ExternalId,
+                    DepartmentName = e.Part != null ? e.Part.PartName : null,
+                    CompanyId = e.CompanyId
+                })
                 .FirstOrDefaultAsync();
 
             // Generate new JWT token
-            AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(user, department, departmentName, EmployeeId, Id, roles);
+            AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(user, info.Department, info.DepartmentName, info.EmployeeId, user.EmployeeId.GetValueOrDefault(), info.CompanyId.GetValueOrDefault(), roles);
 
             // Update Refresh Token buy not change expirationDatetime 
             user.RefreshToken = authenticationResponse.RefreshToken;

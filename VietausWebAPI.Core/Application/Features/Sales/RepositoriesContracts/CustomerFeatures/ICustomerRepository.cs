@@ -41,7 +41,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.Cu
 
         Task<bool> UpdateCustomerAsync(PatchCustomer customer);
 
-        IQueryable<Customer> Query();
+        IQueryable<Customer> Query(bool track = true);
 
         /// <summary>
         /// lấy sô cuối cùng của code

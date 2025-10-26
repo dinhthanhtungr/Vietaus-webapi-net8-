@@ -16,7 +16,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.Sam
         /// Tạo lệnh query để truy vấn yêu cầu mẫu từ cơ sở dữ liệu.
         /// </summary>
         /// <returns></returns>
-        IQueryable<SampleRequest> Query();
+        IQueryable<SampleRequest> Query(bool track = false);
         /// <summary>
         /// Tạo mới một yêu cầu mẫu
         /// </summary>

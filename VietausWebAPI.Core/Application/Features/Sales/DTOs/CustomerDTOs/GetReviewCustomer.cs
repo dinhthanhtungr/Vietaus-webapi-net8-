@@ -16,5 +16,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs
         public string? RegNo { get; set; }
         public string? Phone { get; set; }
         public string? Group { get; set; }
+        public string? Address { get; set; }
+        public string? DeliveryName { get; set; }
     }
 }

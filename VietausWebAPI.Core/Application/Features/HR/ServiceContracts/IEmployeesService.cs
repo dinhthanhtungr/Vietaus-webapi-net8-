@@ -22,6 +22,14 @@ namespace VietausWebAPI.Core.Application.Features.HR.ServiceContracts
         /// <param name="EmployeeId"></param>
         /// <returns></returns>
         public Task<IEnumerable<EmployeesCommonDatumDTO>> GetEmployeesWithIdServiceAsync(string EmployeeId);
+      
+        /// <summary>
+        /// Lấy danh sách nhân viên
+        /// </summary>
+        /// <param name="EmployeeId"></param>
+        /// <returns></returns>
+        public Task<EmployeesPostDTOs> GetEmployeesByIdsAsync(Guid EmployeeId);
+
         /// <summary>
         /// Thêm mới nhân viên
         /// </summary>
@@ -36,6 +44,7 @@ namespace VietausWebAPI.Core.Application.Features.HR.ServiceContracts
         /// <param name="query"></param>
         /// <returns></returns>
         Task<PagedResult<EmployeeSummary>> GetPagedAsync(EmployeeQuery? query);
+     
         /// <summary>
         /// láy danh sách nhân viên có tài khoản
         /// </summary>
@@ -92,5 +101,7 @@ namespace VietausWebAPI.Core.Application.Features.HR.ServiceContracts
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<PagedResult<EmployeeGroupDTO>> GetEmployeesWithGroupsAsync(GetEmployeesWithGroupsQuery query, CancellationToken ct = default);
+
+        Task<List<RoleDTOs>> GetRoleDTOsAsync(CancellationToken ct = default);
     }
 }

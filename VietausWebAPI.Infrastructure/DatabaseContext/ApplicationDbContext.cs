@@ -39,13 +39,15 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
         //    AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
         //}
 
+        public DbSet<IdCounter> IdCounters { get; set; } = default!;
+
         public virtual DbSet<Address> Addresses { get; set; }
 
         public virtual DbSet<ApprovalHistory> ApprovalHistories { get; set; }
 
-        public virtual DbSet<ApprovalHistoryMaterialDatum> ApprovalHistoryMaterialData { get; set; }
+        //public virtual DbSet<ApprovalHistoryMaterialDatum> ApprovalHistoryMaterialData { get; set; }
 
-        public virtual DbSet<ApprovalLevelsCommonDatum> ApprovalLevelsCommonData { get; set; }
+        //public virtual DbSet<ApprovalLevelsCommonDatum> ApprovalLevelsCommonData { get; set; }
 
         public virtual DbSet<Branch> Branches { get; set; }
 
@@ -61,11 +63,20 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
         public virtual DbSet<CustomerTransferLog> CustomerTransferLogs { get; set; }
 
+        public virtual DbSet<DeliveryOrder> DeliveryOrders { get; set; }
+        public virtual DbSet<DeliveryOrderPO> DeliveryOrderPOs { get; set; }
+
+        public virtual DbSet<DeliveryOrderDetail> DeliveryOrderDetails { get; set; }
+
+        public virtual DbSet<DelivererInfor> DelivererInfors { get; set; }
+
+        public virtual DbSet<Deliverer> Deliverers { get; set; } 
+
         public virtual DbSet<DetailCustomerTransfer> DetailCustomerTransfers { get; set; }
 
         public virtual DbSet<Employee> Employees { get; set; }
 
-        public virtual DbSet<EmployeesCommonDatum> EmployeesCommonData { get; set; }
+        //public virtual DbSet<EmployeesCommonDatum> EmployeesCommonData { get; set; }
 
         public virtual DbSet<Formula> Formulas { get; set; }
 
@@ -73,41 +84,49 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
         public virtual DbSet<Group> Groups { get; set; }
 
-        public virtual DbSet<GroupsCommonDatum> GroupsCommonData { get; set; }
+        //public virtual DbSet<GroupsCommonDatum> GroupsCommonData { get; set; }
 
-        public virtual DbSet<InventoryReceiptsMaterialDatum> InventoryReceiptsMaterialData { get; set; }
+        //public virtual DbSet<InventoryReceiptsMaterialDatum> InventoryReceiptsMaterialData { get; set; }
 
-        public virtual DbSet<MachinesCommonDatum> MachinesCommonData { get; set; }
+        //public virtual DbSet<MachinesCommonDatum> MachinesCommonData { get; set; }
 
         public virtual DbSet<Material> Materials { get; set; }
 
-        public virtual DbSet<MaterialGroup> MaterialGroups { get; set; }
+        //public virtual DbSet<MaterialGroup> MaterialGroups { get; set; }
 
-        public virtual DbSet<MaterialGroupsMaterialDatum> MaterialGroupsMaterialData { get; set; }
+        //public virtual DbSet<MaterialGroupsMaterialDatum> MaterialGroupsMaterialData { get; set; }
 
-        public virtual DbSet<MaterialsMaterialDatum> MaterialsMaterialData { get; set; }
+        //public virtual DbSet<MaterialsMaterialDatum> MaterialsMaterialData { get; set; }
 
         public virtual DbSet<MaterialsSupplier> MaterialsSuppliers { get; set; }
 
-        public virtual DbSet<MaterialsSuppliersMaterialDatum> MaterialsSuppliersMaterialData { get; set; }
+        //public virtual DbSet<MaterialsSuppliersMaterialDatum> MaterialsSuppliersMaterialData { get; set; }
+
+        public virtual DbSet<ManufacturingFormula> ManufacturingFormulas { get; set; }
+        public virtual DbSet<ManufacturingFormulaMaterial> ManufacturingFormulaMaterials { get; set; }
+        public virtual DbSet<ManufacturingFormulaLog> ManufacturingFormulaLogs { get; set; }
 
         public virtual DbSet<MemberInGroup> MemberInGroups { get; set; }
 
         public virtual DbSet<MerchandiseOrder> MerchandiseOrders { get; set; }
+        public virtual DbSet<MerchandiseOrderLog> MerchandiseOrderLogs { get; set; }
 
         public virtual DbSet<MerchandiseOrderDetail> MerchandiseOrderDetails { get; set; }
 
         public virtual DbSet<MerchandiseOrderSchedule> MerchandiseOrderSchedules { get; set; }
+        public virtual DbSet<OrderAttachment> OrderAttachments { get; set; }
 
         public virtual DbSet<MfgProductionOrdersPlan> MfgProductionOrdersPlans { get; set; }
+        public virtual DbSet<MfgProductionOrder> MfgProductionOrders { get; set; }
+        public virtual DbSet<MfgProductionOrderLog> MfgProductionOrderLogs { get; set; }
 
         public virtual DbSet<Part> Parts { get; set; }
 
-        public virtual DbSet<PartsCommonDatum> PartsCommonData { get; set; }
+        //public virtual DbSet<PartsCommonDatum> PartsCommonData { get; set; }
 
         public virtual DbSet<PriceHistory> PriceHistories { get; set; }
 
-        public virtual DbSet<PriceHistoryMaterialDatum> PriceHistoryMaterialData { get; set; }
+        //public virtual DbSet<PriceHistoryMaterialDatum> PriceHistoryMaterialData { get; set; }
 
         public virtual DbSet<Product> Products { get; set; }
 
@@ -122,14 +141,15 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
         public virtual DbSet<PurchaseOrder> PurchaseOrders { get; set; }
 
         public virtual DbSet<PurchaseOrderDetail> PurchaseOrderDetails { get; set; }
+        public virtual DbSet<PurchaseOrderSnapshot> PurchaseOrderSnapshots { get; set; }
 
-        public virtual DbSet<PurchaseOrderDetailsMaterialDatum> PurchaseOrderDetailsMaterialData { get; set; }
+        //public virtual DbSet<PurchaseOrderDetailsMaterialDatum> PurchaseOrderDetailsMaterialData { get; set; }
 
         public virtual DbSet<PurchaseOrderStatusHistory> PurchaseOrderStatusHistories { get; set; }
 
-        public virtual DbSet<PurchaseOrderStatusHistoryMaterialDatum> PurchaseOrderStatusHistoryMaterialData { get; set; }
+        //public virtual DbSet<PurchaseOrderStatusHistoryMaterialDatum> PurchaseOrderStatusHistoryMaterialData { get; set; }
 
-        public virtual DbSet<PurchaseOrdersMaterialDatum> PurchaseOrdersMaterialData { get; set; }
+        //public virtual DbSet<PurchaseOrdersMaterialDatum> PurchaseOrdersMaterialData { get; set; }
 
         public virtual DbSet<PurchaseOrdersSchedule> PurchaseOrdersSchedules { get; set; }
 
@@ -137,7 +157,8 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
         public virtual DbSet<RequestDetail> RequestDetails { get; set; }
 
-        public virtual DbSet<RequestDetailMaterialDatum> RequestDetailMaterialData { get; set; }
+        public virtual DbSet<PurchaseOrderLink> PurchaseOrderLinks { get; set; }
+        //public virtual DbSet<RequestDetailMaterialDatum> RequestDetailMaterialData { get; set; }
 
         public virtual DbSet<SampleRequest> SampleRequests { get; set; }
         public virtual DbSet<SampleRequestImage> SampleRequestImages { get; set; }
@@ -150,13 +171,17 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
         public virtual DbSet<SupplierContact> SupplierContacts { get; set; }
 
-        public virtual DbSet<SuppliersMaterialDatum> SuppliersMaterialData { get; set; }
+        //public virtual DbSet<SuppliersMaterialDatum> SuppliersMaterialData { get; set; }
 
         public virtual DbSet<SupplyRequest> SupplyRequests { get; set; }
 
-        public virtual DbSet<SupplyRequestsMaterialDatum> SupplyRequestsMaterialData { get; set; }
+        //public virtual DbSet<SupplyRequestsMaterialDatum> SupplyRequestsMaterialData { get; set; }
 
         public virtual DbSet<Unit> Units { get; set; }
+        public virtual DbSet<WarehouseShelfStock> WarehouseShelfStocks { get; set; }
+        public virtual DbSet<WarehouseTempStock> WarehouseTempStocks { get; set; }
+        public virtual DbSet<WarehouseRequest> WarehouseRequests { get; set; }
+        public virtual DbSet<WarehouseRequestDetail> WarehouseRequestDetails { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -175,6 +200,14 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
         {
             base.OnModelCreating(modelBuilder);
 
+            // Đếm số
+            modelBuilder.Entity<IdCounter>(e =>
+            {
+                e.ToTable("IdCounters", "public");
+                e.HasKey(x => new { x.CompanyId, x.Prefix, x.Period });
+            });
+
+
             // Thiết lập khóa chính
             modelBuilder.Entity<ApplicationUserRole>()
                 .HasKey(ur => new { ur.UserId, ur.RoleId });
@@ -192,12 +225,21 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 .HasForeignKey(ur => ur.RoleId);
 
 
+            modelBuilder.Entity<ApplicationUser>()
+                .HasOne(u => u.Employee)
+                .WithMany(e => e.ApplicationUsers)   // <— CHỈ RÕ NAVIGATION PHÍA Employee
+                .HasForeignKey(u => u.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ApplicationUser>()
+                .HasIndex(u => u.EmployeeId);
+
             // Thiết lập khóa chính
             modelBuilder.Entity<Address>(entity =>
             {
                 entity.HasKey(e => e.AddressId).HasName("PK__Address__091C2A1BCCA306B0");
 
-                entity.ToTable("Address", "sales");
+                entity.ToTable("Address", "Customer");
 
                 entity.HasIndex(e => e.CustomerId, "IX_Address_CustomerID");
 
@@ -245,48 +287,48 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasConstraintName("FK_ApprovalHistory_RequestID");
             });
 
-            modelBuilder.Entity<ApprovalHistoryMaterialDatum>(entity =>
-            {
-                entity.HasKey(e => e.Id).HasName("PK__Approval__3214EC27EC140479");
+            //modelBuilder.Entity<ApprovalHistoryMaterialDatum>(entity =>
+            //{
+            //    entity.HasKey(e => e.Id).HasName("PK__Approval__3214EC27EC140479");
 
-                entity.ToTable("ApprovalHistory_Material_data");
+            //    entity.ToTable("ApprovalHistory_Material_data");
 
-                entity.HasIndex(e => e.EmployeeId, "IX_ApprovalHistory_Material_data_EmployeeID");
+            //    entity.HasIndex(e => e.EmployeeId, "IX_ApprovalHistory_Material_data_EmployeeID");
 
-                entity.HasIndex(e => e.RequestId, "IX_ApprovalHistory_Material_data_RequestID");
+            //    entity.HasIndex(e => e.RequestId, "IX_ApprovalHistory_Material_data_RequestID");
 
-                entity.Property(e => e.Id).HasColumnName("ID");
-                entity.Property(e => e.EmployeeId)
-                    .HasMaxLength(16)
-                    .HasColumnName("EmployeeID");
-                entity.Property(e => e.Note).HasColumnType("citext");
-                entity.Property(e => e.RequestId)
-                    .HasMaxLength(16)
-                    .HasColumnName("RequestID");
+            //    entity.Property(e => e.Id).HasColumnName("ID");
+            //    entity.Property(e => e.EmployeeId)
+            //        .HasMaxLength(16)
+            //        .HasColumnName("EmployeeID");
+            //    entity.Property(e => e.Note).HasColumnType("citext");
+            //    entity.Property(e => e.RequestId)
+            //        .HasMaxLength(16)
+            //        .HasColumnName("RequestID");
 
-                entity.HasOne(d => d.Employee).WithMany(p => p.ApprovalHistoryMaterialData)
-                    .HasForeignKey(d => d.EmployeeId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_ApprovalHistory_Employee");
+            //    entity.HasOne(d => d.Employee).WithMany(p => p.ApprovalHistoryMaterialData)
+            //        .HasForeignKey(d => d.EmployeeId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_ApprovalHistory_Employee");
 
-                entity.HasOne(d => d.Request).WithMany(p => p.ApprovalHistoryMaterialData)
-                    .HasForeignKey(d => d.RequestId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_ApprovalHistory_Request");
-            });
+            //    entity.HasOne(d => d.Request).WithMany(p => p.ApprovalHistoryMaterialData)
+            //        .HasForeignKey(d => d.RequestId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_ApprovalHistory_Request");
+            //});
 
-            modelBuilder.Entity<ApprovalLevelsCommonDatum>(entity =>
-            {
-                entity.HasKey(e => e.LevelId).HasName("PK__Approval__09F03C061CA120B7");
+            //modelBuilder.Entity<ApprovalLevelsCommonDatum>(entity =>
+            //{
+            //    entity.HasKey(e => e.LevelId).HasName("PK__Approval__09F03C061CA120B7");
 
-                entity.ToTable("ApprovalLevels_Common_data");
+            //    entity.ToTable("ApprovalLevels_Common_data");
 
-                entity.Property(e => e.LevelId)
-                    .HasMaxLength(10)
-                    .HasColumnName("LevelID");
-                entity.Property(e => e.Description).HasColumnType("citext");
-                entity.Property(e => e.LevelName).HasColumnType("citext");
-            });
+            //    entity.Property(e => e.LevelId)
+            //        .HasMaxLength(10)
+            //        .HasColumnName("LevelID");
+            //    entity.Property(e => e.Description).HasColumnType("citext");
+            //    entity.Property(e => e.LevelName).HasColumnType("citext");
+            //});
 
             modelBuilder.Entity<Branch>(entity =>
             {
@@ -322,7 +364,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             {
                 entity.HasKey(e => e.CategoryId).HasName("PK__Categori__19093A0B0352530F");
 
-                entity.ToTable("Categories", "inventory");
+                entity.ToTable("Categories", "Material");
 
                 entity.HasIndex(e => e.CompanyId, "IX_Categories_CompanyId");
 
@@ -365,7 +407,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             {
                 entity.HasKey(e => e.ContactId).HasName("PK__Contacts__5C6625BB570D4F62");
 
-                entity.ToTable("Contacts", "sales");
+                entity.ToTable("Contacts", "Customer");
 
                 entity.HasIndex(e => e.CustomerId, "IX_Contacts_CustomerID");
 
@@ -389,7 +431,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             {
                 entity.HasKey(e => e.CustomerId).HasName("PK__Customer__A4AE64D875977EBB");
 
-                entity.ToTable("Customer", "sales");
+                entity.ToTable("Customer", "Customer");
 
                 entity.HasIndex(e => e.CompanyId, "IX_Customer_CompanyId");
 
@@ -427,7 +469,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             {
                 entity.HasKey(e => e.Id).HasName("PK__Customer__3214EC279397A842");
 
-                entity.ToTable("CustomerAssignment", "sales");
+                entity.ToTable("CustomerAssignment", "Customer");
 
                 entity.HasIndex(e => e.CustomerId, "IX_CustomerAssignment_CustomerID");
 
@@ -485,7 +527,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             {
                 entity.HasKey(e => e.Id).HasName("PK__Customer__3214EC276977D605");
 
-                entity.ToTable("CustomerTransferLog", "sales");
+                entity.ToTable("CustomerTransferLog", "Customer");
 
                 entity.HasIndex(e => e.FromEmployeeId, "IX_CustomerTransferLog_FromEmployeeId");
 
@@ -540,11 +582,184 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasConstraintName("FK_CustomerTransferLog_ToGroupId");
             });
 
+
+            modelBuilder.Entity<Deliverer>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK__Deliverer__3214EC27D1AFC3E3");
+
+
+                entity.HasIndex(e => e.DelivererInforId, "IX_Deliverer_DelivererInforId");
+                entity.HasIndex(e => e.DeliveryOrderId, "IX_Deliverer_DeliveryOrderId");
+
+
+                entity.ToTable("Deliverer", "DeliveryOrder");
+
+                entity.Property(e => e.Id)
+                    .HasDefaultValueSql("gen_random_uuid()")
+                    .HasColumnName("ID");
+
+                // FK -> DelivererInfor
+                entity.HasOne(d => d.DelivererInfor)
+                      .WithMany()
+                      .HasForeignKey(d => d.DelivererInforId)
+                      .OnDelete(DeleteBehavior.Restrict) // hoặc Cascade; tránh ClientSetNull khi FK non-null
+                      .HasConstraintName("FK_Deliverer_DelivererInforId");
+
+                // FK -> DeliveryOrder
+                entity.HasOne(d => d.DeliveryOrder)
+                      .WithMany(p => p.Deliverers)
+                      .HasForeignKey(d => d.DeliveryOrderId)
+                      .OnDelete(DeleteBehavior.Restrict) // hoặc Cascade
+                      .HasConstraintName("FK_Deliverer_DeliveryOrderId");
+
+            });
+
+            modelBuilder.Entity<DelivererInfor>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK__DelivererInfor__3214EC27B1E3D8F1");
+                entity.ToTable("DelivererInfor", "DeliveryOrder");
+
+                entity.Property(e => e.Id)
+                    .HasDefaultValueSql("gen_random_uuid()")
+                    .HasColumnName("ID");
+
+            });
+
+            modelBuilder.Entity<DeliveryOrder>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK__DeliveryOrder__A2F6B5D8D1C1E3E3");
+                entity.ToTable("DeliveryOrders", "DeliveryOrder");
+
+                entity.Property(e => e.Id)
+                      .HasDefaultValueSql("gen_random_uuid()")
+                      .HasColumnName("ID");
+
+                entity.HasIndex(e => e.CompanyId, "IX_DeliveryOrders_CompanyId");
+                entity.HasIndex(e => e.CreatedBy, "IX_DeliveryOrders_CreatedBy");
+                entity.HasIndex(e => e.UpdatedBy, "IX_DeliveryOrders_UpdatedBy");
+                entity.HasIndex(e => e.CustomerId, "IX_DeliveryOrders_CustomerId");
+                //entity.HasIndex(e => e.MerchandiseOrderId, "IX_DeliveryOrders_MerchandiseOrderId");
+                //entity.HasIndex(e => e.WarehouseRequestId, "IX_DeliveryOrders_WarehouseRequestId");
+
+                entity.Property(x => x.ExternalId).HasColumnType("citext");
+                //entity.Property(x => x.MerchandiseOrderExternalIdSnapShot).HasColumnType("citext");
+                entity.Property(x => x.CustomerExternalIdSnapShot).HasColumnType("citext");
+                entity.Property(x => x.IsActive).HasDefaultValue(true);
+
+                //entity.HasOne(d => d.MerchandiseOrder).WithMany(p => p.DeliveryOrders)
+                //    .HasForeignKey(d => d.MerchandiseOrderId)
+                //    .OnDelete(DeleteBehavior.ClientSetNull)
+                //    .HasConstraintName("FK_DeliveryOrder_MerchandiseOrder");
+
+                //entity.HasOne(d => d.WarehouseRequest).WithMany(p => p.DeliveryOrders)
+                //    .HasForeignKey(d => d.WarehouseRequestId)
+                //    .OnDelete(DeleteBehavior.ClientSetNull)
+                //    .HasConstraintName("FK_DeliveryOrder_WarehouseRequest");
+
+                entity.HasOne(d => d.Customer).WithMany()
+                    .HasForeignKey(d => d.CustomerId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_DeliveryOrder_Customer");
+
+                entity.HasOne(d => d.Company).WithMany()
+                    .HasForeignKey(d => d.CompanyId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_DeliveryOrder_Company");
+
+                entity.HasOne(d => d.CreatedByNavigation).WithMany()
+                    .HasForeignKey(d => d.CreatedBy)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_DeliveryOrder_CreatedBy");
+
+                entity.HasOne(d => d.UpdatedByNavigation).WithMany()
+                    .HasForeignKey(d => d.UpdatedBy)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_DeliveryOrder_UpdatedBy");
+            });
+
+            modelBuilder.Entity<DeliveryOrderDetail>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK__DeliveryOrderDetail__A2F6B5D8D1C1E3E3");
+                entity.ToTable("DeliveryOrderDetail", "DeliveryOrder");
+
+                entity.Property(e => e.Id)
+                      .HasDefaultValueSql("gen_random_uuid()")
+                      .HasColumnName("ID");
+
+                entity.HasIndex(x => x.DeliveryOrderId, "IX_DeliveryOrderDetail_DeliveryOrderId");
+                entity.HasIndex(x => x.ProductId, "IX_DeliveryOrderDetail_ProductId");
+                entity.HasIndex(e => e.MerchandiseOrderId, "IX_DeliveryOrderDetails_ID");
+
+                entity.Property(x => x.ProductExternalIdSnapShot).HasColumnType("citext");
+                entity.Property(x => x.LotNoList).HasColumnType("citext");
+
+
+                entity.Property(x => x.MerchandiseOrderExternalIdSnapShot).HasColumnType("citext");
+                entity.Property(x => x.IsActive).HasDefaultValue(true);
+                entity.Property(x => x.IsAttach).HasDefaultValue(true);
+
+
+                // DECIMAL(18,3) cho số lượng
+                entity.Property(x => x.Quantity).HasPrecision(18, 3);
+                entity.Property(x => x.NumOfBags);
+
+                entity.Property(x => x.PONo).HasColumnType("citext");
+
+
+                // (1) Ràng buộc "detail phải đúng dòng của PO"
+                entity.HasOne<MerchandiseOrderDetail>(d => d.MerchandiseOrderDetail)
+                    .WithMany()
+                    .HasPrincipalKey(mod => new { mod.MerchandiseOrderDetailId, mod.MerchandiseOrderId }) // <- generic OK
+                    .HasForeignKey(d => new { d.MerchandiseOrderDetailId, d.MerchandiseOrderId })
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .HasConstraintName("FK_DeliveryOrderDetail_MerchandiseOrder");
+
+                // (2) Ràng buộc "PO của detail PHẢI thuộc tập PO đã gán cho DO"
+                // (3) FK kép sang bảng bắc cầu DO–PO (PO này thuộc DO này)
+                entity.HasOne<DeliveryOrderPO>()
+                      .WithMany()
+                      .HasForeignKey(x => new { x.DeliveryOrderId, x.MerchandiseOrderId })
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                //entity.HasOne(d => d.DeliveryOrder).WithMany(p => p.Details)
+                //    .HasForeignKey(d => d.DeliveryOrderId)
+                //    .OnDelete(DeleteBehavior.ClientSetNull)
+                //    .HasConstraintName("FK_DeliveryOrderDetail_DeliveryOrder");
+
+                entity.HasOne(d => d.Product).WithMany(p => p.DeliveryOrderDetails)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .HasConstraintName("FK_DeliveryOrderDetail_Product");
+
+            });
+
+            modelBuilder.Entity<DeliveryOrderPO>(entity =>
+            {
+                entity.ToTable("DeliveryOrderPO", "DeliveryOrder");
+                entity.HasKey(x => new { x.DeliveryOrderId, x.MerchandiseOrderId });
+
+                entity.HasOne(x => x.DeliveryOrder)
+                    .WithMany(o => o.DeliveryOrderPOs)
+                    .HasForeignKey(x => x.DeliveryOrderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(x => x.MerchandiseOrder)
+                    .WithMany(mo => mo.DeliveryOrderPOs)
+                    .HasForeignKey(x => x.MerchandiseOrderId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.WarehouseRequest)
+                    .WithMany(wr => wr.DeliveryOrderPOs)
+                    .HasForeignKey(x => x.WarehouseRequestId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+
             modelBuilder.Entity<DetailCustomerTransfer>(entity =>
             {
                 entity.HasKey(e => e.Id).HasName("PK__DetailCu__3214EC273B3F47A0");
 
-                entity.ToTable("DetailCustomerTransfer", "sales");
+                entity.ToTable("DetailCustomerTransfer", "Customer");
 
                 entity.HasIndex(e => e.CustomerId, "IX_DetailCustomerTransfer_CustomerID");
 
@@ -572,6 +787,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.ToTable("Employees", "hr");
 
                 entity.HasIndex(e => e.PartId, "IX_Employees_PartID");
+                entity.HasIndex(e => e.CompanyId, "IX_Employees_CompanyId");
 
                 entity.Property(e => e.EmployeeId)
                     .HasDefaultValueSql("gen_random_uuid()")
@@ -590,50 +806,54 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.HasOne(d => d.Part).WithMany(p => p.Employees)
                     .HasForeignKey(d => d.PartId)
                     .HasConstraintName("FK_Employees_Parts");
+
+                entity.HasOne(d => d.Company).WithMany(p => p.Employees)
+                    .HasForeignKey(d => d.CompanyId)
+                    .HasConstraintName("FK_Employees_Companies");
             });
 
-            modelBuilder.Entity<EmployeesCommonDatum>(entity =>
-            {
-                entity.HasKey(e => e.EmployeeId).HasName("PK__Employee__7AD04FF184E31508");
+            //modelBuilder.Entity<EmployeesCommonDatum>(entity =>
+            //{
+            //    entity.HasKey(e => e.EmployeeId).HasName("PK__Employee__7AD04FF184E31508");
 
-                entity.ToTable("Employees_Common_data");
+            //    entity.ToTable("Employees_Common_data");
 
-                entity.HasIndex(e => e.LevelId, "IX_Employees_Common_data_LevelID");
+            //    entity.HasIndex(e => e.LevelId, "IX_Employees_Common_data_LevelID");
 
-                entity.HasIndex(e => e.PartId, "IX_Employees_Common_data_PartID");
+            //    entity.HasIndex(e => e.PartId, "IX_Employees_Common_data_PartID");
 
-                entity.Property(e => e.EmployeeId)
-                    .HasMaxLength(16)
-                    .HasColumnName("EmployeeID");
-                entity.Property(e => e.Address).HasColumnType("citext");
-                entity.Property(e => e.Email).HasColumnType("citext");
-                entity.Property(e => e.FullName).HasColumnType("citext");
-                entity.Property(e => e.Gender).HasColumnType("citext");
-                entity.Property(e => e.Identifier).HasColumnType("citext");
-                entity.Property(e => e.LevelId)
-                    .HasMaxLength(10)
-                    .HasColumnName("LevelID");
-                entity.Property(e => e.PartId)
-                    .HasMaxLength(16)
-                    .HasColumnName("PartID");
-                entity.Property(e => e.PhoneNumber).HasColumnType("citext");
-                entity.Property(e => e.Status).HasColumnType("citext");
+            //    entity.Property(e => e.EmployeeId)
+            //        .HasMaxLength(16)
+            //        .HasColumnName("EmployeeID");
+            //    entity.Property(e => e.Address).HasColumnType("citext");
+            //    entity.Property(e => e.Email).HasColumnType("citext");
+            //    entity.Property(e => e.FullName).HasColumnType("citext");
+            //    entity.Property(e => e.Gender).HasColumnType("citext");
+            //    entity.Property(e => e.Identifier).HasColumnType("citext");
+            //    entity.Property(e => e.LevelId)
+            //        .HasMaxLength(10)
+            //        .HasColumnName("LevelID");
+            //    entity.Property(e => e.PartId)
+            //        .HasMaxLength(16)
+            //        .HasColumnName("PartID");
+            //    entity.Property(e => e.PhoneNumber).HasColumnType("citext");
+            //    entity.Property(e => e.Status).HasColumnType("citext");
 
-                entity.HasOne(d => d.Level).WithMany(p => p.EmployeesCommonData)
-                    .HasForeignKey(d => d.LevelId)
-                    .HasConstraintName("FK__Employees__Level__693CA210");
+            //    entity.HasOne(d => d.Level).WithMany(p => p.EmployeesCommonData)
+            //        .HasForeignKey(d => d.LevelId)
+            //        .HasConstraintName("FK__Employees__Level__693CA210");
 
-                entity.HasOne(d => d.Part).WithMany(p => p.EmployeesCommonData)
-                    .HasForeignKey(d => d.PartId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Employees__PartI__68487DD7");
-            });
+            //    entity.HasOne(d => d.Part).WithMany(p => p.EmployeesCommonData)
+            //        .HasForeignKey(d => d.PartId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK__Employees__PartI__68487DD7");
+            //});
 
             modelBuilder.Entity<Formula>(entity =>
             {
                 entity.HasKey(e => e.FormulaId).HasName("PK__Formulas__227429A55C6F1195");
 
-                entity.ToTable("Formulas", "labs");
+                entity.ToTable("Formulas", "SampleRequests");
 
                 entity.HasIndex(e => e.CompanyId, "IX_Formulas_CompanyId");
 
@@ -643,10 +863,20 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.HasIndex(e => e.UpdatedBy, "IX_Formulas_UpdatedBy");
 
+                entity.HasIndex(e => e.CheckBy, "IX_Formulas_CheckBy");
+
+                entity.HasIndex(e => e.CheckBy, "IX_Formulas_SentBy");
+
+                entity.Property(e => e.IsSelect).HasDefaultValue(false);
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+                //entity.Property(e => e.IsCustomerSelect).HasDefaultValue(false);
+
                 entity.Property(e => e.FormulaId).HasDefaultValueSql("gen_random_uuid()");
                 entity.Property(e => e.ExternalId).HasMaxLength(50);
                 entity.Property(e => e.Name).HasMaxLength(200);
+                entity.Property(e => e.CheckNameSnapshot).HasMaxLength(200);
                 entity.Property(e => e.TotalPrice).HasPrecision(16, 2);
+                entity.Property(e => e.Note).HasColumnType("citext");
                 entity.Property(e => e.Status)
                       .HasMaxLength(32)
                       .HasDefaultValue("Draft");
@@ -658,6 +888,14 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.FormulaCreatedByNavigations)
                     .HasForeignKey(d => d.CreatedBy)
                     .HasConstraintName("FK_Formulas_CreatedBy");
+
+                entity.HasOne(d => d.CheckByNavigation).WithMany(p => p.FormulaCheckByNavigations)
+                    .HasForeignKey(d => d.CheckBy)
+                    .HasConstraintName("FK_Formulas_CheckBy");
+
+                entity.HasOne(d => d.SentByNavigation).WithMany(p => p.FormulaSentByNavigations)
+                    .HasForeignKey(d => d.SentBy)
+                    .HasConstraintName("IX_Formulas_SentBy");
 
                 entity.HasOne(d => d.Product).WithMany(p => p.Formulas)
                     .HasForeignKey(d => d.ProductId)
@@ -674,7 +912,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             modelBuilder.Entity<FormulaStatusLog>(entity =>
             {
                 entity.HasKey(e => e.LogId).HasName("PK_FormulaStatusLog");
-                entity.ToTable("FormulaStatusLog", "labs");
+                entity.ToTable("FormulaStatusLog", "SampleRequests");
 
                 // Index như yêu cầu
                 entity.HasIndex(e => e.FormulaId, "IX_FormulaStatusLog_FormulaId");
@@ -710,12 +948,11 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             {
                 entity.HasKey(e => e.FormulaMaterialId).HasName("PK__FormulaM__0315C60A1F19742A");
 
-                entity.ToTable("FormulaMaterials", "labs");
+                entity.ToTable("FormulaMaterials", "SampleRequests");
 
                 entity.HasIndex(e => e.FormulaId, "IX_FormulaMaterials_FormulaId");
 
                 entity.HasIndex(e => e.MaterialId, "IX_FormulaMaterials_MaterialId");
-
 
                 entity.Property(e => e.FormulaMaterialId).HasDefaultValueSql("gen_random_uuid()");
 
@@ -723,10 +960,15 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.Quantity).HasPrecision(18, 6);
                 entity.Property(e => e.UnitPrice).HasPrecision(16, 2);
                 entity.Property(e => e.TotalPrice).HasPrecision(16, 2);
-
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
                 entity.Property(e => e.MaterialNameSnapshot).HasMaxLength(200);
-                entity.Property(e => e.MaterialCodeSnapshot).HasMaxLength(50);
+                entity.Property(e => e.MaterialExternalIdSnapshot).HasMaxLength(50);
                 entity.Property(e => e.Unit).HasMaxLength(32);
+
+                entity.HasOne(d => d.Formula).WithMany(p => p.FormulaMaterials)
+                    .HasForeignKey(d => d.FormulaId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_FormulaMaterials_Formula");
 
                 entity.HasOne(d => d.Formula).WithMany(p => p.FormulaMaterials)
                     .HasForeignKey(d => d.FormulaId)
@@ -774,98 +1016,98 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasConstraintName("FK_Groups_UpdatedBy");
             });
 
-            modelBuilder.Entity<GroupsCommonDatum>(entity =>
-            {
-                entity.HasKey(e => e.GroupId).HasName("PK__Groups__149AF30A6FD59030");
+            //modelBuilder.Entity<GroupsCommonDatum>(entity =>
+            //{
+            //    entity.HasKey(e => e.GroupId).HasName("PK__Groups__149AF30A6FD59030");
 
-                entity.ToTable("Groups_Common_data");
+            //    entity.ToTable("Groups_Common_data");
 
-                entity.Property(e => e.GroupId)
-                    .HasMaxLength(10)
-                    .HasColumnName("GroupID");
-                entity.Property(e => e.Description).HasColumnType("citext");
-                entity.Property(e => e.GroupName).HasColumnType("citext");
-            });
+            //    entity.Property(e => e.GroupId)
+            //        .HasMaxLength(10)
+            //        .HasColumnName("GroupID");
+            //    entity.Property(e => e.Description).HasColumnType("citext");
+            //    entity.Property(e => e.GroupName).HasColumnType("citext");
+            //});
 
-            modelBuilder.Entity<InventoryReceiptsMaterialDatum>(entity =>
-            {
-                entity.HasKey(e => e.ReceiptId).HasName("PK__Inventor__CC08C400857F0DFA");
+            //modelBuilder.Entity<InventoryReceiptsMaterialDatum>(entity =>
+            //{
+            //    entity.HasKey(e => e.ReceiptId).HasName("PK__Inventor__CC08C400857F0DFA");
 
-                entity.ToTable("InventoryReceipts_Material_data");
+            //    entity.ToTable("InventoryReceipts_Material_data");
 
-                entity.HasIndex(e => e.DetailId, "IX_InventoryReceipts_Material_data_DetailID");
+            //    entity.HasIndex(e => e.DetailId, "IX_InventoryReceipts_Material_data_DetailID");
 
-                entity.HasIndex(e => e.RequestId, "IX_InventoryReceipts_Material_data_RequestID");
+            //    entity.HasIndex(e => e.RequestId, "IX_InventoryReceipts_Material_data_RequestID");
 
-                entity.HasIndex(e => e.MaterialId, "IX_InventoryReceipts_Material_data_materialId");
+            //    entity.HasIndex(e => e.MaterialId, "IX_InventoryReceipts_Material_data_materialId");
 
-                entity.Property(e => e.ReceiptId).HasColumnName("ReceiptID");
-                entity.Property(e => e.DetailId).HasColumnName("DetailID");
-                entity.Property(e => e.MaterialId).HasColumnName("materialId");
-                entity.Property(e => e.Note).HasColumnType("citext");
-                entity.Property(e => e.RequestId)
-                    .HasMaxLength(16)
-                    .HasColumnName("RequestID");
-                entity.Property(e => e.TotalPrice).HasPrecision(18, 2);
-                entity.Property(e => e.UnitPrice).HasPrecision(18, 2);
+            //    entity.Property(e => e.ReceiptId).HasColumnName("ReceiptID");
+            //    entity.Property(e => e.DetailId).HasColumnName("DetailID");
+            //    entity.Property(e => e.MaterialId).HasColumnName("materialId");
+            //    entity.Property(e => e.Note).HasColumnType("citext");
+            //    entity.Property(e => e.RequestId)
+            //        .HasMaxLength(16)
+            //        .HasColumnName("RequestID");
+            //    entity.Property(e => e.TotalPrice).HasPrecision(18, 2);
+            //    entity.Property(e => e.UnitPrice).HasPrecision(18, 2);
 
-                entity.HasOne(d => d.Detail).WithMany(p => p.InventoryReceiptsMaterialData)
-                    .HasForeignKey(d => d.DetailId)
-                    .HasConstraintName("FK_PO_Detail_InventoryReceipt");
+            //    entity.HasOne(d => d.Detail).WithMany(p => p.InventoryReceiptsMaterialData)
+            //        .HasForeignKey(d => d.DetailId)
+            //        .HasConstraintName("FK_PO_Detail_InventoryReceipt");
 
-                entity.HasOne(d => d.Material).WithMany(p => p.InventoryReceiptsMaterialData)
-                    .HasForeignKey(d => d.MaterialId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_InventoryReceipts_Material");
+            //    entity.HasOne(d => d.Material).WithMany(p => p.InventoryReceiptsMaterialData)
+            //        .HasForeignKey(d => d.MaterialId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_InventoryReceipts_Material");
 
-                entity.HasOne(d => d.Request).WithMany(p => p.InventoryReceiptsMaterialData)
-                    .HasForeignKey(d => d.RequestId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_InventoryReceipts_Request");
-            });
+            //    entity.HasOne(d => d.Request).WithMany(p => p.InventoryReceiptsMaterialData)
+            //        .HasForeignKey(d => d.RequestId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_InventoryReceipts_Request");
+            //});
 
-            modelBuilder.Entity<MachinesCommonDatum>(entity =>
-            {
-                entity.HasKey(e => e.MachineId).HasName("PK__Machines__5A97603FADC7D2ED");
+            //modelBuilder.Entity<MachinesCommonDatum>(entity =>
+            //{
+            //    entity.HasKey(e => e.MachineId).HasName("PK__Machines__5A97603FADC7D2ED");
 
-                entity.ToTable("Machines_Common_data");
+            //    entity.ToTable("Machines_Common_data");
 
-                entity.HasIndex(e => e.GroupId, "IX_Machines_Common_data_GroupID");
+            //    entity.HasIndex(e => e.GroupId, "IX_Machines_Common_data_GroupID");
 
-                entity.HasIndex(e => e.PartId, "IX_Machines_Common_data_PartID");
+            //    entity.HasIndex(e => e.PartId, "IX_Machines_Common_data_PartID");
 
-                entity.Property(e => e.MachineId)
-                    .HasMaxLength(16)
-                    .HasColumnName("MachineID");
-                entity.Property(e => e.Description).HasColumnType("citext");
-                entity.Property(e => e.Factory)
-                    .HasDefaultValueSql("'Tam Phước'::character varying")
-                    .HasColumnType("citext");
-                entity.Property(e => e.GroupId)
-                    .HasMaxLength(10)
-                    .HasColumnName("GroupID");
-                entity.Property(e => e.GroupMachine).HasColumnType("citext");
-                entity.Property(e => e.MachineName).HasColumnType("citext");
-                entity.Property(e => e.PartId)
-                    .HasMaxLength(16)
-                    .HasColumnName("PartID");
+            //    entity.Property(e => e.MachineId)
+            //        .HasMaxLength(16)
+            //        .HasColumnName("MachineID");
+            //    entity.Property(e => e.Description).HasColumnType("citext");
+            //    entity.Property(e => e.Factory)
+            //        .HasDefaultValueSql("'Tam Phước'::character varying")
+            //        .HasColumnType("citext");
+            //    entity.Property(e => e.GroupId)
+            //        .HasMaxLength(10)
+            //        .HasColumnName("GroupID");
+            //    entity.Property(e => e.GroupMachine).HasColumnType("citext");
+            //    entity.Property(e => e.MachineName).HasColumnType("citext");
+            //    entity.Property(e => e.PartId)
+            //        .HasMaxLength(16)
+            //        .HasColumnName("PartID");
 
-                entity.HasOne(d => d.Group).WithMany(p => p.MachinesCommonData)
-                    .HasForeignKey(d => d.GroupId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Machines__GroupI__6477ECF3");
+            //    entity.HasOne(d => d.Group).WithMany(p => p.MachinesCommonData)
+            //        .HasForeignKey(d => d.GroupId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK__Machines__GroupI__6477ECF3");
 
-                entity.HasOne(d => d.Part).WithMany(p => p.MachinesCommonData)
-                    .HasForeignKey(d => d.PartId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Machines__PartID__656C112C");
-            });
+            //    entity.HasOne(d => d.Part).WithMany(p => p.MachinesCommonData)
+            //        .HasForeignKey(d => d.PartId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK__Machines__PartID__656C112C");
+            //});
 
             modelBuilder.Entity<Material>(entity =>
             {
                 entity.HasKey(e => e.MaterialId).HasName("PK__Material__C50610F7C355BA5C");
 
-                entity.ToTable("Materials", "inventory");
+                entity.ToTable("Materials", "Material");
 
                 entity.HasIndex(e => e.CategoryId, "IX_Materials_CategoryId");
 
@@ -906,68 +1148,68 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasConstraintName("FK_Materials_UpdatedBy");
             });
 
-            modelBuilder.Entity<MaterialGroup>(entity =>
-            {
-                entity.HasKey(e => e.MaterialGroupId).HasName("PK__Material__E20265FD68C7B626");
+            //modelBuilder.Entity<MaterialGroup>(entity =>
+            //{
+            //    entity.HasKey(e => e.MaterialGroupId).HasName("PK__Material__E20265FD68C7B626");
 
-                entity.Property(e => e.MaterialGroupId)
-                    .HasMaxLength(50)
-                    .HasColumnName("MaterialGroupID");
-                entity.Property(e => e.MaterialGroupName).HasColumnType("citext");
-            });
+            //    entity.Property(e => e.MaterialGroupId)
+            //        .HasMaxLength(50)
+            //        .HasColumnName("MaterialGroupID");
+            //    entity.Property(e => e.MaterialGroupName).HasColumnType("citext");
+            //});
 
-            modelBuilder.Entity<MaterialGroupsMaterialDatum>(entity =>
-            {
-                entity.HasKey(e => e.MaterialGroupId).HasName("PK__Material__E20265FD37B632C7");
+            //modelBuilder.Entity<MaterialGroupsMaterialDatum>(entity =>
+            //{
+            //    entity.HasKey(e => e.MaterialGroupId).HasName("PK__Material__E20265FD37B632C7");
 
-                entity.ToTable("MaterialGroups_Material_data");
+            //    entity.ToTable("MaterialGroups_Material_data");
 
-                entity.Property(e => e.MaterialGroupId)
-                    .HasDefaultValueSql("gen_random_uuid()")
-                    .HasColumnName("MaterialGroupID");
-                entity.Property(e => e.Detail).HasColumnType("citext");
-                entity.Property(e => e.ExternalId)
-                    .HasColumnType("citext")
-                    .HasColumnName("externalId");
-                entity.Property(e => e.MaterialGroupName).HasColumnType("citext");
-            });
+            //    entity.Property(e => e.MaterialGroupId)
+            //        .HasDefaultValueSql("gen_random_uuid()")
+            //        .HasColumnName("MaterialGroupID");
+            //    entity.Property(e => e.Detail).HasColumnType("citext");
+            //    entity.Property(e => e.ExternalId)
+            //        .HasColumnType("citext")
+            //        .HasColumnName("externalId");
+            //    entity.Property(e => e.MaterialGroupName).HasColumnType("citext");
+            //});
 
-            modelBuilder.Entity<MaterialsMaterialDatum>(entity =>
-            {
-                entity.HasKey(e => e.MaterialId).HasName("PK__Material__99B653FDEEB02A00");
+            //modelBuilder.Entity<MaterialsMaterialDatum>(entity =>
+            //{
+            //    entity.HasKey(e => e.MaterialId).HasName("PK__Material__99B653FDEEB02A00");
 
-                entity.ToTable("Materials_material_data");
+            //    entity.ToTable("Materials_material_data");
 
-                entity.HasIndex(e => e.EmployeeId, "IX_Materials_material_data_EmployeeID");
+            //    entity.HasIndex(e => e.EmployeeId, "IX_Materials_material_data_EmployeeID");
 
-                entity.HasIndex(e => e.MaterialGroupId, "IX_Materials_material_data_MaterialGroupId");
+            //    entity.HasIndex(e => e.MaterialGroupId, "IX_Materials_material_data_MaterialGroupId");
 
-                entity.Property(e => e.MaterialId)
-                    .HasDefaultValueSql("gen_random_uuid()")
-                    .HasColumnName("materialId");
-                entity.Property(e => e.EmployeeId)
-                    .HasMaxLength(16)
-                    .HasColumnName("EmployeeID");
-                entity.Property(e => e.ExternalId)
-                    .HasColumnType("citext")
-                    .HasColumnName("externalId");
-                entity.Property(e => e.Name).HasColumnType("citext");
-                entity.Property(e => e.Unit).HasColumnType("citext");
+            //    entity.Property(e => e.MaterialId)
+            //        .HasDefaultValueSql("gen_random_uuid()")
+            //        .HasColumnName("materialId");
+            //    entity.Property(e => e.EmployeeId)
+            //        .HasMaxLength(16)
+            //        .HasColumnName("EmployeeID");
+            //    entity.Property(e => e.ExternalId)
+            //        .HasColumnType("citext")
+            //        .HasColumnName("externalId");
+            //    entity.Property(e => e.Name).HasColumnType("citext");
+            //    entity.Property(e => e.Unit).HasColumnType("citext");
 
-                entity.HasOne(d => d.Employee).WithMany(p => p.MaterialsMaterialData)
-                    .HasForeignKey(d => d.EmployeeId)
-                    .HasConstraintName("FK__Materials__Emplo__6DCC4D03");
+            //    entity.HasOne(d => d.Employee).WithMany(p => p.MaterialsMaterialData)
+            //        .HasForeignKey(d => d.EmployeeId)
+            //        .HasConstraintName("FK__Materials__Emplo__6DCC4D03");
 
-                entity.HasOne(d => d.MaterialGroup).WithMany(p => p.MaterialsMaterialData)
-                    .HasForeignKey(d => d.MaterialGroupId)
-                    .HasConstraintName("FK__Materials__Mater__6CD828CA");
-            });
+            //    entity.HasOne(d => d.MaterialGroup).WithMany(p => p.MaterialsMaterialData)
+            //        .HasForeignKey(d => d.MaterialGroupId)
+            //        .HasConstraintName("FK__Materials__Mater__6CD828CA");
+            //});
 
             modelBuilder.Entity<MaterialsSupplier>(entity =>
             {
                 entity.HasKey(e => e.MaterialsSuppliersId).HasName("PK__Material__4F13EDBB73A34869");
 
-                entity.ToTable("Materials_Suppliers", "inventory");
+                entity.ToTable("Materials_Suppliers", "Material");
 
                 entity.HasIndex(e => e.MaterialId, "IX_Materials_Suppliers_MaterialId");
 
@@ -1008,48 +1250,346 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 .HasFilter("\"IsPreferred\" = TRUE")
                 .IsUnique();
 
-            modelBuilder.Entity<MaterialsSuppliersMaterialDatum>(entity =>
+            //modelBuilder.Entity<MaterialsSuppliersMaterialDatum>(entity =>
+            //{
+            //    entity.HasKey(e => e.MaterialsSuppliersId).HasName("PK__Material__4F13EDBB69530C3D");
+
+            //    entity.ToTable("MaterialsSuppliers_material_data");
+
+            //    entity.HasIndex(e => e.MaterialId, "IX_MaterialsSuppliers_material_data_materialId");
+
+            //    entity.HasIndex(e => e.PriceHistoryId, "IX_MaterialsSuppliers_material_data_priceHistoryId");
+
+            //    entity.HasIndex(e => e.SupplierId, "IX_MaterialsSuppliers_material_data_supplierId");
+
+            //    entity.Property(e => e.MaterialsSuppliersId)
+            //        .HasDefaultValueSql("gen_random_uuid()")
+            //        .HasColumnName("Materials_SuppliersId");
+            //    entity.Property(e => e.Currency)
+            //        .HasColumnType("citext")
+            //        .HasColumnName("currency");
+            //    entity.Property(e => e.CurrentPrice)
+            //        .HasPrecision(18, 2)
+            //        .HasColumnName("currentPrice");
+            //    entity.Property(e => e.IsPreferred)
+            //        .HasDefaultValue(false)
+            //        .HasColumnName("isPreferred");
+            //    entity.Property(e => e.MaterialId).HasColumnName("materialId");
+            //    entity.Property(e => e.MinDeliveryDays).HasColumnName("minDeliveryDays");
+            //    entity.Property(e => e.PriceHistoryId).HasColumnName("priceHistoryId");
+            //    entity.Property(e => e.SupplierId).HasColumnName("supplierId");
+            //    entity.Property(e => e.UpdatedDate).HasColumnName("updatedDate");
+
+            //    entity.HasOne(d => d.Material).WithMany(p => p.MaterialsSuppliersMaterialData)
+            //        .HasForeignKey(d => d.MaterialId)
+            //        .HasConstraintName("FK__Materials__mater__7FEAFD3E");
+
+            //    entity.HasOne(d => d.PriceHistory).WithMany(p => p.MaterialsSuppliersMaterialData)
+            //        .HasForeignKey(d => d.PriceHistoryId)
+            //        .HasConstraintName("FK__Materials__price__2A6B46EF");
+
+            //    entity.HasOne(d => d.Supplier).WithMany(p => p.MaterialsSuppliersMaterialData)
+            //        .HasForeignKey(d => d.SupplierId)
+            //        .HasConstraintName("FK__Materials__suppl__2B5F6B28");
+            //});
+
+            modelBuilder.Entity<MfgProductionOrder>(entity =>
             {
-                entity.HasKey(e => e.MaterialsSuppliersId).HasName("PK__Material__4F13EDBB69530C3D");
+                entity.ToTable("MfgProductionOrders", "manufacturing");
 
-                entity.ToTable("MaterialsSuppliers_material_data");
+                entity.HasKey(e => e.MfgProductionOrderId)
+                      .HasName("PK__MfgProductionOrders__MfgProductionOrderId");
 
-                entity.HasIndex(e => e.MaterialId, "IX_MaterialsSuppliers_material_data_materialId");
+                entity.Property(e => e.MfgProductionOrderId)
+                      .HasDefaultValueSql("gen_random_uuid()")
+                      .HasColumnName("mfgProductionOrderId");
+                entity.HasIndex(x => new { x.CompanyId, x.ExternalId }).IsUnique();
+                entity.HasIndex(e => e.CompanyId, "IX_MfgProductionOrders_companyId");
+                entity.HasIndex(e => e.Status, "IX_MfgProductionOrders_status");
 
-                entity.HasIndex(e => e.PriceHistoryId, "IX_MaterialsSuppliers_material_data_priceHistoryId");
+                entity.HasIndex(e => e.CustomerExternalIdSnapshot, "IX_MfgProductionOrders_customerExternalIdSnapshot");
+                entity.HasIndex(e => e.ProductExternalIdSnapshot, "IX_MfgProductionOrders_productExternalIdSnapshot");
+                entity.HasIndex(e => e.MerchandiseOrderExternalId, "IX_MfgProductionOrders_MerchandiseOrderExternalId");
 
-                entity.HasIndex(e => e.SupplierId, "IX_MaterialsSuppliers_material_data_supplierId");
+                entity.HasIndex(e => new { e.Status, e.ExpectedDate }, "IX_MfgProductionOrders_status_expectedDate");
+                entity.HasIndex(e => new { e.Status, e.requiredDate }, "IX_MfgProductionOrders_status_requiredDate");
 
-                entity.Property(e => e.MaterialsSuppliersId)
-                    .HasDefaultValueSql("gen_random_uuid()")
-                    .HasColumnName("Materials_SuppliersId");
-                entity.Property(e => e.Currency)
-                    .HasColumnType("citext")
-                    .HasColumnName("currency");
-                entity.Property(e => e.CurrentPrice)
-                    .HasPrecision(18, 2)
-                    .HasColumnName("currentPrice");
-                entity.Property(e => e.IsPreferred)
-                    .HasDefaultValue(false)
-                    .HasColumnName("isPreferred");
-                entity.Property(e => e.MaterialId).HasColumnName("materialId");
-                entity.Property(e => e.MinDeliveryDays).HasColumnName("minDeliveryDays");
-                entity.Property(e => e.PriceHistoryId).HasColumnName("priceHistoryId");
-                entity.Property(e => e.SupplierId).HasColumnName("supplierId");
+                entity.Property(e => e.ExternalId).HasColumnName("externalId").HasColumnType("citext");
+                entity.Property(e => e.MerchandiseOrderExternalId).HasColumnName("merchandiseOrderExternalId").HasColumnType("citext");
+                entity.Property(e => e.ProductionType).HasColumnName("productionType").HasColumnType("citext");
+                entity.Property(e => e.ProductExternalIdSnapshot).HasColumnName("productExternalIdSnapshot").HasColumnType("citext");
+                entity.Property(e => e.ProductNameSnapshot).HasColumnName("productNameSnapshot").HasColumnType("citext");
+                entity.Property(e => e.CustomerNameSnapshot).HasColumnName("customerNameSnapshot");
+                entity.Property(e => e.CustomerExternalIdSnapshot).HasColumnName("customerExternalIdSnapshot");
+                entity.Property(e => e.FormulaExternalIdSnapshot).HasColumnName("formulaExternalIdSnapshot");
+                entity.Property(e => e.Status).HasColumnName("status");
+                entity.Property(e => e.CompanyId).HasColumnName("companyId");
+                entity.Property(e => e.IsActive).HasDefaultValue(true).HasColumnName("isActive");
+                entity.Property(e => e.ManufacturingDate).HasColumnName("manufacturingDate");
+                entity.Property(e => e.ExpectedDate).HasColumnName("expectedDate");
+                entity.Property(e => e.requiredDate).HasColumnName("requiredDate");
+                entity.Property(e => e.TotalQuantity).HasColumnName("totalQuantity");
+                entity.Property(e => e.TotalQuantityRequest).HasColumnName("totalQuantityRequest");
+                entity.Property(e => e.NumOfBatches).HasColumnName("numOfBatches");
+                entity.Property(e => e.LabNote).HasColumnName("labNote");
+                entity.Property(e => e.Requirement).HasColumnName("requirement");
+                entity.Property(e => e.PlpuNote).HasColumnName("plpuNote");
+                entity.Property(e => e.BagType).HasColumnName("bagType");
+
+                entity.Property(e => e.QualifiedQuantity).HasPrecision(18, 2).HasColumnName("qualifiedQuantity");
+                entity.Property(e => e.RejectedQuantity).HasPrecision(18, 2).HasColumnName("rejectedQuantity");
+                entity.Property(e => e.WasteQuantity).HasPrecision(18, 2).HasColumnName("wasteQuantity");
+
+                entity.Property(e => e.CreateDate).HasDefaultValueSql("timezone('utc', now())").HasColumnName("createDate");
+
+                entity.Property(e => e.CreatedBy).HasColumnName("createdBy");
                 entity.Property(e => e.UpdatedDate).HasColumnName("updatedDate");
+                entity.Property(e => e.UpdatedBy).HasColumnName("updatedBy");
 
-                entity.HasOne(d => d.Material).WithMany(p => p.MaterialsSuppliersMaterialData)
-                    .HasForeignKey(d => d.MaterialId)
-                    .HasConstraintName("FK__Materials__mater__7FEAFD3E");
+                entity.HasOne(d => d.MerchandiseOrder).WithMany(p => p.MfgProductionOrders)
+                      .HasForeignKey(d => d.MerchandiseOrderId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__Mpo__merchandiseOrderId");
 
-                entity.HasOne(d => d.PriceHistory).WithMany(p => p.MaterialsSuppliersMaterialData)
-                    .HasForeignKey(d => d.PriceHistoryId)
-                    .HasConstraintName("FK__Materials__price__2A6B46EF");
+                entity.HasOne(d => d.Product).WithMany(p => p.MfgProductionOrders)
+                      .HasForeignKey(d => d.ProductId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__Mpo__productId");
 
-                entity.HasOne(d => d.Supplier).WithMany(p => p.MaterialsSuppliersMaterialData)
-                    .HasForeignKey(d => d.SupplierId)
-                    .HasConstraintName("FK__Materials__suppl__2B5F6B28");
+                entity.HasOne(d => d.Customer).WithMany(p => p.MfgProductionOrders)
+                      .HasForeignKey(d => d.CustomerId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__Mpo__customerId");
+
+                entity.HasOne(d => d.Company).WithMany(p => p.MfgProductionOrders)
+                      .HasForeignKey(d => d.CompanyId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__Mpo__companyId");
+
+                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.MfgProductionOrderCreatedByNavigations)
+                      .HasForeignKey(d => d.CreatedBy)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__Mpo__createdBy");
+
+                entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.MfgProductionOrderUpdatedByNavigations)
+                      .HasForeignKey(d => d.UpdatedBy)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__Mpo__updatedBy");
             });
+
+            modelBuilder.Entity<MfgProductionOrderLog>(entity =>
+            {
+                entity.ToTable("MfgProductionOrderLogs", "manufacturing");
+
+                entity.HasKey(e => e.LogId)
+                      .HasName("PK__MfgProductionOrderLogs__LogId");
+
+
+                entity.Property(e => e.CreatedDate).HasDefaultValueSql("timezone('utc', now())").HasColumnName("createDate");
+
+                entity.Property(e => e.CreatedBy).HasColumnName("createdBy");
+
+
+                entity.HasOne(d => d.MfgProductionOrder).WithMany(p => p.ManufacturingOrderLogs)
+                      .HasForeignKey(d => d.MfgProductionOrderId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__MfgProductionOrderLogs__MfgProductionOrderId");
+
+
+                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.MfgProductionOrderLogCreatedByNavigations)
+                      .HasForeignKey(d => d.CreatedBy)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__MfgProductionOrderLogs__createdBy");
+            });
+
+
+
+
+
+            modelBuilder.Entity<ManufacturingFormula>(entity =>
+            {
+                // ===== TABLE & PK =====
+                entity.ToTable("ManufacturingFormulas", "manufacturing");
+                entity.HasKey(e => e.ManufacturingFormulaId)
+                      .HasName("PK__ManufacturingFormulas__manufacturingFormulaId");
+
+                entity.Property(e => e.ManufacturingFormulaId)
+                      .HasDefaultValueSql("gen_random_uuid()")
+                      .HasColumnName("manufacturingFormulaId");
+
+                // ===== INDEXES (tuỳ nhu cầu lọc) =====
+                entity.HasIndex(e => e.mfgProductionOrderId, "IX_ManufacturingFormulas_mfgProductionOrderId");
+
+
+
+                entity.Property(x => x.IsActive).HasDefaultValue(true).IsRequired().HasColumnName("isActive");
+
+                entity.HasIndex(x => x.VUFormulaId)
+                    .HasFilter(@"""isStandard"" = TRUE AND ""isActive"" = TRUE")
+                    .IsUnique()
+                    .HasDatabaseName("ux_mfg_formula_isstandard_one_per_vu");
+
+
+                entity.HasIndex(x => x.mfgProductionOrderId)
+                    .HasFilter(@"""isSelect"" = TRUE AND ""isActive"" = TRUE")
+                    .IsUnique()
+                    .HasDatabaseName("ux_mfg_formula_isselect_one_per_order");
+
+                // ===== COLUMNS =====
+                entity.Property(e => e.MfgProductionOrderExternalId).HasColumnName("mfgProductionOrderExternalId");
+                entity.Property(e => e.Name).HasColumnName("name");
+                entity.Property(e => e.mfgProductionOrderId).HasColumnName("mfgProductionOrderId");
+                entity.Property(e => e.Status).HasColumnName("status");
+
+                entity.Property(e => e.TotalPrice)
+                      .HasPrecision(18, 2)
+                      .HasColumnName("totalPrice");
+
+                entity.Property(e => e.IsSelect)
+                      .HasDefaultValue(false)
+                      .HasColumnName("isSelect");
+
+                entity.Property(e => e.IsStandard)
+                      .HasDefaultValue(false)
+                      .HasColumnName("isStandard");
+
+                entity.Property(e => e.Note).HasColumnName("note");
+
+                entity.Property(e => e.createdDate).HasColumnName("createdDate");
+                entity.Property(e => e.CreatedBy).HasColumnName("createdBy");
+                entity.Property(e => e.UpdatedDate).HasColumnName("updatedDate");
+                entity.Property(e => e.UpdatedBy).HasColumnName("updatedBy");
+                entity.Property(e => e.companyId).HasColumnName("companyId");
+
+                // ===== RELATIONSHIPS (FK names) =====
+                entity.HasOne(d => d.MfgProductionOrder).WithMany(p => p.ManufacturingFormulas)
+                      .HasForeignKey(d => d.mfgProductionOrderId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__Mf__mfgProductionOrderId");
+
+                entity.HasOne(d => d.VUFormula).WithMany(p => p.ManufacturingFormulas)
+                      .HasForeignKey(d => d.VUFormulaId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__Mf__VUFormulaId");
+
+                entity.HasOne(d => d.SourceVUFormula).WithMany(p => p.ManufacturingFormulaSources)
+                      .HasForeignKey(d => d.SourceVUFormulaId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__Mf__SourceVUFormulaId");
+
+                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.ManufacturingFormulaCreatedByNavigations)
+                      .HasForeignKey(d => d.CreatedBy)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__Mf__createdBy");
+
+                entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.ManufacturingFormulaUpdatedByNavigations)
+                      .HasForeignKey(d => d.UpdatedBy)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__Mf__updatedBy");
+
+                entity.HasOne(d => d.Company).WithMany(p => p.ManufacturingFormulas)
+                      .HasForeignKey(d => d.companyId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__Mf__companyId");
+
+                // self-referencing foreign key (khóa ngoại tự tham chiếu cùng bảng).
+                entity.HasOne(x => x.SourceManufacturingFormula).WithMany()
+                      .HasForeignKey(x => x.SourceManufacturingFormulaId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__Mf__SourceManufacturingFormulaId");
+
+
+
+            });
+
+            modelBuilder.Entity<ManufacturingFormulaLog>(entity =>
+            {
+                // ===== TABLE & PK =====
+                entity.ToTable("ManufacturingFormulaLog", "manufacturing");
+                entity.HasKey(e => e.Id)
+                      .HasName("PK__ManufacturingFormulaLog__Id");
+
+                entity.Property(e => e.Id)
+                      .HasDefaultValueSql("gen_random_uuid()")
+                      .HasColumnName("Id");
+
+                // ===== INDEXES (tuỳ nhu cầu lọc) =====
+                entity.HasIndex(e => e.ManufacturingFormulaId, "IX_ManufacturingFormulaLog_ManufacturingFormulaId");
+
+
+                entity.Property(e => e.PerformedDate).HasColumnName("PerformedDate");
+
+                // ===== RELATIONSHIPS (FK names) =====
+                entity.HasOne(d => d.ManufacturingFormula).WithMany(p => p.ManufacturingFormulaLogs)
+                      .HasForeignKey(d => d.ManufacturingFormulaId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__Mf__ManufacturingFormulaLogs");
+
+                entity.HasOne(d => d.PerformedByNavigation).WithMany(p => p.PerformedByNavigations)
+                      .HasForeignKey(d => d.PerformedBy)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__Mf__performedBy");
+
+            });
+
+
+            modelBuilder.Entity<ManufacturingFormulaMaterial>(entity =>
+            {
+                // ===== TABLE & PK =====
+                entity.ToTable("ManufacturingFormulaMaterials", "manufacturing");
+
+                entity.HasKey(e => e.ManufacturingFormulaMaterialId)
+                      .HasName("PK__ManufacturingFormulaMaterials__manufacturingFormulaMaterialId");
+
+                entity.Property(e => e.ManufacturingFormulaMaterialId)
+                      .HasDefaultValueSql("gen_random_uuid()")
+                      .HasColumnName("manufacturingFormulaMaterialId");
+
+                // ===== INDEXES (tối thiểu & thực dụng) =====
+                // Lấy danh sách nguyên liệu theo công thức
+
+
+                // (Tuỳ) nếu tra cứu theo LotNo trong phạm vi một công thức/kho:
+                // entity.HasIndex(e => new { e.ManufacturingFormulaId, e.LotNo }, "IX_Mfm_mf_lotNo");
+
+                // ===== COLUMNS =====
+                entity.Property(e => e.ManufacturingFormulaId).HasColumnName("manufacturingFormulaId");
+                entity.Property(e => e.MaterialId).HasColumnName("materialId");
+                entity.Property(e => e.CategoryId).HasColumnName("categoryId");
+
+                entity.Property(e => e.Unit).HasColumnName("unit"); // có thể dùng citext nếu cần case-insensitive: .HasColumnType("citext")
+
+                entity.Property(e => e.Quantity).HasPrecision(18, 6);
+                entity.Property(e => e.UnitPrice).HasPrecision(16, 2);
+                entity.Property(e => e.TotalPrice).HasPrecision(16, 2);
+
+                entity.Property(e => e.LotNo).HasColumnName("lotNo");
+                entity.Property(e => e.StockId).HasColumnName("stockId");
+
+                entity.Property(e => e.MaterialNameSnapshot).HasColumnName("materialNameSnapshot");
+                entity.Property(e => e.MaterialExternalIdSnapshot).HasColumnName("materialExternalIdSnapshot"); // có thể citext nếu so sánh không phân biệt hoa/thường
+
+                // ===== RELATIONSHIPS =====
+                entity.HasOne(d => d.ManufacturingFormula).WithMany(p => p.ManufacturingFormulaMaterials)
+                      .HasForeignKey(d => d.ManufacturingFormulaId)
+                      .OnDelete(DeleteBehavior.Cascade) // thường xóa công thức thì xóa luôn vật liệu con
+                      .HasConstraintName("FK__Mfm__manufacturingFormulaId");
+
+                // ManufacturingFormulaMaterial mapping
+                entity.HasOne(d => d.Category)
+                      .WithMany(c => c.ManufacturingFormulaMaterials) // <-- CHỈ RÕ
+                      .HasForeignKey(d => d.CategoryId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__Mfm__categoryId");
+
+                entity.HasOne(d => d.Material)
+                      .WithMany(m => m.ManufacturingFormulaMaterials) // cần có collection này trong Material
+                      .HasForeignKey(d => d.MaterialId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__Mfm__materialId");
+            });
+
+
 
             modelBuilder.Entity<MemberInGroup>(entity =>
             {
@@ -1091,15 +1631,22 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.HasIndex(e => e.UpdatedBy, "IX_MerchandiseOrders_UpdatedBy");
 
-                entity.Property(e => e.MerchandiseOrderId).ValueGeneratedNever();
+                entity.Property(e => e.MerchandiseOrderId).HasDefaultValueSql("gen_random_uuid()");
                 entity.Property(e => e.DeliveryAddress).HasMaxLength(255);
                 entity.Property(e => e.ExternalId).HasMaxLength(50);
                 entity.Property(e => e.PaymentType).HasMaxLength(50);
                 entity.Property(e => e.Receiver).HasMaxLength(255);
                 entity.Property(e => e.ShippingMethod).HasMaxLength(50);
                 entity.Property(e => e.Status).HasMaxLength(50);
+                entity.Property(e => e.CustomerExternalIdSnapshot).HasColumnType("citext");
+                entity.Property(e => e.CustomerNameSnapshot).HasColumnType("citext");
+
                 entity.Property(e => e.TotalPrice).HasPrecision(18, 2);
-                entity.Property(e => e.Vat).HasColumnName("VAT");
+                entity.Property(x => x.Vat).HasColumnName("VAT").HasPrecision(5, 2);
+
+                entity.Property(x => x.Currency).HasMaxLength(3).IsUnicode(false);
+                entity.Property(x => x.IsPaid).HasDefaultValue(false);
+                entity.Property(x => x.IsActive).HasDefaultValue(true);
 
                 entity.HasOne(d => d.Company).WithMany(p => p.MerchandiseOrders)
                     .HasForeignKey(d => d.CompanyId)
@@ -1122,21 +1669,58 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasConstraintName("FK_MerchandiseOrderst_UpdatedBy");
             });
 
+
+            modelBuilder.Entity<MerchandiseOrderLog>(entity =>
+            {
+                entity.ToTable("MerchandiseOrderLogs", "Orders");
+
+                entity.HasKey(e => e.LogId)
+                      .HasName("PK__MerchandiseOrderLogs__LogId");
+
+
+                entity.Property(e => e.CreatedDate).HasDefaultValueSql("timezone('utc', now())").HasColumnName("createDate");
+
+                entity.Property(e => e.CreatedBy).HasColumnName("createdBy");
+
+
+                entity.HasOne(d => d.MerchandiseOrder).WithMany(p => p.MerchandiseOrderLogs)
+                      .HasForeignKey(d => d.MerchandiseOrderId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__MerchandiseOrderLogs__MerchandiseOrderId");
+
+
+                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.MerchandiseOrderLogCreatedByNavigations)
+                      .HasForeignKey(d => d.CreatedBy)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK__MerchandiseOrderLogs__createdBy");
+            });
+
             modelBuilder.Entity<MerchandiseOrderDetail>(entity =>
             {
                 entity.HasKey(e => e.MerchandiseOrderDetailId).HasName("PK__Merchand__FE0FB3FF67BDE750");
 
                 entity.ToTable("MerchandiseOrderDetails", "Orders");
 
+                // Alternate Key/Unique cho cặp (DetailId, MerchandiseOrderId)
+                entity.HasAlternateKey(x => new { x.MerchandiseOrderDetailId, x.MerchandiseOrderId });
+
                 entity.HasIndex(e => e.MerchandiseOrderId, "IX_MerchandiseOrderDetails_MerchandiseOrderId");
 
                 entity.HasIndex(e => e.ProductId, "IX_MerchandiseOrderDetails_ProductId");
+                entity.HasIndex(e => e.FormulaId, "IX_MerchandiseOrderDetails_FormulaId");
 
-                entity.Property(e => e.MerchandiseOrderDetailId).ValueGeneratedNever();
+                entity.Property(e => e.MerchandiseOrderDetailId).HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(x => x.ProductExternalIdSnapshot).HasColumnType("citext");
+                entity.Property(x => x.ProductNameSnapshot).HasColumnType("citext");
+                entity.Property(x => x.FormulaExternalIdSnapshot).HasColumnType("citext");
+
                 entity.Property(e => e.BagType).HasMaxLength(50);
-                entity.Property(e => e.FormulaExternalId).HasMaxLength(50);
-                entity.Property(e => e.Price).HasPrecision(18, 2);
+                entity.Property(x => x.BaseCostSnapshot).HasPrecision(18, 2);
+                entity.Property(x => x.RecommendedUnitPrice).HasPrecision(18, 2);
+                entity.Property(x => x.UnitPriceAgreed).HasPrecision(18, 2);
+                entity.Property(x => x.TotalPriceAgreed).HasPrecision(18, 2);
                 entity.Property(e => e.Status).HasMaxLength(50);
+                entity.Property(x => x.IsActive).HasDefaultValue(true);
 
                 entity.HasOne(d => d.MerchandiseOrder).WithMany(p => p.MerchandiseOrderDetails)
                     .HasForeignKey(d => d.MerchandiseOrderId)
@@ -1147,6 +1731,11 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasForeignKey(d => d.ProductId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_MerchandiseOrderDetails_ProductId");
+
+                entity.HasOne(d => d.Formula).WithMany(p => p.MerchandiseOrderDetails)
+                    .HasForeignKey(d => d.FormulaId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_MerchandiseOrderDetails_FormulaId");
             });
 
             modelBuilder.Entity<MerchandiseOrderSchedule>(entity =>
@@ -1165,6 +1754,31 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_MerchandiseOrderSchedules_MerchandiseOrderId");
             });
+
+            modelBuilder.Entity<OrderAttachment>(entity =>
+            {
+                entity.HasKey(e => e.AttachmentId).HasName("PK__OrderAttachment__B49D545E8C296524");
+
+
+                entity.ToTable("OrderAttachments", "Orders");
+                entity.Property(e => e.AttachmentId).HasDefaultValueSql("gen_random_uuid()");
+
+                entity.HasOne(x => x.MerchandiseOrder).WithMany(o => o.Attachments).HasForeignKey(x => x.MerchandiseOrderId);
+                entity.Property(x => x.FileName).HasMaxLength(255);
+                entity.Property(x => x.StoragePath).HasMaxLength(500);
+
+                entity.HasOne(d => d.MerchandiseOrder).WithMany(p => p.Attachments)
+                    .HasForeignKey(d => d.MerchandiseOrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OrderAttachment_MerchandiseOrderId");
+
+                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.OrderAttachmentCreatedByNavigations)
+                    .HasForeignKey(d => d.CreateBy)
+                    .HasConstraintName("FK_OrderAttachment_CreatedBy");
+            });
+
+
+
 
             modelBuilder.Entity<MfgProductionOrdersPlan>(entity =>
             {
@@ -1222,23 +1836,23 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.PartName).HasColumnType("citext");
             });
 
-            modelBuilder.Entity<PartsCommonDatum>(entity =>
-            {
-                entity.HasKey(e => e.PartId).HasName("PK__Parts__7C3F0D3012CD1E19");
+            //modelBuilder.Entity<PartsCommonDatum>(entity =>
+            //{
+            //    entity.HasKey(e => e.PartId).HasName("PK__Parts__7C3F0D3012CD1E19");
 
-                entity.ToTable("Parts_Common_data");
+            //    entity.ToTable("Parts_Common_data");
 
-                entity.Property(e => e.PartId)
-                    .HasMaxLength(16)
-                    .HasColumnName("PartID");
-                entity.Property(e => e.PartName).HasColumnType("citext");
-            });
+            //    entity.Property(e => e.PartId)
+            //        .HasMaxLength(16)
+            //        .HasColumnName("PartID");
+            //    entity.Property(e => e.PartName).HasColumnType("citext");
+            //});
 
             modelBuilder.Entity<PriceHistory>(entity =>
             {
                 entity.HasKey(e => e.PriceHistoryId).HasName("PK__PriceHis__A927CACB4B3A2EAC");
 
-                entity.ToTable("PriceHistory", "inventory");
+                entity.ToTable("PriceHistory", "Material");
 
                 entity.HasIndex(e => e.CreatedBy, "IX_PriceHistory_CreatedBy");
 
@@ -1274,60 +1888,60 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             //    .HasFilter("\"IsActive\" = TRUE")
             //    .IsUnique();    
 
-            modelBuilder.Entity<PriceHistoryMaterialDatum>(entity =>
-            {
-                entity.HasKey(e => e.PriceHistoryId).HasName("PK__PriceHis__77D1486CB71DF1F1");
+            //modelBuilder.Entity<PriceHistoryMaterialDatum>(entity =>
+            //{
+            //    entity.HasKey(e => e.PriceHistoryId).HasName("PK__PriceHis__77D1486CB71DF1F1");
 
-                entity.ToTable("PriceHistory_material_data");
+            //    entity.ToTable("PriceHistory_material_data");
 
-                entity.HasIndex(e => e.MaterialId, "IX_PriceHistory_material_data_materialId");
+            //    entity.HasIndex(e => e.MaterialId, "IX_PriceHistory_material_data_materialId");
 
-                entity.HasIndex(e => e.SupplierId, "IX_PriceHistory_material_data_supplierId");
+            //    entity.HasIndex(e => e.SupplierId, "IX_PriceHistory_material_data_supplierId");
 
-                entity.HasIndex(e => e.UpdatedBy, "IX_PriceHistory_material_data_updatedBy");
+            //    entity.HasIndex(e => e.UpdatedBy, "IX_PriceHistory_material_data_updatedBy");
 
-                entity.Property(e => e.PriceHistoryId)
-                    .ValueGeneratedNever()
-                    .HasColumnName("priceHistoryId");
-                entity.Property(e => e.Currency)
-                    .HasColumnType("citext")
-                    .HasColumnName("currency");
-                entity.Property(e => e.MaterialId).HasColumnName("materialId");
-                entity.Property(e => e.NewPrice)
-                    .HasPrecision(18, 2)
-                    .HasColumnName("newPrice");
-                entity.Property(e => e.OldPrice)
-                    .HasPrecision(18, 2)
-                    .HasColumnName("oldPrice");
-                entity.Property(e => e.Reason)
-                    .HasColumnType("citext")
-                    .HasColumnName("reason");
-                entity.Property(e => e.SupplierId).HasColumnName("supplierId");
-                entity.Property(e => e.UpdatedBy)
-                    .HasMaxLength(16)
-                    .HasColumnName("updatedBy");
-                entity.Property(e => e.UpdatedDate).HasColumnName("updatedDate");
+            //    entity.Property(e => e.PriceHistoryId)
+            //        .ValueGeneratedNever()
+            //        .HasColumnName("priceHistoryId");
+            //    entity.Property(e => e.Currency)
+            //        .HasColumnType("citext")
+            //        .HasColumnName("currency");
+            //    entity.Property(e => e.MaterialId).HasColumnName("materialId");
+            //    entity.Property(e => e.NewPrice)
+            //        .HasPrecision(18, 2)
+            //        .HasColumnName("newPrice");
+            //    entity.Property(e => e.OldPrice)
+            //        .HasPrecision(18, 2)
+            //        .HasColumnName("oldPrice");
+            //    entity.Property(e => e.Reason)
+            //        .HasColumnType("citext")
+            //        .HasColumnName("reason");
+            //    entity.Property(e => e.SupplierId).HasColumnName("supplierId");
+            //    entity.Property(e => e.UpdatedBy)
+            //        .HasMaxLength(16)
+            //        .HasColumnName("updatedBy");
+            //    entity.Property(e => e.UpdatedDate).HasColumnName("updatedDate");
 
-                entity.HasOne(d => d.Material).WithMany(p => p.PriceHistoryMaterialData)
-                    .HasForeignKey(d => d.MaterialId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__PriceHist__mater__793DFFAF");
+            //    entity.HasOne(d => d.Material).WithMany(p => p.PriceHistoryMaterialData)
+            //        .HasForeignKey(d => d.MaterialId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK__PriceHist__mater__793DFFAF");
 
-                entity.HasOne(d => d.Supplier).WithMany(p => p.PriceHistoryMaterialData)
-                    .HasForeignKey(d => d.SupplierId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__PriceHist__suppl__2D47B39A");
+            //    entity.HasOne(d => d.Supplier).WithMany(p => p.PriceHistoryMaterialData)
+            //        .HasForeignKey(d => d.SupplierId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK__PriceHist__suppl__2D47B39A");
 
-                entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.PriceHistoryMaterialData)
-                    .HasForeignKey(d => d.UpdatedBy)
-                    .HasConstraintName("FK__PriceHist__updat__2E3BD7D3");
-            });
+            //    entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.PriceHistoryMaterialData)
+            //        .HasForeignKey(d => d.UpdatedBy)
+            //        .HasConstraintName("FK__PriceHist__updat__2E3BD7D3");
+            //});
 
             modelBuilder.Entity<Product>(entity =>
             {
                 entity.HasKey(e => e.ProductId).HasName("PK__Products__B40CC6CD344F4294");
 
-                entity.ToTable("Products", "labs");
+                entity.ToTable("Products", "SampleRequests");
 
                 entity.HasIndex(e => e.CategoryId, "IX_Products_CategoryId");
 
@@ -1341,13 +1955,13 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.Additive).HasMaxLength(200);
                 entity.Property(e => e.Application).HasMaxLength(100);
                 entity.Property(e => e.Code).HasMaxLength(100);
-                entity.Property(e => e.ColourCode).HasMaxLength(50);
+                entity.Property(e => e.ColourCode).HasColumnType("citext");
                 entity.Property(e => e.ColourName).HasMaxLength(100);
                 entity.Property(e => e.EndUser).HasMaxLength(100);
                 entity.Property(e => e.ExpiryType).HasMaxLength(100);
                 entity.Property(e => e.LabComment).HasMaxLength(500);
                 entity.Property(e => e.LightCondition).HasMaxLength(100);
-                entity.Property(e => e.Name).HasMaxLength(200);
+                entity.Property(e => e.Name).HasColumnType("citext");
                 entity.Property(e => e.PolymerMatchedIn).HasMaxLength(100);
                 entity.Property(e => e.Procedure).HasMaxLength(100);
                 entity.Property(e => e.ProductType).HasMaxLength(100);
@@ -1381,7 +1995,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             {
                 entity.HasKey(e => e.ProductChangedHistoryId).HasName("PK__ProductC__A793B6CA9FB36DED");
 
-                entity.ToTable("ProductChangedHistory", "labs");
+                entity.ToTable("ProductChangedHistory", "SampleRequests");
 
                 entity.HasIndex(e => e.ChangedBy, "IX_ProductChangedHistory_ChangedBy");
 
@@ -1514,7 +2128,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             {
                 entity.HasKey(e => e.PurchaseOrderId).HasName("PK__Purchase__036BACA44B53DA7A");
 
-                entity.ToTable("PurchaseOrders", "inventory");
+                entity.ToTable("PurchaseOrders", "Orders");
 
                 entity.HasIndex(e => e.CompanyId, "IX_PurchaseOrders_CompanyId");
 
@@ -1525,15 +2139,21 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.HasIndex(e => e.UpdatedBy, "IX_PurchaseOrders_UpdatedBy");
 
                 entity.Property(e => e.PurchaseOrderId).ValueGeneratedNever();
-                entity.Property(e => e.DeliveryAddress).HasMaxLength(255);
+                //entity.Property(e => e.DeliveryAddress).HasMaxLength(255);
                 entity.Property(e => e.ExternalId).HasMaxLength(50);
                 entity.Property(e => e.OrderType).HasMaxLength(50);
-                entity.Property(e => e.PackageType).HasMaxLength(50);
-                entity.Property(e => e.PaymentDays).HasMaxLength(50);
-                entity.Property(e => e.RequestSourceType).HasMaxLength(50);
+                //entity.Property(e => e.PackageType).HasMaxLength(50);
+                //entity.Property(e => e.PaymentDays).HasMaxLength(50);
+                //entity.Property(e => e.RequestSourceType).HasMaxLength(50);
                 entity.Property(e => e.Status).HasMaxLength(50);
-                entity.Property(e => e.TotalPrice).HasPrecision(16, 2);
-                entity.Property(e => e.Vat).HasColumnName("VAT");
+
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+                //entity.Property(e => e.TotalPrice).HasPrecision(16, 2);
+                //entity.Property(e => e.Vat).HasColumnName("VAT");
+
+                entity.HasOne(d => d.PurchaseOrderSnapshot).WithMany()
+                    .HasForeignKey(d => d.PurchaseOrderSnapshotId)
+                    .HasConstraintName("FK_PurchaseOrders_PurchaseOrderSnapshot");
 
                 entity.HasOne(d => d.Company).WithMany(p => p.PurchaseOrders)
                     .HasForeignKey(d => d.CompanyId)
@@ -1554,16 +2174,30 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<PurchaseOrderDetail>(entity =>
             {
-                entity.HasKey(e => e.PurchaseOrderDetailId).HasName("PK__Purchase__5026B698A94EFE68");
+                entity.HasKey(e => e.PurchaseOrderDetailId).HasName("PK__Purchase__5026B698A94EFE60");
 
-                entity.ToTable("PurchaseOrderDetails", "inventory");
+
+                entity.Property(e => e.PurchaseOrderDetailId)
+                    .HasDefaultValueSql("gen_random_uuid()")
+                    .HasColumnName("PurchaseOrderDetailId");
+
+                entity.ToTable("PurchaseOrderDetails", "Orders");
 
                 entity.HasIndex(e => e.MaterialId, "IX_PurchaseOrderDetails_MaterialId");
 
                 entity.HasIndex(e => e.PurchaseOrderId, "IX_PurchaseOrderDetails_PurchaseOrderId");
 
                 entity.Property(e => e.Note).HasMaxLength(255);
-                entity.Property(e => e.Price).HasPrecision(18, 2);
+                entity.Property(e => e.TotalPriceAgreed).HasPrecision(18, 2);
+                entity.Property(e => e.BaseCostSnapshot).HasPrecision(18, 2);
+                entity.Property(e => e.UnitPriceAgreed).HasPrecision(18, 2);
+                entity.Property(e => e.RealQuantity).HasPrecision(18, 2);
+                entity.Property(e => e.RequestQuantity).HasPrecision(18, 2);
+
+                //entity.Property(e => e.ExternalId).HasColumnType("citext");
+                entity.Property(e => e.MaterialExternalIDSnapshot).HasColumnType("citext");
+                entity.Property(e => e.MaterialNameSnapshot).HasColumnType("citext");
+
 
                 entity.HasOne(d => d.Material).WithMany(p => p.PurchaseOrderDetails)
                     .HasForeignKey(d => d.MaterialId)
@@ -1576,46 +2210,86 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasConstraintName("FK_PurchaseOrderDetails_PurchaseOrderId");
             });
 
-            modelBuilder.Entity<PurchaseOrderDetailsMaterialDatum>(entity =>
+            modelBuilder.Entity<PurchaseOrderSnapshot>(entity =>
             {
-                entity.HasKey(e => e.PodetailId).HasName("PK__Purchase__4EB47B3EB8D4CA48");
+                entity.HasKey(e => e.PurchaseOrderSnapshotId).HasName("PK__PurchaseOrderSnapshot__5026B698A94EFE60");
 
-                entity.ToTable("PurchaseOrderDetails_material_data");
 
-                entity.HasIndex(e => e.DetailId, "IX_PurchaseOrderDetails_material_data_DetailID");
-
-                entity.HasIndex(e => e.MaterialId, "IX_PurchaseOrderDetails_material_data_MaterialId");
-
-                entity.HasIndex(e => e.Poid, "IX_PurchaseOrderDetails_material_data_POID");
-
-                entity.Property(e => e.PodetailId)
+                entity.Property(e => e.PurchaseOrderSnapshotId)
                     .HasDefaultValueSql("gen_random_uuid()")
-                    .HasColumnName("PODetailId");
-                entity.Property(e => e.DetailId).HasColumnName("DetailID");
-                entity.Property(e => e.Note)
-                    .HasColumnType("citext")
-                    .HasColumnName("note");
-                entity.Property(e => e.Poid).HasColumnName("POID");
-                entity.Property(e => e.UnitPrice).HasPrecision(18, 2);
+                    .HasColumnName("PurchaseOrderSnapshotId");
 
-                entity.HasOne(d => d.Detail).WithMany(p => p.PurchaseOrderDetailsMaterialData)
-                    .HasForeignKey(d => d.DetailId)
-                    .HasConstraintName("FK_PO_Detail_RequestDetail");
+                entity.ToTable("PurchaseOrderSnapshot", "Orders");
 
-                entity.HasOne(d => d.Material).WithMany(p => p.PurchaseOrderDetailsMaterialData)
-                    .HasForeignKey(d => d.MaterialId)
-                    .HasConstraintName("FK__PurchaseO__Mater__10216507");
+                entity.Property(e => e.TotalPrice).HasPrecision(18, 2);
 
-                entity.HasOne(d => d.Po).WithMany(p => p.PurchaseOrderDetailsMaterialData)
-                    .HasForeignKey(d => d.Poid)
-                    .HasConstraintName("FK__PurchaseOr__POID__30242045");
             });
+
+
+
+
+
+            modelBuilder.Entity<PurchaseOrderLink>(entity =>
+            {
+                entity.ToTable("PurchaseOrderLink", "Orders");
+                entity.HasKey(e => e.PurchaseOrderLinkId).HasName("PK__PurchaseOrderLink__5026B698A94EFE60");
+
+
+                entity.Property(e => e.PurchaseOrderLinkId)
+                    .HasDefaultValueSql("gen_random_uuid()")
+                    .HasColumnName("PurchaseOrderLinkId");
+
+                entity.HasOne(x => x.PurchaseOrder)
+                    .WithMany(o => o.PurchaseOrderLinks)
+                    .HasForeignKey(x => x.PurchaseOrderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(x => x.MerchandiseOrder)
+                    .WithMany(mo => mo.PurchaseOrderLinks)
+                    .HasForeignKey(x => x.MerchandiseOrderId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            //modelBuilder.Entity<PurchaseOrderDetailsMaterialDatum>(entity =>
+            //{
+            //    entity.HasKey(e => e.PodetailId).HasName("PK__Purchase__4EB47B3EB8D4CA48");
+
+            //    entity.ToTable("PurchaseOrderDetails_material_data");
+
+            //    entity.HasIndex(e => e.DetailId, "IX_PurchaseOrderDetails_material_data_DetailID");
+
+            //    entity.HasIndex(e => e.MaterialId, "IX_PurchaseOrderDetails_material_data_MaterialId");
+
+            //    entity.HasIndex(e => e.Poid, "IX_PurchaseOrderDetails_material_data_POID");
+
+            //    entity.Property(e => e.PodetailId)
+            //        .HasDefaultValueSql("gen_random_uuid()")
+            //        .HasColumnName("PODetailId");
+            //    entity.Property(e => e.DetailId).HasColumnName("DetailID");
+            //    entity.Property(e => e.Note)
+            //        .HasColumnType("citext")
+            //        .HasColumnName("note");
+            //    entity.Property(e => e.Poid).HasColumnName("POID");
+            //    entity.Property(e => e.UnitPrice).HasPrecision(18, 2);
+
+            //    entity.HasOne(d => d.Detail).WithMany(p => p.PurchaseOrderDetailsMaterialData)
+            //        .HasForeignKey(d => d.DetailId)
+            //        .HasConstraintName("FK_PO_Detail_RequestDetail");
+
+            //    entity.HasOne(d => d.Material).WithMany(p => p.PurchaseOrderDetailsMaterialData)
+            //        .HasForeignKey(d => d.MaterialId)
+            //        .HasConstraintName("FK__PurchaseO__Mater__10216507");
+
+            //    entity.HasOne(d => d.Po).WithMany(p => p.PurchaseOrderDetailsMaterialData)
+            //        .HasForeignKey(d => d.Poid)
+            //        .HasConstraintName("FK__PurchaseOr__POID__30242045");
+            //});
 
             modelBuilder.Entity<PurchaseOrderStatusHistory>(entity =>
             {
                 entity.HasKey(e => e.StatusHistoryId).HasName("PK__Purchase__DB973491370CD24F");
 
-                entity.ToTable("PurchaseOrderStatusHistory", "inventory");
+                entity.ToTable("PurchaseOrderStatusHistory", "Orders");
 
                 entity.HasIndex(e => e.EmployeeId, "IX_PurchaseOrderStatusHistory_EmployeeId");
 
@@ -1634,81 +2308,81 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasConstraintName("FK_PurchaseOrderStatusHistory_PurchaseOrderId");
             });
 
-            modelBuilder.Entity<PurchaseOrderStatusHistoryMaterialDatum>(entity =>
-            {
-                entity.HasKey(e => e.StatusHistoryId).HasName("PK__Purchase__DB9734917B73E8D7");
+            //modelBuilder.Entity<PurchaseOrderStatusHistoryMaterialDatum>(entity =>
+            //{
+            //    entity.HasKey(e => e.StatusHistoryId).HasName("PK__Purchase__DB9734917B73E8D7");
 
-                entity.ToTable("PurchaseOrderStatusHistory_material_data");
+            //    entity.ToTable("PurchaseOrderStatusHistory_material_data");
 
-                entity.HasIndex(e => e.Poid, "IX_PurchaseOrderStatusHistory_material_data_POID");
+            //    entity.HasIndex(e => e.Poid, "IX_PurchaseOrderStatusHistory_material_data_POID");
 
-                entity.Property(e => e.StatusHistoryId).HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.EmployeeId).HasColumnType("citext");
-                entity.Property(e => e.Note)
-                    .HasColumnType("citext")
-                    .HasColumnName("note");
-                entity.Property(e => e.Poid).HasColumnName("POID");
-                entity.Property(e => e.StatusFrom).HasColumnType("citext");
-                entity.Property(e => e.StatusTo).HasColumnType("citext");
+            //    entity.Property(e => e.StatusHistoryId).HasDefaultValueSql("gen_random_uuid()");
+            //    entity.Property(e => e.EmployeeId).HasColumnType("citext");
+            //    entity.Property(e => e.Note)
+            //        .HasColumnType("citext")
+            //        .HasColumnName("note");
+            //    entity.Property(e => e.Poid).HasColumnName("POID");
+            //    entity.Property(e => e.StatusFrom).HasColumnType("citext");
+            //    entity.Property(e => e.StatusTo).HasColumnType("citext");
 
-                entity.HasOne(d => d.Po).WithMany(p => p.PurchaseOrderStatusHistoryMaterialData)
-                    .HasForeignKey(d => d.Poid)
-                    .HasConstraintName("FK__PurchaseOr__POID__34E8D562");
-            });
+            //    entity.HasOne(d => d.Po).WithMany(p => p.PurchaseOrderStatusHistoryMaterialData)
+            //        .HasForeignKey(d => d.Poid)
+            //        .HasConstraintName("FK__PurchaseOr__POID__34E8D562");
+            //});
 
-            modelBuilder.Entity<PurchaseOrdersMaterialDatum>(entity =>
-            {
-                entity.HasKey(e => e.Poid).HasName("PK__Purchase__5F02A2F4EB754C0F");
+            //modelBuilder.Entity<PurchaseOrdersMaterialDatum>(entity =>
+            //{
+            //    entity.HasKey(e => e.Poid).HasName("PK__Purchase__5F02A2F4EB754C0F");
 
-                entity.ToTable("PurchaseOrders_material_data");
+            //    entity.ToTable("PurchaseOrders_material_data");
 
-                entity.HasIndex(e => e.EmployeeId, "IX_PurchaseOrders_material_data_EmployeeId");
+            //    entity.HasIndex(e => e.EmployeeId, "IX_PurchaseOrders_material_data_EmployeeId");
 
-                entity.HasIndex(e => e.SupplierId, "IX_PurchaseOrders_material_data_SupplierId");
+            //    entity.HasIndex(e => e.SupplierId, "IX_PurchaseOrders_material_data_SupplierId");
 
-                entity.Property(e => e.Poid)
-                    .HasDefaultValueSql("gen_random_uuid()")
-                    .HasColumnName("POID");
-                entity.Property(e => e.ContactName).HasColumnType("citext");
-                entity.Property(e => e.DeliveryAddress).HasColumnType("citext");
-                entity.Property(e => e.DeliveryContact).HasColumnType("citext");
-                entity.Property(e => e.EmployeeId).HasMaxLength(16);
-                entity.Property(e => e.GrandTotal).HasPrecision(18, 2);
-                entity.Property(e => e.InvoiceNote).HasColumnType("citext");
-                entity.Property(e => e.Note)
-                    .HasColumnType("citext")
-                    .HasColumnName("note");
-                entity.Property(e => e.Packaging).HasColumnType("citext");
-                entity.Property(e => e.PaymentTerm).HasColumnType("citext");
-                entity.Property(e => e.Pocode)
-                    .HasColumnType("citext")
-                    .HasColumnName("POCode");
-                entity.Property(e => e.RequiredDocuments).HasColumnType("citext");
-                entity.Property(e => e.RequiredDocumentsEng)
-                    .HasColumnType("citext")
-                    .HasColumnName("RequiredDocuments_Eng");
-                entity.Property(e => e.Status)
-                    .HasColumnType("citext")
-                    .HasColumnName("status");
-                entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
-                entity.Property(e => e.Vat).HasColumnName("VAT");
-                entity.Property(e => e.VendorAddress).HasColumnType("citext");
-                entity.Property(e => e.VendorPhone).HasColumnType("citext");
+            //    entity.Property(e => e.Poid)
+            //        .HasDefaultValueSql("gen_random_uuid()")
+            //        .HasColumnName("POID");
+            //    entity.Property(e => e.ContactName).HasColumnType("citext");
+            //    entity.Property(e => e.DeliveryAddress).HasColumnType("citext");
+            //    entity.Property(e => e.DeliveryContact).HasColumnType("citext");
+            //    entity.Property(e => e.EmployeeId).HasMaxLength(16);
+            //    entity.Property(e => e.GrandTotal).HasPrecision(18, 2);
+            //    entity.Property(e => e.InvoiceNote).HasColumnType("citext");
+            //    entity.Property(e => e.Note)
+            //        .HasColumnType("citext")
+            //        .HasColumnName("note");
+            //    entity.Property(e => e.Packaging).HasColumnType("citext");
+            //    entity.Property(e => e.PaymentTerm).HasColumnType("citext");
+            //    entity.Property(e => e.Pocode)
+            //        .HasColumnType("citext")
+            //        .HasColumnName("POCode");
+            //    entity.Property(e => e.RequiredDocuments).HasColumnType("citext");
+            //    entity.Property(e => e.RequiredDocumentsEng)
+            //        .HasColumnType("citext")
+            //        .HasColumnName("RequiredDocuments_Eng");
+            //    entity.Property(e => e.Status)
+            //        .HasColumnType("citext")
+            //        .HasColumnName("status");
+            //    entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
+            //    entity.Property(e => e.Vat).HasColumnName("VAT");
+            //    entity.Property(e => e.VendorAddress).HasColumnType("citext");
+            //    entity.Property(e => e.VendorPhone).HasColumnType("citext");
 
-                entity.HasOne(d => d.Employee).WithMany(p => p.PurchaseOrdersMaterialData)
-                    .HasForeignKey(d => d.EmployeeId)
-                    .HasConstraintName("FK__PurchaseO__Emplo__320C68B7");
+            //    entity.HasOne(d => d.Employee).WithMany(p => p.PurchaseOrdersMaterialData)
+            //        .HasForeignKey(d => d.EmployeeId)
+            //        .HasConstraintName("FK__PurchaseO__Emplo__320C68B7");
 
-                entity.HasOne(d => d.Supplier).WithMany(p => p.PurchaseOrdersMaterialData)
-                    .HasForeignKey(d => d.SupplierId)
-                    .HasConstraintName("FK__PurchaseO__Suppl__33008CF0");
-            });
+            //    entity.HasOne(d => d.Supplier).WithMany(p => p.PurchaseOrdersMaterialData)
+            //        .HasForeignKey(d => d.SupplierId)
+            //        .HasConstraintName("FK__PurchaseO__Suppl__33008CF0");
+            //});
 
             modelBuilder.Entity<PurchaseOrdersSchedule>(entity =>
             {
                 entity.HasKey(e => e.PurchaseOrdersScheduleId).HasName("PK__Purchase__658C1532BFBEF664");
 
-                entity.ToTable("PurchaseOrdersSchedules", "inventory");
+                entity.ToTable("PurchaseOrdersSchedules", "Orders");
 
                 entity.HasIndex(e => e.PurchaseOrderId, "IX_PurchaseOrdersSchedules_PurchaseOrderId");
 
@@ -1766,40 +2440,42 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasConstraintName("FK_SupplyRequest_RequestID");
             });
 
-            modelBuilder.Entity<RequestDetailMaterialDatum>(entity =>
-            {
-                entity.HasKey(e => e.DetailId).HasName("PK__RequestD__135C314D44B7445B");
 
-                entity.ToTable("RequestDetail_Material_data");
 
-                entity.HasIndex(e => e.RequestId, "IX_RequestDetail_Material_data_RequestID");
+            //modelBuilder.Entity<RequestDetailMaterialDatum>(entity =>
+            //{
+            //    entity.HasKey(e => e.DetailId).HasName("PK__RequestD__135C314D44B7445B");
 
-                entity.HasIndex(e => e.MaterialId, "IX_RequestDetail_Material_data_materialId");
+            //    entity.ToTable("RequestDetail_Material_data");
 
-                entity.Property(e => e.DetailId).HasColumnName("DetailID");
-                entity.Property(e => e.MaterialId).HasColumnName("materialId");
-                entity.Property(e => e.Note).HasColumnType("citext");
-                entity.Property(e => e.PurchasedQuantity).HasDefaultValue(0);
-                entity.Property(e => e.RequestId)
-                    .HasMaxLength(16)
-                    .HasColumnName("RequestID");
+            //    entity.HasIndex(e => e.RequestId, "IX_RequestDetail_Material_data_RequestID");
 
-                entity.HasOne(d => d.Material).WithMany(p => p.RequestDetailMaterialData)
-                    .HasForeignKey(d => d.MaterialId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_RequestDetail_Material");
+            //    entity.HasIndex(e => e.MaterialId, "IX_RequestDetail_Material_data_materialId");
 
-                entity.HasOne(d => d.Request).WithMany(p => p.RequestDetailMaterialData)
-                    .HasForeignKey(d => d.RequestId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_RequestDetail_Request");
-            });
+            //    entity.Property(e => e.DetailId).HasColumnName("DetailID");
+            //    entity.Property(e => e.MaterialId).HasColumnName("materialId");
+            //    entity.Property(e => e.Note).HasColumnType("citext");
+            //    entity.Property(e => e.PurchasedQuantity).HasDefaultValue(0);
+            //    entity.Property(e => e.RequestId)
+            //        .HasMaxLength(16)
+            //        .HasColumnName("RequestID");
+
+            //    entity.HasOne(d => d.Material).WithMany(p => p.RequestDetailMaterialData)
+            //        .HasForeignKey(d => d.MaterialId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_RequestDetail_Material");
+
+            //    entity.HasOne(d => d.Request).WithMany(p => p.RequestDetailMaterialData)
+            //        .HasForeignKey(d => d.RequestId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_RequestDetail_Request");
+            //});
 
             modelBuilder.Entity<SampleRequest>(entity =>
             {
                 entity.HasKey(e => e.SampleRequestId).HasName("PK__SampleRe__6F83B553A1A0D2A8");
 
-                entity.ToTable("SampleRequests", "labs");
+                entity.ToTable("SampleRequests", "SampleRequests");
 
                 entity.HasIndex(e => e.CompanyId, "IX_SampleRequests_CompanyId");
 
@@ -1811,6 +2487,8 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.HasIndex(e => e.ManagerBy, "IX_SampleRequests_ManagerBy");
 
+                entity.HasIndex(e => e.ManagerBy, "IX_SampleRequests_SendBy");
+
                 entity.HasIndex(e => e.ProductId, "IX_SampleRequests_ProductId");
 
                 entity.HasIndex(e => e.UpdatedBy, "IX_SampleRequests_UpdatedBy");
@@ -1820,6 +2498,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.ExpectedPrice).HasPrecision(18, 4);
                 entity.Property(e => e.ExternalId).HasMaxLength(50);
                 entity.Property(e => e.Image).HasMaxLength(255);
+                entity.Property(e => e.SendByNameSnapshot).HasMaxLength(255);
                 entity.Property(e => e.InfoType).HasMaxLength(100);
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
                 entity.Property(e => e.OtherComment).HasMaxLength(500);
@@ -1858,11 +2537,15 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.SampleRequestUpdatedByNavigations)
                     .HasForeignKey(d => d.UpdatedBy)
                     .HasConstraintName("FK_SampleRequests_UpdatedBy");
+
+                entity.HasOne(d => d.SendByNavigation).WithMany(p => p.SampleRequestSendByNavigations)
+                    .HasForeignKey(d => d.SendBy)
+                    .HasConstraintName("FK_SampleRequests_SendBy");
             });
 
             modelBuilder.Entity<SampleRequestImage>(entity =>
             {
-                entity.ToTable("SampleRequestImages", "labs");
+                entity.ToTable("SampleRequestImages", "SampleRequests");
                 entity.HasKey(e => e.SampleRequestImageId).HasName("PK__SampleRequestImage__3214EC07A98DEC4E");
 
                 entity.Property(e => e.SampleRequestImageId).HasDefaultValueSql("gen_random_uuid()");
@@ -1880,7 +2563,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             {
                 entity.HasKey(e => e.Id).HasName("PK__Schedual__3214EC07A98DEC4E");
 
-                entity.ToTable("SchedualMfg");
+                entity.ToTable("SchedualMfg", "Schedual");
 
                 entity.Property(e => e.Id).ValueGeneratedNever();
                 entity.Property(e => e.BagType).HasColumnType("citext");
@@ -1902,7 +2585,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             {
                 entity.HasKey(e => e.SupplierId).HasName("PK__Supplier__4BE666B4029CD1B8");
 
-                entity.ToTable("Suppliers", "inventory");
+                entity.ToTable("Suppliers", "Material");
 
                 entity.HasIndex(e => e.CompanyId, "IX_Suppliers_CompanyId");
 
@@ -1936,7 +2619,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             {
                 entity.HasKey(e => e.AddressId).HasName("PK__Supplier__091C2AFB0B8862E7");
 
-                entity.ToTable("SupplierAddresses", "inventory");
+                entity.ToTable("SupplierAddresses", "Material");
 
                 entity.HasIndex(e => e.SupplierId, "IX_SupplierAddresses_SupplierId");
 
@@ -1959,7 +2642,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             {
                 entity.HasKey(e => e.ContactId).HasName("PK__Supplier__5C66259B7A3571DD");
 
-                entity.ToTable("SupplierContacts", "inventory");
+                entity.ToTable("SupplierContacts", "Material");
 
                 entity.HasIndex(e => e.SupplierId, "IX_SupplierContacts_SupplierId");
 
@@ -1976,32 +2659,32 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasConstraintName("FK_SupplierContact_Supplier");
             });
 
-            modelBuilder.Entity<SuppliersMaterialDatum>(entity =>
-            {
-                entity.HasKey(e => e.SupplierId).HasName("PK__Supplier__DB8E62ED69C94CF3");
+            //modelBuilder.Entity<SuppliersMaterialDatum>(entity =>
+            //{
+            //    entity.HasKey(e => e.SupplierId).HasName("PK__Supplier__DB8E62ED69C94CF3");
 
-                entity.ToTable("Suppliers_material_data");
+            //    entity.ToTable("Suppliers_material_data");
 
-                entity.Property(e => e.SupplierId)
-                    .HasDefaultValueSql("gen_random_uuid()")
-                    .HasColumnName("supplierId");
-                entity.Property(e => e.ExternalId)
-                    .HasColumnType("citext")
-                    .HasColumnName("externalId");
-                entity.Property(e => e.Name).HasColumnType("citext");
-                entity.Property(e => e.Phone)
-                    .HasColumnType("citext")
-                    .HasColumnName("phone");
-                entity.Property(e => e.RegNo)
-                    .HasColumnType("citext")
-                    .HasColumnName("regNo");
-                entity.Property(e => e.TaxNo)
-                    .HasColumnType("citext")
-                    .HasColumnName("taxNo");
-                entity.Property(e => e.Website)
-                    .HasColumnType("citext")
-                    .HasColumnName("website");
-            });
+            //    entity.Property(e => e.SupplierId)
+            //        .HasDefaultValueSql("gen_random_uuid()")
+            //        .HasColumnName("supplierId");
+            //    entity.Property(e => e.ExternalId)
+            //        .HasColumnType("citext")
+            //        .HasColumnName("externalId");
+            //    entity.Property(e => e.Name).HasColumnType("citext");
+            //    entity.Property(e => e.Phone)
+            //        .HasColumnType("citext")
+            //        .HasColumnName("phone");
+            //    entity.Property(e => e.RegNo)
+            //        .HasColumnType("citext")
+            //        .HasColumnName("regNo");
+            //    entity.Property(e => e.TaxNo)
+            //        .HasColumnType("citext")
+            //        .HasColumnName("taxNo");
+            //    entity.Property(e => e.Website)
+            //        .HasColumnType("citext")
+            //        .HasColumnName("website");
+            //});
 
             modelBuilder.Entity<SupplyRequest>(entity =>
             {
@@ -2037,35 +2720,35 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasConstraintName("FK_SupplyRequest_UpdatedBy");
             });
 
-            modelBuilder.Entity<SupplyRequestsMaterialDatum>(entity =>
-            {
-                entity.HasKey(e => e.RequestId).HasName("PK__SupplyRe__33A8519AEED4B83E");
+            //modelBuilder.Entity<SupplyRequestsMaterialDatum>(entity =>
+            //{
+            //    entity.HasKey(e => e.RequestId).HasName("PK__SupplyRe__33A8519AEED4B83E");
 
-                entity.ToTable("SupplyRequests_Material_data");
+            //    entity.ToTable("SupplyRequests_Material_data");
 
-                entity.HasIndex(e => e.EmployeeId, "IX_SupplyRequests_Material_data_EmployeeID");
+            //    entity.HasIndex(e => e.EmployeeId, "IX_SupplyRequests_Material_data_EmployeeID");
 
-                entity.Property(e => e.RequestId)
-                    .HasMaxLength(16)
-                    .HasColumnName("RequestID");
-                entity.Property(e => e.EmployeeId)
-                    .HasMaxLength(16)
-                    .HasColumnName("EmployeeID");
-                entity.Property(e => e.Note).HasColumnType("citext");
-                entity.Property(e => e.NoteCancel).HasColumnType("citext");
-                entity.Property(e => e.RequestStatus).HasColumnType("citext");
+            //    entity.Property(e => e.RequestId)
+            //        .HasMaxLength(16)
+            //        .HasColumnName("RequestID");
+            //    entity.Property(e => e.EmployeeId)
+            //        .HasMaxLength(16)
+            //        .HasColumnName("EmployeeID");
+            //    entity.Property(e => e.Note).HasColumnType("citext");
+            //    entity.Property(e => e.NoteCancel).HasColumnType("citext");
+            //    entity.Property(e => e.RequestStatus).HasColumnType("citext");
 
-                entity.HasOne(d => d.Employee).WithMany(p => p.SupplyRequestsMaterialData)
-                    .HasForeignKey(d => d.EmployeeId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__SupplyReq__Emplo__6C190EBB");
-            });
+            //    entity.HasOne(d => d.Employee).WithMany(p => p.SupplyRequestsMaterialData)
+            //        .HasForeignKey(d => d.EmployeeId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK__SupplyReq__Emplo__6C190EBB");
+            //});
 
             modelBuilder.Entity<Unit>(entity =>
             {
                 entity.HasKey(e => e.UnitId).HasName("PK__Units__44F5ECB5E080D698");
 
-                entity.ToTable("Units", "inventory");
+                entity.ToTable("Units", "Material");
 
                 entity.HasIndex(e => e.CreatedBy, "IX_Units_CreatedBy");
 
@@ -2078,6 +2761,124 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.Units)
                     .HasForeignKey(d => d.CreatedBy)
                     .HasConstraintName("FK_Units_CreatedBy");
+            });
+
+            modelBuilder.Entity<WarehouseShelfStock>(entity =>
+            {
+                entity.HasKey(e => e.SlotId).HasName("PK__WarehouseShelfStock__3214EC07A98DEC4E");
+                entity.Property(x => x.SlotId).UseIdentityAlwaysColumn();
+
+                entity.ToTable("WarehouseShelfStock", "Warehouse");
+
+
+                entity.Property(x => x.SlotCode).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.Code).HasColumnType("citext").IsRequired();
+                entity.Property(x => x.BatchNo).HasMaxLength(50);
+                entity.Property(x => x.LotKey).HasColumnType("citext");
+                entity.Property(x => x.StockType).HasConversion<int>();
+                entity.Property(x => x.QtyKg).HasPrecision(18, 3);
+
+                entity.HasOne(d => d.Company).WithMany(p => p.WarehouseShelfStocks)
+                    .HasForeignKey(d => d.CompanyId)
+                    .HasConstraintName("FK_WarehouseShelfStock_Company");
+
+
+                entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.WarehouseShelfStockUpdatedByNavigations)
+                    .HasForeignKey(d => d.UpdatedBy)
+                    .HasConstraintName("FK_WarehouseShelfStock_UpdatedBy");
+
+                entity.HasIndex(x => new { x.CompanyId, x.Code });
+                entity.HasIndex(x => new { x.CompanyId, x.Code, x.LotKey });
+
+            });
+
+            modelBuilder.Entity<WarehouseRequest>(entity =>
+            {
+                entity.HasKey(e => e.RequestId).HasName("PK__WareHouseRequest__3214EC07A98DEC4E");
+               
+                entity.Property(x => x.RequestId).UseIdentityAlwaysColumn();
+
+
+                entity.ToTable("WarehouseRequest", "Warehouse");
+
+
+                entity.Property(x => x.RequestName).IsRequired();
+                entity.Property(x => x.CreatedBy).IsRequired();
+                entity.Property(x => x.ReqStatus);
+                
+                entity.Property(x => x.ReqType);
+
+                entity.HasOne(d => d.Company).WithMany(p => p.WarehouseRequests)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasForeignKey(d => d.CompanyId)
+                    .HasConstraintName("FK_WarehouseRequest_Company");
+
+                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.WarehouseRequestCreatedByNavigations)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasForeignKey(d => d.CreatedBy)
+                    .HasConstraintName("FK_WarehouseRequest_CreatedBy");
+
+                entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.WarehouseRequestUpdatedByNavigations)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasForeignKey(d => d.UpdatedBy)
+                    .HasConstraintName("FK_WarehouseRequest_UpdatedBy");
+
+            });
+
+            modelBuilder.Entity<WarehouseRequestDetail>(entity =>
+            {
+                entity.HasKey(e => e.DetailId).HasName("PK__WareHouseRequestDetail__3214EC07A98DEC4E");
+                entity.Property(x => x.DetailId).UseIdentityAlwaysColumn();
+
+                entity.HasIndex(e => e.RequestId, "IX_WarehouseRequestDetail_RequestCode");
+                entity.ToTable("WarehouseRequestDetail", "Warehouse");
+
+
+                entity.Property(x => x.WeightKg).HasPrecision(18, 3);
+
+                entity.HasOne(d => d.WarehouseRequest)
+                    .WithMany(p => p.WarehouseRequestDetails)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasForeignKey(d => d.RequestId)
+                    .HasConstraintName("FK_WarehouseRequestDetail_RequestId");
+
+            });
+
+           
+            modelBuilder.Entity<WarehouseTempStock>(entity =>
+            {
+                entity.HasKey(e => e.TempId).HasName("PK__WarehouseTempStock__3214EC07A98DEC4E");
+
+                entity.ToTable("WarehouseTempStock", "Warehouse");
+                entity.Property(x => x.TempId).UseIdentityAlwaysColumn(); // Postgres identity;
+
+
+                entity.Property(x => x.Code).HasColumnType("citext").IsRequired();
+                entity.Property(x => x.VaCode).HasColumnType("citext").IsRequired();
+                //entity.Property(x => x.VaLineCode).HasColumnType("citext");
+                entity.Property(x => x.LotKey).HasColumnType("citext");
+
+                //entity.Property(x => x.QtyStock).HasPrecision(18, 3);
+                entity.Property(x => x.QtyRequest).HasPrecision(18, 3);
+
+
+                // Enum = int (mặc định của EF) -> KHÔNG dùng HasConversion<string>()
+                //entity.Property(x => x.TempType).IsRequired();
+                entity.Property(x => x.ReserveStatus);
+
+
+                entity.HasOne(x => x.CreatedByNavigation)
+                    .WithMany()
+                    .HasForeignKey(x => x.CreatedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.WarehouseTempStockCreatedByNavigations)
+                    .HasForeignKey(d => d.CreatedBy)
+                    .HasConstraintName("FK_WarehouseTempStock_CreatedBy");
+
+                //entity.HasIndex(x => new { x.CompanyId, x.TempType, x.Code, x.LotKey });
+                entity.HasIndex(x => new { x.CompanyId, x.VaCode });
+                //entity.HasIndex(x => new { x.CompanyId, x.SnapshotSetId });
             });
         }
     }
