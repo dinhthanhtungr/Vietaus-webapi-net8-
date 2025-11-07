@@ -1,0 +1,19 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace VietausWebAPI.Core.Domain.Enums.Products
+{
+    public enum SampleRequestStatus
+    {
+        New,            // Mới
+        SampleReceived, // Nhận mẫu
+        InProgress,     // Đang xử lý
+        FirstSuccess,     // Xác nhận lần đâu
+        SampleSent,     // Gửi mẫu
+        Cancelled,      // Hủy
+        Completed        // Hoàn thành
+    }
+}

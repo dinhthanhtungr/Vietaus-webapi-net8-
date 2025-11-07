@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection.PortableExecutable;
 using System.Text;
@@ -12,15 +11,16 @@ using VietausWebAPI.Core.Application.Features.PurchaseFeatures.DTOs;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.DTOs.Material_warehouse;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.Queries;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.EventLogDtos;
+using VietausWebAPI.Core.Application.Features.TimelineFeature.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Domain.Enums;
+using VietausWebAPI.Core.Domain.Enums.Logs;
 using VietausWebAPI.Core.Domain.Enums.WareHouses;
 using VietausWebAPI.Core.Repositories_Contracts;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
-using static QuestPDF.Helpers.Colors;
 
 namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
 {
@@ -28,11 +28,13 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IExternalIdService _idService;
+        private readonly ITimelineService _TimelineService;
 
-        public PurchaseOrderService(IUnitOfWork unitOfWork, IExternalIdService idService)
+        public PurchaseOrderService(IUnitOfWork unitOfWork, IExternalIdService idService, ITimelineService timelineService)
         {
             _unitOfWork = unitOfWork;
             _idService = idService;
+            _TimelineService = timelineService;
         }
 
         /// <summary>
@@ -99,6 +101,8 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                     CreatedBy = req.CreatedBy,
                     PurchaseOrderSnapshotId = snapshot?.PurchaseOrderSnapshotId
                 };
+
+
 
                 await _unitOfWork.PurchaseOrderRepository.AddAsync(po, ct);
 

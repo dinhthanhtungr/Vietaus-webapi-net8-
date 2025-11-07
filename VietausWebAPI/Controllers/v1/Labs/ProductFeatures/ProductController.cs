@@ -32,5 +32,20 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.ProductFeatures
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetActionResultAsync([FromQuery] Guid query, CancellationToken ct = default)
+        {
+            try
+            {
+                var result = await _productService.GetInformationByIdAsync(query, ct);
+                return Ok(result);
+            }
+
+            catch(Exception ex)
+            {
+                return StatusCode(500, "Error Db API");
+            }
+        }
     }
 }

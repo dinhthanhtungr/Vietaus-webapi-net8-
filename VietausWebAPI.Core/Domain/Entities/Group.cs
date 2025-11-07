@@ -32,6 +32,7 @@ public partial class Group
     public virtual ICollection<CustomerTransferLog> CustomerTransferLogToGroups { get; set; } = new List<CustomerTransferLog>();
 
     public virtual ICollection<MemberInGroup> MemberInGroups { get; set; } = new List<MemberInGroup>();
+    public virtual ICollection<CustomerAssignment> CustomerAssignments { get; set; } = new List<CustomerAssignment>();
 
     public virtual Employee? UpdatedByNavigation { get; set; }
 }

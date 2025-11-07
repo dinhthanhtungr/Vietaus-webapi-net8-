@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas;
 using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOrders;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 
 namespace VietausWebAPI.Core.Application.Features.Manufacturing
 {
@@ -33,7 +34,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing
                 .ForMember(d => d.TotalQuantityRequest, opt => opt.MapFrom(s => s.MfgProductionOrder.TotalQuantityRequest))
                 .ForMember(d => d.ExternalId, opt => opt.MapFrom(s => s.ExternalId))
                 .ForMember(d => d.mfgProductionOrderId,
-                    o => o.MapFrom(s => s.mfgProductionOrderId))
+                    o => o.MapFrom(s => s.MfgProductionOrderId))
                 .ForMember(d => d.MfgExternalId,
                     o => o.MapFrom(s => s.MfgProductionOrder.ExternalId))
                 .ForMember(d => d.MerchandiseOrderExternalId,
@@ -146,7 +147,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing
 
             CreateMap<ManufacturingFormula, GetSampleMfgFormula>()
                 .ForMember(d => d.CreatedDate,
-                    opt => opt.MapFrom(s => s.createdDate));
+                    opt => opt.MapFrom(s => s.CreatedDate));
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 
 namespace VietausWebAPI.Core.Domain.Entities;
 

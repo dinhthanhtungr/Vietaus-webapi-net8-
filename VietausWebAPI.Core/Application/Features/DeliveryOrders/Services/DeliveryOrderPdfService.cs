@@ -197,38 +197,38 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
 
 
 
-                        var existedDeliveryStatuses = await _unitOfWork.MerchandiseOrderLogRepository
-                            .Query(track: false)
-                            .Where(log => poIds.Contains(log.MerchandiseOrderId)
-                                          && log.Status == MerchadiseStatus.Delivering.ToString())
-                            .Select(log => log.MerchandiseOrderId)
-                            .Distinct()
-                            .ToListAsync(ct);
+                        //var existedDeliveryStatuses = await _unitOfWork.MerchandiseOrderLogRepository
+                        //    .Query(track: false)
+                        //    .Where(log => poIds.Contains(log.MerchandiseOrderId)
+                        //                  && log.Status == MerchadiseStatus.Delivering.ToString())
+                        //    .Select(log => log.MerchandiseOrderId)
+                        //    .Distinct()
+                        //    .ToListAsync(ct);
 
-                        var needUpdatePoIds = poIds.Except(existedDeliveryStatuses).ToArray();
+                        //var needUpdatePoIds = poIds.Except(existedDeliveryStatuses).ToArray();
 
-                        if (needUpdatePoIds.Length > 0)
-                        {
-                            var allLogs = needUpdatePoIds.Select(id => new MerchandiseOrderLog
-                            {
-                                LogId = Guid.NewGuid(),
-                                MerchandiseOrderId = id,
-                                Status = MerchadiseStatus.Delivering.ToString(),
-                                Note = $"From DO {vm.ExternalId}",
-                                CreatedBy = vm.CreateBy,
-                                CreatedDate = now
-                            }).ToList();
+                        //if (needUpdatePoIds.Length > 0)
+                        //{
+                        //    var allLogs = needUpdatePoIds.Select(id => new MerchandiseOrderLog
+                        //    {
+                        //        LogId = Guid.NewGuid(),
+                        //        MerchandiseOrderId = id,
+                        //        Status = MerchadiseStatus.Delivering.ToString(),
+                        //        Note = $"From DO {vm.ExternalId}",
+                        //        CreatedBy = vm.CreateBy,
+                        //        CreatedDate = now
+                        //    }).ToList();
 
-                            // (tuỳ bạn) nếu muốn set PO → Delivering (idempotent, nhanh):
-                            await _unitOfWork.MerchandiseOrderRepository.Query(track: false)
-                                .Where(po => poIds.Contains(po.MerchandiseOrderId))
-                                .ExecuteUpdateAsync(s => s
-                                    .SetProperty(p => p.Status, _ => MerchadiseStatus.Delivering.ToString())
-                                    .SetProperty(p => p.UpdatedBy, _ => vm.CreateBy)
-                                    .SetProperty(p => p.UpdatedDate, _ => now), ct);
+                        //    // (tuỳ bạn) nếu muốn set PO → Delivering (idempotent, nhanh):
+                        //    await _unitOfWork.MerchandiseOrderRepository.Query(track: false)
+                        //        .Where(po => poIds.Contains(po.MerchandiseOrderId))
+                        //        .ExecuteUpdateAsync(s => s
+                        //            .SetProperty(p => p.Status, _ => MerchadiseStatus.Delivering.ToString())
+                        //            .SetProperty(p => p.UpdatedBy, _ => vm.CreateBy)
+                        //            .SetProperty(p => p.UpdatedDate, _ => now), ct);
 
-                            await _unitOfWork.MerchandiseOrderLogRepository.AddRangeAsync(allLogs, ct);
-                        }
+                        //    await _unitOfWork.MerchandiseOrderLogRepository.AddRangeAsync(allLogs, ct);
+                        //}
 
                         // 2) Tính các PO hoàn tất trong memory
                         var completed = MerchadiseStatus.Completed.ToString();
@@ -240,37 +240,37 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
 
 
                         // 3) Overwrite các PO này sang Completed
-                        var existedCompletedPoIds = await _unitOfWork.MerchandiseOrderLogRepository.Query(track: false)
-                            .Where(l => completedPoIds.Contains(l.MerchandiseOrderId)
-                                     && l.Status == MerchadiseStatus.Completed.ToString())
-                            .Select(l => l.MerchandiseOrderId)
-                            .Distinct()
-                            .ToListAsync(ct);
+                        //var existedCompletedPoIds = await _unitOfWork.MerchandiseOrderLogRepository.Query(track: false)
+                        //    .Where(l => completedPoIds.Contains(l.MerchandiseOrderId)
+                        //             && l.Status == MerchadiseStatus.Completed.ToString())
+                        //    .Select(l => l.MerchandiseOrderId)
+                        //    .Distinct()
+                        //    .ToListAsync(ct);
 
-                        var needCompletedLogPoIds = completedPoIds.Except(existedCompletedPoIds).ToArray();
+                        //var needCompletedLogPoIds = completedPoIds.Except(existedCompletedPoIds).ToArray();
 
-                        if (needCompletedLogPoIds.Length > 0)
-                        {
-                            var completedLogs = needCompletedLogPoIds.Select(id => new MerchandiseOrderLog
-                            {
-                                LogId = Guid.NewGuid(),
-                                MerchandiseOrderId = id,
-                                Status = MerchadiseStatus.Completed.ToString(),
-                                Note = $"Auto-completed from DO {vm.ExternalId}",
-                                CreatedBy = vm.CreateBy,
-                                CreatedDate = now
-                            }).ToList();
+                        //if (needCompletedLogPoIds.Length > 0)
+                        //{
+                        //    var completedLogs = needCompletedLogPoIds.Select(id => new MerchandiseOrderLog
+                        //    {
+                        //        LogId = Guid.NewGuid(),
+                        //        MerchandiseOrderId = id,
+                        //        Status = MerchadiseStatus.Completed.ToString(),
+                        //        Note = $"Auto-completed from DO {vm.ExternalId}",
+                        //        CreatedBy = vm.CreateBy,
+                        //        CreatedDate = now
+                        //    }).ToList();
 
 
-                            // (tuỳ bạn) nếu muốn set PO → Completed (idempotent, nhanh):
-                            await _unitOfWork.MerchandiseOrderRepository.Query(track: false)
-                                .Where(po => poIds.Contains(po.MerchandiseOrderId))
-                                .ExecuteUpdateAsync(s => s
-                                    .SetProperty(p => p.Status, _ => MerchadiseStatus.Completed.ToString())
-                                    .SetProperty(p => p.UpdatedBy, _ => vm.CreateBy)
-                                    .SetProperty(p => p.UpdatedDate, _ => now), ct);
-                            await _unitOfWork.MerchandiseOrderLogRepository.AddRangeAsync(completedLogs, ct);
-                        }
+                        //    // (tuỳ bạn) nếu muốn set PO → Completed (idempotent, nhanh):
+                        //    await _unitOfWork.MerchandiseOrderRepository.Query(track: false)
+                        //        .Where(po => poIds.Contains(po.MerchandiseOrderId))
+                        //        .ExecuteUpdateAsync(s => s
+                        //            .SetProperty(p => p.Status, _ => MerchadiseStatus.Completed.ToString())
+                        //            .SetProperty(p => p.UpdatedBy, _ => vm.CreateBy)
+                        //            .SetProperty(p => p.UpdatedDate, _ => now), ct);
+                        //    await _unitOfWork.MerchandiseOrderLogRepository.AddRangeAsync(completedLogs, ct);
+                        //}
                     }
 
                     // 2) Chỉ cập nhật khi CHƯA in lần nào

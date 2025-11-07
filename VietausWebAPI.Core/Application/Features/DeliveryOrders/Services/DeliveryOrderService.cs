@@ -755,7 +755,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
 
 
             // Nếu không truyền Id, lấy bản mới nhất theo CreateDate (tùy nhu cầu)
-            baseQ = baseQ.OrderByDescending(po => po.CreatedDate);
+            //baseQ = baseQ.OrderByDescending(po => po.CreatedDate);
 
             var dto = await baseQ
                 .Select(po => new GetDeliveryOrder

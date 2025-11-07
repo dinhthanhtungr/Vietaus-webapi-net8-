@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 
 namespace VietausWebAPI.Core.Domain.Entities;
 
@@ -7,9 +8,9 @@ public partial class Customer
 {
     public Guid CustomerId { get; set; }
 
-    public string? ExternalId { get; set; }
+    public string ExternalId { get; set; } = string.Empty;
 
-    public string? CustomerName { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
 
     public string? CustomerGroup { get; set; }
 
@@ -23,15 +24,15 @@ public partial class Customer
 
     public string? Website { get; set; }
 
-    public DateTime? CreatedDate { get; set; }
+    public DateTime CreatedDate { get; set; }
 
-    public Guid? CreatedBy { get; set; }
+    public Guid CreatedBy { get; set; }
 
     public DateTime? UpdatedDate { get; set; }
 
     public Guid? UpdatedBy { get; set; }
 
-    public Guid? CompanyId { get; set; }
+    public Guid CompanyId { get; set; }
 
     public DateTime? IssueDate { get; set; }
 
@@ -39,7 +40,7 @@ public partial class Customer
 
     public string? FaxNumber { get; set; }
 
-    public string? Product { get; set; }
+    //public string? Product { get; set; }
 
     public bool? IsActive { get; set; }
 

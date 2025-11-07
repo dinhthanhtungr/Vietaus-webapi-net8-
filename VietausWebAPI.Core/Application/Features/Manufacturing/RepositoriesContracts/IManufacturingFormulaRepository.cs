@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 
 namespace VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts
 {
@@ -21,6 +21,14 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesCont
         /// <param name="ct"></param>
         /// <returns></returns>
         Task AddAsync(ManufacturingFormula sampleRequest, CancellationToken ct = default);
+
+        /// <summary>
+        /// Tạo một nhóm mẫu mới vào cơ sở dữ liệu.
+        /// </summary>
+        /// <param name="sampleRequest"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task AddRangeAsync(IEnumerable<ManufacturingFormula> sampleRequests, CancellationToken ct = default);
 
         /// <summary>
         /// Kiểm tra xem mẫu có tồn tại hay không

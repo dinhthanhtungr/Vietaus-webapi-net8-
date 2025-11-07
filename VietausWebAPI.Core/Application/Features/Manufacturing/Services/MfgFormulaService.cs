@@ -13,11 +13,17 @@ using VietausWebAPI.Core.Application.Features.Manufacturing.Queries.MfgFormulas;
 using VietausWebAPI.Core.Application.Features.Manufacturing.Queries.MfgProductionOrders;
 using VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTOs;
+using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.EventLogDtos;
+using VietausWebAPI.Core.Application.Features.TimelineFeature.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 using VietausWebAPI.Core.Domain.Enums;
+using VietausWebAPI.Core.Domain.Enums.Formulas;
+using VietausWebAPI.Core.Domain.Enums.Logs;
+using VietausWebAPI.Core.Domain.Enums.Manufacturings;
 using VietausWebAPI.Core.Repositories_Contracts;
 
 namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
@@ -27,12 +33,14 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IExternalIdService _externalId;
+        private readonly ITimelineService _TimelineService;
 
-        public MfgFormulaService(IUnitOfWork unitOfWork, IMapper mapper, IExternalIdService externalId)
+        public MfgFormulaService(IUnitOfWork unitOfWork, IMapper mapper, IExternalIdService externalId, ITimelineService timelineService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _externalId = externalId;
+            _TimelineService = timelineService;
         }
 
         /// <summary>
@@ -82,7 +90,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
                 if (query.CompanyId is Guid cid && cid != Guid.Empty)
                 {
-                    qm = qm.Where(x => x.companyId == cid);
+                    qm = qm.Where(x => x.CompanyId == cid);
                     qr = qr.Where(x => x.CompanyId == cid);
                 }
 
@@ -95,8 +103,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 // 2) Hợp nguồn và ProjectTo DTO
                 IQueryable<GetSummaryMfgFormula> unified = query.Source switch
                 {
-                    FormulaSource.Production => qm.ProjectTo<GetSummaryMfgFormula>(_mapper.ConfigurationProvider),
-                    FormulaSource.Research => qr.ProjectTo<GetSummaryMfgFormula>(_mapper.ConfigurationProvider),
+                    FormulaSource.FromVA => qm.ProjectTo<GetSummaryMfgFormula>(_mapper.ConfigurationProvider),
+                    FormulaSource.FromVU => qr.ProjectTo<GetSummaryMfgFormula>(_mapper.ConfigurationProvider),
                     _ => qm.ProjectTo<GetSummaryMfgFormula>(_mapper.ConfigurationProvider)
                           .Union(qr.ProjectTo<GetSummaryMfgFormula>(_mapper.ConfigurationProvider))
                 };
@@ -187,7 +195,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
         /// <summary>
         /// Upsert (cập nhật hoặc bổ sung) **Công thức sản xuất** cho một Lệnh sản xuất.
         /// 
-        /// NGHIỆP VỤ & QUY TẮC KINH DOANH
+        /// NGHIỆP VỤ & QUY TẮC
         /// 1) Cho phép cập nhật các thuộc tính meta của công thức (Note, Source*, IsActive, IsSelect, IsStandard, Status…).
         /// 2) Quản lý **duy nhất 1 công thức IsSelect** trong phạm vi **một Lệnh sản xuất** (MfgProductionOrder).
         /// 3) Quản lý **duy nhất 1 công thức IsStandard** trong phạm vi **một VUFormula** (bộ công thức chuẩn).
@@ -217,39 +225,62 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 // 1) Load công thức sản xuất cần cập nhật (bao gồm cả materials)
                 var formulaExist = await _unitOfWork.ManufacturingFormulaRepository.Query(track: true)
                     .Include(f => f.ManufacturingFormulaMaterials)
+                    .Include(m => m.MfgProductionOrder)
                     .FirstOrDefaultAsync(f => f.ManufacturingFormulaId == req.ManufacturingFormulaId && f.IsActive == true, cancellationToken ?? default);
-
-
 
 
                 if (formulaExist == null) return OperationResult.Fail("Công thức không tồn tại");
 
-                // 2) Cập nhật trạng thái đơn hàng
+                // Lưu lại trước khi đổi để biết có thay đổi không
+                var oldFormulaStatus = formulaExist.Status;
+                var mfgOrderEntity = formulaExist.MfgProductionOrder;   // đã Include ở trên
+                var oldMfgStatus = mfgOrderEntity?.Status;
 
+                // 2) Cập nhật trạng thái đơn hàng
                 if (formulaExist.Status == ManufacturingProductOrder.New.ToString())
                 {
+                    var moId = formulaExist.MfgProductionOrder?.MerchandiseOrderId;
 
-                    var mfgProductionOrder = formulaExist.MfgProductionOrder;
-                    Guid? merchandiseOrderId = mfgProductionOrder?.MerchandiseOrderId;
-
-                    MerchandiseOrder? merchadiseExist = null;
-                    if (merchandiseOrderId != null && merchandiseOrderId != Guid.Empty)
+                    if (moId is Guid id && id != Guid.Empty)
                     {
-                        merchadiseExist = await _unitOfWork.MerchandiseOrderRepository.Query(track: true)
-                            .FirstOrDefaultAsync(m => m.MerchandiseOrderId == merchandiseOrderId, cancellationToken ?? default);
-                    }
 
-                    if (merchadiseExist != null)
-                    {
-                        merchadiseExist.Status = MerchadiseStatus.Processing.ToString();
+                        var affected = await _unitOfWork.MerchandiseOrderRepository.Query(track: true)
+                            .Where(m => m.MerchandiseOrderId == id
+                                     && m.IsActive
+                                     // tránh “hạ cấp” trạng thái:
+                                     && m.Status != MerchadiseStatus.Processing.ToString()
+                                     && m.Status != MerchadiseStatus.Completed.ToString()
+                                     && m.Status != MerchadiseStatus.Cancelled.ToString())
+                            .ExecuteUpdateAsync(s => s
+                                .SetProperty(m => m.Status, _ => MerchadiseStatus.Processing.ToString())
+                                .SetProperty(m => m.UpdatedBy, _ => /* actorId */ formulaExist.CreatedBy)
+                                .SetProperty(m => m.UpdatedDate, _ => now), cancellationToken ?? default);
+
+                        // chỉ log khi có thay đổi thực sự
+                        if (affected > 0)
+                        {
+                            await _TimelineService.AddEventLogAsync(new EventLogModels
+                            {
+                                employeeId = /* actorId */ formulaExist.CreatedBy,
+                                eventType = EventType.MerchadiseStatus,
+                                sourceId = id,
+                                sourceCode = formulaExist.MfgProductionOrder?.MerchandiseOrderExternalId ?? string.Empty,
+                                status = MerchadiseStatus.Processing.ToString(),
+                                note = "Auto set to Processing because first MFG is New"
+                            }, cancellationToken ?? default);
+                        }
                     }
                 }
+
 
 
                 PatchHelper.SetIfRef(req.Note, () => formulaExist.Note, v => formulaExist.Note = v);
 
 
-                PatchHelper.SetIfRef(req.SourceType, () => formulaExist.SourceType, v => formulaExist.SourceType = v);
+                if (!Equals(req.SourceType, formulaExist.SourceType))
+                {
+                    formulaExist.SourceType = req.SourceType;
+                }
                 
                 PatchHelper.SetIfRef(req.SourceManufacturingExternalIdSnapshot, () => formulaExist.SourceManufacturingExternalIdSnapshot, v => formulaExist.SourceManufacturingExternalIdSnapshot = v);                
                 PatchHelper.SetIf(req.SourceManufacturingFormulaId, () => formulaExist.SourceManufacturingFormulaId.GetValueOrDefault(), v => formulaExist.SourceManufacturingFormulaId = v);
@@ -267,10 +298,10 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     formulaExist.Status = ManufacturingProductOrderFormula.IsSelect.ToString();
 
                     // Đồng thời cập nhật trạng thái của Lệnh sản xuất là đã được chọn công thức
-                    var mfgOrderEntity = await _unitOfWork.MfgProductionOrderRepository.Query(track: true)
-                        .FirstOrDefaultAsync(o => o.MfgProductionOrderId == formulaExist.mfgProductionOrderId, cancellationToken ?? default);
+                    //var mfgOrderEntity = await _unitOfWork.MfgProductionOrderRepository.Query(track: true)
+                    //    .FirstOrDefaultAsync(o => o.MfgProductionOrderId == formulaExist.mfgProductionOrderId, cancellationToken ?? default);
 
-                    if (mfgOrderEntity != null /*&& (mfgOrderEntity.Status == ManufacturingProductOrder.New.ToString() || mfgOrderEntity.Status == ManufacturingProductOrder.QCFail.ToString())*/)
+                    if (mfgOrderEntity != null && (mfgOrderEntity.Status == ManufacturingProductOrder.New.ToString() || mfgOrderEntity.Status == ManufacturingProductOrder.QCFail.ToString()))
                     {
                         mfgOrderEntity.Status = ManufacturingProductOrder.QCChecked.ToString();
                     }
@@ -288,15 +319,15 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 // 5) Nếu đặt làm Standard → log lại
                 if (req.IsStandard)
                 {
-                    await _unitOfWork.ManufacturingFormulaLogRepository.AddAsync(new ManufacturingFormulaLog
-                    {
-                        ManufacturingFormulaId = formulaExist.ManufacturingFormulaId,
-                        Action = ManufacturingFormulaLogAction.SetStandard,
-                        Comment = req.noteWhyStandardChanged,
-                        PerformedDate = now,
-                        PerformedBy = req.UpdatedBy.GetValueOrDefault(),
-                        PerformedByNameSnapshot = "Created by system (ID from Lab)"
-                    }, cancellationToken ?? default);
+                    //await _unitOfWork.ManufacturingFormulaLogRepository.AddAsync(new ManufacturingFormulaLogAction
+                    //{
+                    //    ManufacturingFormulaId = formulaExist.ManufacturingFormulaId,
+                    //    Action = ManufacturingFormulaLogAction.SetStandard,
+                    //    Comment = req.noteWhyStandardChanged,
+                    //    PerformedDate = now,
+                    //    PerformedBy = req.UpdatedBy.GetValueOrDefault(),
+                    //    PerformedByNameSnapshot = "Created by system (ID from Lab)"
+                    //}, cancellationToken ?? default);
                 }
 
 
@@ -305,10 +336,10 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 if (req.IsSelect == true)
                 {
                     var ct = cancellationToken ?? default;
-                    var orderId = formulaExist.mfgProductionOrderId;
+                    var orderId = formulaExist.MfgProductionOrderId;
 
                     await _unitOfWork.ManufacturingFormulaRepository.Query(track: false)
-                        .Where(f => f.mfgProductionOrderId == orderId
+                        .Where(f => f.MfgProductionOrderId == orderId
                                     && f.ManufacturingFormulaId != formulaExist.ManufacturingFormulaId
                                     && (f.IsActive == true))
                         .ExecuteUpdateAsync(u => u.SetProperty(x => x.IsSelect, x => false), ct);
@@ -329,9 +360,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
                     formulaExist.IsStandard = true;
                 }
-
-
-
 
                 // 8) Quản lý danh sách vật tư (ManufacturingFormulaMaterials)
 
@@ -400,6 +428,26 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 formulaExist.UpdatedBy = req.UpdatedBy;
 
 
+                if (mfgOrderEntity != null)
+                {
+                    var newMfgStatus = mfgOrderEntity.Status;
+                    var statusChanged = oldMfgStatus != newMfgStatus;
+
+                    if (statusChanged)
+                    {
+                        // Log trạng thái MFG khi có thay đổi (ví dụ lên QCChecked)
+                        //await _TimelineService.AddEventLogAsync(new EventLogModels
+                        //{
+                        //    employeeId = (req.UpdatedBy ?? formulaExist.CreatedBy),
+                        //    eventType = EventType.ManufacturingProductOrder,
+                        //    sourceId = mfgOrderEntity.MfgProductionOrderId,
+                        //    sourceCode = mfgOrderEntity.ExternalId ?? string.Empty,
+                        //    status = newMfgStatus, // ví dụ: QCChecked
+                        //    note = $"MFG status changed: {oldMfgStatus} → {newMfgStatus} by formula {(req.IsSelect ? "selection" : "update")}"
+                        //}, cancellationToken ?? default);
+                    }
+                }
+
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
@@ -447,7 +495,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     if (req.IsSelect == true)
                 {
                     await _unitOfWork.ManufacturingFormulaRepository.Query(track: false)
-                        .Where(f => f.mfgProductionOrderId == req.mfgProductionOrderId && f.IsActive == true && f.IsSelect)
+                        .Where(f => f.MfgProductionOrderId == req.mfgProductionOrderId && f.IsActive == true && f.IsSelect)
                         .ExecuteUpdateAsync(u => u.SetProperty(x => x.IsSelect, x => false), ct);
 
 
@@ -503,8 +551,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     prefix => _unitOfWork.ManufacturingFormulaRepository.GetLatestExternalIdStartsWithAsync(prefix, guid)
                 );
 
-                formula.mfgProductionOrderId = req.mfgProductionOrderId;
-                formula.createdDate = now;
+                formula.MfgProductionOrderId = req.mfgProductionOrderId;
+                formula.CreatedDate = now;
 
                 formula.CreatedBy = req.CreatedBy;
 

@@ -29,6 +29,14 @@ namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.ProductF
         /// <param name="req"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<ProductDTO> CreateAsync(CreateProductRequest req, CancellationToken ct = default);
+        //Task<ProductDTO> CreateAsync(CreateProductRequest req, CancellationToken ct = default);
+
+        /// <summary>
+        /// Lấy thông tin chi tiết sản phẩm theo Id, kèm theo công thức được xác định chuẩn của sản phẩm đó
+        /// </summary>
+        /// <param name="productId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<GetProductInformation> GetInformationByIdAsync(Guid productId, CancellationToken ct = default);
     }
 }

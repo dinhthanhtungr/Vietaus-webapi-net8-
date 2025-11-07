@@ -10,7 +10,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.Cu
     public interface ICustomerAssignmentRepository
     {
         // Nếu cần đọc assignment
-        IQueryable<CustomerAssignment> Query();
+        IQueryable<CustomerAssignment> Query(bool track = false);
 
         // Cập nhật hàng loạt Employee/Group cho danh sách khách
         Task BulkTransferWithHistoryAsync(

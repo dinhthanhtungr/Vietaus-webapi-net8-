@@ -10,8 +10,10 @@ using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.FormulaFeature;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.FormulaFeatures;
 using VietausWebAPI.Core.Application.Shared.Helper;
+using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Enums.Products;
 using VietausWebAPI.Core.Repositories_Contracts;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
@@ -20,12 +22,22 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ICurrentUser _currentUser;
 
-        public FormulaService(IUnitOfWork unitOfWork, IMapper mapper)
+        public FormulaService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUser currentUser)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _currentUser = currentUser;
         }
+
+        /// <summary>
+        /// Tạo công thức mới cho sản phẩm (theo VU)
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         public async Task<OperationResult> CreateAsync(PostFormula req, CancellationToken ct = default)
         {
             if (req.ProductId == Guid.Empty) throw new ArgumentException("ProductId cannot be empty", nameof(req.ProductId));
@@ -93,6 +105,13 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
             }
         }
 
+        /// <summary>
+        /// Lấy danh sách công thức
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public async Task<PagedResult<GetFormula>> GetAllAsync(FormulaQuery query, CancellationToken ct = default)
         {
             try
@@ -131,7 +150,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                      .Take(query.PageSize);
 
                 // 👉 Projection tay để tính TotalPrice bằng giá gần nhất
-                var ms = _unitOfWork.MaterialsSupplierRepository.Query().AsNoTracking();
+                var ms = _unitOfWork.MaterialsSupplierRepository.Query();
 
                 var items = await q
                     .Where(f => f.FormulaMaterials.Any(a => a.IsActive == true)) // vẫn giữ rule active
@@ -149,52 +168,52 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                         IsSelect = f.IsSelect,
 
                         CheckDate = f.CheckDate,
-                        CheckNameSnapshot = f.CheckNameSnapshot,
+                        CheckNameSnapshot = f.CheckByNavigation != null ? f.CheckByNavigation.FullName : null,
                         SentDate = f.SentDate,
-                        SentByNameSnapshot = f.SentByNameSnapshot,
+                        SentByNameSnapshot = f.SentByNavigation != null ? f.SentByNavigation.FullName : null,
 
                         CreatedByName = f.CreatedByNavigation != null ? (f.CreatedByNavigation.FullName).Trim() : null,
                         
                         // ==== TÍNH TOTAL PRICE THEO RULE VA/VU ====
-                        TotalPrice =
-                            // 1) Thử lấy theo VA: chọn VA IsStandard gần nhất, rồi SUM vật tư của VA
-                            (
-                                f.ManufacturingFormulaSources
-                                 .Where(mf => mf.IsActive == true && mf.IsStandard == true)
-                                 .OrderByDescending(mf => (DateTime?)(mf.UpdatedDate ?? mf.createdDate))
-                                 .Select(mf => (decimal?)              // Ép về decimal? để dùng ??
-                                     mf.ManufacturingFormulaMaterials
-                                       .Where(mm => mm.IsActive == true)
-                                       .Select(mm =>
-                                           (mm.Quantity) *
-                                           (
-                                               ms.Where(s => s.MaterialId == mm.MaterialId && (s.IsActive ?? true))
-                                                 .OrderByDescending(s => (DateTime?)(s.UpdatedDate ?? s.CreateDate))
-                                                 .ThenByDescending(s => (s.IsPreferred ?? false))
-                                                 .Select(s => (decimal?)s.CurrentPrice)
-                                                 .FirstOrDefault() ?? 0m
-                                           )
-                                       ).Sum()
-                                 )
-                                 .FirstOrDefault()
-                            )
-                            // 2) Nếu không có VA chuẩn → fallback về VU (FormulaMaterials)
-                            ??
-                            (
-                                (decimal?)
-                                f.FormulaMaterials
-                                 .Where(m => m.IsActive == true)
-                                 .Select(m =>
-                                     (m.Quantity) *
-                                     (
-                                         ms.Where(s => s.MaterialId == m.MaterialId && (s.IsActive ?? true))
-                                           .OrderByDescending(s => (DateTime?)(s.UpdatedDate ?? s.CreateDate))
-                                           .ThenByDescending(s => (s.IsPreferred ?? false))
-                                           .Select(s => (decimal?)s.CurrentPrice)
-                                           .FirstOrDefault() ?? 0m
-                                     )
-                                 ).Sum()
-                            ),
+                        //TotalPrice =
+                        //    // 1) Thử lấy theo VA: chọn VA IsStandard gần nhất, rồi SUM vật tư của VA
+                        //    (
+                        //        f.ManufacturingFormulaSources
+                        //         .Where(mf => mf.IsActive == true && mf.IsStandard == true)
+                        //         .OrderByDescending(mf => (DateTime?)(mf.UpdatedDate ))
+                        //         .Select(mf => (decimal?)              // Ép về decimal? để dùng ??
+                        //             mf.ManufacturingFormulaMaterials
+                        //               .Where(mm => mm.IsActive == true)
+                        //               .Select(mm =>
+                        //                   (mm.Quantity) *
+                        //                   (
+                        //                       ms.Where(s => s.MaterialId == mm.MaterialId && (s.IsActive ?? true))
+                        //                         .OrderByDescending(s => (DateTime?)(s.UpdatedDate ?? s.CreateDate))
+                        //                         .ThenByDescending(s => (s.IsPreferred ?? false))
+                        //                         .Select(s => (decimal?)s.CurrentPrice)
+                        //                         .FirstOrDefault() ?? 0m
+                        //                   )
+                        //               ).Sum()
+                        //         )
+                        //         .FirstOrDefault()
+                        //    )
+                        //    // 2) Nếu không có VA chuẩn → fallback về VU (FormulaMaterials)
+                        //    ??
+                        //    (
+                        //        (decimal?)
+                        //        f.FormulaMaterials
+                        //         .Where(m => m.IsActive == true)
+                        //         .Select(m =>
+                        //             (m.Quantity) *
+                        //             (
+                        //                 ms.Where(s => s.MaterialId == m.MaterialId && (s.IsActive ?? true))
+                        //                   .OrderByDescending(s => (DateTime?)(s.UpdatedDate ?? s.CreateDate))
+                        //                   .ThenByDescending(s => (s.IsPreferred ?? false))
+                        //                   .Select(s => (decimal?)s.CurrentPrice)
+                        //                   .FirstOrDefault() ?? 0m
+                        //             )
+                        //         ).Sum()
+                        //    ),
 
                             materialFormulas = f.FormulaMaterials
                                 .Where(m => m.IsActive == true)
@@ -221,12 +240,19 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
             }
         }
 
+        /// <summary>
+        /// Cập nhật dữ liệu công thức
+        /// </summary>
+        /// <param name="patch"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<OperationResult> UpdateInformationAsync(PatchFormulaInformation patch, CancellationToken? cancellationToken = null)
         {
             await _unitOfWork.BeginTransactionAsync();
             try
             {
                 var now = DateTime.Now;
+                var userId = _currentUser.EmployeeId;
 
                 var formulaExist = await _unitOfWork.FormulaRepository.Query(track: true)
                     .FirstOrDefaultAsync(f => f.FormulaId == patch.FormulaId, cancellationToken ?? default);
@@ -237,39 +263,44 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                 if (formulaExist == null) return OperationResult.Fail("Công thức không tồn tại");
 
                 PatchHelper.SetIfRef(patch.Status, () => formulaExist.Status, v => formulaExist.Status = v);
-                PatchHelper.SetIfRef(patch.CheckNameSnapshot, () => formulaExist.CheckNameSnapshot, v => formulaExist.CheckNameSnapshot = v);
-                var isChangeCheckBy = PatchHelper.SetIf(patch.CheckBy, () => formulaExist.CheckBy.GetValueOrDefault(), v => formulaExist.CheckBy = v);
+
+                if (patch.CheckBy.HasValue)
+                {
+                    formulaExist.CheckDate = now;
+                    formulaExist.CheckBy = userId;
+                }
+
+                if (patch.SentBy.HasValue)
+                {
+                    formulaExist.SentDate = now;
+                    formulaExist.SentBy = userId;
+
+                    if (sampleRequestExist != null)
+                    {
+                        sampleRequestExist.RealDeliveryDate = now;
+                        sampleRequestExist.RealPriceQuoteDate = now;
+                    }
+                }
 
                 // Fix: Only access sampleRequestExist.SendBy if sampleRequestExist is not null
                 if (sampleRequestExist != null && formulaExist != null)
                 {
-                    var isChangeSendBy = PatchHelper.SetIf(patch.SentBy, () => sampleRequestExist.SendBy.GetValueOrDefault(), v => sampleRequestExist.SendBy = v);
+                    //var isChangeSendBy = PatchHelper.SetIf(patch.SentBy, () => sampleRequestExist.SendBy.GetValueOrDefault(), v => sampleRequestExist.SendBy = v);
 
-                    if (sampleRequestExist.Status == "InProgress")
+                    if (sampleRequestExist.Status == SampleRequestStatus.InProgress.ToString())
                     {
                         sampleRequestExist.ResponseDeliveryDate = now;
-                        sampleRequestExist.Status = "SampleSent";
-                        sampleRequestExist.SendByNameSnapshot = patch.SentByNameSnapshot;
-
+                        sampleRequestExist.Status = SampleRequestStatus.SampleSent.ToString();
+                        sampleRequestExist.SendBy = userId;
                     }
-                    var isChangeSendByFormula = PatchHelper.SetIf(patch.SentBy, () => formulaExist.SentBy.GetValueOrDefault(), v => formulaExist.SentBy = v);
-
-                    if (isChangeSendByFormula)
-                    {
-                        formulaExist.SentByNameSnapshot = patch.SentByNameSnapshot;
-                        //formulaExist.IsSelect = true;
-                        formulaExist.SentDate = now;
-                    }
-
                 }
 
-                if (isChangeCheckBy)
+                // Fix: Ensure formulaExist is not null before dereferencing
+                if (formulaExist != null)
                 {
-                    formulaExist.CheckDate = now;
+                    formulaExist.UpdatedDate = now;
+                    formulaExist.UpdatedBy = userId;
                 }
-
-                formulaExist.UpdatedDate = now;
-                formulaExist.UpdatedBy = patch.UpdatedBy;
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
@@ -283,6 +314,12 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
             }
         }
 
+        /// <summary>
+        /// Cập nhật dữ liệu về nghuyên vật liệu có ttrong công thức
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<OperationResult> UpsertFormulaAsync(PatchFormula req, CancellationToken? cancellationToken = null)
         {
             await _unitOfWork.BeginTransactionAsync();
@@ -318,7 +355,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                 SetIfRef(req.Name, () => formulaExist.Name, v => formulaExist.Name = v);
                 SetIfRef(req.Status, () => formulaExist.Status, v => formulaExist.Status = v ?? "Daft");
                 //SetIf(req.TotalPrice, () => formulaExist.TotalPrice.GetValueOrDefault(), v => formulaExist.TotalPrice = v);
-                SetIf(req.IsSelect, () => formulaExist.IsSelect.GetValueOrDefault(), v => formulaExist.IsSelect = v);
+                SetIf(req.IsSelect, () => formulaExist.IsSelect, v => formulaExist.IsSelect = v);
 
 
                 // 2) Cập nhật công thức vật tư - xóa thêm sửa
@@ -370,14 +407,14 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
 
                 // SOFT-DELETE: những dòng đang active nhưng không còn trong payload
                 var incomingIds = req.materialFormulas.Select(x => x.MaterialId).ToHashSet();
-                foreach (var old in formulaExist.FormulaMaterials.Where(x => x.IsActive.GetValueOrDefault() && !incomingIds.Contains(x.MaterialId)))
+                foreach (var old in formulaExist.FormulaMaterials.Where(x => x.IsActive && !incomingIds.Contains(x.MaterialId)))
                 {
                     old.IsActive = false;
                 }
 
                 // Cách an toàn nhất: bỏ qua req.TotalPrice, luôn tính theo dòng còn hiệu lực
                 formulaExist.TotalPrice = formulaExist.FormulaMaterials
-                    .Where(x => x.IsActive.GetValueOrDefault())              // nhớ lọc IsActive
+                    .Where(x => x.IsActive)              // nhớ lọc IsActive
                     .Sum(x => x.TotalPrice);
 
 

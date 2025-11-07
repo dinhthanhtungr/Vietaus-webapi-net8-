@@ -1,37 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
+using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 
- namespace VietausWebAPI.Core.Domain.Entities;
+namespace VietausWebAPI.Core.Domain.Entities;
 
 public partial class Formula
 {
     public Guid FormulaId { get; set; }
 
-    public string? ExternalId { get; set; }
-
-    public string? Name { get; set; }
-
+    public string ExternalId { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 
     public Guid ProductId { get; set; }
-
-    // Trạng thái hiện tại của công thức
     public string Status { get; set; } = "Draft";
-
 
     public Guid? CheckBy { get; set; }          // UNIQUEIDENTIFIER
     public DateTime? CheckDate { get; set; }       // DATETIME
-    public string? CheckNameSnapshot { get; set; }  // NVARCHAR
-
 
     public Guid? SentBy { get; set; }          // UNIQUEIDENTIFIER
     public DateTime? SentDate { get; set; }       // DATETIME
-    public string? SentByNameSnapshot { get; set; }  // NVARCHAR
 
-
-
-    public decimal? TotalPrice { get; set; }
-    public bool? IsSelect { get; set; }
-    public bool? IsActive { get; set; }
+    public decimal TotalPrice { get; set; } 
+    public bool IsSelect { get; set; } = false;
+    public bool IsActive { get; set; } = true;
     //public bool? IsCustomerSelect { get; set; }
 
     public string? Note { get; set; }
@@ -58,7 +49,7 @@ public partial class Formula
     public virtual Product Product { get; set; } = null!;
 
     public virtual ICollection<SampleRequest> SampleRequests { get; set; } = new List<SampleRequest>();
-    public virtual ICollection<FormulaStatusLog> StatusLogs { get; set; } = new List<FormulaStatusLog>();
+    //public virtual ICollection<FormulaStatusLog> StatusLogs { get; set; } = new List<FormulaStatusLog>();
     public virtual ICollection<MerchandiseOrderDetail> MerchandiseOrderDetails { get; set; } = new List<MerchandiseOrderDetail>();
     public virtual Employee? UpdatedByNavigation { get; set; }
     public virtual Employee? CheckByNavigation { get; set; }

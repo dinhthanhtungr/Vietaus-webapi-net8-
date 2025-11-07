@@ -5,6 +5,7 @@ using VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.OrderAttachment;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 
 namespace VietausWebAPI.Core.Application.Features.Sales
 {
@@ -55,11 +56,12 @@ namespace VietausWebAPI.Core.Application.Features.Sales
                 .ForMember(d => d.RegNo, opt => opt.MapFrom(s => s.RegistrationNumber))
                 .ForMember(d => d.Phone, opt => opt.MapFrom(s => s.Phone))
                 .ForMember(d => d.Group, opt => opt.MapFrom(s => s.CustomerGroup))
+
                 // DeliveryName: ưu tiên contact main, không có main thì lấy contact đầu
                 .ForMember(d => d.DeliveryName, o => o.MapFrom(s =>
                     s.Contacts != null && s.Contacts.Any()
                         ? s.Contacts
-                            .OrderByDescending(c => c.IsPrimary)       // nếu dùng IsPrimary/IsDefault thì đổi tên field
+                            .OrderByDescending(c => c.IsPrimary) // nếu dùng IsPrimary/IsDefault thì đổi tên field
                             .Select(c => ((c.FirstName ?? "") + " " + (c.LastName ?? "")).Trim())
                             .FirstOrDefault()
                         : null
@@ -70,21 +72,24 @@ namespace VietausWebAPI.Core.Application.Features.Sales
                     s.Addresses != null && s.Addresses.Any()
                         ? s.Addresses
                             .OrderByDescending(c => c.IsPrimary)
-                            .Select(c => c.AddressLine)                  // nếu địa chỉ nằm ở field khác thì đổi lại
+                            .Select(c => c.AddressLine) // nếu địa chỉ nằm ở field khác thì đổi lại
                             .FirstOrDefault()
                         : null
                 ))
 
+                // EmployeeId: Lấy EmployeeId từ CustomerAssignments nếu có
                 .ForMember(d => d.EmployeeId, opt => opt.MapFrom(s => s.CustomerAssignments
-                                                                            .Where(a => a.IsActive)
-                                                                            .Select(a => (Guid?)a.EmployeeId)
-                                                                            .FirstOrDefault()))
-                .ForMember(d => d.EmployeeName, opt => opt.MapFrom(s => s.CustomerAssignments
-                                                                            .Where(a => a.IsActive)
-                                                                            .Select(a => a.Employee.FullName)
-                                                                            .FirstOrDefault()));
+                    .Where(a => a.IsActive)
+                    .Select(a => (Guid?)a.EmployeeId)
+                    .FirstOrDefault()))
 
-                
+                // EmployeeName: Lấy tên nhân viên từ CustomerAssignments, dựa vào EmployeeId đã lấy ở trên
+                .ForMember(d => d.EmployeeName, opt => opt.MapFrom((s, d) =>
+                    s.CustomerAssignments
+                        .Where(a => a.IsActive && a.EmployeeId == d.EmployeeId) // Lọc theo EmployeeId
+                        .Select(a => a.Employee.FullName)
+                        .FirstOrDefault()));
+
 
             // Patch
             CreateMap<PatchCustomer, Customer>().ReverseMap();
@@ -115,7 +120,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales
 
             // OrderAttachment
 
-            CreateMap<OrderAttachment, OrderAttachmentDTO>().ReverseMap();
+            //CreateMap<OrderAttachment, OrderAttachmentDTO>().ReverseMap();
 
 
             // Mapper cho phần tạo lệnh sản xuất kèm theo đơn hàng bán
@@ -138,9 +143,9 @@ namespace VietausWebAPI.Core.Application.Features.Sales
                 .ForMember(d => d.CompanyId, o => o.Ignore())         // lấy từ token
                 .ForMember(d => d.IsActive, o => o.Ignore())
                 .ForMember(d => d.QcCheck, o => o.Ignore())
-                .ForMember(d => d.QualifiedQuantity, o => o.Ignore())
-                .ForMember(d => d.RejectedQuantity, o => o.Ignore())
-                .ForMember(d => d.WasteQuantity, o => o.Ignore())
+                //.ForMember(d => d.QualifiedQuantity, o => o.Ignore())
+                //.ForMember(d => d.RejectedQuantity, o => o.Ignore())
+                //.ForMember(d => d.WasteQuantity, o => o.Ignore())
                 // tất cả snapshot phải do server fill, không lấy từ client:
                 .ForMember(d => d.ProductExternalIdSnapshot, o => o.Ignore())
                 .ForMember(d => d.ProductNameSnapshot, o => o.Ignore())

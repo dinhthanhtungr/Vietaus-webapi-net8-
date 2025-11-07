@@ -20,7 +20,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRe
         /// <param name="req"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<OperationResult> CreateAsync(CreateSampleWithProductRequest req, CancellationToken ct = default);
+        Task<OperationResult<Guid>> CreateAsync(CreateSampleWithProductRequest req, CancellationToken ct = default);
 
         /// <summary>
         /// Lấy danh sách các yêu cầu mẫu với phân trang và lọc.

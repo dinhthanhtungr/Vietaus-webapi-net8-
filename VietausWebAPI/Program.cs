@@ -18,19 +18,22 @@ using System;
 using System.Text;
 using VietausWebAPI.Core.Application.Features.HR;
 using VietausWebAPI.Core.Application.Features.Labs;
-using VietausWebAPI.Core.Application.Features.Labs.Helpers;
 using VietausWebAPI.Core.Application.Features.Manufacturing;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures;
 using VietausWebAPI.Core.Application.Features.Planning;
 using VietausWebAPI.Core.Application.Features.Sales;
 using VietausWebAPI.Core.Application.Shared.Helper.FileStorage;
+using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
+using VietausWebAPI.Core.Application.Shared.Helper.Repository;
 using VietausWebAPI.Core.Identity;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Core.Service;
 using VietausWebAPI.Core.ServiceContracts;
+using VietausWebAPI.Infrastructure.Helpers.Repositories;
 using VietausWebAPI.Infrastructure.Repositories;
 using VietausWebAPI.WebAPI;
 using VietausWebAPI.WebAPI.DatabaseContext;
+using VietausWebAPI.WebAPI.Helpers;
 using VietausWebAPI.WebAPI.Hubs;
 
 
@@ -153,8 +156,13 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 .AddDefaultTokenProviders();
 
 
+
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
 
 // Thử nghiệp phải xóa đi kkhi build trương trình

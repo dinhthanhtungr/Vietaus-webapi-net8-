@@ -33,7 +33,9 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTO
         public string? ShippingMethod { get; set; }
         public string? PONo { get; set; }
 
+        public string? DeletedReason { get; set; }
+
         public DateTime? UpdatedDate { get; set; }
-        public Guid? UpdatedBy { get; set; }
+        public Guid UpdatedBy { get; set; }
     }
 }

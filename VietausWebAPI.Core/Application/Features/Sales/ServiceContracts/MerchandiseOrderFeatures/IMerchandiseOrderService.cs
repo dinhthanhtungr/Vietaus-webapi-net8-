@@ -17,7 +17,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.Merchan
         /// <param name="req"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<OperationResult> CreateAsync(PostMerchandiseOrder req, CancellationToken ct = default);
+        Task<OperationResult<Guid>> CreateAsync(PostMerchandiseOrder req, CancellationToken ct = default);
 
         /// <summary>
         /// Lấy danh sách đơn hàng với phân trang và lọc
@@ -45,7 +45,6 @@ namespace VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.Merchan
         /// <returns></returns>
         Task<OperationResult> UpdateInformationAsync(PatchMerchandiseOrderInformation req, CancellationToken ct = default);
 
-
         /// <summary>
         /// Lấy thông tin đơn hàng của khách hàng này theo lần bán gần nhất
         /// </summary>
@@ -53,5 +52,21 @@ namespace VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.Merchan
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<GetOldProductInformation?> GetLastMerchandiseOrderByCustomerIdAsync(Guid customerId, Guid productId, CancellationToken ct = default);
+
+        /// <summary>
+        /// Cập nhật trạng thái duyệt đơn hàngm
+        /// </summary>
+        /// <param name="guid"></param>
+        /// <returns></returns>
+        Task<OperationResult> UpdateApproveStatus(PatchMerchandiseOrderInformation query, CancellationToken ct = default);
+
+        /// <summary>
+        /// Xóa mềm đơn hàng
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<OperationResult> SoftDelete(PatchMerchandiseOrderInformation query, CancellationToken ct = default);
+
     }
 }

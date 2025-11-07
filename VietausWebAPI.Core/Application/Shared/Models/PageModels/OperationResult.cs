@@ -24,7 +24,13 @@ namespace VietausWebAPI.Core.Application.Shared.Models.PageModels
         public static OperationResult<T> Ok(T data, string? message = null)
             => new() { Success = true, Message = message, Data = data };
 
+        public static new OperationResult<T> Ok(string message)
+            => new() { Success = true, Message = message };
+
         public static new OperationResult<T> Fail(string message)
             => new() { Success = false, Message = message };
+
+        public static OperationResult<T> Fail(T? data, string message)
+            => new() { Success = false, Message = message, Data = data };
     }
 }

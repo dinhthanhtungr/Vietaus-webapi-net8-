@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
+using VietausWebAPI.Core.Application.Features.Attachments.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.FormulaFeatures;
@@ -10,6 +11,7 @@ using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.MerchandiseOrderFeatures;
+using VietausWebAPI.Core.Application.Features.TimelineFeature.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContracts;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Infrastructure.Repositories.Sales;
@@ -21,9 +23,17 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
     public class UnitOfWork : IUnitOfWork
     {
         private readonly ApplicationDbContext _context;
+
+
         /// <summary>
         /// Khai báo các repository
         /// </summary>
+        /// 
+
+        // Attachment
+        public IAttachmentCollectionRepository AttachmentCollectionRepository { get; }
+        public IAttachmentModelRepository AttachmentModelRepository { get; }
+
         public IEmployeesRepository EmployeesCommonRepository { get; }
         // HR
         public IEmployeesRepository EmployeesRepository { get; }
@@ -36,8 +46,8 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public ICustomerAssignmentRepository CustomerAssignmentRepository { get; }
         public ICustomerTransferLogRepository CustomerTransferLogRepository { get; }
         public IMerchandiseOrderRepository MerchandiseOrderRepository { get; }
-        public IMerchandiseOrderLogRepository MerchandiseOrderLogRepository { get; }
-        public IAttachmentRepository AttachmentRepository { get; }
+        //public IMerchandiseOrderLogRepository MerchandiseOrderLogRepository { get; }
+        //public IAttachmentRepository AttachmentRepository { get; }
         // Labs
         public IProductStandardRepository ProductStandardRepository { get; }
         public IProductInspectionRepository ProductInspectionRepository { get; }
@@ -46,7 +56,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IQCDetailRepository IQCDetailRepository { get; }
         public IProductRepository ProductRepository { get; }
         public ISampleRequestRepository SampleRequestRepository { get; }
-        public ISampleRequestImageRepository SampleRequestImageRepository { get; }
+        //public ISampleRequestImageRepository SampleRequestImageRepository { get; }
         public IFormulaRepository FormulaRepository { get; }
         public IFormulaMaterialRepository FormulaMaterialRepository { get; }
         // Planning
@@ -65,7 +75,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         // Manufacturing
         public IMfgProductionOrderRepository MfgProductionOrderRepository { get; }
         public IManufacturingFormulaMaterialRepository ManufacturingFormulaMaterialRepository { get; }
-        public IManufacturingFormulaLogRepository ManufacturingFormulaLogRepository { get; }
+        //public IManufacturingFormulaLogRepository ManufacturingFormulaLogRepository { get; }
         public IManufacturingFormulaRepository ManufacturingFormulaRepository { get; }
 
         // Warehouses
@@ -87,6 +97,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IPurchaseOrderDetailRepository PurchaseOrderDetailRepository { get; }
         public IPurchaseOrderSnapshotRepository PurchaseOrderSnapshotRepository { get; }
 
+
+        // Audit
+        public IEventLogRepository EventLogRepository { get; }
         /// <summary>
         /// Khởi tạo UnitOfWork
         /// </summary>
@@ -97,6 +110,8 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         /// <param name="inventoryReceiptsRepository"></param>
         /// <param name="employeesCommonRepository"></param>
         public UnitOfWork(ApplicationDbContext context
+            , IAttachmentCollectionRepository attachmentCollectionRepository
+            , IAttachmentModelRepository attachmentModelRepository
             , IEmployeesRepository employeesCommonRepository
             , IProductStandardRepository productStandardRepository
             , IProductInspectionRepository productInspectionRepository
@@ -114,7 +129,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             , IMemberInGroupRepository memberInGroupRepository
             , ISampleRequestRepository sampleRequestRepository
             , IProductRepository productRepository
-            , ISampleRequestImageRepository sampleRequestImageRepository
+            //, ISampleRequestImageRepository sampleRequestImageRepository
             , IMaterialRepository materialRepository
             , ISupplierRepository supplierRepository
             , ICategoryRepository categoryRepository
@@ -123,12 +138,12 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             , IFormulaRepository formulaRepository
             , IFormulaMaterialRepository formulaMaterialRepository
             , IMerchandiseOrderRepository merchandiseOrderRepository
-            , IMerchandiseOrderLogRepository merchandiseOrderLogRepository
-            , IAttachmentRepository attachmentRepository
+            //, IMerchandiseOrderLogRepository merchandiseOrderLogRepository
+            //, IAttachmentRepository attachmentRepository
             , IMfgProductionOrderRepository mfgProductionOrderRepository
             , IManufacturingFormulaMaterialRepository manufacturingFormulaMaterialRepository
             , IManufacturingFormulaRepository manufacturingFormulaRepository
-            , IManufacturingFormulaLogRepository manufacturingFormulaLogRepository
+            //, IManufacturingFormulaLogRepository manufacturingFormulaLogRepository
             , IWarehouseShelfStockRepository warehouseShelfStockRepository
             , IWarehouseTempStockRepository warehouseTempStockRepository
             , IWarehouseRequestDetailRepository warehouseRequestDetailRepository
@@ -141,11 +156,14 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             , IPurchaseOrderRepository purchaseOrderRepository
             , IPurchaseOrderDetailRepository purchaseOrderDetailRepository
             , IPurchaseOrderSnapshotRepository purchaseOrderSnapshotRepository
-
+            , IEventLogRepository eventLogRepository
             )
 
         {
             _context = context;
+            //Attachment
+            AttachmentCollectionRepository = attachmentCollectionRepository;
+            AttachmentModelRepository = attachmentModelRepository;
 
             // Labs
             ProductStandardRepository = productStandardRepository;
@@ -164,7 +182,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             MemberInGroupRepository = memberInGroupRepository;
             SampleRequestRepository = sampleRequestRepository;
             ProductRepository = productRepository;
-            SampleRequestImageRepository = sampleRequestImageRepository;
+            //SampleRequestImageRepository = sampleRequestImageRepository;
             MaterialRepository = materialRepository;
             SupplierRepository = supplierRepository;
             CategoryRepository = categoryRepository;
@@ -173,13 +191,13 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             FormulaRepository = formulaRepository;
             FormulaMaterialRepository = formulaMaterialRepository;
             MerchandiseOrderRepository = merchandiseOrderRepository;
-            MerchandiseOrderLogRepository = merchandiseOrderLogRepository;
-            AttachmentRepository = attachmentRepository;
+            //MerchandiseOrderLogRepository = merchandiseOrderLogRepository;
+            //AttachmentRepository = attachmentRepository;
 
             MfgProductionOrderRepository = mfgProductionOrderRepository;
             ManufacturingFormulaMaterialRepository = manufacturingFormulaMaterialRepository;
             ManufacturingFormulaRepository = manufacturingFormulaRepository;
-            ManufacturingFormulaLogRepository = manufacturingFormulaLogRepository;
+            //ManufacturingFormulaLogRepository = manufacturingFormulaLogRepository;
 
             WarehouseShelfStockRepository = warehouseShelfStockRepository;
             WarehouseTempStockRepository = warehouseTempStockRepository;
@@ -195,6 +213,8 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             PurchaseOrderRepository = purchaseOrderRepository;
             PurchaseOrderDetailRepository = purchaseOrderDetailRepository;
             PurchaseOrderSnapshotRepository = purchaseOrderSnapshotRepository;
+        
+            EventLogRepository = eventLogRepository;
         }
         /// <summary>
         /// Bắt đầu một transaction

@@ -33,8 +33,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProducti
         public decimal? RejectedQuantity { get; set; }
         public decimal? WasteQuantity { get; set; }
 
-        public DateTime? UpdatedDate { get; set; }
-        public Guid? UpdatedBy { get; set; }
+        public DateTime UpdatedDate { get; set; }
+        public Guid UpdatedBy { get; set; }
 
 
         public virtual ICollection<PatchMfgFormulaMaterial> ManufacturingFormulaMaterials { get; set; } = new List<PatchMfgFormulaMaterial>();

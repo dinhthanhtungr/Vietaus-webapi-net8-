@@ -13,8 +13,10 @@ using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.Sam
 using VietausWebAPI.Core.Application.Features.Labs.Queries.CreateSampleRequest;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRequestFeature;
 using VietausWebAPI.Core.Application.Shared.Helper;
+using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
 using VietausWebAPI.Core.Repositories_Contracts;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
@@ -24,79 +26,126 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
     {
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ICurrentUser _currentUser;
 
-        public SampleRequestService(IUnitOfWork unitOfWork, IMapper mapper)
+        public SampleRequestService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUser currentUser)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _currentUser = currentUser;
         }
 
-        public async Task<OperationResult> CreateAsync(CreateSampleWithProductRequest req, CancellationToken ct = default)
+        /// <summary>
+        /// Tạo mới yêu cầu mẫu kèm sản phẩm 
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public async Task<OperationResult<Guid>> CreateAsync(CreateSampleWithProductRequest req, CancellationToken ct = default)
         {
-            if(req.Sample.CompanyId == Guid.Empty) throw new ArgumentException("CompanyId cannot be empty", nameof(req.Sample.CompanyId));
-            if(req.Sample.CreatedBy == Guid.Empty) throw new ArgumentException("CreatedBy  cannot be empty", nameof(req.Sample.CreatedBy));
+            // lấy info từ user đăng nhập
+            var companyId = _currentUser.CompanyId;        // bạn tự xem ICurrentUser bạn đang expose thế nào
+            var userId = _currentUser.EmployeeId;           // hoặc EmployeeId
 
+            if (companyId == Guid.Empty)
+                throw new ArgumentException("CompanyId cannot be empty");
 
-            int affected = 0;
-                await using var tx = await _unitOfWork.BeginTransactionAsync();
+            // nếu client quên gửi sample thì báo luôn
+            if (req.Sample is null)
+                throw new ArgumentException("Sample payload is required", nameof(req.Sample));
+
+            await using var tx = await _unitOfWork.BeginTransactionAsync();
 
             try
             {
                 Guid productId;
 
-                req.Sample.ExternalId = await ExternalIdGenerator.GenerateCode(
-                    "TP",
-                    prefix => _unitOfWork.SampleRequestRepository.GetLatestExternalIdStartsWithAsync(prefix)
-                );
-                
-
-                // Case1:  Tạo mới sản phẩm
+                // ====== 1. Xử lý sản phẩm trước ======
                 if (req.ProductId.HasValue)
                 {
+                    // case 1: dùng product có sẵn
                     var exists = await _unitOfWork.ProductRepository.Query()
                         .AnyAsync(p => p.ProductId == req.ProductId.Value, ct);
 
-                    if (!exists) throw new ArgumentException("Product does not exist", nameof(req.ProductId));
+                    if (!exists)
+                        throw new ArgumentException("Product does not exist", nameof(req.ProductId));
+
                     productId = req.ProductId.Value;
                 }
-                // Case2: Tạo mới mẫu
                 else
                 {
+                    // case 2: tạo mới product
                     var product = _mapper.Map<Product>(req.Product);
-
-                    // (tuỳ chọn) nếu muốn đồng bộ tenant/audit với Sample:
-                    //product.CompanyId ??= req.Sample.CompanyId;
-                    //product.CreatedBy ??= req.Sample.CreatedBy;
+                    // nếu Product cũng có CompanyId thì gán luôn cho cùng tenant
+                    if (product.CompanyId == Guid.Empty)
+                        product.CompanyId = companyId;
 
                     await _unitOfWork.ProductRepository.AddAsync(product, ct);
-                    affected = await _unitOfWork.SaveChangesAsync();
+                    await _unitOfWork.SaveChangesAsync();   // để DB sinh PK
                     productId = product.ProductId;
                 }
 
-                // Tạo mới mẫu
+                // ====== 2. Map sang entity SampleRequest ======
                 var sample = _mapper.Map<SampleRequest>(req.Sample);
+
+                // ép các field hệ thống (override luôn data client gửi)
+                sample.CompanyId = companyId;
+                sample.BranchId = sample.BranchId; // nếu client gửi rồi thì giữ, không thì lấy từ user
+                sample.CreatedBy = userId;
+                sample.UpdatedBy = userId;
+                sample.CreatedDate = DateTime.Now;
+                sample.UpdatedDate = DateTime.Now;
+                sample.IsActive = true;
+                // status để client gửi cũng được, nhưng nếu muốn backend quyết thì:
+                if (string.IsNullOrWhiteSpace(sample.Status))
+                    sample.Status = "New";
+
+                // ====== 3. Tạo bucket đính kèm ======
+                var bucket = new AttachmentCollection
+                {
+                    AttachmentCollectionId = Guid.CreateVersion7(),
+                };
+                await _unitOfWork.AttachmentCollectionRepository.AddAsync(bucket, ct);
+                sample.AttachmentCollectionId = bucket.AttachmentCollectionId;
+
+                // ====== 4. Sinh ExternalId (theo prefix TP) ======
+                sample.ExternalId = await ExternalIdGenerator.GenerateCode(
+                    "TP",
+                    prefix => _unitOfWork.SampleRequestRepository.GetLatestExternalIdStartsWithAsync(prefix)
+                );
+
+                // gán product
                 sample.ProductId = productId;
 
+                // ====== 5. Thêm sample ======
+                // nếu bạn đang dùng “hybrid” id (DB cũng sinh được), đoạn này có thể KHÔNG set SampleRequestId
+                // còn nếu bạn muốn chủ động Guid v7 ở backend:
+                // sample.SampleRequestId = Guid.CreateVersion7();
+
                 await _unitOfWork.SampleRequestRepository.AddAsync(sample, ct);
-                affected = await _unitOfWork.SaveChangesAsync();
+                var affected = await _unitOfWork.SaveChangesAsync();
 
                 await tx.CommitAsync(ct);
 
+                // mình nghĩ trả về SampleRequestId hợp lý hơn kết dính bucket
                 return affected > 0
-                    ? OperationResult.Ok("Tạo thành công")
-                    : OperationResult.Fail("Thất bại.");
-
-
+                    ? OperationResult<Guid>.Ok(sample.AttachmentCollectionId, "Tạo đơn mẫu thành công")
+                    : OperationResult<Guid>.Fail("Thất bại.");
             }
-
             catch (Exception ex)
             {
                 await tx.RollbackAsync(ct);
-                return OperationResult.Fail($"Lỗi khi tạo {ex.Message}");
+                return OperationResult<Guid>.Fail($"Lỗi khi tạo: {ex.Message}");
             }
-
         }
 
+        /// <summary>
+        /// Xóa mềm mẫu theo điều kiện (thực chất là cập nhật IsActive = false)
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public async Task<OperationResult> DeleteSampleRequestAsync(Guid id)
         {
             await _unitOfWork.BeginTransactionAsync();
@@ -119,6 +168,13 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             }
         }
 
+        /// <summary>
+        /// Lấy danh sách mẫu với phân trang và lọc
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public async Task<PagedResult<SampleRequestSummaryDTO>> GetAllAsync(SampleRequestQuery query, CancellationToken ct = default)
         {
             try
@@ -165,6 +221,13 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             }
         }
 
+        /// <summary>
+        /// Trả về mẫu theo ID kèm sản phẩm và công thức (nếu có)
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public async Task<GetSampleWithProductRequest> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
             try
@@ -209,68 +272,162 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             }
         }
 
-        public async Task<OperationResult> UpdateSampleRequestAsync(UpdateSampleRequest sampleRequest, CancellationToken ct = default)
+        /// <summary>
+        /// Cập nhật yêu cầu phối mẫu và sản phẩm kèm theo
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<OperationResult> UpdateSampleRequestAsync(UpdateSampleRequest req, CancellationToken ct = default)
         {
             await _unitOfWork.BeginTransactionAsync();
+
             try
             {
-                //var res = _mapper.Map<SampleRequest>(sampleRequest);
+                var now = DateTime.Now;
 
-                // 1) Xử lý colourCode nếu có template
-                if (sampleRequest.Product?.ColourCode?.Contains('_') == true)
+                // 1) Lấy entity hiện có (track) + Product để patch
+                var existing = await _unitOfWork.SampleRequestRepository.Query(track: true)
+                    .Include(x => x.Product)
+                    .FirstOrDefaultAsync(x => x.SampleRequestId == req.SampleRequestId, ct);
+
+                if (existing == null)
+                    return OperationResult.Fail($"Không tìm thấy yêu cầu phối mẫu với ID {req.SampleRequestId}");
+
+                var userId = _currentUser.EmployeeId;           // hoặc EmployeeId
+                existing.UpdatedDate = now;
+
+                // 2) Nếu ColourCode là template thì phát sinh mã mới trước khi patch vào Product
+                if (req.Product?.ColourCode?.Contains('_') == true)
                 {
-                    sampleRequest.Product.ColourCode = await ExternalIdGenerator.GenerateCodeFromTemplateAsync(
-                        template: sampleRequest.Product.ColourCode,
+                    req.Product.ColourCode = await ExternalIdGenerator.GenerateCodeFromTemplateAsync(
+                        template: req.Product.ColourCode,
                         existingCodes: _unitOfWork.ProductRepository.Query().Select(p => p.ColourCode),
                         getLatestCodeFunc: _unitOfWork.ProductRepository.GetLatestProductStartsWithAsync,
                         padWidth: 3,
                         ct: ct);
                 }
 
+                // 3) Patch SampleRequest (chỉ những field cho phép)
+                PatchHelper.SetIf(req.CustomerId, () => existing.CustomerId, v => existing.CustomerId = v);
 
-                // 2) Cập nhật sản phẩm
-                var affected = await _unitOfWork.SampleRequestRepository.UpdateSampleRequestAsync(sampleRequest, ct);
+                PatchHelper.SetIf(req.RealDeliveryDate, () => existing.RealDeliveryDate.GetValueOrDefault(), v => existing.RealDeliveryDate = v);
+                PatchHelper.SetIf(req.RequestTestSampleDate, () => existing.RequestTestSampleDate.GetValueOrDefault(), v => existing.RequestTestSampleDate = v);
+                PatchHelper.SetIf(req.ExpectedDeliveryDate, () => existing.ExpectedDeliveryDate.GetValueOrDefault(), v => existing.ExpectedDeliveryDate = v);
+                PatchHelper.SetIf(req.RequestDeliveryDate, () => existing.RequestDeliveryDate.GetValueOrDefault(), v => existing.RequestDeliveryDate = v);
+                PatchHelper.SetIf(req.ResponseDeliveryDate, () => existing.ResponseDeliveryDate.GetValueOrDefault(), v => existing.ResponseDeliveryDate = v);
+                PatchHelper.SetIf(req.RealPriceQuoteDate, () => existing.RealPriceQuoteDate.GetValueOrDefault(), v => existing.RealPriceQuoteDate = v);
+                PatchHelper.SetIf(req.ExpectedPriceQuoteDate, () => existing.ExpectedPriceQuoteDate.GetValueOrDefault(), v => existing.ExpectedPriceQuoteDate = v);
 
+                PatchHelper.SetIfRef(req.AdditionalComment, () => existing.AdditionalComment, v => existing.AdditionalComment = v);
+                PatchHelper.SetIfRef(req.Status, () => existing.Status, v => existing.Status = v);
+                PatchHelper.SetIfRef(req.RequestType, () => existing.RequestType, v => existing.RequestType = v);
+                PatchHelper.SetIfNullable(req.ExpectedQuantity, () => existing.ExpectedQuantity, v => existing.ExpectedQuantity = v);
+                PatchHelper.SetIfNullable(req.ExpectedPrice, () => existing.ExpectedPrice, v => existing.ExpectedPrice = v);
+                PatchHelper.SetIfNullable(req.SampleQuantity, () => existing.SampleQuantity, v => existing.SampleQuantity = v);
+                PatchHelper.SetIfRef(req.OtherComment, () => existing.OtherComment, v => existing.OtherComment = v);
+                PatchHelper.SetIfRef(req.InfoType, () => existing.InfoType, v => existing.InfoType = v);
+                PatchHelper.SetIfRef(req.CustomerProductCode, () => existing.CustomerProductCode, v => existing.CustomerProductCode = v);
+                PatchHelper.SetIfNullable(req.FormulaId, () => existing.FormulaId, v => existing.FormulaId = v);
+                PatchHelper.SetIfRef(req.SaleComment, () => existing.SaleComment, v => existing.SaleComment = v);
+                PatchHelper.SetIf(req.BranchId, () => existing.BranchId, v => existing.BranchId = v);
+                PatchHelper.SetIfRef(req.Package, () => existing.Package, v => existing.Package = v);
 
-                // 3) Lấy thông tin công thức mà sale chọn trong yêu cầu phối mẫu (nếu có)
-                var formulaSelect = await _unitOfWork.FormulaRepository.Query()
-                    .Where(f => f.FormulaId == sampleRequest.FormulaId)
-                    .Select(f => new { f.FormulaId, f.ProductId })
-                    .SingleOrDefaultAsync(ct);
+                // 4) Patch Product (nếu có)
+                var product = existing.Product;
 
-                if (formulaSelect != null)
+                // fallback: nếu chưa Include được mà req có ProductId thì load riêng
+                if (product == null && req.ProductId.HasValue)
                 {
-                    // 4) Cập nhật công thức vào sản phẩm (nếu có)
-                    await _unitOfWork.FormulaRepository.Query()
-                        .Where(f => f.ProductId == formulaSelect.ProductId && f.FormulaId != formulaSelect.FormulaId)
-                        .ExecuteUpdateAsync(s => s.SetProperty(f => f.IsSelect, false), ct);
+                    product = await _unitOfWork.ProductRepository.Query(track: true)
+                        .FirstOrDefaultAsync(p => p.ProductId == req.ProductId.Value, ct);
 
-                    // 5) Bật công thức đang chọn
-                    await _unitOfWork.FormulaRepository.Query()
-                        .Where(f => f.FormulaId == formulaSelect.FormulaId)
-                        .ExecuteUpdateAsync(s => s.SetProperty(f => f.IsSelect, true), ct);
+                    if (product != null)
+                        existing.Product = product;
                 }
 
+                if (product != null && req.Product != null)
+                {
+
+                    product.UpdatedBy = userId;
+                    product.UpdatedDate = now;
+
+                    // Strings / refs
+                    PatchHelper.SetIfRef(req.Product.Requirement, () => product.Requirement, v => product.Requirement = v);
+                    PatchHelper.SetIfRef(req.Product.Name, () => product.Name, v => product.Name = v);
+                    PatchHelper.SetIfRef(req.Product.ColourCode, () => product.ColourCode, v => product.ColourCode = v);
+                    PatchHelper.SetIfRef(req.Product.ColourName, () => product.ColourName, v => product.ColourName = v);
+                    PatchHelper.SetIfRef(req.Product.ExpiryType, () => product.ExpiryType, v => product.ExpiryType = v);
+                    PatchHelper.SetIfRef(req.Product.LabComment, () => product.LabComment, v => product.LabComment = v);
+                    //PatchHelper.SetIfRef(req.Product.ProductType, () => product.ProductType, v => product.ProductType = v);
+                    PatchHelper.SetIfRef(req.Product.Procedure, () => product.Procedure, v => product.Procedure = v);
+                    PatchHelper.SetIfRef(req.Product.Application, () => product.Application, v => product.Application = v);
+                    PatchHelper.SetIfRef(req.Product.ProductUsage, () => product.ProductUsage, v => product.ProductUsage = v);
+                    PatchHelper.SetIfRef(req.Product.PolymerMatchedIn, () => product.PolymerMatchedIn, v => product.PolymerMatchedIn = v);
+                    PatchHelper.SetIfRef(req.Product.Code, () => product.Code, v => product.Code = v);
+                    PatchHelper.SetIfRef(req.Product.EndUser, () => product.EndUser, v => product.EndUser = v);
+                    PatchHelper.SetIfRef(req.Product.OtherComment, () => product.OtherComment, v => product.OtherComment = v);
+                    PatchHelper.SetIfRef(req.Product.Unit, () => product.Unit, v => product.Unit = v);
+
+                    // Value types (nullable)
+                    PatchHelper.SetIfNullable(req.Product.StorageCondition, () => product.StorageCondition, v => product.StorageCondition = v);
+                    PatchHelper.SetIfNullable(req.Product.UsageRate, () => product.UsageRate, v => product.UsageRate = v);
+                    PatchHelper.SetIfRef(req.Product.DeltaE, () => product.DeltaE, v => product.DeltaE = v);
+                    PatchHelper.SetIfNullable(req.Product.RecycleRate, () => product.RecycleRate, v => product.RecycleRate = v);
+                    PatchHelper.SetIfNullable(req.Product.TaicalRate, () => product.TaicalRate, v => product.TaicalRate = v);
+                    PatchHelper.SetIfNullable(req.Product.MaxTemp, () => product.MaxTemp, v => product.MaxTemp = v);
+                    PatchHelper.SetIfNullable(req.Product.Weight, () => product.Weight, v => product.Weight = v);
+
+                    // Flags / chuẩn kiểm
+                    PatchHelper.SetIf(req.Product.FoodSafety, () => product.FoodSafety, v => product.FoodSafety = v);
+                    PatchHelper.SetIf(req.Product.RohsStandard, () => product.RohsStandard, v => product.RohsStandard = v);
+                    PatchHelper.SetIfRef(req.Product.WeatherResistance, () => product.WeatherResistance, v => product.WeatherResistance = v);
+                    PatchHelper.SetIfRef(req.Product.LightCondition, () => product.LightCondition, v => product.LightCondition = v);
+                    PatchHelper.SetIfRef(req.Product.VisualTest, () => product.VisualTest, v => product.VisualTest = v);
+                    PatchHelper.SetIf(req.Product.ReturnSample, () => product.ReturnSample, v => product.ReturnSample = v);
+
+                    // Phân loại
+                    PatchHelper.SetIf(req.Product.CategoryId, () => product.CategoryId, v => product.CategoryId = v);
 
 
+                    if (!string.IsNullOrWhiteSpace(req.Product?.Name) && !req.CreatedBy.HasValue)
+                    {
+                        product.CreatedBy = userId;
+                    }
+                }
 
+                // 5) Lưu thay đổi entity đã track
+                await _unitOfWork.SaveChangesAsync();
+
+                // 6) Xử lý chọn công thức (IsSelect) nếu có FormulaId
+                if (req.FormulaId.HasValue)
+                {
+                    var formulaSelect = await _unitOfWork.FormulaRepository.Query()
+                        .Where(f => f.FormulaId == req.FormulaId.Value)
+                        .Select(f => new { f.FormulaId, f.ProductId })
+                        .SingleOrDefaultAsync(ct);
+
+                    if (formulaSelect != null)
+                    {
+                        await _unitOfWork.FormulaRepository.Query()
+                            .Where(f => f.ProductId == formulaSelect.ProductId && f.FormulaId != formulaSelect.FormulaId)
+                            .ExecuteUpdateAsync(s => s.SetProperty(f => f.IsSelect, false), ct);
+
+                        await _unitOfWork.FormulaRepository.Query()
+                            .Where(f => f.FormulaId == formulaSelect.FormulaId)
+                            .ExecuteUpdateAsync(s => s.SetProperty(f => f.IsSelect, true), ct);
+                    }
+                }
 
                 await _unitOfWork.CommitTransactionAsync();
-
-                await _unitOfWork.SaveChangesAsync();
-                return affected > 0
-                    ? OperationResult.Ok("Thay đổi thành công")
-                    : OperationResult.Fail("Thay đổi thất bại");
-
-
+                return OperationResult.Ok("Thay đổi thành công");
             }
-
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                throw new Exception($"Lỗi khi Thay đổi: {ex.Message}", ex);
+                return OperationResult.Fail($"Lỗi khi cập nhật: {ex.Message}");
             }
-
         }
+
     }
 }

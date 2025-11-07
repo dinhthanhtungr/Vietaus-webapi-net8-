@@ -22,11 +22,21 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
             _context = context;
         }
 
+        /// <summary>
+        /// Thêm một khách hàng mới
+        /// </summary>
+        /// <param name="customer"></param>
+        /// <returns></returns>
         public async Task AddNewCustomer(Customer customer)
         {
             await _context.Customers.AddAsync(customer);
         }
 
+        /// <summary>
+        /// Xóa mềm dữ liệu khách hàng này
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public async Task<bool> DeleteCustomerByIdAsync(Guid id)
         {
             var customer = await _context.Customers.FindAsync(id);
@@ -89,7 +99,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
                        IssueDate = c.IssueDate,
                        IssuedPlace = c.IssuedPlace,
                        FaxNumber = c.FaxNumber,
-                       Product = c.Product,
+                       //Product = c.Product,
                        //IsActive = c.IsActive,
                        // CreatedDate = c.CreatedDate,
                        // CreatedBy = c.CreatedBy,
@@ -170,9 +180,8 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
             existingCustomer.IssueDate = customer.IssueDate;
             existingCustomer.IssuedPlace = customer.IssuedPlace;
             existingCustomer.FaxNumber = customer.FaxNumber;
-            existingCustomer.Product = customer.Product;
             existingCustomer.TaxNumber = customer.TaxNumber;
-            existingCustomer.CompanyId = customer.CompanyId;
+            //existingCustomer.CompanyId = customer.CompanyId;
             existingCustomer.IsActive = customer.IsActive;
 
             // --- STEP 2: Cập nhật địa chỉ ---

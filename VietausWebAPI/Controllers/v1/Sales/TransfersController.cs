@@ -28,9 +28,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
 
         [HttpPost]
         [Authorize(Roles = "SaleUser")]
-        public async Task<ActionResult<TransferCustomerDTO>> Create(
-            [FromBody] TransferCustomersRequest req,
-            CancellationToken ct)
+        public async Task<ActionResult<TransferCustomerDTO>> Create([FromBody] TransferCustomersRequest req, CancellationToken ct)
         {
             var dto = await _svc.CreateTransferAsync(req, ct);
             return CreatedAtAction(nameof(Get), new { id = dto.Id }, dto);

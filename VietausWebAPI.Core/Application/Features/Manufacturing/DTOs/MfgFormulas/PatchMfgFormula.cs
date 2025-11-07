@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOrders;
+using VietausWebAPI.Core.Domain.Enums.Formulas;
 
 namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas
 {
@@ -19,7 +20,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas
         public string? Status { get; set; }
         public decimal? TotalPrice { get; set; }
 
-        public string? SourceType { get; set; }                     // "FromVA" hoặc "FromVU"
+        public FormulaSource SourceType { get; set; }                     // "FromVA" hoặc "FromVU"
 
         public Guid? SourceManufacturingFormulaId { get; set; }
         public string? SourceManufacturingExternalIdSnapshot { get; set; } // ví dụ: mã của nguồn lúc copy
@@ -32,8 +33,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas
         public bool IsStandard { get; set; }
         public string? Note { get; set; }
 
-        public DateTime? UpdatedDate { get; set; }
-        public Guid? UpdatedBy { get; set; }
+        public DateTime UpdatedDate { get; set; }
+        public Guid UpdatedBy { get; set; }
 
         public virtual ICollection<PatchMfgFormulaMaterial> ManufacturingFormulaMaterials { get; set; } = new List<PatchMfgFormulaMaterial>();
     }

@@ -19,9 +19,11 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
             _context = context;
         }
 
-        public IQueryable<CustomerAssignment> Query()
+
+        public IQueryable<CustomerAssignment> Query(bool track = false)
         {
-            return _context.CustomerAssignments.AsNoTracking();
+            var db = _context.CustomerAssignments.AsQueryable();
+            return track ? db : db.AsNoTracking();
         }
 
         public async Task BulkTransferWithHistoryAsync(
@@ -95,8 +97,6 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
             await _context.CustomerAssignments.AddRangeAsync(newRows, ct);
             // SaveChangesAsync do UnitOfWork gọi
         }
-
-
 
         public async Task PostCustomerAssignment(CustomerAssignment customerAssignment)
         {

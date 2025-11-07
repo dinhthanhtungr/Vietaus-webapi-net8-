@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
-using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 using VietausWebAPI.WebAPI.DatabaseContext;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing
@@ -23,6 +23,11 @@ namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing
         public async Task AddAsync(MfgProductionOrder mfgProductionOrder, CancellationToken ct = default)
         {
             await _context.MfgProductionOrders.AddAsync(mfgProductionOrder, ct);   
+        }
+
+        public async Task AddRangeAsync(IEnumerable<MfgProductionOrder> mfgProductionOrders, CancellationToken ct = default)
+        {
+            await _context.MfgProductionOrders.AddRangeAsync(mfgProductionOrders, ct);
         }
 
         public async Task<string?> GetLatestExternalIdStartsWithAsync(string prefix)

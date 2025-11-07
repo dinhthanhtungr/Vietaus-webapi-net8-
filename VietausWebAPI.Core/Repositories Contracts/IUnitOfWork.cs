@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Attachments.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.FormulaFeatures;
@@ -15,11 +16,16 @@ using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.MerchandiseOrderFeatures;
+using VietausWebAPI.Core.Application.Features.TimelineFeature.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContracts;
 namespace VietausWebAPI.Core.Repositories_Contracts
 {
     public interface IUnitOfWork : IDisposable
     {
+        //Attachment
+        IAttachmentModelRepository AttachmentModelRepository { get; }
+        IAttachmentCollectionRepository AttachmentCollectionRepository { get; }
+
         IEmployeesRepository EmployeesCommonRepository { get; }
 
         //HR
@@ -32,8 +38,8 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         ICustomerAssignmentRepository CustomerAssignmentRepository { get; }
         ICustomerTransferLogRepository CustomerTransferLogRepository { get; }
         IMerchandiseOrderRepository MerchandiseOrderRepository { get; }
-        IMerchandiseOrderLogRepository MerchandiseOrderLogRepository { get; }
-        IAttachmentRepository AttachmentRepository { get; }
+        //IMerchandiseOrderLogRepository MerchandiseOrderLogRepository { get; }
+        //IAttachmentRepository AttachmentRepository { get; }
         // Labs
         IProductStandardRepository ProductStandardRepository { get; }
         IProductInspectionRepository ProductInspectionRepository { get; }
@@ -44,7 +50,7 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         IFormulaMaterialRepository FormulaMaterialRepository { get; }
         //IMfgProductionOrdersPlanRepository MfgProductionOrdersPlanRepository { get; }
         IQCDetailRepository IQCDetailRepository { get; }
-        ISampleRequestImageRepository SampleRequestImageRepository { get; }
+        //ISampleRequestImageRepository SampleRequestImageRepository { get; }
 
         //Planning
         IScheduealRepository ScheduealRepository { get; }
@@ -65,7 +71,7 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         IManufacturingFormulaMaterialRepository ManufacturingFormulaMaterialRepository { get; }
         IManufacturingFormulaRepository ManufacturingFormulaRepository { get; }
 
-        IManufacturingFormulaLogRepository ManufacturingFormulaLogRepository { get; }
+        //IManufacturingFormulaLogRepository ManufacturingFormulaLogRepository { get; }
 
         // Warehouses
         IWarehouseShelfStockRepository WarehouseShelfStockRepository { get; }
@@ -84,6 +90,10 @@ namespace VietausWebAPI.Core.Repositories_Contracts
         IPurchaseOrderRepository PurchaseOrderRepository { get; }
         IPurchaseOrderDetailRepository PurchaseOrderDetailRepository { get; }
         IPurchaseOrderSnapshotRepository PurchaseOrderSnapshotRepository { get; }
+
+
+        // Audit
+        IEventLogRepository EventLogRepository { get; }
 
         // Thêm các repository khác nếu cần
         Task<IDbContextTransaction> BeginTransactionAsync();

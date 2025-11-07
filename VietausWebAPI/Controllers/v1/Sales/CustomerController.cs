@@ -91,20 +91,18 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
 
         [HttpGet("GetCustomerByEmployeeAssignment")]
         public async Task<IActionResult> GetCustomerByEmployeeAssignment(
-            bool isAdmin,
-            Guid employeeId,
-            Guid? customerId = null,
-            string? keyword = null ,
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 15,
+            [FromQuery] CustomerQuery query,
             CancellationToken ct = default)
         {
-            if (employeeId == Guid.Empty)
+            var result = await _customerService.GetCustomerByEmployeeAssignment(query, ct);
+            if (result != null)
             {
-                return BadRequest("Invalid employee ID.");
+                return Ok(result);
             }
-            var result = await _customerService.GetCustomerByEmployeeAssignment(isAdmin, employeeId, customerId , keyword,pageNumber, pageSize, ct);
-            return Ok(result);
+            else
+            {
+                return NotFound("No delivery orders found.");
+            }
         }
     }
 }

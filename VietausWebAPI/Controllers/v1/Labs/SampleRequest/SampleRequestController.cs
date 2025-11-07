@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.SampleRequest;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.CreateSampleRequest;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRequestFeature;
+using VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.MerchandiseOrderFeatures;
+using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
+using VietausWebAPI.WebAPI.Helpers;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.SampleRequest
 {
@@ -12,12 +15,12 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.SampleRequest
     public class SampleRequestController : Controller
     {
         private readonly ISampleRequestService _sampleRequestService;
-        private readonly ISampleRequestImageService _sampleRequestImageService;
+        private readonly ICurrentUser _CurrentUser;
 
-        public SampleRequestController(ISampleRequestService sampleRequestService, ISampleRequestImageService sampleRequestImageService)
+        public SampleRequestController(ISampleRequestService sampleRequestService, ICurrentUser currentUser)
         {
             _sampleRequestService = sampleRequestService;
-            _sampleRequestImageService = sampleRequestImageService;
+            _CurrentUser = currentUser;
         }
 
         /// <summary>
@@ -27,8 +30,6 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.SampleRequest
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost("Create")]
-        //[ProducesResponseType(typeof(SampleRequestDTO), StatusCodes.Status201Created)]
-        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateSampleRequest([FromBody] CreateSampleWithProductRequest request)
         {
             if (request == null)
@@ -38,11 +39,11 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.SampleRequest
             try
             {
                 var result = await _sampleRequestService.CreateAsync(request);
+
                 if (!result.Success)
-                {
-                    return BadRequest(result.Message);
-                }
-                return Ok(result);
+                    return BadRequest(result);        // body vẫn là OperationResult
+
+                return StatusCode(StatusCodes.Status201Created, result);
             }
             catch (ArgumentException ex)
             {
@@ -118,15 +119,20 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.SampleRequest
         }
 
         [HttpPatch]
-        public async Task<IActionResult> UpdateSampleRequest([FromBody] UpdateSampleRequest id, CancellationToken ct = default)
+        public async Task<IActionResult> UpdateSampleRequest([FromBody] UpdateSampleRequest request, CancellationToken ct = default)
         {
-            if (id.SampleRequestId == Guid.Empty)
+            if (request.SampleRequestId == Guid.Empty)
             {
                 return BadRequest("Invalid ID.");
             }
             try
             {
-                var result = await _sampleRequestService.UpdateSampleRequestAsync(id, default);
+                if(request.Status == "New")
+                {
+                    request.CreatedBy = _CurrentUser.EmployeeId;
+                }
+                request.UpdatedBy = _CurrentUser.EmployeeId;
+                var result = await _sampleRequestService.UpdateSampleRequestAsync(request, default);
                 if (!result.Success)
                 {
                     return BadRequest(result.Message);
@@ -140,19 +146,19 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.SampleRequest
             }
         }
 
-        [HttpPost("UploadImage/{sampleRequestId}")]
-        [RequestSizeLimit(50 * 1024 * 1024)] // Giới hạn kích thước upload tối đa 10MB
+        //[HttpPost("UploadImage/{sampleRequestId}")]
+        //[RequestSizeLimit(50 * 1024 * 1024)] // Giới hạn kích thước upload tối đa 10MB
 
-        public async Task<IActionResult> Upload(Guid sampleRequestId, IFormFile file, CancellationToken ct)
-        {
-            if (file is null || file.Length == 0) return BadRequest("File rỗng.");
-            var res = await _sampleRequestImageService.UploadAsync(sampleRequestId, file.FileName, file.ContentType, file.Length, file.OpenReadStream(), ct);
-            return Ok(res);
-        }
+        //public async Task<IActionResult> Upload(Guid sampleRequestId, IFormFile file, CancellationToken ct)
+        //{
+        //    if (file is null || file.Length == 0) return BadRequest("File rỗng.");
+        //    var res = await _sampleRequestImageService.UploadAsync(sampleRequestId, file.FileName, file.ContentType, file.Length, file.OpenReadStream(), ct);
+        //    return Ok(res);
+        //}
 
-        [HttpGet]
-        public Task<List<SampleRequestImageDto>> List(Guid sampleRequestId, CancellationToken ct)
-        => _sampleRequestImageService.ListAsync(sampleRequestId, ct);
+        //[HttpGet]
+        //public Task<List<SampleRequestImageDto>> List(Guid sampleRequestId, CancellationToken ct)
+        //=> _sampleRequestImageService.ListAsync(sampleRequestId, ct);
 
     }
 }

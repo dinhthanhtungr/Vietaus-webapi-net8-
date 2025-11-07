@@ -11,58 +11,55 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
     public class UpdateSampleRequest
     {
         public Guid SampleRequestId { get; set; }
+        public Guid? CustomerId { get; set; }
 
-        public string? ExternalId { get; set; }
+        public Guid? ManagerBy { get; set; }
 
-        public Guid CustomerId { get; set; }
-
-        public Guid ManagerBy { get; set; }
-
-        public Guid ProductId { get; set; }
+        public Guid? ProductId { get; set; }
+        public Guid? AttachmentCollectionId { get; set; }
 
         public DateTime? RealDeliveryDate { get; set; }
-        public DateTime? RequestTestSampleDate { get; set; }
         public DateTime? ExpectedDeliveryDate { get; set; }
+
         public DateTime? RequestDeliveryDate { get; set; }
+        public DateTime? RequestTestSampleDate { get; set; }
         public DateTime? ResponseDeliveryDate { get; set; }
 
         public DateTime? RealPriceQuoteDate { get; set; }
-
         public DateTime? ExpectedPriceQuoteDate { get; set; }
 
-        public string? AdditionalComment { get; set; }
-        public string? CustomerProductCode { get; set; }
-
-
-        public string? RequestType { get; set; }
+        public string? RequestType { get; set; } = string.Empty;
 
         public double? ExpectedQuantity { get; set; }
-
         public decimal? ExpectedPrice { get; set; }
-
         public double? SampleQuantity { get; set; }
 
         public string? OtherComment { get; set; }
-
         public string? InfoType { get; set; }
 
         public Guid? FormulaId { get; set; }
 
-        public string? Comment { get; set; }
+        public string? SaleComment { get; set; }
 
-        public string? Image { get; set; }
+        public string? AdditionalComment { get; set; } = string.Empty;
+        public string? CustomerProductCode { get; set; } = string.Empty;
 
-        public int? Branch { get; set; }
+        public Guid? BranchId { get; set; }
 
         public string? Status { get; set; }
 
-        public string? Package { get; set; }
+        public string? Package { get; set; } = string.Empty;
 
-        //public DateTime? CreatedDate { get; set; }
+        public DateTime? CreatedDate { get; set; }
 
         public Guid? CreatedBy { get; set; }
 
-        //public DateTime? UpdatedDate { get; set; }
+        public Guid? SendBy { get; set; }
+        public DateTime SendDate { get; set; }
+
+        public string? SendByNameSnapshot { get; set; }
+
+        public DateTime? UpdatedDate { get; set; }
 
         public Guid? UpdatedBy { get; set; }
 

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Enums;
+using VietausWebAPI.Core.Domain.Enums.Formulas;
 
 namespace VietausWebAPI.Core.Application.Features.Manufacturing.Queries.MfgFormulas
 {
@@ -16,6 +17,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Queries.MfgFormu
         public string? fromVuOrVa { get; set; }
         public DateTime? From { get; set; }
         public DateTime? To { get; set; }
-        public FormulaSource Source { get; set; } = FormulaSource.Production;
+        public FormulaSource Source { get; set; }
     }
 }

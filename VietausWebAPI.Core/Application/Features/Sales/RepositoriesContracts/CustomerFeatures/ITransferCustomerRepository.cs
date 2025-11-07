@@ -14,7 +14,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.Cu
     {
         //Task<PagedResult<CustomerTransferLog>> GetPageCustomerTransferLog(CustomerTransferQuery query);
         //Task<TransferCustomerDTO?> GetTransferApiDtoAsync(Guid logId, CancellationToken ct = default);
-        IQueryable<CustomerTransferLog> Query(); // base query
+        IQueryable<CustomerTransferLog> Query(bool track = false); // base query
         Task AddAsync(CustomerTransferLog log, CancellationToken ct = default);
 
     }

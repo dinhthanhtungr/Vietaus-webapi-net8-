@@ -5,9 +5,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.TransferCustomerDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.Querys;
 using VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.CustomerFeatures;
+using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Repositories_Contracts;
@@ -18,15 +20,28 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ICurrentUser _CurrentUser;
 
-        public TransferCustomerService(IUnitOfWork unitOfWork, IMapper mapper)
+        public TransferCustomerService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUser currentUser)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _CurrentUser = currentUser;
         }
 
+        /// <summary>
+        /// Tạo mới một lần chuyển khách hàng từ nhân viên này sang nhân viên khác
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentException"></exception>
         public async Task<TransferCustomerDTO> CreateTransferAsync(TransferCustomersRequest req, CancellationToken ct)
         {
+            req.CompanyId = _CurrentUser.CompanyId;
+            req.CreatedBy = _CurrentUser.EmployeeId;
+
             if (req == null) throw new ArgumentNullException(nameof(req));
             if (req.CustomerIds == null || req.CustomerIds.Count == 0)
                 throw new ArgumentException("CustomerIds is empty.", nameof(req.CustomerIds));
@@ -130,7 +145,12 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
             }
         }
 
-
+        /// <summary>
+        /// Lấy thông tin một lần chuyển khách hàng theo Id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         public async Task<TransferCustomerDTO?> GetTransferByIdAsync(Guid id, CancellationToken ct = default)
         {
             return await _unitOfWork.CustomerTransferLogRepository.Query()
@@ -177,101 +197,97 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                 .FirstOrDefaultAsync(ct);
         }
 
+        /// <summary>
+        /// Lấy danh sách các lần chuyển khách hàng theo bộ lọc trong query
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public async Task<PagedResult<TransferCustomerDTO>> GetTransfersAsync(CustomerTransferQuery query, CancellationToken ct = default)
         {
-            if (query.PageNumber <= 0) query.PageNumber = 1;
-            if (query.PageSize <= 0) query.PageSize = 15;
-
-            // 1) Base query
-            IQueryable<CustomerTransferLog> q = _unitOfWork.TransferCustomerRepository.Query();
-
-            // 2) Optional filter
-            if (query.CompanyId.HasValue)
-                q = q.Where(x => x.CompanyId == query.CompanyId.Value);
-
-            if (query.From.HasValue)
-                q = q.Where(x => x.CreatedDate >= query.From.Value);
-
-            if (query.To.HasValue)
-                q = q.Where(x => x.CreatedDate <= query.To.Value);
-
-            if (!string.IsNullOrWhiteSpace(query.Keyword))
+            try
             {
-                // Tìm theo tên/mã NV hoặc tên/mã khách trong batch
-                q = q.Where(x =>
-                    x.FromEmployee.FullName.Contains(query.Keyword) ||
-                    x.ToEmployee.FullName.Contains(query.Keyword) ||
-                    x.FromEmployee.ExternalId.Contains(query.Keyword) ||
-                    x.ToEmployee.ExternalId.Contains(query.Keyword) ||
-                    x.DetailCustomerTransfers.Any(d =>
-                        d.Customer.CustomerName.Contains(query.Keyword) ||
-                        d.Customer.ExternalId.Contains(query.Keyword)
-                    )
-                );
-            }
+                // Nếu là leader, lấy tất cả khách hàng thuộc group của leader
 
-            // 3) Sort
-            q = q.OrderByDescending(x => x.CreatedDate);
+                var groupId = await _unitOfWork.MemberInGroupRepository.Query()
+                    .Where(g => g.Profile == _CurrentUser.EmployeeId && g.IsAdmin == true && g.IsActive == true)
+                    .Select(g => g.GroupId)
+                    .FirstOrDefaultAsync(ct);
 
-            // 4) Total trước khi paging
-            int total = await q.CountAsync(ct);
-
-            // Remove the .AsSplitQuery() call, as it is not valid on IQueryable<TransferCustomerDTO>
-            // The correct usage is on the Entity Framework Core query before projection to DTOs.
-            // So, simply delete the following line from your code:
-
-            // .AsSplitQuery()   // tránh join nổ khi có collection
-
-            // The corrected code block should look like this:
-            List<TransferCustomerDTO> items = await q
-                .Skip((query.PageNumber - 1) * query.PageSize)
-                .Take(query.PageSize)
-                .Select(x => new TransferCustomerDTO
+                IQueryable<CustomerTransferLog> CustomerTransferLog = _unitOfWork.TransferCustomerRepository.Query();
+                
+                if (groupId != Guid.Empty)
                 {
-                    Id = x.Id,
-                    CreatedDate = x.CreatedDate,
-                    FromEmployee = new EmpLiteDto
-                    {
-                        Id = x.FromEmployee.EmployeeId,
-                        FullName = x.FromEmployee.FullName,
-                        Code = x.FromEmployee.ExternalId // đổi sang cột mã NV bạn dùng
-                    },
-                    ToEmployee = new EmpLiteDto
-                    {
-                        Id = x.ToEmployee.EmployeeId,
-                        FullName = x.ToEmployee.FullName,
-                        Code = x.ToEmployee.ExternalId
-                    },
+                    CustomerTransferLog = CustomerTransferLog
+                        .Where(t => t.FromGroupId == groupId || t.ToGroupId == groupId);
+                }
 
-                    FromGroup = new GroupLiteDto
-                    {
-                        Id = x.FromGroup.GroupId,
-                        Name = x.FromGroup.Name,
-                        Code = x.FromGroup.ExternalId // nếu có mã nhóm
-                    },
+                // Áp dụng lọc từ query
+                if (query.From.HasValue)
+                {
+                    CustomerTransferLog = CustomerTransferLog
+                        .Where(t => t.CreatedDate >= query.From.Value);
+                }
 
-                    ToGroup = new GroupLiteDto
-                    {
-                        Id = x.ToGroup.GroupId,
-                        Name = x.ToGroup.Name,
-                        Code = x.ToGroup.ExternalId // nếu có mã nhóm
-                    },
-                    Note = x.Note,
+                if (query.To.HasValue)
+                {
+                    CustomerTransferLog = CustomerTransferLog
+                        .Where(t => t.CreatedDate <= query.To.Value);
+                }
 
-                    Customers = x.DetailCustomerTransfers
-                        .Select(d => new CustomerLiteDto
+                var totalItems = await CustomerTransferLog.CountAsync(ct);
+                var items = await CustomerTransferLog
+                    .OrderByDescending(t => t.CreatedDate)
+                    .Skip((query.PageNumber - 1) * query.PageSize)
+                    .Take(query.PageSize)
+                    .Select(x => new TransferCustomerDTO
+                    {
+                        Id = x.Id,
+                        CreatedDate = x.CreatedDate,
+                        FromEmployee = new EmpLiteDto
                         {
-                            Id = d.CustomerId,
-                            ExternalId = d.Customer.ExternalId,   // mã KH
-                            Name = d.Customer.CustomerName
-                        })
-                        .ToList()
-                })
-                .AsNoTracking()
-                .ToListAsync(ct);
+                            Id = x.FromEmployeeId,
+                            FullName = x.FromEmployee.FullName,
+                            Code = x.FromEmployee.ExternalId
+                        },
+                        ToEmployee = new EmpLiteDto
+                        {
+                            Id = x.ToEmployeeId,
+                            FullName = x.ToEmployee.FullName,
+                            Code = x.ToEmployee.ExternalId
+                        },
+                        FromGroup = x.FromGroup != null ? new GroupLiteDto
+                        {
+                            Id = x.FromGroup.GroupId,
+                            Name = x.FromGroup.Name,
+                            Code = x.FromGroup.ExternalId // nếu có mã nhóm
+                        } : null,
+                        ToGroup = x.ToGroup != null ? new GroupLiteDto
+                        {
+                            Id = x.ToGroup.GroupId,
+                            Name = x.ToGroup.Name,
+                            Code = x.ToGroup.ExternalId // nếu có mã nhóm
+                        } : null,
+                        Note = x.Note,
+                        Customers = x.DetailCustomerTransfers
+                            .Select(d => new CustomerLiteDto
+                            {
+                                Id = d.CustomerId,
+                                ExternalId = d.Customer.ExternalId,
+                                Name = d.Customer.CustomerName
+                            })
+                            .ToList()
+                    })
+                    .AsNoTracking()
+                    .ToListAsync(ct);
 
-            // 6) Kết quả chuẩn theo model của bạn
-            return new PagedResult<TransferCustomerDTO>(items, total, query.PageNumber, query.PageSize);
+                return new PagedResult<TransferCustomerDTO>(items, totalItems, query.PageNumber, query.PageSize);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi lấy danh sách khách hàng: {ex.Message}", ex);
+            }
         }
     }
 }

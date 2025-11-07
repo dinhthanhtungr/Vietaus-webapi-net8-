@@ -23,7 +23,7 @@ public partial class CustomerAssignment
 
     public Guid CompanyId { get; set; }
 
-    public bool IsActive { get; set; }
+    public bool IsActive { get; set; } = true;
 
     public virtual Company Company { get; set; } = null!;
 
@@ -34,4 +34,6 @@ public partial class CustomerAssignment
     public virtual Employee Employee { get; set; } = null!;
 
     public virtual Employee UpdatedByNavigation { get; set; } = null!;
+
+    public virtual Group Group { get; set; } = null!;
 }

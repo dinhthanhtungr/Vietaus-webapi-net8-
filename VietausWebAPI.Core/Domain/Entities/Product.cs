@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 
- namespace VietausWebAPI.Core.Domain.Entities;
+namespace VietausWebAPI.Core.Domain.Entities;
 
 public partial class Product
 {
@@ -17,7 +18,7 @@ public partial class Product
 
     public double? UsageRate { get; set; }
 
-    public double? DeltaE { get; set; }
+    public string? DeltaE { get; set; }
 
     public string? Requirement { get; set; }
 
@@ -27,7 +28,7 @@ public partial class Product
 
     public string? LabComment { get; set; }
 
-    public string? ProductType { get; set; }
+    //public string? ProductType { get; set; }
 
     public string? Procedure { get; set; }
 
@@ -45,9 +46,10 @@ public partial class Product
 
     public string? EndUser { get; set; }
 
-    public bool? FoodSafety { get; set; }
+    public bool FoodSafety { get; set; } = false;
 
-    public bool? RohsStandard { get; set; }
+    public bool RohsStandard { get; set; } = false;
+    public bool ReachStandard { get; set; } = false;
 
     public double? MaxTemp { get; set; }
 
@@ -57,18 +59,18 @@ public partial class Product
 
     public string? VisualTest { get; set; }
 
-    public bool? ReturnSample { get; set; }
-    public bool? IsRecycle { get; set; }
+    public bool ReturnSample { get; set; } = false;
+    public bool IsRecycle { get; set; } = false;
 
     public string? OtherComment { get; set; }
 
-    public Guid? CategoryId { get; set; }
+    public Guid CategoryId { get; set; }
 
     public double? Weight { get; set; }
 
     public string? Unit { get; set; }
 
-    public DateTime? CreatedDate { get; set; }
+    public DateTime CreatedDate { get; set; }
 
     public Guid? CreatedBy { get; set; }
 
@@ -76,7 +78,8 @@ public partial class Product
 
     public Guid? UpdatedBy { get; set; }
 
-    public Guid? CompanyId { get; set; }
+    public Guid CompanyId { get; set; }
+    public bool IsActive { get; set; } = true;
 
     public virtual Category? Category { get; set; }
 
@@ -90,7 +93,7 @@ public partial class Product
     public virtual ICollection<MerchandiseOrderDetail> MerchandiseOrderDetails { get; set; } = new List<MerchandiseOrderDetail>();
 
     public virtual ICollection<MfgProductionOrder> MfgProductionOrders { get; set; } = new List<MfgProductionOrder>();
-    public virtual ICollection<ProductChangedHistory> ProductChangedHistories { get; set; } = new List<ProductChangedHistory>();
+    //public virtual ICollection<ProductChangedHistory> ProductChangedHistories { get; set; } = new List<ProductChangedHistory>();
 
     public virtual ICollection<SampleRequest> SampleRequests { get; set; } = new List<SampleRequest>();
 

@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.Querys;
 using VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.MerchandiseOrderFeatures;
+using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
+using VietausWebAPI.WebAPI.Helpers;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
 {
@@ -12,10 +14,12 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
     public class MerchandiseOrderController : Controller
     {
         private readonly IMerchandiseOrderService _merchandiseOrderService;
+        private readonly ICurrentUser _CurrentUser;
 
-        public MerchandiseOrderController(IMerchandiseOrderService merchandiseOrderService)
+        public MerchandiseOrderController(IMerchandiseOrderService merchandiseOrderService, ICurrentUser currentUser)
         {
             _merchandiseOrderService = merchandiseOrderService;
+            _CurrentUser = currentUser;
         }
 
         [HttpPost]
@@ -27,12 +31,15 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
             }
             try
             {
+                request.CreatedBy = _CurrentUser.EmployeeId;
                 var result = await _merchandiseOrderService.CreateAsync(request);
+
                 if (!result.Success)
-                {
-                    return BadRequest(result.Message);
-                }
-                return Ok(result);
+                    return BadRequest(result);        // body vẫn là OperationResult
+
+                // Nếu service có OrderId/CollectionId, bạn có thể set header ở đây:
+                // Trả 201 nhưng body vẫn chỉ là OperationResult theo ý bạn
+                return StatusCode(StatusCodes.Status201Created, result);
             }
             catch (ArgumentException ex)
             {
@@ -44,7 +51,6 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
-
 
         [HttpGet("GetAll")]
         public async Task<IActionResult> GetAllMerchandiseOrders([FromQuery] MerchandiseOrderQuery query, CancellationToken ct = default)
@@ -129,7 +135,50 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
+        [HttpPatch("Approve")]
+        public async Task<IActionResult> UpdateAppoveStatus([FromBody] PatchMerchandiseOrderInformation request, CancellationToken ct = default)
+        {
+            if (request == null || request.MerchandiseOrderId == Guid.Empty)
+            {
+                return BadRequest("Invalid request data.");
+            }
+            try
+            {
+                var result = await _merchandiseOrderService.UpdateApproveStatus(request, ct);
+                if (!result.Success)
+                {
+                    return BadRequest(result.Message);
+                }
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
 
-
+        [HttpPatch("soft-delete")]
+        public async Task<IActionResult> SoftDeleteMerchandiseOrder([FromBody] PatchMerchandiseOrderInformation request, CancellationToken ct = default)
+        {
+            if (request == null || request.MerchandiseOrderId == Guid.Empty)
+            {
+                return BadRequest("Invalid request data.");
+            }
+            try
+            {
+                var result = await _merchandiseOrderService.SoftDelete(request, ct);
+                if (!result.Success)
+                {
+                    return BadRequest(result.Message);
+                }
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
     }
 }

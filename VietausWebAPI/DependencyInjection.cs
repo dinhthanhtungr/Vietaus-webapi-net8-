@@ -1,4 +1,7 @@
-﻿using VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers;
+﻿using VietausWebAPI.Core.Application.Features.Attachments.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Attachments.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Attachments.Services;
+using VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.Services;
@@ -35,14 +38,19 @@ using VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.CustomerFea
 using VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.MerchandiseOrderFeatures;
 using VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeatures;
 using VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrderFeatures;
+using VietausWebAPI.Core.Application.Features.TimelineFeature.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.TimelineFeature.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.TimelineFeature.Services;
 using VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Warehouse.Services;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
-using VietausWebAPI.Core.Application.Shared.Helper.ImageStorage;
+//using VietausWebAPI.Core.Application.Shared.Helper.ImageStorage;
 using VietausWebAPI.Core.Repositories_Contracts;
 using VietausWebAPI.Infrastructure.DataUnitOfWork;
 using VietausWebAPI.Infrastructure.Helpers.IdCounter;
+using VietausWebAPI.Infrastructure.Repositories.Attachments;
+using VietausWebAPI.Infrastructure.Repositories.Audits;
 using VietausWebAPI.Infrastructure.Repositories.DeliveryOrders;
 using VietausWebAPI.Infrastructure.Repositories.HR;
 using VietausWebAPI.Infrastructure.Repositories.Labs;
@@ -63,6 +71,11 @@ namespace VietausWebAPI.WebAPI
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
+            //Attachment
+            services.AddScoped<IAttachmentCollectionRepository, AttachmentCollectionRepository>();
+            services.AddScoped<IAttachmentModelRepository, AttachmentModelRepository>();
+            services.AddScoped<IAttachmentSchemaService, AttachmentSchemaService>();
+
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IExternalIdService, ExternalIdServicePostgres>();
             services.AddScoped<IEmployeesRepository, EmployeesRepository>();
@@ -81,10 +94,10 @@ namespace VietausWebAPI.WebAPI
             services.AddScoped<ICustomerTransferLogRepository, CustomerTransferLogRepository>();
             services.AddScoped<ICustomerAssignmentRepository, CustomerAssignmentRepository>();
             services.AddScoped<IMerchandiseOrderRepository, MerchandiseOrderRepository>();
-            services.AddScoped<IMerchandiseOrderLogRepository, MerchandiseOrderLogRepository>();
+            //services.AddScoped<IMerchandiseOrderLogRepository, MerchandiseOrderLogRepository>();
             services.AddScoped<IMerchandiseOrderService, MerchandiseOrderService>();
-            services.AddScoped<IAttachmentService, AttachmentService>();
-            services.AddScoped<IAttachmentRepository, AttachmentRepository>();
+            //services.AddScoped<IAttachmentService, AttachmentService>();
+            //services.AddScoped<IAttachmentRepository, AttachmentRepository>();
 
 
             //services.AddScoped<ITransferCustomerRepository, TransferCustomerRepository>();
@@ -113,9 +126,9 @@ namespace VietausWebAPI.WebAPI
             services.AddScoped<ISampleRequestRepository, SampleRequestRepository>();
 
             //SampleRequestImage
-            services.AddScoped<ISampleRequestImageService, SampleRequestImageService>();
-            services.AddScoped<ISampleRequestImageRepository, SampleRequestImageRepository>();
-            services.AddScoped<IFileStorage, LocalFileStorage>();    
+            //services.AddScoped<ISampleRequestImageService, SampleRequestImageService>();
+            //services.AddScoped<ISampleRequestImageRepository, SampleRequestImageRepository>();
+            //services.AddScoped<IFileStorage, LocalFileStorage>();    
 
             //Product
             services.AddScoped<IProductRepository, ProductRepository>();
@@ -150,7 +163,7 @@ namespace VietausWebAPI.WebAPI
             services.AddScoped<IManufacturingFormulaRepository, ManufacturingFormulaRepository>();
             services.AddScoped<IManufacturingFormulaMaterialRepository, ManufacturingFormulaMaterialRepository>();
             services.AddScoped<IMfgFormulaService, MfgFormulaService>();
-            services.AddScoped<IManufacturingFormulaLogRepository, ManufacturingFormulaLogRepository>();
+            //services.AddScoped<IManufacturingFormulaLogRepository, ManufacturingFormulaLogRepository>();
 
             //services.AddScoped<IMaterialService, MaterialService>
 
@@ -182,6 +195,12 @@ namespace VietausWebAPI.WebAPI
             services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
             services.AddScoped<IPurchaseOrderPdfService, PurchaseOrderPdfService>();
             services.AddScoped<IPurchaseOrderPdfRenderHelper, PurchaseOrderPdfRenderHelper>();
+
+
+            // Audit
+            services.AddScoped<IEventLogRepository, EventLogRepository>();
+
+            services.AddScoped<ITimelineService, TimelineService>();
 
 
 

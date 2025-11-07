@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using VietausWebAPI.Core.Domain.Enums;
+using VietausWebAPI.Core.Domain.Enums.Attachment;
 
 namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.OrderAttachment
 {

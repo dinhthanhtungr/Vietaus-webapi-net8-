@@ -14,11 +14,12 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
             _context = context;
         }
 
-        public IQueryable<CustomerTransferLog> Query()
+        public IQueryable<CustomerTransferLog> Query(bool track = false)
         {
-            // Chỉ đọc → NoTracking cho nhẹ
-            return _context.CustomerTransferLogs.AsNoTracking();
+            var db = _context.CustomerTransferLogs.AsQueryable();
+            return track ? db : db.AsNoTracking();
         }
+
 
         public Task AddAsync(CustomerTransferLog log, CancellationToken ct = default)
         {

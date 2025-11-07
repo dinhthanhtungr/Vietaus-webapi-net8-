@@ -20,6 +20,7 @@ public partial class Address
     public string? Country { get; set; }
 
     public bool? IsPrimary { get; set; }
+    public bool? IsActive { get; set; }
 
     public string? PostalCode { get; set; }
 

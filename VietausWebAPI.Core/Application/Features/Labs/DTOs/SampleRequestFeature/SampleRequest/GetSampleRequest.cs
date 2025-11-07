@@ -15,11 +15,12 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
 
         public string? CustomerName { get; set; }
         public string? CustomerCode { get; set; }
-        public Guid? CustomerId { get; set; }
+        public Guid CustomerId { get; set; }
 
         public string? ManagerName { get; set; }
 
-        public string? ProductId { get; set; }
+        public Guid ProductId { get; set; }
+        public Guid? AttachmentCollectionId { get; set; }
 
         public DateTime? RealDeliveryDate { get; set; }
 
@@ -31,33 +32,29 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
 
         public DateTime? ExpectedPriceQuoteDate { get; set; }
 
-        public string? AdditionalComment { get; set; }
-        public string? CustomerProductCode { get; set; }
-
-
-        public string? RequestType { get; set; }
+        public string RequestType { get; set; } = string.Empty;
 
         public double? ExpectedQuantity { get; set; }
-
         public decimal? ExpectedPrice { get; set; }
-
         public double? SampleQuantity { get; set; }
 
         public string? OtherComment { get; set; }
-
         public string? InfoType { get; set; }
 
+        public Guid? FormulaId { get; set; }
+
+        public string? SaleComment { get; set; }
+
+        public string? AdditionalComment { get; set; } = string.Empty;
+        public string? CustomerProductCode { get; set; } = string.Empty;
+
+        public Guid BranchId { get; set; }
+
+        public string Status { get; set; } = "New";
+
+        public string Package { get; set; } = string.Empty;
+
         public GetSampleFormula? Formula { get; set; }
-
-        public string? Comment { get; set; }
-
-        public string? Image { get; set; }
-
-        public int? Branch { get; set; }
-
-        public string? Status { get; set; }
-
-        public string? Package { get; set; }
 
         public DateTime? CreatedDate { get; set; }
 

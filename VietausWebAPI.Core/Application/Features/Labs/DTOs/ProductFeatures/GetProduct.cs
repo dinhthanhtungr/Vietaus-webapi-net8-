@@ -14,12 +14,12 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductFeatures
         public string? ColourName { get; set; }
         public string? Additive { get; set; }
         public double? UsageRate { get; set; }
-        public double? DeltaE { get; set; }
+        public string? DeltaE { get; set; }
         public string? Requirement { get; set; }
         public string? ExpiryType { get; set; }
         public bool? StorageCondition { get; set; }
         public string? LabComment { get; set; }
-        public string? ProductType { get; set; }
+        //public string? ProductType { get; set; }
         public string? Procedure { get; set; }
         public double? RecycleRate { get; set; }
         public double? TaicalRate { get; set; }
@@ -30,6 +30,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductFeatures
         public string? EndUser { get; set; }
         public bool? FoodSafety { get; set; }
         public bool? RohsStandard { get; set; }
+        public bool? ReachStandard { get; set; }
         public double? MaxTemp { get; set; }
         public string? WeatherResistance { get; set; }
         public string? LightCondition { get; set; }

@@ -7,7 +7,7 @@ namespace VietausWebAPI.Core.ServiceContracts
 {
     public interface IJwtService
     {
-        AuthenticationResponse CreateJwtJoken(ApplicationUser user, string partId, string departmentName, string EmployeeId, Guid Id, Guid CompanyId, IList<string> roles = null);
+        AuthenticationResponse CreateJwtJoken(ApplicationUser user, Guid partId, string partName, string EmployeeExternalId, Guid EmployeeId, Guid CompanyId, IList<string> roles = null);
         ClaimsPrincipal? GetPrincipalFromJwtToken(string? token);
 
     }

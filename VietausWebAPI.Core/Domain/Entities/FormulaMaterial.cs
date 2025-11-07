@@ -20,7 +20,7 @@ public partial class FormulaMaterial
     public string? MaterialNameSnapshot { get; set; }         // NVARCHAR
     public string? MaterialExternalIdSnapshot { get; set; }   // VARCHAR
     public string? Unit { get; set; }                         // VARCHAR
-    public bool? IsActive { get; set; }
+    public bool IsActive { get; set; } = true;
 
 
     public virtual Formula Formula { get; set; } = null!;

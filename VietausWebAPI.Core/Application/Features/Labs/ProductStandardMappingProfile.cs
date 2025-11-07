@@ -101,7 +101,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs
                 .ForMember(d => d.CreatedBy, opt => opt.MapFrom(src => src.CreatedByNavigation.FullName))
                 .ForMember(d => d.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(d => d.CustomerName, opt => opt.MapFrom(src => src.Customer.CustomerName))
-                .ForMember(d => d.LabName, opt => opt.MapFrom(src => src.Product.CreatedBy))
+                .ForMember(d => d.LabName, opt => opt.MapFrom(src => src.Product.CreatedByNavigation.FullName))
                 .ReverseMap();
 
             CreateMap<SampleRequest, GetSampleRequest>()
@@ -125,11 +125,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs
             CreateMap<CreateProductRequest, Product>()
                 .ForMember(d => d.ProductId, opt => opt.Ignore())
                 .ForMember(d => d.CreatedDate, opt => opt.MapFrom(_ => DateTime.Now))
-                
+                .ForMember(d => d.CreatedBy, opt => opt.Ignore())
                 .ForMember(d => d.UpdatedDate, opt => opt.Ignore())
                 .ForMember(d => d.Additive, opt => opt.Ignore())
                 .ForMember(d => d.UpdatedDate, opt => opt.Ignore())
-                .ForMember(d => d.CategoryId, opt => opt.Ignore())
                 .ForMember(d => d.ColourCode, opt => opt.Ignore())
                 .ForMember(d => d.ColourName, opt => opt.Ignore())
                 .ForMember(d => d.ExpiryType, opt => opt.Ignore())
@@ -137,14 +136,14 @@ namespace VietausWebAPI.Core.Application.Features.Labs
                 .ForMember(d => d.Name, opt => opt.Ignore())
                 .ForMember(d => d.Requirement, opt => opt.Ignore())
                 .ForMember(d => d.StorageCondition, opt => opt.Ignore())
-                .ForMember(d => d.Weight, opt => opt.Ignore())
+
                 .ForMember(d => d.UpdatedDate, opt => opt.Ignore())
                 .ForMember(d => d.UpdatedBy, opt => opt.Ignore());// Chặn map
 
             CreateMap<Product, GetProduct>().ReverseMap();
                 
 
-            CreateMap<Product, ProductDTO>().ReverseMap();
+            //CreateMap<Product, ProductDTO>().ReverseMap();
 
             // Map "bao" ra DTO lồng
             CreateMap<SampleRequest, GetSampleWithProductRequest>()

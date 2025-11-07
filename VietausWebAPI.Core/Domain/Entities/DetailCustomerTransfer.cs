@@ -5,8 +5,6 @@ using System.Collections.Generic;
 
 public partial class DetailCustomerTransfer
 {
-    public int Id { get; set; }
-
     public Guid CustomerId { get; set; }
 
     public Guid LogId { get; set; }

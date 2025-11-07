@@ -7,8 +7,16 @@ using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Reflection.Metadata;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
+using VietausWebAPI.Core.Domain.Entities.AuditSchema;
+using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
+using VietausWebAPI.Core.Domain.Entities.MROSchema;
+
+
+
 //using System.Text.RegularExpressions;
 using VietausWebAPI.Core.Identity;
+using VietausWebAPI.Infrastructure.Helpers.IdCounter;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 
@@ -18,11 +26,6 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
 
     //Scaffold-DbContext "Host=Localhost;Port=5432;Database=VietausDb;Username=postgres;Password=qazwsxedc123@" 
-
-
-    //namespace VietausWebAPI.Core.Domain.Entities;
-
-
 
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid,
         IdentityUserClaim<Guid>, ApplicationUserRole, IdentityUserLogin<Guid>,
@@ -41,6 +44,9 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
         public DbSet<IdCounter> IdCounters { get; set; } = default!;
 
+        public virtual DbSet<AttachmentCollection> AttachmentCollections { get; set; }
+        public virtual DbSet<AttachmentModel> AttachmentModels { get; set; }
+
         public virtual DbSet<Address> Addresses { get; set; }
 
         public virtual DbSet<ApprovalHistory> ApprovalHistories { get; set; }
@@ -54,6 +60,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
         public virtual DbSet<Category> Categories { get; set; }
 
         public virtual DbSet<Company> Companies { get; set; }
+
 
         public virtual DbSet<Contact> Contacts { get; set; }
 
@@ -77,6 +84,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
         public virtual DbSet<Employee> Employees { get; set; }
 
         //public virtual DbSet<EmployeesCommonDatum> EmployeesCommonData { get; set; }
+        public virtual DbSet<EventLog> EventLogs { get; set; }
 
         public virtual DbSet<Formula> Formulas { get; set; }
 
@@ -104,17 +112,17 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
         public virtual DbSet<ManufacturingFormula> ManufacturingFormulas { get; set; }
         public virtual DbSet<ManufacturingFormulaMaterial> ManufacturingFormulaMaterials { get; set; }
-        public virtual DbSet<ManufacturingFormulaLog> ManufacturingFormulaLogs { get; set; }
+        //public virtual DbSet<ManufacturingFormulaLog> ManufacturingFormulaLogs { get; set; }
 
         public virtual DbSet<MemberInGroup> MemberInGroups { get; set; }
 
         public virtual DbSet<MerchandiseOrder> MerchandiseOrders { get; set; }
-        public virtual DbSet<MerchandiseOrderLog> MerchandiseOrderLogs { get; set; }
+        //public virtual DbSet<MerchandiseOrderLog> MerchandiseOrderLogs { get; set; }
 
         public virtual DbSet<MerchandiseOrderDetail> MerchandiseOrderDetails { get; set; }
 
-        public virtual DbSet<MerchandiseOrderSchedule> MerchandiseOrderSchedules { get; set; }
-        public virtual DbSet<OrderAttachment> OrderAttachments { get; set; }
+        //public virtual DbSet<MerchandiseOrderSchedule> MerchandiseOrderSchedules { get; set; }
+        //public virtual DbSet<OrderAttachment> OrderAttachments { get; set; }
 
         public virtual DbSet<MfgProductionOrdersPlan> MfgProductionOrdersPlans { get; set; }
         public virtual DbSet<MfgProductionOrder> MfgProductionOrders { get; set; }
@@ -130,7 +138,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
         public virtual DbSet<Product> Products { get; set; }
 
-        public virtual DbSet<ProductChangedHistory> ProductChangedHistories { get; set; }
+        //public virtual DbSet<ProductChangedHistory> ProductChangedHistories { get; set; }
 
         public virtual DbSet<ProductInspection> ProductInspections { get; set; }
 
@@ -161,7 +169,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
         //public virtual DbSet<RequestDetailMaterialDatum> RequestDetailMaterialData { get; set; }
 
         public virtual DbSet<SampleRequest> SampleRequests { get; set; }
-        public virtual DbSet<SampleRequestImage> SampleRequestImages { get; set; }
+        //public virtual DbSet<SampleRequestImage> SampleRequestImages { get; set; }
 
         public virtual DbSet<SchedualMfg> SchedualMfgs { get; set; }
 
@@ -182,6 +190,25 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
         public virtual DbSet<WarehouseTempStock> WarehouseTempStocks { get; set; }
         public virtual DbSet<WarehouseRequest> WarehouseRequests { get; set; }
         public virtual DbSet<WarehouseRequestDetail> WarehouseRequestDetails { get; set; }
+
+
+        /// <summary>
+        /// ==================================== MRO Module ==================================== 
+        /// </summary>
+        public virtual DbSet<AreaMRO> AreaMROs { get; set; }
+        public virtual DbSet<WarehouseMRO> WarehouseMROs { get; set; }
+        public virtual DbSet<ZoneMRO> ZoneMROs { get; set; }
+        public virtual DbSet<RackMRO> RackMROs { get; set; }
+        public virtual DbSet<SlotMRO> SlotMROs { get; set; }
+        public virtual DbSet<EquipmentMRO> EquipmentMROs { get; set; }
+        public virtual DbSet<IncidentHeaderMRO> IncidentHeaderMROs { get; set; }
+
+
+        /// <summary>
+        /// ==================================== Audit Module ==================================== 
+        /// </summary>
+        public virtual DbSet<CodeCounter> CodeCounters { get; set; }
+
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -234,31 +261,90 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             modelBuilder.Entity<ApplicationUser>()
                 .HasIndex(u => u.EmployeeId);
 
+            modelBuilder.Entity<AttachmentModel>(entity =>
+            {
+                entity.HasKey(e => e.AttachmentId).HasName("PK__AttachmentModel__B3C4DAF6D3F2E2B3");
+                entity.ToTable("AttachmentModel", "Attachment");
+
+                entity.Property(e => e.AttachmentId)
+                    .HasColumnName("AttachmentModelID")
+                    .ValueGeneratedOnAdd()
+                    .HasValueGenerator<GuidV7Generator>();
+
+                entity.HasOne(d => d.CreatedByNavigation).WithMany()
+                    .HasForeignKey(d => d.CreateBy)
+                    .HasConstraintName("FK_AttachmentModel_CreatedBy");
+            });
+
+            modelBuilder.Entity<AttachmentCollection>(entity =>
+            {
+                entity.HasKey(e => e.AttachmentCollectionId).HasName("PK__AttachmentCollection__B3C4DAF6D3F2E2B3");
+                entity.ToTable("AttachmentCollection", "Attachment");
+
+                entity.Property(e => e.AttachmentCollectionId)
+                    .HasColumnName("AttachmentCollectionID")
+                    .ValueGeneratedOnAdd()
+                    .HasValueGenerator<GuidV7Generator>();
+            });
+
+
+
             // Thiết lập khóa chính
             modelBuilder.Entity<Address>(entity =>
             {
+                // Primary key
                 entity.HasKey(e => e.AddressId).HasName("PK__Address__091C2A1BCCA306B0");
 
+                // Tên bảng và schema
                 entity.ToTable("Address", "Customer");
 
-                entity.HasIndex(e => e.CustomerId, "IX_Address_CustomerID");
-
+                // ===== Columns =====
                 entity.Property(e => e.AddressId)
-                    .HasDefaultValueSql("gen_random_uuid()")
-                    .HasColumnName("AddressID");
-                entity.Property(e => e.AddressLine).HasColumnType("citext");
-                entity.Property(e => e.City).HasColumnType("citext");
-                entity.Property(e => e.Country).HasColumnType("citext");
-                entity.Property(e => e.CustomerId).HasColumnName("CustomerID");
-                entity.Property(e => e.District).HasColumnType("citext");
-                entity.Property(e => e.IsPrimary).HasDefaultValue(false);
-                entity.Property(e => e.PostalCode).HasColumnType("citext");
-                entity.Property(e => e.Province).HasColumnType("citext");
+                      .HasColumnName("AddressId")  // Đặt tên chuẩn
+                      .ValueGeneratedOnAdd()
+                      .HasDefaultValueSql("gen_random_uuid()");
 
-                entity.HasOne(d => d.Customer).WithMany(p => p.Addresses)
-                    .HasForeignKey(d => d.CustomerId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Address_Customer");
+                entity.Property(e => e.AddressLine).HasColumnName("AddressLine")
+                      .HasColumnType("citext"); // Không phân biệt hoa thường
+
+                entity.Property(e => e.City).HasColumnName("City")
+                      .HasColumnType("citext");
+
+                entity.Property(e => e.Country).HasColumnName("Country")
+                      .HasColumnType("citext");
+
+                entity.Property(e => e.CustomerId)
+                      .HasColumnName("CustomerId");
+
+                entity.Property(e => e.District).HasColumnName("District")
+                      .HasColumnType("citext");
+
+                entity.Property(e => e.IsPrimary).HasColumnName("IsPrimary")
+                      .HasDefaultValue(false); 
+
+                entity.Property(e => e.PostalCode).HasColumnName("PostalCode")
+                      .HasColumnType("citext");
+
+                entity.Property(e => e.Province).HasColumnName("Province")
+                      .HasColumnType("citext");
+
+                entity.Property(e => e.IsActive).HasColumnName("IsActive")
+                      .HasDefaultValue(true); 
+
+                // ===== Indexes =====
+                // Index cho CustomerId để tìm kiếm nhanh các địa chỉ theo khách hàng
+                entity.HasIndex(e => e.CustomerId).HasDatabaseName("IX_Address_CustomerId");
+
+                // Index cho IsPrimary, để lọc nhanh địa chỉ chính của khách hàng
+                entity.HasIndex(e => new { e.CustomerId, e.IsPrimary }).HasDatabaseName("IX_Address_Customer_IsPrimary");
+
+                // ===== Relationships =====
+                // Quan hệ với bảng Customer
+                entity.HasOne(d => d.Customer)
+                      .WithMany(p => p.Addresses)
+                      .HasForeignKey(d => d.CustomerId)
+                      .OnDelete(DeleteBehavior.ClientSetNull) // Nếu khách hàng bị xóa thì không xóa địa chỉ, chỉ set null
+                      .HasConstraintName("FK_Address_Customer");
             });
 
             modelBuilder.Entity<ApprovalHistory>(entity =>
@@ -286,6 +372,8 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasForeignKey(d => d.RequestId)
                     .HasConstraintName("FK_ApprovalHistory_RequestID");
             });
+
+
 
             //modelBuilder.Entity<ApprovalHistoryMaterialDatum>(entity =>
             //{
@@ -403,29 +491,48 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasConstraintName("FK_Companies_UpdatedBy");
             });
 
+
             modelBuilder.Entity<Contact>(entity =>
             {
+                // Primary key
                 entity.HasKey(e => e.ContactId).HasName("PK__Contacts__5C6625BB570D4F62");
 
+                // Tên bảng và schema
                 entity.ToTable("Contacts", "Customer");
 
-                entity.HasIndex(e => e.CustomerId, "IX_Contacts_CustomerID");
+                // ===== Columns =====
+                entity.Property(e => e.ContactId).HasColumnName("ContactId")
+                      .ValueGeneratedOnAdd()
+                      .HasDefaultValueSql("gen_random_uuid()");
 
-                entity.Property(e => e.ContactId)
-                    .HasDefaultValueSql("gen_random_uuid()")
-                    .HasColumnName("ContactID");
-                entity.Property(e => e.CustomerId).HasColumnName("CustomerID");
-                entity.Property(e => e.Email).HasColumnType("citext");
-                entity.Property(e => e.FirstName).HasColumnType("citext");
-                entity.Property(e => e.Gender).HasColumnType("citext");
-                entity.Property(e => e.LastName).HasColumnType("citext");
-                entity.Property(e => e.Phone).HasColumnType("citext");
+                entity.Property(e => e.CustomerId).HasColumnName("CustomerId");
 
-                entity.HasOne(d => d.Customer).WithMany(p => p.Contacts)
-                    .HasForeignKey(d => d.CustomerId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Contacts_Customer");
+                entity.Property(e => e.Email).HasColumnName("Email")
+                      .HasColumnType("citext"); // Không phân biệt hoa thường
+
+                entity.Property(e => e.FirstName).HasColumnName("FirstName")
+                      .HasColumnType("citext");
+
+                entity.Property(e => e.Gender).HasColumnName("Gender")
+                      .HasColumnType("citext");
+
+                entity.Property(e => e.LastName).HasColumnName("LastName")
+                      .HasColumnType("citext");
+
+                entity.Property(e => e.Phone).HasColumnName("Phone")
+                      .HasColumnType("citext");
+
+                // ===== Indexes =====
+                entity.HasIndex(e => e.CustomerId).HasDatabaseName("IX_Contacts_CustomerId");
+
+                // ===== Relationships =====
+                entity.HasOne(d => d.Customer)
+                      .WithMany(p => p.Contacts)
+                      .HasForeignKey(d => d.CustomerId)
+                      .OnDelete(DeleteBehavior.ClientSetNull)  // Khi khách hàng bị xóa, chỉ set null mà không xoá liên hệ
+                      .HasConstraintName("FK_Contacts_Customer");
             });
+
 
             modelBuilder.Entity<Customer>(entity =>
             {
@@ -433,36 +540,64 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.ToTable("Customer", "Customer");
 
-                entity.HasIndex(e => e.CompanyId, "IX_Customer_CompanyId");
+                // ===== Columns (đặt HasColumnName y như property) =====
+                entity.Property(e => e.CustomerId)
+                    .HasColumnName("CustomerId")
+                    .ValueGeneratedOnAdd()
+                    .HasDefaultValueSql("gen_random_uuid()");
 
-                entity.HasIndex(e => e.CreatedBy, "IX_Customer_CreatedBy");
+                entity.Property(e => e.ExternalId).HasColumnName("ExternalId").HasColumnType("citext").IsRequired();
+                entity.Property(e => e.CustomerName).HasColumnName("CustomerName").HasColumnType("citext").IsRequired();
+                entity.Property(e => e.CustomerGroup).HasColumnName("CustomerGroup").HasColumnType("citext");
+                entity.Property(e => e.ApplicationName).HasColumnName("ApplicationName").HasColumnType("citext");
+                entity.Property(e => e.RegistrationNumber).HasColumnName("RegistrationNumber").HasColumnType("citext");
+                entity.Property(e => e.TaxNumber).HasColumnName("TaxNumber").HasColumnType("citext");
+                entity.Property(e => e.Phone).HasColumnName("Phone").HasColumnType("citext");
+                entity.Property(e => e.Website).HasColumnName("Website").HasColumnType("citext");
 
-                entity.HasIndex(e => e.UpdatedBy, "IX_Customer_UpdatedBy");
+                entity.Property(e => e.CreatedDate).HasColumnName("CreatedDate");
+                entity.Property(e => e.CreatedBy).HasColumnName("CreatedBy");
 
-                entity.Property(e => e.CustomerId).HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.ApplicationName).HasColumnType("citext");
-                entity.Property(e => e.CustomerGroup).HasColumnType("citext");
-                entity.Property(e => e.CustomerName).HasColumnType("citext");
-                entity.Property(e => e.ExternalId).HasColumnType("citext");
-                entity.Property(e => e.FaxNumber).HasColumnType("citext");
-                entity.Property(e => e.IssuedPlace).HasColumnType("citext");
-                entity.Property(e => e.Phone).HasColumnType("citext");
-                entity.Property(e => e.Product).HasColumnType("citext");
-                entity.Property(e => e.RegistrationNumber).HasColumnType("citext");
-                entity.Property(e => e.TaxNumber).HasColumnType("citext");
-                entity.Property(e => e.Website).HasColumnType("citext");
+                entity.Property(e => e.UpdatedDate).HasColumnName("UpdatedDate");
+                entity.Property(e => e.UpdatedBy).HasColumnName("UpdatedBy");
 
+                entity.Property(e => e.CompanyId).HasColumnName("CompanyId");
+                entity.Property(e => e.IssueDate).HasColumnName("IssueDate");
+                entity.Property(e => e.IssuedPlace).HasColumnName("IssuedPlace").HasColumnType("citext");
+                entity.Property(e => e.FaxNumber).HasColumnName("FaxNumber").HasColumnType("citext");
+
+                entity.Property(e => e.IsActive).HasColumnName("IsActive").HasDefaultValue(true);
+
+                // ===== Indexes =====
+                entity.HasIndex(e => e.CompanyId).HasDatabaseName("IX_Customers_CompanyId");
+                entity.HasIndex(e => e.CreatedBy).HasDatabaseName("IX_Customers_CreatedBy");
+                entity.HasIndex(e => e.UpdatedBy).HasDatabaseName("IX_Customers_UpdatedBy");
+
+                // Duy nhất theo tenant (ExternalId là mã ngoài của KH)
+                entity.HasIndex(e => new { e.CompanyId, e.ExternalId })
+                      .IsUnique()
+                      .HasDatabaseName("UX_Customers_Company_ExternalId");
+
+                // List/paging trong tenant (CreatedDate DESC)
+                entity.HasIndex(e => new { e.CompanyId, e.IsActive, e.CreatedDate, e.CustomerId })
+                      .IsDescending(false, false, true, true) // EF Core 8+
+                      .HasDatabaseName("IX_Customers_Company_IsActive_CreatedDateDesc");
+
+                // ===== Relationships =====
                 entity.HasOne(d => d.Company).WithMany(p => p.Customers)
                     .HasForeignKey(d => d.CompanyId)
-                    .HasConstraintName("FK__Customer__Compan__1E8F7FEF");
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .HasConstraintName("FK_Customers_Company");
 
                 entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.CustomerCreatedByNavigations)
                     .HasForeignKey(d => d.CreatedBy)
-                    .HasConstraintName("FK_Groups_CreatedBy");
+                    .OnDelete(DeleteBehavior.Restrict) // CreatedBy non-nullable
+                    .HasConstraintName("FK_Customers_CreatedBy");
 
                 entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.CustomerUpdatedByNavigations)
                     .HasForeignKey(d => d.UpdatedBy)
-                    .HasConstraintName("FK_Groups_UpdatedBy");
+                    .OnDelete(DeleteBehavior.SetNull)  // UpdatedBy nullable
+                    .HasConstraintName("FK_Customers_UpdatedBy");
             });
 
             modelBuilder.Entity<CustomerAssignment>(entity =>
@@ -471,56 +606,85 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.ToTable("CustomerAssignment", "Customer");
 
-                entity.HasIndex(e => e.CustomerId, "IX_CustomerAssignment_CustomerID");
-
-                entity.HasIndex(e => e.EmployeeId, "IX_CustomerAssignment_EmployeeID");
-
-                entity.HasIndex(e => e.CompanyId, "IX_CustomerAssignment_companyId");
-
-                entity.HasIndex(e => e.CreatedBy, "IX_CustomerAssignment_createdBy");
-
-                entity.HasIndex(e => e.UpdatedBy, "IX_CustomerAssignment_updatedBy");
-
+                // ===== Columns (đặt HasColumnName y như property) =====
                 entity.Property(e => e.Id)
-                    .HasDefaultValueSql("gen_random_uuid()")
-                    .HasColumnName("ID");
-                entity.Property(e => e.CompanyId).HasColumnName("companyId");
-                entity.Property(e => e.CreatedBy).HasColumnName("createdBy");
-                entity.Property(e => e.CreatedDate)
-                    .HasDefaultValueSql("now()")
-                    .HasColumnName("createdDate");
-                entity.Property(e => e.CustomerId).HasColumnName("CustomerID");
-                entity.Property(e => e.EmployeeId).HasColumnName("EmployeeID");
-                entity.Property(e => e.GroupId).HasColumnName("GroupID");
-                entity.Property(e => e.UpdatedBy).HasColumnName("updatedBy");
-                entity.Property(e => e.UpdatedDate)
-                    .HasDefaultValueSql("now()")
-                    .HasColumnName("updatedDate");
+                      .HasColumnName("Id")
+                      .ValueGeneratedOnAdd()
+                      .HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.CustomerId).HasColumnName("CustomerId");
+                entity.Property(e => e.EmployeeId).HasColumnName("EmployeeId");
+                entity.Property(e => e.GroupId).HasColumnName("GroupId");
+                entity.Property(e => e.CompanyId).HasColumnName("CompanyId");
+
+                entity.Property(e => e.CreatedDate).HasColumnName("CreatedDate");
+                entity.Property(e => e.CreatedBy).HasColumnName("CreatedBy");
+
+                entity.Property(e => e.UpdatedDate).HasColumnName("UpdatedDate");
+                entity.Property(e => e.UpdatedBy).HasColumnName("UpdatedBy");
+
+                entity.Property(e => e.IsActive).HasColumnName("IsActive")
+                      .HasDefaultValue(true);
+
+                // ===== Indexes =====
+                // List nhanh theo nhân viên trong tenant, phân trang ổn định (UpdatedDate/Id DESC)
+                entity.HasIndex(e => new { e.CompanyId, e.IsActive, e.EmployeeId, e.UpdatedDate, e.Id })
+                      .IsDescending(false, false, false, true, true)
+                      .HasDatabaseName("IX_CustAssign_Company_Active_Emp_UpdatedDesc");
+
+                // List nhanh theo nhóm (nếu có màn hình theo Group)
+                entity.HasIndex(e => new { e.CompanyId, e.IsActive, e.GroupId, e.UpdatedDate, e.Id })
+                      .IsDescending(false, false, false, true, true)
+                      .HasDatabaseName("IX_CustAssign_Company_Active_Group_UpdatedDesc");
+
+                // Tra cứu theo khách trong tenant
+                entity.HasIndex(e => new { e.CompanyId, e.CustomerId, e.IsActive })
+                      .HasDatabaseName("IX_CustAssign_Company_Customer_Active");
+
+                // ===== RÀNG BUỘC NGHIỆP VỤ QUAN TRỌNG =====
+                // Mỗi khách CHỈ CÓ 1 phân công đang active trong 1 Company
+                //entity.HasIndex(e => new { e.CompanyId, e.CustomerId })
+                //      .IsUnique()
+                //      .HasFilter("\"IsActive\" = TRUE") // partial unique index (PostgreSQL)
+                //      .HasDatabaseName("UX_CustAssign_Company_Customer_Active");
+
+                // Nếu bạn muốn "mỗi khách chỉ có 1 phân công active cho MỖI GROUP"
+                // thì thay bằng:
+                entity.HasIndex(e => new { e.CompanyId, e.CustomerId, e.GroupId })
+                      .IsUnique()
+                      .HasFilter("\"IsActive\" = TRUE")
+                      .HasDatabaseName("UX_CustAssign_Company_Customer_Group_Active");
+
+                // ===== Relationships (non-nullable => Restrict) =====
+                entity.HasOne(d => d.Group).WithMany(p => p.CustomerAssignments)
+                      .HasForeignKey(d => d.GroupId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_CustomerAssignment_Group");
 
                 entity.HasOne(d => d.Company).WithMany(p => p.CustomerAssignments)
-                    .HasForeignKey(d => d.CompanyId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_CustomerAssignment_Company");
-
-                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.CustomerAssignmentCreatedByNavigations)
-                    .HasForeignKey(d => d.CreatedBy)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_CustomerAssignment_CreatedBy");
+                      .HasForeignKey(d => d.CompanyId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_CustomerAssignment_Company");
 
                 entity.HasOne(d => d.Customer).WithMany(p => p.CustomerAssignments)
-                    .HasForeignKey(d => d.CustomerId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_CustomerAssignment_Customer");
+                      .HasForeignKey(d => d.CustomerId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_CustomerAssignment_Customer");
 
                 entity.HasOne(d => d.Employee).WithMany(p => p.CustomerAssignmentEmployees)
-                    .HasForeignKey(d => d.EmployeeId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_CustomerAssignment_EmployeeID");
+                      .HasForeignKey(d => d.EmployeeId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_CustomerAssignment_Employee");
+
+                // CreatedBy/UpdatedBy là non-nullable Guid => Restrict (không SetNull)
+                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.CustomerAssignmentCreatedByNavigations)
+                      .HasForeignKey(d => d.CreatedBy)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_CustomerAssignment_CreatedBy");
 
                 entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.CustomerAssignmentUpdatedByNavigations)
-                    .HasForeignKey(d => d.UpdatedBy)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_CustomerAssignment_updatedBy");
+                      .HasForeignKey(d => d.UpdatedBy)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_CustomerAssignment_UpdatedBy");
             });
 
             modelBuilder.Entity<CustomerTransferLog>(entity =>
@@ -529,57 +693,64 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.ToTable("CustomerTransferLog", "Customer");
 
-                entity.HasIndex(e => e.FromEmployeeId, "IX_CustomerTransferLog_FromEmployeeId");
-
-                entity.HasIndex(e => e.FromGroupId, "IX_CustomerTransferLog_FromGroupId");
-
-                entity.HasIndex(e => e.ToEmployeeId, "IX_CustomerTransferLog_ToEmployeeId");
-
-                entity.HasIndex(e => e.ToGroupId, "IX_CustomerTransferLog_ToGroupId");
-
-                entity.HasIndex(e => e.CompanyId, "IX_CustomerTransferLog_companyId");
-
-                entity.HasIndex(e => e.CreatedBy, "IX_CustomerTransferLog_createdBy");
-
+                // Columns (đặt đúng tên property)
                 entity.Property(e => e.Id)
-                    .HasDefaultValueSql("gen_random_uuid()")
-                    .HasColumnName("ID");
-                entity.Property(e => e.CompanyId).HasColumnName("companyId");
-                entity.Property(e => e.CreatedBy).HasColumnName("createdBy");
-                entity.Property(e => e.CreatedDate)
-                    .HasDefaultValueSql("now()")
-                    .HasColumnName("createdDate");
-                entity.Property(e => e.Note).HasColumnType("citext");
+                      .HasColumnName("Id")
+                      .ValueGeneratedOnAdd()
+                      .HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.FromEmployeeId).HasColumnName("FromEmployeeId");
+                entity.Property(e => e.ToEmployeeId).HasColumnName("ToEmployeeId");
+                entity.Property(e => e.FromGroupId).HasColumnName("FromGroupId");
+                entity.Property(e => e.ToGroupId).HasColumnName("ToGroupId");
+                entity.Property(e => e.Note).HasColumnName("Note").HasColumnType("text"); // Note dùng text là hợp lí
+                entity.Property(e => e.CreatedDate).HasColumnName("CreatedDate");
+                entity.Property(e => e.CreatedBy).HasColumnName("CreatedBy");
+                entity.Property(e => e.CompanyId).HasColumnName("CompanyId");
 
+                // Indexes (phân trang & tra cứu theo nhân viên)
+                entity.HasIndex(e => new { e.CompanyId, e.CreatedDate, e.Id })
+                      .IsDescending(false, true, true)
+                      .HasDatabaseName("IX_CustomerTransferLog_Company_CreatedDateDesc");
+
+                entity.HasIndex(e => new { e.CompanyId, e.FromEmployeeId, e.CreatedDate, e.Id })
+                      .IsDescending(false, false, true, true)
+                      .HasDatabaseName("IX_CustomerTransferLog_Company_FromEmp_CreatedDateDesc");
+
+                entity.HasIndex(e => new { e.CompanyId, e.ToEmployeeId, e.CreatedDate, e.Id })
+                      .IsDescending(false, false, true, true)
+                      .HasDatabaseName("IX_CustomerTransferLog_Company_ToEmp_CreatedDateDesc");
+
+                // Relationships (non-nullable => Restrict; header là cha của detail)
                 entity.HasOne(d => d.Company).WithMany(p => p.CustomerTransferLogs)
-                    .HasForeignKey(d => d.CompanyId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_CustomerTransferLog_Company");
+                      .HasForeignKey(d => d.CompanyId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_CustomerTransferLog_Company");
 
                 entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.CustomerTransferLogCreatedByNavigations)
-                    .HasForeignKey(d => d.CreatedBy)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_CustomerTransferLog_CreatedBy");
+                      .HasForeignKey(d => d.CreatedBy)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_CustomerTransferLog_CreatedBy");
 
                 entity.HasOne(d => d.FromEmployee).WithMany(p => p.CustomerTransferLogFromEmployees)
-                    .HasForeignKey(d => d.FromEmployeeId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_CustomerTransferLog_FromEmployeeId");
-
-                entity.HasOne(d => d.FromGroup).WithMany(p => p.CustomerTransferLogFromGroups)
-                    .HasForeignKey(d => d.FromGroupId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_CustomerTransferLog_FromGroupId");
+                      .HasForeignKey(d => d.FromEmployeeId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_CustomerTransferLog_FromEmployee");
 
                 entity.HasOne(d => d.ToEmployee).WithMany(p => p.CustomerTransferLogToEmployees)
-                    .HasForeignKey(d => d.ToEmployeeId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_CustomerTransferLog_ToEmployeeId");
+                      .HasForeignKey(d => d.ToEmployeeId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_CustomerTransferLog_ToEmployee");
+
+                entity.HasOne(d => d.FromGroup).WithMany(p => p.CustomerTransferLogFromGroups)
+                      .HasForeignKey(d => d.FromGroupId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_CustomerTransferLog_FromGroup");
 
                 entity.HasOne(d => d.ToGroup).WithMany(p => p.CustomerTransferLogToGroups)
-                    .HasForeignKey(d => d.ToGroupId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_CustomerTransferLog_ToGroupId");
+                      .HasForeignKey(d => d.ToGroupId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_CustomerTransferLog_ToGroup");
+
             });
 
 
@@ -757,27 +928,24 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<DetailCustomerTransfer>(entity =>
             {
-                entity.HasKey(e => e.Id).HasName("PK__DetailCu__3214EC273B3F47A0");
+                entity.HasKey(e => new { e.LogId, e.CustomerId }).HasName("PK_DetailCustomerTransfer");
 
                 entity.ToTable("DetailCustomerTransfer", "Customer");
 
-                entity.HasIndex(e => e.CustomerId, "IX_DetailCustomerTransfer_CustomerID");
+                entity.Property(e => e.LogId).HasColumnName("LogId");
+                entity.Property(e => e.CustomerId).HasColumnName("CustomerId");
 
-                entity.HasIndex(e => e.LogId, "IX_DetailCustomerTransfer_LogID");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-                entity.Property(e => e.CustomerId).HasColumnName("CustomerID");
-                entity.Property(e => e.LogId).HasColumnName("LogID");
-
-                entity.HasOne(d => d.Customer).WithMany(p => p.DetailCustomerTransfers)
-                    .HasForeignKey(d => d.CustomerId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_DetailCustomerTransfer_CustomerID");
+                entity.HasIndex(e => e.CustomerId).HasDatabaseName("IX_DetailCustomerTransfer_CustomerId");
 
                 entity.HasOne(d => d.Log).WithMany(p => p.DetailCustomerTransfers)
-                    .HasForeignKey(d => d.LogId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_DetailCustomerTransfer_LogID");
+                      .HasForeignKey(d => d.LogId)
+                      .OnDelete(DeleteBehavior.Cascade)   // xoá header => xoá detail
+                      .HasConstraintName("FK_DetailCustomerTransfer_Log");
+
+                entity.HasOne(d => d.Customer).WithMany(p => p.DetailCustomerTransfers)
+                      .HasForeignKey(d => d.CustomerId)
+                      .OnDelete(DeleteBehavior.Restrict)  // giữ lịch sử, không cho xoá KH khi đã có log
+                      .HasConstraintName("FK_DetailCustomerTransfer_Customer");
             });
 
             modelBuilder.Entity<Employee>(entity =>
@@ -811,6 +979,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasForeignKey(d => d.CompanyId)
                     .HasConstraintName("FK_Employees_Companies");
             });
+
 
             //modelBuilder.Entity<EmployeesCommonDatum>(entity =>
             //{
@@ -849,99 +1018,168 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
             //        .HasConstraintName("FK__Employees__PartI__68487DD7");
             //});
 
-            modelBuilder.Entity<Formula>(entity =>
+
+
+            modelBuilder.Entity<EventLog>(entity =>
             {
-                entity.HasKey(e => e.FormulaId).HasName("PK__Formulas__227429A55C6F1195");
+                entity.HasKey(e => e.EventId).HasName("PK__EventLogs__227429A55C6F1195");
 
-                entity.ToTable("Formulas", "SampleRequests");
+                entity.ToTable("EventLogs", "Audit");
 
-                entity.HasIndex(e => e.CompanyId, "IX_Formulas_CompanyId");
+                entity.Property(e => e.EventId)
+                  .HasDefaultValueSql("gen_random_uuid()");
 
-                entity.HasIndex(e => e.CreatedBy, "IX_Formulas_CreatedBy");
+                entity.HasIndex(e => e.CompanyId, "IX_EventLogs_CompanyId");
+                entity.HasIndex(e => e.EmployeeID, "IX_EventLogs_CreatedBy");
 
-                entity.HasIndex(e => e.ProductId, "IX_Formulas_ProductId");
+                entity.HasIndex(x => x.SourceId).HasDatabaseName("IX_EventLog_SourceId");
+                entity.HasIndex(x => x.SourceCode).HasDatabaseName("IX_EventLog_SourceCode");
+                entity.HasIndex(x => x.EventType).HasDatabaseName("IX_EventLog_EventType");
+                entity.HasIndex(x => x.Status).HasDatabaseName("IX_EventLog_Status");
 
-                entity.HasIndex(e => e.UpdatedBy, "IX_Formulas_UpdatedBy");
 
-                entity.HasIndex(e => e.CheckBy, "IX_Formulas_CheckBy");
-
-                entity.HasIndex(e => e.CheckBy, "IX_Formulas_SentBy");
-
-                entity.Property(e => e.IsSelect).HasDefaultValue(false);
+                // Composite cho các case lọc kết hợp
+                entity.HasIndex(x => new { x.SourceId, x.EventType }).HasDatabaseName("IX_EventLog_SourceId_EventType");
+                
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
                 //entity.Property(e => e.IsCustomerSelect).HasDefaultValue(false);
-
-                entity.Property(e => e.FormulaId).HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.ExternalId).HasMaxLength(50);
-                entity.Property(e => e.Name).HasMaxLength(200);
-                entity.Property(e => e.CheckNameSnapshot).HasMaxLength(200);
-                entity.Property(e => e.TotalPrice).HasPrecision(16, 2);
-                entity.Property(e => e.Note).HasColumnType("citext");
                 entity.Property(e => e.Status)
                       .HasMaxLength(32)
                       .HasDefaultValue("Draft");
 
+
+                entity.HasOne(d => d.Company).WithMany(p => p.EventLogs)
+                    .HasForeignKey(d => d.CompanyId)
+                    .HasConstraintName("FK_EventLogs_Company");
+
+                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.EventLogs)
+                    .HasForeignKey(d => d.EmployeeID)
+                    .HasConstraintName("FK_EventLogs_CreatedBy");
+
+                entity.HasOne(d => d.Part).WithMany(p => p.EventLogs)
+                    .HasForeignKey(d => d.DepartmentId)
+                    .HasConstraintName("FK_EventLogs_DepartmentId");
+
+
+            });
+
+
+            modelBuilder.Entity<Formula>(entity =>
+            {
+                entity.ToTable("Formulas", "SampleRequests");
+                entity.HasKey(e => e.FormulaId).HasName("PK__Formulas__227429A55C6F1195");
+
+                // ===== Columns (đặt HasColumnName y như property) =====
+                entity.Property(e => e.FormulaId)
+                    .HasColumnName("FormulaId")
+                    .ValueGeneratedOnAdd()
+                    .HasDefaultValueSql("gen_random_uuid()");
+
+                entity.Property(e => e.ExternalId).HasColumnName("ExternalId").HasMaxLength(50).IsRequired();
+                entity.Property(e => e.Name).HasColumnName("Name").HasMaxLength(200).IsRequired();
+
+                entity.Property(e => e.ProductId).HasColumnName("ProductId");
+                entity.Property(e => e.Status).HasColumnName("Status").HasMaxLength(32).HasDefaultValue("Draft");
+
+                entity.Property(e => e.CheckBy).HasColumnName("CheckBy");
+                entity.Property(e => e.CheckDate).HasColumnName("CheckDate");
+
+                entity.Property(e => e.SentBy).HasColumnName("SentBy");
+                entity.Property(e => e.SentDate).HasColumnName("SentDate");
+
+                entity.Property(e => e.TotalPrice).HasColumnName("TotalPrice").HasPrecision(16, 2);
+                entity.Property(e => e.IsSelect).HasColumnName("IsSelect").HasDefaultValue(false);
+                entity.Property(e => e.IsActive).HasColumnName("IsActive").HasDefaultValue(true);
+
+                entity.Property(e => e.Note).HasColumnName("Note").HasColumnType("text");
+
+                entity.Property(e => e.CreatedBy).HasColumnName("CreatedBy");
+                entity.Property(e => e.UpdatedBy).HasColumnName("UpdatedBy");
+
+                entity.Property(e => e.CompanyId).HasColumnName("CompanyId");
+
+                // ===== Indexes =====
+                entity.HasIndex(e => e.CompanyId).HasDatabaseName("IX_Formulas_CompanyId");
+                entity.HasIndex(e => e.ProductId).HasDatabaseName("IX_Formulas_ProductId");
+                entity.HasIndex(e => e.CreatedBy).HasDatabaseName("IX_Formulas_CreatedBy");
+                entity.HasIndex(e => e.UpdatedBy).HasDatabaseName("IX_Formulas_UpdatedBy");
+                entity.HasIndex(e => e.CheckBy).HasDatabaseName("IX_Formulas_CheckBy");
+                entity.HasIndex(e => e.SentBy).HasDatabaseName("IX_Formulas_SentBy"); // ✅ sửa nhầm cũ (trước ghi CheckBy)
+
+
+                // List/paging mặc định trong tenant (CreatedDate DESC)
+                entity.HasIndex(e => new { e.CompanyId, e.IsActive, e.CreatedDate, e.ProductId })
+                      .IsDescending(false, false, true, true)
+                      .HasDatabaseName("IX_ProductId_Company_IsActive_CreatedDateDesc");
+
+    
+                // ===== Relationships =====
                 entity.HasOne(d => d.Company).WithMany(p => p.Formulas)
                     .HasForeignKey(d => d.CompanyId)
+                    .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FK_Formulas_Company");
+
+                entity.HasOne(d => d.Product).WithMany(p => p.Formulas)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.Restrict) // ProductId là non-nullable ⇒ không SetNull
+                    .HasConstraintName("FK_Formulas_Product");
 
                 entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.FormulaCreatedByNavigations)
                     .HasForeignKey(d => d.CreatedBy)
+                    .OnDelete(DeleteBehavior.SetNull)   // CreatedBy nullable
                     .HasConstraintName("FK_Formulas_CreatedBy");
+
+                entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.FormulaUpdatedByNavigations)
+                    .HasForeignKey(d => d.UpdatedBy)
+                    .OnDelete(DeleteBehavior.SetNull)   // UpdatedBy nullable
+                    .HasConstraintName("FK_Formulas_UpdatedBy");
 
                 entity.HasOne(d => d.CheckByNavigation).WithMany(p => p.FormulaCheckByNavigations)
                     .HasForeignKey(d => d.CheckBy)
+                    .OnDelete(DeleteBehavior.SetNull)   // CheckBy nullable
                     .HasConstraintName("FK_Formulas_CheckBy");
 
                 entity.HasOne(d => d.SentByNavigation).WithMany(p => p.FormulaSentByNavigations)
                     .HasForeignKey(d => d.SentBy)
-                    .HasConstraintName("IX_Formulas_SentBy");
-
-                entity.HasOne(d => d.Product).WithMany(p => p.Formulas)
-                    .HasForeignKey(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Formulas_Product");
-
-                entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.FormulaUpdatedByNavigations)
-                    .HasForeignKey(d => d.UpdatedBy)
-                    .HasConstraintName("FK_Formulas_UpdatedBy");
-
+                    .OnDelete(DeleteBehavior.SetNull)   // SentBy nullable
+                    .HasConstraintName("FK_Formulas_SentBy"); // ✅ sửa tên constraint (trước ghi nhầm IX_)
             });
 
 
-            modelBuilder.Entity<FormulaStatusLog>(entity =>
-            {
-                entity.HasKey(e => e.LogId).HasName("PK_FormulaStatusLog");
-                entity.ToTable("FormulaStatusLog", "SampleRequests");
 
-                // Index như yêu cầu
-                entity.HasIndex(e => e.FormulaId, "IX_FormulaStatusLog_FormulaId");
-                entity.HasIndex(e => e.CreatedDate, "IX_FormulaStatusLog_CreatedAt");
+            //modelBuilder.Entity<FormulaStatusLog>(entity =>
+            //{
+            //    entity.HasKey(e => e.LogId).HasName("PK_FormulaStatusLog");
+            //    entity.ToTable("FormulaStatusLog", "SampleRequests");
 
-                entity.Property(e => e.LogId)
-                      .HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.OldStatus).HasMaxLength(32);
-                entity.Property(e => e.NewStatus).HasMaxLength(32);
-                entity.Property(e => e.CreateNameSnapShot).HasMaxLength(200);
-                entity.Property(e => e.CreatedDate)
-                      .HasDefaultValueSql("now()"); // mặc định thời điểm ghi log
+            //    // Index như yêu cầu
+            //    entity.HasIndex(e => e.FormulaId, "IX_FormulaStatusLog_FormulaId");
+            //    entity.HasIndex(e => e.CreatedDate, "IX_FormulaStatusLog_CreatedAt");
 
-                entity.HasOne(d => d.Formula).WithMany(p => p.StatusLogs)
-                      .HasForeignKey(d => d.FormulaId)
-                      .OnDelete(DeleteBehavior.Cascade)
-                      .HasConstraintName("FK_FormulaStatusLog_Formula");
+            //    entity.Property(e => e.LogId)
+            //          .HasDefaultValueSql("gen_random_uuid()");
+            //    entity.Property(e => e.OldStatus).HasMaxLength(32);
+            //    entity.Property(e => e.NewStatus).HasMaxLength(32);
+            //    entity.Property(e => e.CreateNameSnapShot).HasMaxLength(200);
+            //    entity.Property(e => e.CreatedDate)
+            //          .HasDefaultValueSql("now()"); // mặc định thời điểm ghi log
 
-                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.FormulaStatusLogCreatedByNavigations)
-                      .HasForeignKey(d => d.CreatedBy)
-                      .HasConstraintName("FK_FormulaStatusLog_CreatedBy");
+            //    entity.HasOne(d => d.Formula).WithMany(p => p.StatusLogs)
+            //          .HasForeignKey(d => d.FormulaId)
+            //          .OnDelete(DeleteBehavior.Cascade)
+            //          .HasConstraintName("FK_FormulaStatusLog_Formula");
 
-                // (Khuyến nghị) hợp lệ hoá trạng thái
-                //entity.ToTable(tb => tb.HasCheckConstraint(
-                //    "CK_FormulaStatusLog_Status",
-                //    "(OldStatus IS NULL OR OldStatus IN ('Draft','Sent','Verified','Rejected','Archived')) " +
-                //    "AND (NewStatus IS NULL OR NewStatus IN ('Draft','Sent','Verified','Rejected','Archived'))"
-                //));
-            });
+            //    entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.FormulaStatusLogCreatedByNavigations)
+            //          .HasForeignKey(d => d.CreatedBy)
+            //          .HasConstraintName("FK_FormulaStatusLog_CreatedBy");
+
+            //    // (Khuyến nghị) hợp lệ hoá trạng thái
+            //    //entity.ToTable(tb => tb.HasCheckConstraint(
+            //    //    "CK_FormulaStatusLog_Status",
+            //    //    "(OldStatus IS NULL OR OldStatus IN ('Draft','Sent','Verified','Rejected','Archived')) " +
+            //    //    "AND (NewStatus IS NULL OR NewStatus IN ('Draft','Sent','Verified','Rejected','Archived'))"
+            //    //));
+            //});
 
 
             modelBuilder.Entity<FormulaMaterial>(entity =>
@@ -992,28 +1230,54 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.ToTable("Groups", "company");
 
-                entity.HasIndex(e => e.CompanyId, "IX_Groups_CompanyId");
+                // ===== Columns =====
+                entity.Property(e => e.GroupId)
+                      .HasColumnName("GroupId")
+                      .ValueGeneratedOnAdd()
+                      .HasDefaultValueSql("gen_random_uuid()");
 
-                entity.HasIndex(e => e.CreatedBy, "IX_Groups_CreatedBy");
+                entity.Property(e => e.GroupType).HasColumnName("GroupType").HasMaxLength(100);
+                entity.Property(e => e.ExternalId).HasColumnName("ExternalId").HasColumnType("citext").HasMaxLength(50);
+                entity.Property(e => e.Name).HasColumnName("Name").HasColumnType("citext").HasMaxLength(200);
 
-                entity.HasIndex(e => e.UpdatedBy, "IX_Groups_UpdatedBy");
+                entity.Property(e => e.CreatedDate).HasColumnName("CreatedDate");
+                entity.Property(e => e.CreatedBy).HasColumnName("CreatedBy");
 
-                entity.Property(e => e.GroupId).HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.ExternalId).HasMaxLength(50);
-                entity.Property(e => e.GroupType).HasMaxLength(100);
-                entity.Property(e => e.Name).HasMaxLength(200);
+                entity.Property(e => e.UpdatedDate).HasColumnName("UpdatedDate");
+                entity.Property(e => e.UpdatedBy).HasColumnName("UpdatedBy");
 
+                entity.Property(e => e.CompanyId).HasColumnName("CompanyId");
+
+                // ===== Indexes =====
+                entity.HasIndex(e => e.CompanyId).HasDatabaseName("IX_Groups_CompanyId");
+                entity.HasIndex(e => e.CreatedBy).HasDatabaseName("IX_Groups_CreatedBy");
+                entity.HasIndex(e => e.UpdatedBy).HasDatabaseName("IX_Groups_UpdatedBy");
+
+                // (tuỳ chọn) Duy nhất theo tenant cho mã nhóm
+                entity.HasIndex(e => new { e.CompanyId, e.ExternalId })
+                      .IsUnique()
+                      .HasDatabaseName("UX_Groups_Company_ExternalId");
+
+                // (tuỳ chọn) Duy nhất theo tenant cho tên nhóm (citext → không phân biệt hoa/thường)
+                // entity.HasIndex(e => new { e.CompanyId, e.Name })
+                //       .IsUnique()
+                //       .HasDatabaseName("UX_Groups_Company_Name");
+
+                // ===== Relationships =====
                 entity.HasOne(d => d.Company).WithMany(p => p.Groups)
-                    .HasForeignKey(d => d.CompanyId)
-                    .HasConstraintName("FK__Groups__CompanyI__131DCD43");
+                      .HasForeignKey(d => d.CompanyId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_Groups_Company");
 
                 entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.GroupCreatedByNavigations)
-                    .HasForeignKey(d => d.CreatedBy)
-                    .HasConstraintName("FK_Groups_CreatedBy");
+                      .HasForeignKey(d => d.CreatedBy)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .HasConstraintName("FK_Groups_CreatedBy");
 
                 entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.GroupUpdatedByNavigations)
-                    .HasForeignKey(d => d.UpdatedBy)
-                    .HasConstraintName("FK_Groups_UpdatedBy");
+                      .HasForeignKey(d => d.UpdatedBy)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .HasConstraintName("FK_Groups_UpdatedBy");
             });
 
             //modelBuilder.Entity<GroupsCommonDatum>(entity =>
@@ -1336,12 +1600,11 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.Property(e => e.PlpuNote).HasColumnName("plpuNote");
                 entity.Property(e => e.BagType).HasColumnName("bagType");
 
-                entity.Property(e => e.QualifiedQuantity).HasPrecision(18, 2).HasColumnName("qualifiedQuantity");
-                entity.Property(e => e.RejectedQuantity).HasPrecision(18, 2).HasColumnName("rejectedQuantity");
-                entity.Property(e => e.WasteQuantity).HasPrecision(18, 2).HasColumnName("wasteQuantity");
+                //entity.Property(e => e.QualifiedQuantity).HasPrecision(18, 2).HasColumnName("qualifiedQuantity");
+                //entity.Property(e => e.RejectedQuantity).HasPrecision(18, 2).HasColumnName("rejectedQuantity");
+                //entity.Property(e => e.WasteQuantity).HasPrecision(18, 2).HasColumnName("wasteQuantity");
 
-                entity.Property(e => e.CreateDate).HasDefaultValueSql("timezone('utc', now())").HasColumnName("createDate");
-
+  
                 entity.Property(e => e.CreatedBy).HasColumnName("createdBy");
                 entity.Property(e => e.UpdatedDate).HasColumnName("updatedDate");
                 entity.Property(e => e.UpdatedBy).HasColumnName("updatedBy");
@@ -1418,7 +1681,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                       .HasColumnName("manufacturingFormulaId");
 
                 // ===== INDEXES (tuỳ nhu cầu lọc) =====
-                entity.HasIndex(e => e.mfgProductionOrderId, "IX_ManufacturingFormulas_mfgProductionOrderId");
+                entity.HasIndex(e => e.MfgProductionOrderId, "IX_ManufacturingFormulas_mfgProductionOrderId");
 
 
 
@@ -1430,15 +1693,15 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                     .HasDatabaseName("ux_mfg_formula_isstandard_one_per_vu");
 
 
-                entity.HasIndex(x => x.mfgProductionOrderId)
+                entity.HasIndex(x => x.MfgProductionOrderId)
                     .HasFilter(@"""isSelect"" = TRUE AND ""isActive"" = TRUE")
                     .IsUnique()
                     .HasDatabaseName("ux_mfg_formula_isselect_one_per_order");
 
                 // ===== COLUMNS =====
-                entity.Property(e => e.MfgProductionOrderExternalId).HasColumnName("mfgProductionOrderExternalId");
+                //entity.Property(e => e.MfgProductionOrderExternalId).HasColumnName("mfgProductionOrderExternalId");
                 entity.Property(e => e.Name).HasColumnName("name");
-                entity.Property(e => e.mfgProductionOrderId).HasColumnName("mfgProductionOrderId");
+                entity.Property(e => e.MfgProductionOrderId).HasColumnName("mfgProductionOrderId");
                 entity.Property(e => e.Status).HasColumnName("status");
 
                 entity.Property(e => e.TotalPrice)
@@ -1455,15 +1718,15 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.Property(e => e.Note).HasColumnName("note");
 
-                entity.Property(e => e.createdDate).HasColumnName("createdDate");
+                entity.Property(e => e.CreatedDate).HasColumnName("createdDate");
                 entity.Property(e => e.CreatedBy).HasColumnName("createdBy");
                 entity.Property(e => e.UpdatedDate).HasColumnName("updatedDate");
                 entity.Property(e => e.UpdatedBy).HasColumnName("updatedBy");
-                entity.Property(e => e.companyId).HasColumnName("companyId");
+                entity.Property(e => e.CompanyId).HasColumnName("companyId");
 
                 // ===== RELATIONSHIPS (FK names) =====
                 entity.HasOne(d => d.MfgProductionOrder).WithMany(p => p.ManufacturingFormulas)
-                      .HasForeignKey(d => d.mfgProductionOrderId)
+                      .HasForeignKey(d => d.MfgProductionOrderId)
                       .OnDelete(DeleteBehavior.Restrict)
                       .HasConstraintName("FK__Mf__mfgProductionOrderId");
 
@@ -1488,7 +1751,7 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                       .HasConstraintName("FK__Mf__updatedBy");
 
                 entity.HasOne(d => d.Company).WithMany(p => p.ManufacturingFormulas)
-                      .HasForeignKey(d => d.companyId)
+                      .HasForeignKey(d => d.CompanyId)
                       .OnDelete(DeleteBehavior.Restrict)
                       .HasConstraintName("FK__Mf__companyId");
 
@@ -1502,35 +1765,35 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             });
 
-            modelBuilder.Entity<ManufacturingFormulaLog>(entity =>
-            {
-                // ===== TABLE & PK =====
-                entity.ToTable("ManufacturingFormulaLog", "manufacturing");
-                entity.HasKey(e => e.Id)
-                      .HasName("PK__ManufacturingFormulaLog__Id");
+            //modelBuilder.Entity<ManufacturingFormulaLog>(entity =>
+            //{
+            //    // ===== TABLE & PK =====
+            //    entity.ToTable("ManufacturingFormulaLog", "manufacturing");
+            //    entity.HasKey(e => e.Id)
+            //          .HasName("PK__ManufacturingFormulaLog__Id");
 
-                entity.Property(e => e.Id)
-                      .HasDefaultValueSql("gen_random_uuid()")
-                      .HasColumnName("Id");
+            //    entity.Property(e => e.Id)
+            //          .HasDefaultValueSql("gen_random_uuid()")
+            //          .HasColumnName("Id");
 
-                // ===== INDEXES (tuỳ nhu cầu lọc) =====
-                entity.HasIndex(e => e.ManufacturingFormulaId, "IX_ManufacturingFormulaLog_ManufacturingFormulaId");
+            //    // ===== INDEXES (tuỳ nhu cầu lọc) =====
+            //    entity.HasIndex(e => e.ManufacturingFormulaId, "IX_ManufacturingFormulaLog_ManufacturingFormulaId");
 
 
-                entity.Property(e => e.PerformedDate).HasColumnName("PerformedDate");
+            //    entity.Property(e => e.PerformedDate).HasColumnName("PerformedDate");
 
-                // ===== RELATIONSHIPS (FK names) =====
-                entity.HasOne(d => d.ManufacturingFormula).WithMany(p => p.ManufacturingFormulaLogs)
-                      .HasForeignKey(d => d.ManufacturingFormulaId)
-                      .OnDelete(DeleteBehavior.Restrict)
-                      .HasConstraintName("FK__Mf__ManufacturingFormulaLogs");
+            //    // ===== RELATIONSHIPS (FK names) =====
+            //    entity.HasOne(d => d.ManufacturingFormula).WithMany(p => p.ManufacturingFormulaLogs)
+            //          .HasForeignKey(d => d.ManufacturingFormulaId)
+            //          .OnDelete(DeleteBehavior.Restrict)
+            //          .HasConstraintName("FK__Mf__ManufacturingFormulaLogs");
 
-                entity.HasOne(d => d.PerformedByNavigation).WithMany(p => p.PerformedByNavigations)
-                      .HasForeignKey(d => d.PerformedBy)
-                      .OnDelete(DeleteBehavior.Restrict)
-                      .HasConstraintName("FK__Mf__performedBy");
+            //    entity.HasOne(d => d.PerformedByNavigation).WithMany(p => p.PerformedByNavigations)
+            //          .HasForeignKey(d => d.PerformedBy)
+            //          .OnDelete(DeleteBehavior.Restrict)
+            //          .HasConstraintName("FK__Mf__performedBy");
 
-            });
+            //});
 
 
             modelBuilder.Entity<ManufacturingFormulaMaterial>(entity =>
@@ -1597,185 +1860,334 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
                 entity.ToTable("MemberInGroup", "company");
 
-                entity.HasIndex(e => e.GroupId, "IX_MemberInGroup_GroupId");
+                // ===== Columns =====
+                entity.Property(e => e.MemberId)
+                      .HasColumnName("MemberId")
+                      .ValueGeneratedOnAdd()
+                      .HasDefaultValueSql("gen_random_uuid()");
 
-                entity.HasIndex(e => e.Profile, "IX_MemberInGroup_Profile");
+                entity.Property(e => e.IsAdmin).HasColumnName("IsAdmin").HasDefaultValue(false);
+                entity.Property(e => e.Profile).HasColumnName("Profile");     // EmployeeId (nullable)
+                entity.Property(e => e.GroupId).HasColumnName("GroupId");
+                entity.Property(e => e.IsActive).HasColumnName("IsActive").HasDefaultValue(true);
 
-                entity.Property(e => e.MemberId).HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.IsActive).HasDefaultValue(true);
-                entity.Property(e => e.IsAdmin).HasDefaultValue(false);
+                // ===== Indexes =====
+                entity.HasIndex(e => e.GroupId).HasDatabaseName("IX_MemberInGroup_GroupId");
+                entity.HasIndex(e => e.Profile).HasDatabaseName("IX_MemberInGroup_Profile");
 
+                // Chống trùng một nhân sự trong cùng group (chỉ tính bản IsActive = TRUE)
+                entity.HasIndex(e => new { e.GroupId, e.Profile })
+                      .IsUnique()
+                      .HasFilter("\"IsActive\" = TRUE")
+                      .HasDatabaseName("UX_MemberInGroup_Group_Profile_Active");
+
+                // (tuỳ chọn) Nếu muốn MỖI NHÓM chỉ có 1 admin active:
+                // entity.HasIndex(e => e.GroupId)
+                //       .IsUnique()
+                //       .HasFilter("\"IsActive\" = TRUE AND \"IsAdmin\" = TRUE")
+                //       .HasDatabaseName("UX_MemberInGroup_Group_SingleAdmin_Active");
+
+                // ===== Relationships =====
                 entity.HasOne(d => d.Group).WithMany(p => p.MemberInGroups)
-                    .HasForeignKey(d => d.GroupId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_MemberInGroup_Groups");
+                      .HasForeignKey(d => d.GroupId)
+                      .OnDelete(DeleteBehavior.Cascade)   // Xoá group → xoá thành viên
+                      .HasConstraintName("FK_MemberInGroup_Group");
 
                 entity.HasOne(d => d.ProfileNavigation).WithMany(p => p.MemberInGroups)
-                    .HasForeignKey(d => d.Profile)
-                    .HasConstraintName("FK_MemberInGroup_Profile");
+                      .HasForeignKey(d => d.Profile)
+                      .OnDelete(DeleteBehavior.SetNull)   // Xoá employee → giữ bản ghi, set null
+                      .HasConstraintName("FK_MemberInGroup_Profile");
             });
 
             modelBuilder.Entity<MerchandiseOrder>(entity =>
             {
+                // Primary key
                 entity.HasKey(e => e.MerchandiseOrderId).HasName("PK__Merchand__D0AB7E7AFDA62167");
 
+                // Tên bảng và schema
                 entity.ToTable("MerchandiseOrders", "Orders");
 
-                entity.HasIndex(e => e.CompanyId, "IX_MerchandiseOrders_CompanyId");
+                // ===== Columns =====
+                entity.Property(e => e.MerchandiseOrderId).HasColumnName("MerchandiseOrderId")
+                      .ValueGeneratedOnAdd()
+                      .HasDefaultValueSql("gen_random_uuid()");
 
-                entity.HasIndex(e => e.CreatedBy, "IX_MerchandiseOrders_CreatedBy");
+                entity.Property(e => e.ExternalId).HasColumnName("ExternalId")
+                      .HasColumnType("citext");
 
-                entity.HasIndex(e => e.CustomerId, "IX_MerchandiseOrders_CustomerId");
+                entity.Property(e => e.DeliveryAddress).HasColumnName("DeliveryAddress")
+                      .HasMaxLength(255);
 
-                entity.HasIndex(e => e.ManagerById, "IX_MerchandiseOrders_ManagerById");
+                entity.Property(e => e.PaymentType).HasColumnName("PaymentType")
+                      .HasColumnType("citext");
 
-                entity.HasIndex(e => e.UpdatedBy, "IX_MerchandiseOrders_UpdatedBy");
+                entity.Property(e => e.Receiver).HasColumnName("Receiver")
+                      .HasColumnType("citext");
 
-                entity.Property(e => e.MerchandiseOrderId).HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.DeliveryAddress).HasMaxLength(255);
-                entity.Property(e => e.ExternalId).HasMaxLength(50);
-                entity.Property(e => e.PaymentType).HasMaxLength(50);
-                entity.Property(e => e.Receiver).HasMaxLength(255);
-                entity.Property(e => e.ShippingMethod).HasMaxLength(50);
-                entity.Property(e => e.Status).HasMaxLength(50);
-                entity.Property(e => e.CustomerExternalIdSnapshot).HasColumnType("citext");
-                entity.Property(e => e.CustomerNameSnapshot).HasColumnType("citext");
+                entity.Property(e => e.ShippingMethod).HasColumnName("ShippingMethod")
+                      .HasColumnType("citext");
 
-                entity.Property(e => e.TotalPrice).HasPrecision(18, 2);
-                entity.Property(x => x.Vat).HasColumnName("VAT").HasPrecision(5, 2);
+                entity.Property(e => e.Status)
+                      .HasColumnName("Status")
+                      .HasColumnType("citext");
 
-                entity.Property(x => x.Currency).HasMaxLength(3).IsUnicode(false);
-                entity.Property(x => x.IsPaid).HasDefaultValue(false);
-                entity.Property(x => x.IsActive).HasDefaultValue(true);
+                entity.Property(e => e.CustomerExternalIdSnapshot)
+                      .HasColumnName("CustomerExternalIdSnapshot")
+                      .HasColumnType("citext");
 
-                entity.HasOne(d => d.Company).WithMany(p => p.MerchandiseOrders)
-                    .HasForeignKey(d => d.CompanyId)
-                    .HasConstraintName("FK_MerchandiseOrderst_Company");
+                entity.Property(e => e.CustomerNameSnapshot)
+                      .HasColumnName("CustomerNameSnapshot")
+                      .HasColumnType("citext");
 
-                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.MerchandiseOrderCreatedByNavigations)
-                    .HasForeignKey(d => d.CreatedBy)
-                    .HasConstraintName("FK_MerchandiseOrderst_CreatedBy");
+                entity.Property(e => e.TotalPrice)
+                      .HasColumnName("TotalPrice")
+                      .HasPrecision(18, 2);
 
-                entity.HasOne(d => d.Customer).WithMany(p => p.MerchandiseOrders)
-                    .HasForeignKey(d => d.CustomerId)
-                    .HasConstraintName("FK_MerchandiseOrders_Customer");
+                entity.Property(e => e.Vat)
+                      .HasColumnName("VAT")
+                      .HasPrecision(5, 2);
 
-                entity.HasOne(d => d.ManagerBy).WithMany(p => p.MerchandiseOrderManagerBies)
-                    .HasForeignKey(d => d.ManagerById)
-                    .HasConstraintName("FK_MerchandiseOrderst_ManagerById");
+                entity.Property(e => e.Currency).HasColumnName("Currency")
+                      .HasMaxLength(10)
+                      .IsUnicode(false);
 
-                entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.MerchandiseOrderUpdatedByNavigations)
-                    .HasForeignKey(d => d.UpdatedBy)
-                    .HasConstraintName("FK_MerchandiseOrderst_UpdatedBy");
-            });
+                entity.Property(e => e.IsPaid).HasColumnName("IsPaid")
+                      .HasDefaultValue(false);
 
+                entity.Property(e => e.IsActive).HasColumnName("IsActive")
+                      .HasDefaultValue(true);
 
-            modelBuilder.Entity<MerchandiseOrderLog>(entity =>
-            {
-                entity.ToTable("MerchandiseOrderLogs", "Orders");
+                entity.Property(e => e.PONo).HasColumnName("PONo")
+                      .HasColumnType("citext");
 
-                entity.HasKey(e => e.LogId)
-                      .HasName("PK__MerchandiseOrderLogs__LogId");
+                entity.Property(e => e.CreateDate).HasColumnName("CreateDate");
 
+                entity.Property(e => e.UpdatedDate)
+                      .HasColumnName("UpdatedDate");
 
-                entity.Property(e => e.CreatedDate).HasDefaultValueSql("timezone('utc', now())").HasColumnName("createDate");
+                // ===== Indexes =====
 
-                entity.Property(e => e.CreatedBy).HasColumnName("createdBy");
+                // Đảm bảo không trùng ExternalId trong 1 company
+                entity.HasIndex(e => new { e.CompanyId, e.ExternalId })
+                      .IsUnique()
+                      .HasDatabaseName("UX_MO_Company_ExternalId");
 
 
-                entity.HasOne(d => d.MerchandiseOrder).WithMany(p => p.MerchandiseOrderLogs)
-                      .HasForeignKey(d => d.MerchandiseOrderId)
+                entity.HasIndex(e => e.CompanyId).HasDatabaseName("IX_MerchandiseOrders_CompanyId");
+                entity.HasIndex(e => e.CustomerId).HasDatabaseName("IX_MerchandiseOrders_CustomerId");
+                entity.HasIndex(e => e.ManagerById).HasDatabaseName("IX_MerchandiseOrders_ManagerById");
+                entity.HasIndex(e => e.AttachmentCollectionId).HasDatabaseName("IX_Order_AttachmentCollection");
+
+
+                // List/paging trong 1 tenant: IsActive luôn TRUE, sắp xếp CreateDate DESC, tie-break bằng PK
+                entity.HasIndex(e => new { e.CompanyId, e.CreateDate, e.MerchandiseOrderId })
+                      .IsDescending(false, true, true)
+                      .HasFilter("\"IsActive\" = TRUE")
+                      .HasDatabaseName("IX_MO_Tenant_Active_CreateDateDesc");
+
+                // Lọc theo CustomerId + Active, lấy mới nhất
+                entity.HasIndex(e => new { e.CustomerId, e.CreateDate, e.MerchandiseOrderId })
+                      .IsDescending(false, true, true)
+                      .HasFilter("\"IsActive\" = TRUE")
+                      .HasDatabaseName("IX_MO_Customer_Active_CreateDateDesc");
+
+                // Cho bulk update/soft delete theo đơn
+                entity.HasIndex(e => new { e.MerchandiseOrderId, e.IsActive })
+                      .HasDatabaseName("IX_MO_Detail_Order_Active");
+
+                // ===== Relationships =====
+                entity.HasOne(d => d.AttachmentCollection)
+                      .WithMany()
+                      .HasForeignKey(d => d.AttachmentCollectionId)
                       .OnDelete(DeleteBehavior.Restrict)
-                      .HasConstraintName("FK__MerchandiseOrderLogs__MerchandiseOrderId");
+                      .HasConstraintName("FK_MerchandiseOrders_AttachmentCollection");
 
+                entity.HasOne(d => d.Company)
+                      .WithMany(p => p.MerchandiseOrders)
+                      .HasForeignKey(d => d.CompanyId)
+                      .HasConstraintName("FK_MerchandiseOrders_Company");
 
-                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.MerchandiseOrderLogCreatedByNavigations)
+                entity.HasOne(d => d.CreatedByNavigation)
+                      .WithMany(p => p.MerchandiseOrderCreatedByNavigations)
                       .HasForeignKey(d => d.CreatedBy)
-                      .OnDelete(DeleteBehavior.Restrict)
-                      .HasConstraintName("FK__MerchandiseOrderLogs__createdBy");
+                      .HasConstraintName("FK_MerchandiseOrders_CreatedBy");
+
+                entity.HasOne(d => d.Customer)
+                      .WithMany(p => p.MerchandiseOrders)
+                      .HasForeignKey(d => d.CustomerId)
+                      .HasConstraintName("FK_MerchandiseOrders_Customer");
+
+                entity.HasOne(d => d.ManagerBy)
+                      .WithMany(p => p.MerchandiseOrderManagerBies)
+                      .HasForeignKey(d => d.ManagerById)
+                      .HasConstraintName("FK_MerchandiseOrders_ManagerById");
+
+                entity.HasOne(d => d.UpdatedByNavigation)
+                      .WithMany(p => p.MerchandiseOrderUpdatedByNavigations)
+                      .HasForeignKey(d => d.UpdatedBy)
+                      .HasConstraintName("FK_MerchandiseOrders_UpdatedBy");
             });
+
+
+            //modelBuilder.Entity<MerchandiseOrderLog>(entity =>
+            //{
+            //    entity.ToTable("MerchandiseOrderLogs", "Orders");
+
+            //    entity.HasKey(e => e.LogId)
+            //          .HasName("PK__MerchandiseOrderLogs__LogId");
+
+
+            //    entity.Property(e => e.CreatedDate).HasDefaultValueSql("timezone('utc', now())").HasColumnName("createDate");
+
+            //    entity.Property(e => e.CreatedBy).HasColumnName("createdBy");
+
+
+            //    entity.HasOne(d => d.MerchandiseOrder).WithMany(p => p.MerchandiseOrderLogs)
+            //          .HasForeignKey(d => d.MerchandiseOrderId)
+            //          .OnDelete(DeleteBehavior.Restrict)
+            //          .HasConstraintName("FK__MerchandiseOrderLogs__MerchandiseOrderId");
+
+
+            //    entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.MerchandiseOrderLogCreatedByNavigations)
+            //          .HasForeignKey(d => d.CreatedBy)
+            //          .OnDelete(DeleteBehavior.Restrict)
+            //          .HasConstraintName("FK__MerchandiseOrderLogs__createdBy");
+            //});
 
             modelBuilder.Entity<MerchandiseOrderDetail>(entity =>
             {
+                entity.ToTable("MerchandiseOrderDetails", "Orders");
                 entity.HasKey(e => e.MerchandiseOrderDetailId).HasName("PK__Merchand__FE0FB3FF67BDE750");
 
-                entity.ToTable("MerchandiseOrderDetails", "Orders");
+                // ===== Columns (HasColumnName cho tất cả) =====
+                entity.Property(e => e.MerchandiseOrderDetailId)
+                      .HasColumnName("MerchandiseOrderDetailId")
+                      .ValueGeneratedOnAdd()
+                      .HasDefaultValueSql("gen_random_uuid()");
 
-                // Alternate Key/Unique cho cặp (DetailId, MerchandiseOrderId)
-                entity.HasAlternateKey(x => new { x.MerchandiseOrderDetailId, x.MerchandiseOrderId });
+                entity.Property(e => e.MerchandiseOrderId).HasColumnName("MerchandiseOrderId");
+                entity.Property(e => e.ProductId).HasColumnName("ProductId");
+                entity.Property(e => e.FormulaId).HasColumnName("FormulaId");
 
-                entity.HasIndex(e => e.MerchandiseOrderId, "IX_MerchandiseOrderDetails_MerchandiseOrderId");
+                entity.Property(e => e.ProductExternalIdSnapshot)
+                      .HasColumnName("ProductExternalIdSnapshot")
+                      .HasColumnType("citext");
+                entity.Property(e => e.ProductNameSnapshot)
+                      .HasColumnName("ProductNameSnapshot")
+                      .HasColumnType("citext");
+                entity.Property(e => e.FormulaExternalIdSnapshot)
+                      .HasColumnName("FormulaExternalIdSnapshot")
+                      .HasColumnType("citext");
 
-                entity.HasIndex(e => e.ProductId, "IX_MerchandiseOrderDetails_ProductId");
-                entity.HasIndex(e => e.FormulaId, "IX_MerchandiseOrderDetails_FormulaId");
+                entity.Property(e => e.ExpectedQuantity)
+                      .HasColumnName("ExpectedQuantity")
+                      .HasPrecision(18, 3);
+                entity.Property(e => e.RealQuantity)
+                      .HasColumnName("RealQuantity")
+                      .HasPrecision(18, 3);
 
-                entity.Property(e => e.MerchandiseOrderDetailId).HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(x => x.ProductExternalIdSnapshot).HasColumnType("citext");
-                entity.Property(x => x.ProductNameSnapshot).HasColumnType("citext");
-                entity.Property(x => x.FormulaExternalIdSnapshot).HasColumnType("citext");
+                entity.Property(e => e.BagType).HasColumnName("BagType").HasMaxLength(50);
+                entity.Property(e => e.PackageWeight).HasColumnName("PackageWeight").HasMaxLength(50);
 
-                entity.Property(e => e.BagType).HasMaxLength(50);
-                entity.Property(x => x.BaseCostSnapshot).HasPrecision(18, 2);
-                entity.Property(x => x.RecommendedUnitPrice).HasPrecision(18, 2);
-                entity.Property(x => x.UnitPriceAgreed).HasPrecision(18, 2);
-                entity.Property(x => x.TotalPriceAgreed).HasPrecision(18, 2);
-                entity.Property(e => e.Status).HasMaxLength(50);
-                entity.Property(x => x.IsActive).HasDefaultValue(true);
+                entity.Property(e => e.Status).HasColumnName("Status").HasMaxLength(50);
+                entity.Property(e => e.Comment).HasColumnName("Comment").HasColumnType("citext");
 
+                entity.Property(e => e.DeliveryRequestDate).HasColumnName("DeliveryRequestDate");
+                entity.Property(e => e.DeliveryActualDate).HasColumnName("DeliveryActualDate");
+                entity.Property(e => e.ExpectedDeliveryDate).HasColumnName("ExpectedDeliveryDate");
+
+                entity.Property(e => e.BaseCostSnapshot)
+                      .HasColumnName("BaseCostSnapshot").HasPrecision(18, 2);
+                entity.Property(e => e.RecommendedUnitPrice)
+                      .HasColumnName("RecommendedUnitPrice").HasPrecision(18, 2);
+                entity.Property(e => e.UnitPriceAgreed)
+                      .HasColumnName("UnitPriceAgreed").HasPrecision(18, 2);
+                entity.Property(e => e.TotalPriceAgreed)
+                      .HasColumnName("TotalPriceAgreed").HasPrecision(18, 2);
+
+                entity.Property(e => e.IsActive)
+                      .HasColumnName("IsActive")
+                      .HasDefaultValue(true);
+
+                // ===== Indexes =====
+                entity.HasIndex(e => e.MerchandiseOrderId)
+                      .HasDatabaseName("IX_MO_Details_OrderId");
+
+                entity.HasIndex(e => new { e.MerchandiseOrderId, e.ProductId })
+                      .HasDatabaseName("IX_MO_Details_Order_Product");
+
+                entity.HasIndex(e => new { e.MerchandiseOrderId, e.FormulaId })
+                      .HasDatabaseName("IX_MO_Details_Order_Formula");
+
+                // paging/lọc theo trạng thái & ngày giao dự kiến (DESC), ổn định theo DetailId
+                entity.HasIndex(e => new { e.MerchandiseOrderId, e.IsActive, e.Status, e.ExpectedDeliveryDate, e.MerchandiseOrderDetailId })
+                      .IsDescending(false, false, false, true, true)
+                      .HasDatabaseName("IX_MO_Details_Order_Status_DateDesc");
+
+                // (TUỲ CHỌN) Chống trùng item: mỗi (Order, Product, Formula) chỉ 1 dòng active
+                // entity.HasIndex(e => new { e.MerchandiseOrderId, e.ProductId, e.FormulaId })
+                //       .IsUnique()
+                //       .HasFilter("\"IsActive\" = TRUE")
+                //       .HasDatabaseName("UX_MO_Detail_Order_Product_Formula_Active");
+
+                // ===== Relationships =====
+                // Xoá Order -> xoá luôn Detail (chuẩn đơn hàng)
                 entity.HasOne(d => d.MerchandiseOrder).WithMany(p => p.MerchandiseOrderDetails)
-                    .HasForeignKey(d => d.MerchandiseOrderId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_MerchandiseOrderDetails_MerchandiseOrderId");
+                      .HasForeignKey(d => d.MerchandiseOrderId)
+                      .OnDelete(DeleteBehavior.Cascade)
+                      .HasConstraintName("FK_MerchandiseOrderDetails_MerchandiseOrderId");
 
+                // Product/Formula không nullable => dùng Restrict (không SetNull)
                 entity.HasOne(d => d.Product).WithMany(p => p.MerchandiseOrderDetails)
-                    .HasForeignKey(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_MerchandiseOrderDetails_ProductId");
+                      .HasForeignKey(d => d.ProductId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_MerchandiseOrderDetails_Product");
 
                 entity.HasOne(d => d.Formula).WithMany(p => p.MerchandiseOrderDetails)
-                    .HasForeignKey(d => d.FormulaId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_MerchandiseOrderDetails_FormulaId");
+                      .HasForeignKey(d => d.FormulaId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_MerchandiseOrderDetails_FormulaId");
             });
 
-            modelBuilder.Entity<MerchandiseOrderSchedule>(entity =>
-            {
-                entity.HasKey(e => e.MerchandiseOrderScheduleId).HasName("PK__Merchand__B49D545E8C296524");
 
-                entity.ToTable("MerchandiseOrderSchedules", "Orders");
+            //modelBuilder.Entity<MerchandiseOrderSchedule>(entity =>
+            //{
+            //    entity.HasKey(e => e.MerchandiseOrderScheduleId).HasName("PK__Merchand__B49D545E8C296524");
 
-                entity.HasIndex(e => e.MerchandiseOrderId, "IX_MerchandiseOrderSchedules_MerchandiseOrderId");
+            //    entity.ToTable("MerchandiseOrderSchedules", "Orders");
 
-                entity.Property(e => e.MerchandiseOrderScheduleId).ValueGeneratedNever();
-                entity.Property(e => e.Status).HasMaxLength(50);
+            //    entity.HasIndex(e => e.MerchandiseOrderId, "IX_MerchandiseOrderSchedules_MerchandiseOrderId");
 
-                entity.HasOne(d => d.MerchandiseOrder).WithMany(p => p.MerchandiseOrderSchedules)
-                    .HasForeignKey(d => d.MerchandiseOrderId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_MerchandiseOrderSchedules_MerchandiseOrderId");
-            });
+            //    entity.Property(e => e.MerchandiseOrderScheduleId).ValueGeneratedNever();
+            //    entity.Property(e => e.Status).HasMaxLength(50);
 
-            modelBuilder.Entity<OrderAttachment>(entity =>
-            {
-                entity.HasKey(e => e.AttachmentId).HasName("PK__OrderAttachment__B49D545E8C296524");
+            //    entity.HasOne(d => d.MerchandiseOrder).WithMany(p => p.MerchandiseOrderSchedules)
+            //        .HasForeignKey(d => d.MerchandiseOrderId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_MerchandiseOrderSchedules_MerchandiseOrderId");
+            //});
+
+            //modelBuilder.Entity<OrderAttachment>(entity =>
+            //{
+            //    entity.HasKey(e => e.AttachmentId).HasName("PK__OrderAttachment__B49D545E8C296524");
 
 
-                entity.ToTable("OrderAttachments", "Orders");
-                entity.Property(e => e.AttachmentId).HasDefaultValueSql("gen_random_uuid()");
+            //    entity.ToTable("OrderAttachments", "Orders");
+            //    entity.Property(e => e.AttachmentId).HasDefaultValueSql("gen_random_uuid()");
 
-                entity.HasOne(x => x.MerchandiseOrder).WithMany(o => o.Attachments).HasForeignKey(x => x.MerchandiseOrderId);
-                entity.Property(x => x.FileName).HasMaxLength(255);
-                entity.Property(x => x.StoragePath).HasMaxLength(500);
+            //    entity.HasOne(x => x.MerchandiseOrder).WithMany(o => o.Attachments).HasForeignKey(x => x.MerchandiseOrderId);
+            //    entity.Property(x => x.FileName).HasMaxLength(255);
+            //    entity.Property(x => x.StoragePath).HasMaxLength(500);
 
-                entity.HasOne(d => d.MerchandiseOrder).WithMany(p => p.Attachments)
-                    .HasForeignKey(d => d.MerchandiseOrderId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_OrderAttachment_MerchandiseOrderId");
+            //    entity.HasOne(d => d.MerchandiseOrder).WithMany(p => p.Attachments)
+            //        .HasForeignKey(d => d.MerchandiseOrderId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_OrderAttachment_MerchandiseOrderId");
 
-                entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.OrderAttachmentCreatedByNavigations)
-                    .HasForeignKey(d => d.CreateBy)
-                    .HasConstraintName("FK_OrderAttachment_CreatedBy");
-            });
+            //    entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.OrderAttachmentCreatedByNavigations)
+            //        .HasForeignKey(d => d.CreateBy)
+            //        .HasConstraintName("FK_OrderAttachment_CreatedBy");
+            //});
 
 
 
@@ -1939,84 +2351,116 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<Product>(entity =>
             {
+                entity.ToTable("Products", "SampleRequests");
                 entity.HasKey(e => e.ProductId).HasName("PK__Products__B40CC6CD344F4294");
 
-                entity.ToTable("Products", "SampleRequests");
+                // ==== Columns (đặt HasColumnName y như property) ====
+                entity.Property(e => e.ProductId)
+                    .HasColumnName("ProductId")
+                    .ValueGeneratedOnAdd()
+                    .HasDefaultValueSql("gen_random_uuid()");
 
-                entity.HasIndex(e => e.CategoryId, "IX_Products_CategoryId");
+                entity.Property(e => e.ColourCode).HasColumnName("ColourCode").HasColumnType("citext");
+                entity.Property(e => e.Name).HasColumnName("Name").HasColumnType("citext");
+                entity.Property(e => e.ColourName).HasColumnName("ColourName").HasMaxLength(100);
+                entity.Property(e => e.Additive).HasColumnName("Additive").HasMaxLength(200);
+                entity.Property(e => e.UsageRate).HasColumnName("UsageRate");
+                entity.Property(e => e.DeltaE).HasColumnName("DeltaE");
+                entity.Property(e => e.Requirement).HasColumnName("Requirement").HasMaxLength(500);
+                entity.Property(e => e.ExpiryType).HasColumnName("ExpiryType").HasMaxLength(100);
+                entity.Property(e => e.StorageCondition).HasColumnName("StorageCondition");
+                entity.Property(e => e.LabComment).HasColumnName("LabComment").HasMaxLength(500);
+                //entity.Property(e => e.ProductType).HasColumnName("ProductType").HasMaxLength(100);
+                entity.Property(e => e.Procedure).HasColumnName("Procedure").HasMaxLength(100);
+                entity.Property(e => e.RecycleRate).HasColumnName("RecycleRate");
+                entity.Property(e => e.TaicalRate).HasColumnName("TaicalRate");
+                entity.Property(e => e.Application).HasColumnName("Application");
+                entity.Property(e => e.ProductUsage).HasColumnName("ProductUsage");
+                entity.Property(e => e.PolymerMatchedIn).HasColumnName("PolymerMatchedIn").HasMaxLength(100);
+                entity.Property(e => e.Code).HasColumnName("Code").HasMaxLength(100);
+                entity.Property(e => e.EndUser).HasColumnName("EndUser").HasMaxLength(100);
 
-                entity.HasIndex(e => e.CompanyId, "IX_Products_CompanyId");
+                entity.Property(e => e.FoodSafety).HasColumnName("FoodSafety").HasDefaultValue(false);
+                entity.Property(e => e.RohsStandard).HasColumnName("RohsStandard").HasDefaultValue(false);
+                entity.Property(e => e.ReachStandard).HasColumnName("ReachStandard").HasDefaultValue(false);
+                entity.Property(e => e.ReturnSample).HasColumnName("ReturnSample").HasDefaultValue(false);
+                entity.Property(e => e.IsRecycle).HasColumnName("IsRecycle").HasDefaultValue(false);
 
-                entity.HasIndex(e => e.CreatedBy, "IX_Products_CreatedBy");
+                entity.Property(e => e.MaxTemp).HasColumnName("MaxTemp");
+                entity.Property(e => e.WeatherResistance).HasColumnName("WeatherResistance").HasMaxLength(100);
+                entity.Property(e => e.LightCondition).HasColumnName("LightCondition").HasMaxLength(100);
+                entity.Property(e => e.VisualTest).HasColumnName("VisualTest").HasMaxLength(100);
 
-                entity.HasIndex(e => e.UpdatedBy, "IX_Products_UpdatedBy");
+                entity.Property(e => e.OtherComment).HasColumnName("OtherComment");
+                entity.Property(e => e.CategoryId).HasColumnName("CategoryId");
+                entity.Property(e => e.Weight).HasColumnName("Weight");
+                entity.Property(e => e.Unit).HasColumnName("Unit").HasMaxLength(50);
 
-                entity.Property(e => e.ProductId).HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.Additive).HasMaxLength(200);
-                entity.Property(e => e.Application).HasMaxLength(100);
-                entity.Property(e => e.Code).HasMaxLength(100);
-                entity.Property(e => e.ColourCode).HasColumnType("citext");
-                entity.Property(e => e.ColourName).HasMaxLength(100);
-                entity.Property(e => e.EndUser).HasMaxLength(100);
-                entity.Property(e => e.ExpiryType).HasMaxLength(100);
-                entity.Property(e => e.LabComment).HasMaxLength(500);
-                entity.Property(e => e.LightCondition).HasMaxLength(100);
-                entity.Property(e => e.Name).HasColumnType("citext");
-                entity.Property(e => e.PolymerMatchedIn).HasMaxLength(100);
-                entity.Property(e => e.Procedure).HasMaxLength(100);
-                entity.Property(e => e.ProductType).HasMaxLength(100);
-                entity.Property(e => e.ProductUsage).HasMaxLength(100);
-                entity.Property(e => e.Requirement).HasMaxLength(500);
-                //entity.Property(e => e.StorageCondition).HasMaxLength(200);
-                entity.Property(e => e.Unit).HasMaxLength(50);
-                entity.Property(e => e.VisualTest).HasMaxLength(100);
-                entity.Property(e => e.WeatherResistance).HasMaxLength(100);
 
+                entity.Property(e => e.CompanyId).HasColumnName("CompanyId");
+                entity.Property(e => e.IsActive).HasColumnName("IsActive").HasDefaultValue(true);
+
+                // ==== Indexes ====
+                entity.HasIndex(e => e.CompanyId).HasDatabaseName("IX_Products_CompanyId");
+                entity.HasIndex(e => e.CategoryId).HasDatabaseName("IX_Products_CategoryId");
+                entity.HasIndex(e => e.CreatedBy).HasDatabaseName("IX_Products_CreatedBy");
+                entity.HasIndex(e => e.UpdatedBy).HasDatabaseName("IX_Products_UpdatedBy");
+
+
+                // List/paging mặc định trong tenant (khớp CreatedDate desc)
+                entity.HasIndex(e => new { e.CompanyId, e.IsActive, e.CreatedDate, e.ProductId })
+                      .IsDescending(false, false, true, true)
+                      .HasDatabaseName("IX_Products_Company_IsActive_CreatedDateDesc");
+
+                // ==== Relationships ====
                 entity.HasOne(d => d.Category).WithMany(p => p.Products)
                     .HasForeignKey(d => d.CategoryId)
+                    .OnDelete(DeleteBehavior.SetNull)
                     .HasConstraintName("FK_Products_Category");
 
                 entity.HasOne(d => d.Company).WithMany(p => p.Products)
                     .HasForeignKey(d => d.CompanyId)
+                    .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FK_Products_Company");
 
                 entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.ProductCreatedByNavigations)
                     .HasForeignKey(d => d.CreatedBy)
-                    .OnDelete(DeleteBehavior.SetNull)
+                    .OnDelete(DeleteBehavior.SetNull) // CreatedBy là non-nullable
                     .HasConstraintName("FK_Products_CreatedBy");
 
                 entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.ProductUpdatedByNavigations)
                     .HasForeignKey(d => d.UpdatedBy)
-                    .OnDelete(DeleteBehavior.SetNull)
+                    .OnDelete(DeleteBehavior.SetNull) // UpdatedBy nullable
                     .HasConstraintName("FK_Products_UpdatedBy");
+
             });
 
-            modelBuilder.Entity<ProductChangedHistory>(entity =>
-            {
-                entity.HasKey(e => e.ProductChangedHistoryId).HasName("PK__ProductC__A793B6CA9FB36DED");
+            //modelBuilder.Entity<ProductChangedHistory>(entity =>
+            //{
+            //    entity.HasKey(e => e.ProductChangedHistoryId).HasName("PK__ProductC__A793B6CA9FB36DED");
 
-                entity.ToTable("ProductChangedHistory", "SampleRequests");
+            //    entity.ToTable("ProductChangedHistory", "SampleRequests");
 
-                entity.HasIndex(e => e.ChangedBy, "IX_ProductChangedHistory_ChangedBy");
+            //    entity.HasIndex(e => e.ChangedBy, "IX_ProductChangedHistory_ChangedBy");
 
-                entity.HasIndex(e => e.ProductId, "IX_ProductChangedHistory_ProductId");
+            //    entity.HasIndex(e => e.ProductId, "IX_ProductChangedHistory_ProductId");
 
-                entity.Property(e => e.ChangeNote).HasMaxLength(500);
-                entity.Property(e => e.ChangeType).HasMaxLength(100);
-                entity.Property(e => e.FieldChanged).HasMaxLength(100);
-                entity.Property(e => e.NewValue).HasMaxLength(500);
-                entity.Property(e => e.OldValue).HasMaxLength(500);
+            //    entity.Property(e => e.ChangeNote).HasMaxLength(500);
+            //    entity.Property(e => e.ChangeType).HasMaxLength(100);
+            //    entity.Property(e => e.FieldChanged).HasMaxLength(100);
+            //    entity.Property(e => e.NewValue).HasMaxLength(500);
+            //    entity.Property(e => e.OldValue).HasMaxLength(500);
 
-                entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.ProductChangedHistories)
-                    .HasForeignKey(d => d.ChangedBy)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_ProductHistory_ChangedBy");
+            //    entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.ProductChangedHistories)
+            //        .HasForeignKey(d => d.ChangedBy)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_ProductHistory_ChangedBy");
 
-                entity.HasOne(d => d.Product).WithMany(p => p.ProductChangedHistories)
-                    .HasForeignKey(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_ProductHistory_Product");
-            });
+            //    entity.HasOne(d => d.Product).WithMany(p => p.ProductChangedHistories)
+            //        .HasForeignKey(d => d.ProductId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_ProductHistory_Product");
+            //});
 
             modelBuilder.Entity<ProductInspection>(entity =>
             {
@@ -2473,91 +2917,181 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
 
             modelBuilder.Entity<SampleRequest>(entity =>
             {
-                entity.HasKey(e => e.SampleRequestId).HasName("PK__SampleRe__6F83B553A1A0D2A8");
-
+                // Table + PK
                 entity.ToTable("SampleRequests", "SampleRequests");
+                entity.HasKey(e => e.SampleRequestId).HasName("PK_SampleRequests");
 
-                entity.HasIndex(e => e.CompanyId, "IX_SampleRequests_CompanyId");
+                // ==== Columns (HasColumnName cho tất cả) ====
+                entity.Property(e => e.SampleRequestId).HasColumnName("SampleRequestId")
+                     .ValueGeneratedOnAdd()
+                     .HasDefaultValueSql("gen_random_uuid()");
 
-                entity.HasIndex(e => e.CreatedBy, "IX_SampleRequests_CreatedBy");
+                entity.Property(e => e.ExternalId).HasColumnName("ExternalId")
+                    .HasMaxLength(50)
+                    .IsRequired();
 
-                entity.HasIndex(e => e.CustomerId, "IX_SampleRequests_CustomerId");
+                entity.Property(e => e.CustomerId).HasColumnName("CustomerId");
 
-                entity.HasIndex(e => e.FormulaId, "IX_SampleRequests_FormulaId");
+                entity.Property(e => e.ManagerBy).HasColumnName("ManagerBy");
 
-                entity.HasIndex(e => e.ManagerBy, "IX_SampleRequests_ManagerBy");
+                entity.Property(e => e.ProductId).HasColumnName("ProductId");
 
-                entity.HasIndex(e => e.ManagerBy, "IX_SampleRequests_SendBy");
+                entity.Property(e => e.AttachmentCollectionId).HasColumnName("AttachmentCollectionId");
 
-                entity.HasIndex(e => e.ProductId, "IX_SampleRequests_ProductId");
+                entity.Property(e => e.RealDeliveryDate).HasColumnName("RealDeliveryDate");
 
-                entity.HasIndex(e => e.UpdatedBy, "IX_SampleRequests_UpdatedBy");
+                entity.Property(e => e.ExpectedDeliveryDate).HasColumnName("ExpectedDeliveryDate");
 
-                entity.Property(e => e.SampleRequestId).HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.AdditionalComment).HasMaxLength(500);
-                entity.Property(e => e.ExpectedPrice).HasPrecision(18, 4);
-                entity.Property(e => e.ExternalId).HasMaxLength(50);
-                entity.Property(e => e.Image).HasMaxLength(255);
-                entity.Property(e => e.SendByNameSnapshot).HasMaxLength(255);
-                entity.Property(e => e.InfoType).HasMaxLength(100);
-                entity.Property(e => e.IsActive).HasDefaultValue(true);
-                entity.Property(e => e.OtherComment).HasMaxLength(500);
-                entity.Property(e => e.Package).HasMaxLength(100);
-                entity.Property(e => e.CustomerProductCode).HasMaxLength(100);
-                entity.Property(e => e.RequestType).HasMaxLength(100);
-                entity.Property(e => e.Status).HasMaxLength(100);
+                entity.Property(e => e.RequestDeliveryDate).HasColumnName("RequestDeliveryDate");
+
+                entity.Property(e => e.RequestTestSampleDate).HasColumnName("RequestTestSampleDate");
+
+                entity.Property(e => e.ResponseDeliveryDate).HasColumnName("ResponseDeliveryDate");
+
+                entity.Property(e => e.RealPriceQuoteDate).HasColumnName("RealPriceQuoteDate");
+
+                entity.Property(e => e.ExpectedPriceQuoteDate).HasColumnName("ExpectedPriceQuoteDate");
+
+                entity.Property(e => e.RequestType).HasColumnName("RequestType")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.ExpectedQuantity).HasColumnName("ExpectedQuantity");
+
+                entity.Property(e => e.ExpectedPrice).HasColumnName("ExpectedPrice")
+                    .HasPrecision(18, 4);
+
+                entity.Property(e => e.SampleQuantity).HasColumnName("SampleQuantity");
+
+                entity.Property(e => e.OtherComment).HasColumnName("OtherComment")
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.InfoType).HasColumnName("InfoType")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.FormulaId).HasColumnName("FormulaId");
+
+                entity.Property(e => e.SaleComment).HasColumnName("SaleComment");
+                entity.Property(e => e.AdditionalComment).HasColumnName("AdditionalComment");
+
+                entity.Property(e => e.CustomerProductCode).HasColumnName("CustomerProductCode")
+                    .HasMaxLength(100);
+                entity.Property(e => e.BranchId).HasColumnName("BranchId");
+                entity.Property(e => e.Status).HasColumnName("Status")
+                    .HasMaxLength(100)
+                    .HasDefaultValue("New");
+                entity.Property(e => e.Package).HasColumnName("Package")
+                    .HasMaxLength(100);
+
+
+                entity.Property(e => e.CreatedBy).HasColumnName("CreatedBy");
+                entity.Property(e => e.SendBy).HasColumnName("SendBy");
+                ////entity.Property(e => e.SendByNameSnapshot).HasColumnName("SendByNameSnapshot")
+                //    .HasMaxLength(255);
+                entity.Property(e => e.UpdatedBy).HasColumnName("UpdatedBy");
+                entity.Property(e => e.CompanyId).HasColumnName("CompanyId");
+                entity.Property(e => e.IsActive).HasColumnName("IsActive")
+                    .HasDefaultValue(true);
+
+                // ==== Indexes ====
+                //entity.HasIndex(e => e.CompanyId).HasDatabaseName("IX_SampleRequests_CompanyId");
+                //entity.HasIndex(e => e.BranchId).HasDatabaseName("IX_SampleRequests_BranchId");
+                entity.HasIndex(e => e.FormulaId).HasDatabaseName("IX_SampleRequests_FormulaId");
+                entity.HasIndex(e => e.ManagerBy).HasDatabaseName("IX_SampleRequests_ManagerBy");
+                entity.HasIndex(e => e.SendBy).HasDatabaseName("IX_SampleRequests_SendBy");
+                entity.HasIndex(e => e.UpdatedBy).HasDatabaseName("IX_SampleRequests_UpdatedBy");
+                entity.HasIndex(o => o.AttachmentCollectionId).HasDatabaseName("IX_SampleRequests_AttachmentCollection");
+
+                // Trang list mặc định: Company + Active + sort theo thời gian (ổn định, ít tốn CPU sort)
+                entity.HasIndex(e => new { e.CompanyId, e.IsActive, e.CreatedDate, e.SampleRequestId })
+                      .IsDescending(false, false, true, true) // EF Core 8+: CreatedDate, SampleRequestId DESC
+                      .HasDatabaseName("IX_SampleRequests_Company_IsActive_CreatedDateDesc");
+
+
+                entity.HasIndex(e => new { e.CompanyId, e.IsActive, e.Status, e.CreatedDate })
+                      .HasDatabaseName("IX_SampleRequests_Company_Status_CreatedDate");
+                entity.HasIndex(e => new { e.CompanyId, e.IsActive, e.ExternalId })
+                      .IsUnique()
+                      .HasDatabaseName("UX_SampleRequests_Company_ExternalId");
+
+                entity.HasIndex(e => new { e.CompanyId, e.ProductId })
+                      .HasDatabaseName("IX_SampleRequests_Company_Product");
+
+                entity.HasIndex(e => new { e.CompanyId, e.CustomerId })
+                      .HasDatabaseName("IX_SampleRequests_Company_Customer");
+
+                entity.HasIndex(e => new { e.CompanyId, e.CreatedBy })
+                      .HasDatabaseName("IX_SampleRequests_Company_CreatedBy");
+
+                // ==== Relationships ====
+                entity.HasOne(d => d.AttachmentCollection)
+                    .WithMany()
+                    .HasForeignKey(d => d.AttachmentCollectionId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .HasConstraintName("FK_SampleRequests_AttachmentCollection");
 
                 entity.HasOne(d => d.Company).WithMany(p => p.SampleRequests)
                     .HasForeignKey(d => d.CompanyId)
+                    .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FK_SampleRequests_Company");
+
+                entity.HasOne(d => d.Branch).WithMany(p => p.SampleRequests)
+                    .HasForeignKey(d => d.BranchId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .HasConstraintName("FK_SampleRequests_Branch");
 
                 entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.SampleRequestCreatedByNavigations)
                     .HasForeignKey(d => d.CreatedBy)
+                    .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FK_SampleRequests_CreatedBy");
 
                 entity.HasOne(d => d.Customer).WithMany(p => p.SampleRequests)
                     .HasForeignKey(d => d.CustomerId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FK_SampleRequests_Customer");
 
                 entity.HasOne(d => d.Formula).WithMany(p => p.SampleRequests)
                     .HasForeignKey(d => d.FormulaId)
+                    .OnDelete(DeleteBehavior.SetNull)
                     .HasConstraintName("FK_SampleRequests_Formula");
 
                 entity.HasOne(d => d.ManagerByNavigation).WithMany(p => p.SampleRequestManagerByNavigations)
                     .HasForeignKey(d => d.ManagerBy)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FK_SampleRequests_Manager");
 
                 entity.HasOne(d => d.Product).WithMany(p => p.SampleRequests)
                     .HasForeignKey(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FK_SampleRequests_Product");
 
                 entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.SampleRequestUpdatedByNavigations)
                     .HasForeignKey(d => d.UpdatedBy)
+                    .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FK_SampleRequests_UpdatedBy");
 
                 entity.HasOne(d => d.SendByNavigation).WithMany(p => p.SampleRequestSendByNavigations)
                     .HasForeignKey(d => d.SendBy)
+                    .OnDelete(DeleteBehavior.SetNull)
                     .HasConstraintName("FK_SampleRequests_SendBy");
             });
 
-            modelBuilder.Entity<SampleRequestImage>(entity =>
-            {
-                entity.ToTable("SampleRequestImages", "SampleRequests");
-                entity.HasKey(e => e.SampleRequestImageId).HasName("PK__SampleRequestImage__3214EC07A98DEC4E");
 
-                entity.Property(e => e.SampleRequestImageId).HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.FileName).HasMaxLength(255).IsRequired();
-                entity.Property(e => e.FileType).HasMaxLength(100).IsRequired();
-                entity.Property(e => e.FileUrl).IsRequired();
 
-                entity.HasOne(img => img.SampleRequest)
-                      .WithMany(sr => sr.SampleRequestImages)
-                      .HasForeignKey(img => img.SampleRequestId)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
+            //modelBuilder.Entity<SampleRequestImage>(entity =>
+            //{
+            //    entity.ToTable("SampleRequestImages", "SampleRequests");
+            //    entity.HasKey(e => e.SampleRequestImageId).HasName("PK__SampleRequestImage__3214EC07A98DEC4E");
+
+            //    entity.Property(e => e.SampleRequestImageId).HasDefaultValueSql("gen_random_uuid()");
+            //    entity.Property(e => e.FileName).HasMaxLength(255).IsRequired();
+            //    entity.Property(e => e.FileType).HasMaxLength(100).IsRequired();
+            //    entity.Property(e => e.FileUrl).IsRequired();
+
+            //    entity.HasOne(img => img.SampleRequest)
+            //          .WithMany(sr => sr.SampleRequestImages)
+            //          .HasForeignKey(img => img.SampleRequestId)
+            //          .OnDelete(DeleteBehavior.Cascade);
+            //});
 
             modelBuilder.Entity<SchedualMfg>(entity =>
             {
@@ -2880,6 +3414,392 @@ namespace VietausWebAPI.WebAPI.DatabaseContext
                 entity.HasIndex(x => new { x.CompanyId, x.VaCode });
                 //entity.HasIndex(x => new { x.CompanyId, x.SnapshotSetId });
             });
+
+
+
+
+            /// ==================================== MRO Module ==================================== 
+            modelBuilder.Entity<AreaMRO>(entity =>
+            {
+                entity.ToTable("areas", "mro");
+
+                entity.HasKey(x => x.AreaId).HasName("pk_areas");
+
+                entity.Property(x => x.AreaId)
+                      .UseIdentityByDefaultColumn().HasColumnName("area_id");
+                entity.Property(x => x.AreaExternalId)
+                      .HasColumnName("area_externalid")
+                      .HasColumnType("text")
+                      .IsRequired();
+
+                entity.Property(x => x.AreaName)
+                      .HasColumnName("area_name")
+                      .HasColumnType("text")
+                      .IsRequired();
+
+                entity.HasIndex(x => x.AreaExternalId)
+                      .HasDatabaseName("ux_areas_area_externalid")
+                      .IsUnique();
+            });
+
+            modelBuilder.Entity<WarehouseMRO>(entity =>
+            {
+                entity.HasKey(e => e.WarehouseId).HasName("PK__Warehouses__3214EC07A98DEC4E");
+                entity.Property(x => x.WarehouseId).UseIdentityAlwaysColumn();
+
+                entity.ToTable("warehouses", "mro");
+
+
+                entity.Property(x => x.WarehouseId).HasColumnName("warehouse_id");
+                entity.Property(x => x.WarehouseExternalId)
+                      .HasColumnName("warehouse_external_id")
+                      .HasColumnType("text")
+                      .IsRequired();
+                entity.Property(x => x.WarehouseName)
+                      .HasColumnName("warehouse_name")
+                      .HasColumnType("text")
+                      .IsRequired();
+
+                entity.HasIndex(x => x.WarehouseExternalId)
+                      .HasDatabaseName("ix_warehouses_external_id")
+                      .IsUnique(); // nếu không muốn unique, bỏ dòng này
+            });
+
+            modelBuilder.Entity<ZoneMRO>(entity =>
+            {
+                entity.HasKey(e => e.ZoneId).HasName("PK__Zone__3214EC07A98DEC4E");
+                entity.Property(x => x.ZoneId).UseIdentityAlwaysColumn();
+
+                entity.ToTable("zones", "mro");
+
+                entity.Property(x => x.ZoneId).HasColumnName("zone_id");
+                entity.Property(x => x.WarehouseId).HasColumnName("warehouse_id");
+                entity.Property(x => x.ZoneExternalId)
+                      .HasColumnName("zone_external_id")
+                      .HasColumnType("text")
+                      .IsRequired();
+                entity.Property(x => x.ZoneName)
+                      .HasColumnName("zone_name")
+                      .HasColumnType("text")
+                      .IsRequired();
+
+                entity.HasIndex(x => x.WarehouseId)
+                      .HasDatabaseName("ix_zones_warehouse_id");
+
+                // Một warehouse có nhiều zone
+                entity.HasOne(z => z.Warehouse)
+                      .WithMany(w => w.Zones)
+                      .HasForeignKey(z => z.WarehouseId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_zones_warehouse_id");
+
+                // ZoneExternalId duy nhất trong cùng 1 warehouse
+                entity.HasIndex(x => new { x.WarehouseId, x.ZoneExternalId })
+                      .HasDatabaseName("ux_zones_warehouse_external")
+                      .IsUnique();
+            });
+
+            modelBuilder.Entity<RackMRO>(entity =>
+            {
+                entity.HasKey(e => e.RackId).HasName("PK__Ranks__3214EC07A98DEC4E");
+                entity.Property(x => x.RackId).UseIdentityAlwaysColumn();
+
+                entity.ToTable("racks", "mro");
+                entity.Property(x => x.RackId).HasColumnName("rack_id");
+                entity.Property(x => x.ZoneId).HasColumnName("zone_id");
+                entity.Property(x => x.RackExternalId)
+                      .HasColumnName("rack_external_id")
+                      .HasColumnType("text")
+                      .IsRequired();
+                entity.Property(x => x.RackName)
+                      .HasColumnName("rack_name")
+                      .HasColumnType("text")
+                      .IsRequired();
+
+                entity.HasIndex(x => x.ZoneId).HasDatabaseName("ix_racks_zone_id");
+
+                // Một zone có nhiều rack
+                entity.HasOne(r => r.Zone)
+                      .WithMany(z => z.Racks)
+                      .HasForeignKey(r => r.ZoneId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_racks_zone_id");
+
+                // RackExternalId duy nhất trong cùng 1 zone
+                entity.HasIndex(x => new { x.ZoneId, x.RackExternalId })
+                      .HasDatabaseName("ux_racks_zone_external")
+                      .IsUnique();
+            });
+
+            modelBuilder.Entity<SlotMRO>(entity =>
+            {
+                entity.HasKey(e => e.SlotId).HasName("PK__Slots__3214EC07A98DEC4E");
+                entity.Property(x => x.SlotId).UseIdentityAlwaysColumn();
+
+
+                entity.ToTable("slots", "mro");
+                entity.Property(x => x.SlotId).HasColumnName("slot_id");
+                entity.Property(x => x.RackId).HasColumnName("rack_id");
+                entity.Property(x => x.SlotExternalId)
+                      .HasColumnName("slot_external_id")
+                      .HasColumnType("text")
+                      .IsRequired();
+                entity.Property(x => x.SlotName)
+                      .HasColumnName("slot_name")
+                      .HasColumnType("text")
+                      .IsRequired();
+
+                entity.Property(x => x.CapacityQty)
+                      .HasColumnName("capacity_qty")
+                      .HasColumnType("integer")
+                      .HasDefaultValue(0);
+
+                entity.Property(x => x.CountToCapacity)
+                      .HasColumnName("count_to_capacity")
+                      .HasColumnType("boolean")
+                      .HasDefaultValue(true);
+
+                entity.HasIndex(x => x.RackId).HasDatabaseName("ix_slots_rack_id");
+
+                // Một rack có nhiều slot
+                entity.HasOne(s => s.Rack)
+                      .WithMany(r => r.Slots)
+                      .HasForeignKey(s => s.RackId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_slots_rack_id");
+
+                // SlotExternalId duy nhất trong cùng 1 rack
+                entity.HasIndex(x => new { x.RackId, x.SlotExternalId })
+                      .HasDatabaseName("ux_slots_rack_external")
+                      .IsUnique();
+            });
+
+            modelBuilder.Entity<EquipmentMRO>(entity =>
+            {
+                entity.ToTable("equipment", "mro");
+
+                entity.HasKey(x => x.EquipmentId).HasName("pk_equipment");
+
+                entity.Property(x => x.EquipmentId)
+                      .HasColumnName("equipment_id")
+                      .UseIdentityByDefaultColumn(); // Npgsql; nếu SQL Server thì bỏ dòng này
+
+                entity.Property(x => x.EquipmentExternalId)
+                      .HasColumnName("equipment_externalid")
+                      .HasColumnType("text")
+                      .IsRequired();
+
+                entity.Property(x => x.EquipmentName)
+                      .HasColumnName("equipment_name")
+                      .HasColumnType("text")
+                      .IsRequired();
+
+                // soft refs (không FK)
+                entity.Property(x => x.AreaExternalId)
+                      .HasColumnName("area_externalid")
+                      .HasColumnType("text");
+
+                entity.Property(x => x.FactoryExternalId)
+                      .HasColumnName("factory_externalid")
+                      .HasColumnType("text");
+
+                entity.Property(x => x.PartExternalId)
+                      .HasColumnName("part_externalid")
+                      .HasColumnType("citext"); // nếu không dùng PostgreSQL -> "text"
+
+                // hard FK (tùy chọn)
+                entity.Property(x => x.AreaId).HasColumnName("area_id");
+                entity.Property(x => x.FactoryId).HasColumnName("factory_id");
+                entity.Property(x => x.PartId).HasColumnName("part_id");
+
+                // Index tra cứu theo external
+                entity.HasIndex(x => x.AreaExternalId).HasDatabaseName("ix_equipment_area_externalid");
+                entity.HasIndex(x => x.FactoryExternalId).HasDatabaseName("ix_equipment_factory_externalid");
+                entity.HasIndex(x => x.PartExternalId).HasDatabaseName("ix_equipment_part_externalid");
+
+                // Unique theo nhà máy + mã ngoài thiết bị (tuỳ nghiệp vụ)
+                entity.HasIndex(x => new { x.FactoryId, x.EquipmentExternalId })
+                      .HasDatabaseName("ux_equipment_factory_extid")
+                      .IsUnique();
+
+                // Quan hệ OPTIONAL (cho phép null) + hạn chế xóa
+                entity.HasOne(x => x.Area)
+                      .WithMany(a => a.Equipments)
+                      .HasForeignKey(x => x.AreaId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_equipment_area_id");
+
+                entity.HasOne(x => x.Factory)
+                      .WithMany() // hoặc .WithMany(c => c.Equipments) nếu có
+                      .HasForeignKey(x => x.FactoryId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_equipment_factory_id");
+
+                entity.HasOne(x => x.Part)
+                      .WithMany()
+                      .HasForeignKey(x => x.PartId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_equipment_part_id");
+            });
+
+            modelBuilder.Entity<IncidentHeaderMRO>(entity =>
+            {
+                entity.ToTable("incident_hdr", "mro");
+
+                entity.HasKey(x => x.IncidentId).HasName("pk_incident_hdr");
+
+                entity.Property(x => x.IncidentId)
+                      .HasColumnName("incident_id")
+                      .UseIdentityByDefaultColumn(); // nếu SQL Server thì bỏ dòng này
+
+                entity.Property(x => x.IncidentCode)
+                      .HasColumnName("incident_code")
+                      .HasColumnType("text")
+                      .IsRequired();
+
+                entity.Property(x => x.Status)
+                      .HasColumnName("status")
+                      .HasColumnType("text")
+                      .IsRequired();
+
+                entity.Property(x => x.Title)
+                      .HasColumnName("title")
+                      .HasColumnType("text")
+                      .IsRequired();
+
+                entity.Property(x => x.Description)
+                      .HasColumnName("description")
+                      .HasColumnType("text");
+
+                // soft refs + FK optional
+                entity.Property(x => x.EquipmentId).HasColumnName("equipment_id");
+                entity.Property(x => x.EquipmentCode)
+                      .HasColumnName("equipment_code")
+                      .HasColumnType("text"); // dùng "citext" nếu muốn case-insensitive
+
+                entity.Property(x => x.AreaId).HasColumnName("area_id");
+                entity.Property(x => x.AreaCode)
+                      .HasColumnName("area_code")
+                      .HasColumnType("text");
+
+                // Company (FK bắt buộc)
+                entity.Property(x => x.CompanyId).HasColumnName("company_id");
+
+                entity.Property(x => x.RolePrefix)
+                      .HasColumnName("role_prefix")
+                      .HasColumnType("text");
+
+                entity.Property(x => x.CreatedAt).HasColumnName("created_at");
+                entity.Property(x => x.CreatedBy).HasColumnName("created_by");
+
+                entity.Property(x => x.ExecAt).HasColumnName("exec_at");
+                entity.Property(x => x.ExecBy).HasColumnName("exec_by");
+
+                entity.Property(x => x.DoneAt).HasColumnName("done_at");
+                entity.Property(x => x.DoneBy).HasColumnName("done_by");
+
+                entity.Property(x => x.ClosedAt).HasColumnName("closed_at");
+                entity.Property(x => x.ClosedBy).HasColumnName("closed_by");
+
+                entity.Property(x => x.WaitMin).HasColumnName("wait_min");
+                entity.Property(x => x.RepairMin).HasColumnName("repair_min");
+                entity.Property(x => x.TotalMin).HasColumnName("total_min");
+
+                // -------- Indexes / Unique --------
+                entity.HasIndex(x => new { x.CompanyId, x.IncidentCode })
+                      .HasDatabaseName("ux_incident_hdr_company_code")
+                      .IsUnique();
+
+                entity.HasIndex(x => x.Status).HasDatabaseName("ix_incident_hdr_status");
+                entity.HasIndex(x => new { x.EquipmentId, x.EquipmentCode })
+                      .HasDatabaseName("ix_incident_hdr_equipment");
+                entity.HasIndex(x => x.AreaId).HasDatabaseName("ix_incident_hdr_area");
+                entity.HasIndex(x => x.CreatedAt).HasDatabaseName("ix_incident_hdr_created_at");
+
+                // -------- Relationships --------
+                entity.HasOne(x => x.Company)
+                      .WithMany()
+                      .HasForeignKey(x => x.CompanyId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_incident_hdr_company_id");
+
+                entity.HasOne(x => x.Area)
+                      .WithMany()
+                      .HasForeignKey(x => x.AreaId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_incident_hdr_area_id");
+
+                entity.HasOne(x => x.Equipment)
+                      .WithMany()
+                      .HasForeignKey(x => x.EquipmentId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_incident_hdr_equipment_id");
+
+                entity.HasOne(x => x.CreatedByEmployee)
+                      .WithMany()
+                      .HasForeignKey(x => x.CreatedBy)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_incident_hdr_created_by");
+
+                entity.HasOne(x => x.ExecByEmployee)
+                      .WithMany()
+                      .HasForeignKey(x => x.ExecBy)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_incident_hdr_exec_by");
+
+                entity.HasOne(x => x.DoneByEmployee)
+                      .WithMany()
+                      .HasForeignKey(x => x.DoneBy)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_incident_hdr_done_by");
+
+                entity.HasOne(x => x.ClosedByEmployee)
+                      .WithMany()
+                      .HasForeignKey(x => x.ClosedBy)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_incident_hdr_closed_by");
+            });
+
+
+            /// ==================================== Audit Module ==================================== 
+            modelBuilder.Entity<CodeCounter>(entity =>
+            {
+                entity.ToTable("code_counters", "Audit");
+
+                // PK tổng hợp (Prefix, Ymd)
+                entity.HasKey(x => new { x.Prefix, x.Ymd })
+                      .HasName("pk_code_counters_prefix_ymd");
+
+                entity.Property(x => x.Prefix)
+                      .HasColumnName("prefix")
+                      .HasColumnType("text")
+                      .IsRequired();
+
+                entity.Property(x => x.Ymd)
+                      .HasColumnName("ymd")
+                      .HasColumnType("integer")
+                      .IsRequired();
+
+                entity.Property(x => x.LastValue)
+                      .HasColumnName("last_value")
+                      .HasColumnType("integer")
+                      .HasDefaultValue(0)
+                      .IsRequired();
+
+                // Index phụ để tra cứu theo prefix nhanh
+                entity.HasIndex(x => x.Prefix)
+                      .HasDatabaseName("ix_code_counters_prefix");
+            });
+
         }
     }
 }

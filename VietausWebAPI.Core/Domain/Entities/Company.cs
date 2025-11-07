@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
+using VietausWebAPI.Core.Domain.Entities.MROSchema;
 
 namespace VietausWebAPI.Core.Domain.Entities;
 
@@ -21,6 +23,7 @@ public partial class Company
 
     public virtual ICollection<Branch> Branches { get; set; } = new List<Branch>();
     public virtual ICollection<Employee> Employees { get; set; } = new List<Employee>();
+    public virtual ICollection<EquipmentMRO> Equipments { get; set; } = new List<EquipmentMRO>();
 
     public virtual ICollection<Category> Categories { get; set; } = new List<Category>();
 
@@ -33,6 +36,7 @@ public partial class Company
     public virtual ICollection<Customer> Customers { get; set; } = new List<Customer>();
 
     public virtual ICollection<Formula> Formulas { get; set; } = new List<Formula>();
+    public virtual ICollection<EventLog> EventLogs { get; set; } = new List<EventLog>();
 
     public virtual ICollection<Group> Groups { get; set; } = new List<Group>();
 
@@ -58,4 +62,11 @@ public partial class Company
     public virtual ICollection<WarehouseRequest> WarehouseRequests { get; set; } = new List<WarehouseRequest>();
 
     public virtual Employee? UpdatedByNavigation { get; set; }
+
+
+    /// <summary>
+    /// MRO
+    /// </summary>
+    public virtual ICollection<IncidentHeaderMRO> IncidentHeaderMROs { get; set; } = new List<IncidentHeaderMRO>();
+
 }

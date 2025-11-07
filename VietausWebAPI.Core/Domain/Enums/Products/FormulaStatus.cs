@@ -1,0 +1,16 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace VietausWebAPI.Core.Domain.Enums.Products
+{
+    public enum FormulaStatus
+    {
+        Unknown = 0,
+        Draft = 1,
+        Approved = 2,
+        SampleSent = 3
+    }
+}

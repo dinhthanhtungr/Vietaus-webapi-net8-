@@ -70,7 +70,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             // 2) Lấy VaCode từ header công thức (fallback: dùng manufacturingFormulaId)
             var vaCode = await _unitOfWork.ManufacturingFormulaRepository.Query()
                 .Where(f => f.ManufacturingFormulaId == req.manufacturingFormulaId)
-                .Select(f => f.MfgProductionOrderExternalId)
+                .Select(f => f.ExternalId)
                 .FirstOrDefaultAsync(ct);
             vaCode ??= req.manufacturingFormulaId.ToString();
             var vaCodeNorm = Norm(vaCode);
