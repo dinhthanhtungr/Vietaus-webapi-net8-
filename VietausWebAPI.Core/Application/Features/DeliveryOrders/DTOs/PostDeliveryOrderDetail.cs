@@ -8,7 +8,6 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs
 {
     public class PostDeliveryOrderDetail
     {
-        public Guid? MerchandiseOrderId { get; set; }
         public Guid? MerchandiseOrderDetailId { get; set; }
         public Guid? ProductId { get; set; }
 
@@ -16,8 +15,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs
         public string? ProductExternalIdSnapShot { get; set; }
         public string? ProductNameSnapShot { get; set; }
 
-        //public string? ManufacturingFormulaExternalIdSnapShot { get; set; }
-        public string? LocationExternalIdSnapShot { get; set; } = null;
+        public string? LotNoList { get; set; } = null;
         public string? MerchandiseOrderExternalIdSnapShot { get; set; } = null;
 
         public decimal Quantity { get; set; }         // DECIMAL

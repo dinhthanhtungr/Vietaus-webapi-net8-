@@ -119,5 +119,17 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts
         //CONSUMED/CANCELLED không quay lại OPEN.
 
         //Tổng Reserved(OPEN) được dùng để tính Available.
+
+        // ======================================================================== Helper ======================================================================== 
+
+        /// <summary>
+        /// Lấy dictionary thông tin tồn kho VA của các NVL trong công thức sản xuất
+        /// </summary>
+        /// <param name="manufacturingFormulaId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<Dictionary<string, VaAvailabilityVm>> GetVaAvailabilityDictAsync(
+            Guid manufacturingFormulaId,
+            CancellationToken ct = default);
     }
 }

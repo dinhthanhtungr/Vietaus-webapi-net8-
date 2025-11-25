@@ -102,7 +102,7 @@ namespace VietausWebAPI.Core.Domain.Security.Rules.Attachment
                 // Cho phép "image/" nếu thực tế hay dùng ảnh scan.
                 [AttachmentSlot.SampleRequest] = new SlotRule
                 {
-                    AllowMultiple = false,
+                    AllowMultiple = true,
                     AllowedMimePrefixes = new[] { "application/pdf", "image/" },
                     MaxBytes = 20 * MB
                 },

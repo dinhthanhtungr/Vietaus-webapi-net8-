@@ -8,7 +8,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
 {
     public class PostPriceHistory
     {
-        public Guid SupplierId { get; set; }
+        public Guid MaterialSupplierId { get; set; }
         public decimal? OldPrice { get; set; }
 
         public decimal? NewPrice { get; set; }

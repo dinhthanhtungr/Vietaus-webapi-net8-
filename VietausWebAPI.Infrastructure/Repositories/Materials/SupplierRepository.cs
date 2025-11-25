@@ -8,7 +8,8 @@ using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs;
 using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.WebAPI.DatabaseContext;
+using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
+using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Materials
 {
@@ -103,7 +104,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Materials
                 {
                     var newAddress = new SupplierAddress
                     {
-                        AddressId = Guid.NewGuid(),
+                        AddressId = Guid.CreateVersion7(),
                         SupplierId = existingSupplier.SupplierId,
                         AddressLine = incomingAddress.AddressLine,
                         City = incomingAddress.City,
@@ -174,7 +175,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Materials
                 {
                     var newContact = new SupplierContact
                     {
-                        ContactId = Guid.NewGuid(),
+                        ContactId = Guid.CreateVersion7(),
                         SupplierId = existingSupplier.SupplierId,
                         FirstName = incomingContact.FirstName,
                         LastName = incomingContact.LastName,

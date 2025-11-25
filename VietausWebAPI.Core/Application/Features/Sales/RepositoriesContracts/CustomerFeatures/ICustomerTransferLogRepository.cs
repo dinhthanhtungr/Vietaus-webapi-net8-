@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 
 namespace VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures
 {

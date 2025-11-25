@@ -11,10 +11,11 @@ using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs.ResultDtos;
 using VietausWebAPI.Core.Application.Features.Sales.Querys;
 using VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.CustomerFeatures;
-using VietausWebAPI.Core.Application.Shared.Helper;
+using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 using VietausWebAPI.Core.Repositories_Contracts;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static QuestPDF.Helpers.Colors;
@@ -50,6 +51,9 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
         {
 
             customer.CompanyId = _CurrentUser.CompanyId;
+            customer.CreatedBy = _CurrentUser.EmployeeId;
+            var now = DateTime.Now;
+
             // 0) ExternalId (chưa cần transaction)
             if (string.IsNullOrWhiteSpace(customer.ExternalId))
             {
@@ -129,8 +133,8 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
             // Gán thông tin assignment
             customer.CustomerAssignment.GroupId = groupId.Value;
             customer.CustomerAssignment.IsActive = true;
-            customer.CustomerAssignment.CreatedDate = DateTime.Now;
-            customer.CustomerAssignment.UpdatedDate = DateTime.Now;
+            customer.CustomerAssignment.CreatedDate = now;
+            customer.CustomerAssignment.UpdatedDate = now;
 
             customer.CustomerAssignment.CompanyId = _CurrentUser.CompanyId;
             customer.CustomerAssignment.CreatedBy = _CurrentUser.EmployeeId;
@@ -142,7 +146,54 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var customerEntity = _mapper.Map<Customer>(customer);
+                //var customerEntity = _mapper.Map<Customer>(customer);
+
+                var customerEntity = new Customer
+                {
+                    CustomerName = customer.CustomerName,
+                    ExternalId = customer.ExternalId,
+                    TaxNumber = customer.TaxNumber,
+                    RegistrationNumber = customer.RegistrationNumber,
+                    CustomerGroup = customer.CustomerGroup,
+                    IsActive = true,
+                    CreatedBy = _CurrentUser.EmployeeId,
+                    CreatedDate = now,
+                    UpdatedBy = _CurrentUser.EmployeeId,
+                    UpdatedDate = now,
+                    Addresses = customer.Addresses.Select(a => new Address
+                    {
+                        AddressLine = a.AddressLine,
+                        City = a.City,
+                        District = a.District,
+                        PostalCode = a.PostalCode,
+                        Country = a.Country,
+                        IsPrimary = a.IsPrimary,
+                        IsActive = true,
+                    }).ToList(),
+                    Contacts = customer.Contacts.Select(c => new Contact
+                    {
+                        FirstName = c.FirstName,
+                        LastName = c.LastName,
+                        Email = c.Email,
+                        Phone = c.Phone,
+                        IsPrimary = c.IsPrimary,
+                        IsActive = true,
+                    }).ToList(),
+                    CustomerAssignments = new List<CustomerAssignment>
+                    {
+                        new CustomerAssignment
+                        {
+                            EmployeeId = customer.CustomerAssignment.EmployeeId,
+                            GroupId = customer.CustomerAssignment.GroupId.HasValue ? customer.CustomerAssignment.GroupId.Value : Guid.Empty, // <-- FIXED
+                            IsActive = customer.CustomerAssignment.IsActive,
+                            CompanyId = customer.CustomerAssignment.CompanyId ?? Guid.Empty,
+                            CreatedBy = customer.CreatedBy ?? Guid.Empty,
+                            CreatedDate = customer.CustomerAssignment.CreatedDate ?? now,
+                            UpdatedBy = customer.CreatedBy ?? Guid.Empty,
+                            UpdatedDate = customer.CustomerAssignment.UpdatedDate ?? now
+                        }
+                    }
+                };
 
                 customerEntity.CreatedBy = _CurrentUser.EmployeeId;
                 customerEntity.CreatedDate = DateTime.Now;

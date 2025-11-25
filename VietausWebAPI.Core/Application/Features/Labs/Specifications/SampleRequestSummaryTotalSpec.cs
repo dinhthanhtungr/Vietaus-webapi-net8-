@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.CreateSampleRequest;
-using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.Specifications
@@ -27,8 +27,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Specifications
                     (x.Customer.ExternalId ?? "").Contains(kw) ||
                     (x.Customer.CustomerName ?? "").Contains(kw));
             }
-            if (q.CompanyId is Guid cid && cid != Guid.Empty)
-                Query.Where(x => x.CompanyId == cid);
+            //if (q.CompanyId is Guid cid && cid != Guid.Empty)
+            //    Query.Where(x => x.CompanyId == cid);
         }
     }
 }

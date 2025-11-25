@@ -11,7 +11,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseWriteS
     public class CreateVaSnapshotAndReservations
     {
         public Guid companyId { get; set; }
-        public Guid manufacturingFormulaId { get; set; }
+        public Guid manufacturingId { get; set; }
         public Guid createdBy { get; set; }
         public bool cancelPreviousOpen { get; set; } = true;        // huỷ các giữ chỗ OPEN cũ của VA (nếu có)
         public List<MfgFormulaMaterialWarehouse> reservations { get; set; } = new List<MfgFormulaMaterialWarehouse>();

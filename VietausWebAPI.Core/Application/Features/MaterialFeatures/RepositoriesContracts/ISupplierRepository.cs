@@ -1,7 +1,7 @@
 ﻿
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs;
-using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 
 namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts
 {

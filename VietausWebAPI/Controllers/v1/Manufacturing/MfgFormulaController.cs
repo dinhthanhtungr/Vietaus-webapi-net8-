@@ -45,12 +45,85 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Manufacturing
             }
         }
 
+        [HttpGet("View")]
+        public async Task<IActionResult> GetMfgFormulaByIdForView([FromQuery] Guid mfgOrderId, [FromQuery] Guid mfgFormulaId, CancellationToken ct)
+        {
+            if (mfgOrderId == Guid.Empty || mfgFormulaId == Guid.Empty)
+            {
+                return BadRequest("MfgOrderId and MfgFormulaId cannot be empty.");
+            }
+            try
+            {
+                var result = await _mfgFormulaService.GetByIdForViewAsync(mfgOrderId, mfgFormulaId, ct);
+                if (result == null)
+                {
+                    return NotFound(result);
+                }
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
+        [HttpGet("viewmaterial")]
+        public async Task<IActionResult> GetMaterialsByFormulaIdAsync([FromQuery] Guid mfgFormulaId, CancellationToken ct)
+        {
+            if (mfgFormulaId == Guid.Empty)
+            {
+                return BadRequest("MfgFormulaId cannot be empty.");
+            }
+            try
+            {
+                var result = await _mfgFormulaService.GetMaterialsByFormulaIdAsync(mfgFormulaId, ct);
+                if (result == null)
+                {
+                    return NotFound(result);
+                }
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
         [HttpGet("all")]
         public async Task<IActionResult> GetAllMfgFormulas([FromQuery] MfgFormulaQuery query)
         {
             try
             {
                 var result = await _mfgFormulaService.GetAllAsync(query);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
+        [HttpGet("all/version")]
+        public async Task<IActionResult> GetAllMfgFormulasVersion([FromQuery] MfgProductionOrderQuery query)
+        {
+            try
+            {
+                var result = await _mfgFormulaService.GetFormulaVersionsPagedAsync(query);
                 return Ok(result);
             }
             catch (ArgumentException ex)

@@ -20,3 +20,4 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Queries.MfgFormu
         public FormulaSource Source { get; set; }
     }
 }
+    

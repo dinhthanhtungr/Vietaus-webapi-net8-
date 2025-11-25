@@ -22,15 +22,15 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.PurchaseOrder
             _purchaseOrderPdfService = purchaseOrderPdfService;
         }
 
-        [HttpGet("{materialId}/stock")]
-        public async Task<IActionResult> GetMaterialStock(Guid materialId)
-        {
-            var stock = await _purchaseOrderService.GetMaterialStockAsync(materialId);
-            if (stock == null)
-                return NotFound();
+        //[HttpGet("{materialId}/stock")]
+        //public async Task<IActionResult> GetMaterialStock(Guid materialId)
+        //{
+        //    var stock = await _purchaseOrderService.GetMaterialStockAsync(materialId);
+        //    if (stock == null)
+        //        return NotFound();
 
-            return Ok(stock);
-        }
+        //    return Ok(stock);
+        //}
 
         [HttpGet]
         public async Task<IActionResult> GetPurchaseOrders([FromQuery] PurchaseOrderQuery query)
@@ -50,6 +50,15 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.PurchaseOrder
                 return NotFound();
             return Ok(result);
         }
+
+        //[HttpGet("GetPurchaseOrderDetailByIdAsync/{purchaseOrderId}")]
+        //public async Task<IActionResult> GetPurchaseOrderDetailByIdAsync(Guid purchaseOrderId)
+        //{
+        //    var result = await _purchaseOrderService.GetPurchaseOrderDetailByIdAsync(purchaseOrderId, CancellationToken.None);
+        //    if (result == null)
+        //        return NotFound();
+        //    return Ok(result);
+        //}
 
         [HttpPost]
         public async Task<IActionResult> PostPurchaseOrderSnapshot([FromBody] PostPurchaseOrder purchaseOrder)

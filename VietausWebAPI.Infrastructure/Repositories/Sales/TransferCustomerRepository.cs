@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
-using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.WebAPI.DatabaseContext;
+using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
+using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Sales
 {

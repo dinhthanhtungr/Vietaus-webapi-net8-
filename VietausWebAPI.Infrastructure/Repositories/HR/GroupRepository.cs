@@ -11,21 +11,18 @@ using VietausWebAPI.Core.Application.Features.HR.Querys.Groups;
 using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Infrastructure.Helpers.Repositories;
 using VietausWebAPI.Infrastructure.Utilities;
-using VietausWebAPI.WebAPI.DatabaseContext;
+using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace VietausWebAPI.Infrastructure.Repositories.HR
 {
-    public class GroupRepository : IGroupRepository
+    public class GroupRepository : Repository<Group>, IGroupRepository
     {
-        private readonly ApplicationDbContext _context;
-
-        public GroupRepository(ApplicationDbContext context)
+        public GroupRepository(ApplicationDbContext context) : base(context)
         {
-            _context = context;
         }
-
 
         public async Task CreateNewGroupAsync(Group group)
         {
@@ -50,33 +47,6 @@ namespace VietausWebAPI.Infrastructure.Repositories.HR
                 .OrderByDescending(e => e.ExternalId)
                 .Select(e => e.ExternalId)
                 .FirstOrDefaultAsync();
-        }
-
-        public async Task<PagedResult<Group>> GetAllGroupsAsync(GroupQuery? query)
-        {
-            var queryAble = _context.Groups
-                .Include(x => x.MemberInGroups)
-                    .ThenInclude(m => m.ProfileNavigation)
-                .AsNoTracking()
-                .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(query.keyword))
-            {
-                string keywordLower = query.keyword.ToLower();
-                queryAble = queryAble.Where(x =>
-                    x.Name != null && EF.Functions.Collate(x.Name, "Latin1_General_CI_AI").ToLower().Contains(keywordLower) ||
-                    x.ExternalId != null && EF.Functions.Collate(x.ExternalId, "Latin1_General_CI_AI").ToLower().Contains(keywordLower));
-            }
-
-            if (!string.IsNullOrWhiteSpace(query.groupType))
-            {
-                queryAble = queryAble.Where(x => x.GroupType == query.groupType);
-            }
-
-            query.PageSize = 15;
-            queryAble = queryAble.OrderByDescending(x => x.CreatedDate);
-
-            return await QueryableExtensions.GetPagedAsync(queryAble, query);
         }
 
         public async Task AddMembers(IEnumerable<MemberInGroup> members)

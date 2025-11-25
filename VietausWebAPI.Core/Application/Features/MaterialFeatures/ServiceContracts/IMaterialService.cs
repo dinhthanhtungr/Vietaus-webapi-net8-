@@ -41,7 +41,15 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContra
         /// <param name="material"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<GetMaterial>GetMaterialByIdAsync(Guid Id, CancellationToken ct = default);
+        Task<OperationResult<GetMaterial>> GetMaterialByIdAsync(Guid Id, CancellationToken ct = default);
+
+        /// <summary>
+        /// Lấy lịch sử giá bằng Id của material_suppiler
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<OperationResult<PagedResult<GetPriceHistory>>> GetMaterialPriceHistoryByIdAsync(MaterialQuery query, CancellationToken ct = default);
 
         /// <summary>
         /// Cập nhật vật tư
@@ -49,7 +57,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContra
         /// <param name="req"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<OperationResult> UpsertMaterialAsync(GetMaterial req, CancellationToken ct = default);
+        Task<OperationResult> UpsertMaterialAsync(PatchMaterial req, CancellationToken ct = default);
 
         /// <summary>
         /// Xóa mềm vật tư
@@ -58,5 +66,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContra
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<OperationResult> DeleteMaterialAsync(Guid Id, CancellationToken ct = default);
+
+        Task ChangePriceHelper(Guid MaterialsSupplierId, Decimal newPrice, CancellationToken ct = default);
     }
 }

@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.SampleRequest;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.CreateSampleRequest;
-using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.Specifications
 {
@@ -29,10 +29,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Specifications
                 );
             }
 
-            if (q.CompanyId.HasValue && q.CompanyId.Value != Guid.Empty)
-            {
-                Query.Where(x => x.CompanyId == q.CompanyId.Value);
-            }
+            //if (q.CompanyId.HasValue && q.CompanyId.Value != Guid.Empty)
+            //{
+            //    Query.Where(x => x.CompanyId == q.CompanyId.Value);
+            //}
 
             Query.OrderBy(x => x.ExternalId)
                  .Skip((q.PageNumber <= 0 ? 0 : (q.PageNumber - 1) * (q.PageSize <= 0 ? 15 : q.PageSize)))

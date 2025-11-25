@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
-using VietausWebAPI.WebAPI.DatabaseContext;
+using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing
 {
@@ -36,29 +36,33 @@ namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing
 
         public async Task<string?> GetLatestExternalIdStartsWithAsync(string prefix, Guid? id = null)
         {
-            var query = _context.ManufacturingFormulas
-                .AsNoTracking();
-
+            var mf = _context.ManufacturingFormulas.AsNoTracking();
 
             if (id.HasValue)
             {
-                query = query.Where(e => e.MfgProductionOrderId == id);
-                query = query.Where(e => e.Name.StartsWith(prefix));
-                var temp = await query
-                                .OrderByDescending(e => e.Name)
-                                .Select(e => e.Name)
-                                .FirstOrDefaultAsync();
+                // Prefilter bảng select để join gọn hơn
+                var sels = _context.ProductionSelectVersions
+                    .AsNoTracking()
+                    .Where(s => s.MfgProductionOrderId == id.Value);
 
-                return temp;
+                return await mf
+                    .Where(f => f.Name.StartsWith(prefix))
+                    .Join(
+                        sels,
+                        f => f.ManufacturingFormulaId,
+                        s => s.ManufacturingFormulaId,
+                        (f, s) => f)
+                    .OrderByDescending(f => f.Name)   // nhớ zero-pad để sort đúng theo số
+                    .Select(f => f.Name)
+                    .FirstOrDefaultAsync();
             }
 
-            query = query.Where(e => e.ExternalId.StartsWith(prefix));
-            var result = await query
-                            .OrderByDescending(e => e.ExternalId)
-                            .Select(e => e.ExternalId)
-                            .FirstOrDefaultAsync();
-
-            return result;
+            // Toàn cục (hoặc thêm filter CompanyId nếu bạn muốn series theo công ty)
+            return await mf
+                .Where(f => f.Name.StartsWith(prefix))
+                .OrderByDescending(f => f.Name)
+                .Select(f => f.Name)
+                .FirstOrDefaultAsync();
         }
 
         public IQueryable<ManufacturingFormula> Query(bool track = false)

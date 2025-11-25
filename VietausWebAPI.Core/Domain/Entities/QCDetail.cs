@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using VietausWebAPI.Core.Domain.Entities.DevandqaSchema;
 
 namespace VietausWebAPI.Core.Domain.Entities;
 

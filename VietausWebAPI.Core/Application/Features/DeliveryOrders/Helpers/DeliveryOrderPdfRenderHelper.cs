@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs;
 using VietausWebAPI.Core.Application.Shared.Helper;
+using VietausWebAPI.Core.Application.Shared.Helper.Pdfs;
 using static Npgsql.Replication.PgOutput.Messages.RelationMessage;
 
 namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers

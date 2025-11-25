@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.DTOs.PdfPrinter;
 using VietausWebAPI.Core.Application.Shared.Helper;
+using VietausWebAPI.Core.Application.Shared.Helper.Pdfs;
 using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Helpers

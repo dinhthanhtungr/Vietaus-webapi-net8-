@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using VietausWebAPI.WebAPI.DatabaseContext;
+using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
 
 #nullable disable
 

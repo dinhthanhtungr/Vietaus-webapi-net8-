@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.WebAPI.DatabaseContext;
+using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
 
 namespace VietausWebAPI.Infrastructure.Repositories.HR
 {

@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
-using VietausWebAPI.WebAPI.DatabaseContext;
+using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing
 {
@@ -47,3 +47,4 @@ namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing
         }
     }
 }
+ 

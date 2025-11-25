@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas;
 using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOrders;
 using VietausWebAPI.Core.Application.Features.Manufacturing.Queries.MfgProductionOrders;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.Querys;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
+using VietausWebAPI.Core.Application.Shared.Models.SaleAndMfgs;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 
@@ -29,10 +31,10 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts
         /// <param name="query"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<PagedResult<GetSummaryMfgProductionOrder>> GetAllAsync( MfgProductionOrderQuery query, CancellationToken ct = default);
+        Task<OperationResult<PagedResult<GetSummaryMfgProductionOrder>>> GetAllAsync( MfgProductionOrderQuery query, CancellationToken ct = default);
 
         /// <summary>
-        /// Lấy danh sách đơn hàng với phân trang và lọc
+        /// Lấy danh sách công thức theo lệnh sản xuất với phân trang và lọc
         /// </summary>
         /// <param name="query"></param>
         /// <param name="ct"></param>
@@ -53,7 +55,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts
         /// <param name="query"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<GetMfgProductionOrder?> GetByIdAsync( Guid id, CancellationToken ct = default);
+        Task<OperationResult<GetMfgProductionOrder>> GetByIdAsync( Guid id, CancellationToken ct = default);
 
         /// <summary>
         /// Cập nhật thông tin theo đơn hàng mới
@@ -69,8 +71,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts
         /// <param name="mo"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<MfgContext> BuildMfgContextAsync(MerchandiseOrder mo, CancellationToken ct = default);
-
+        Task<MfgContext> BuildMfgContextAsync(OrderSlim mo, CancellationToken ct = default);
         /// <summary>
         /// Gom toàn bộ dữ liệu <b>read-only</b> cần thiết để tạo <b>nhiều</b> lệnh sản xuất cho một đơn hàng,
         /// nhằm tránh N+1 queries và đảm bảo nhất quán trong cùng transaction.
@@ -82,11 +83,12 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts
         /// <param name="now"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<(MfgProductionOrder order, ManufacturingFormula mfgFormula, List<ManufacturingFormulaMaterial> materials)>
-                     CreateOneMfgBundleAsync(
-                         MerchandiseOrder mo,
-                         MerchandiseOrderDetail detail,
-                         MfgContext ctx,
-                         Guid actorId, DateTime now, CancellationToken ct);
+        Task<(MfgProductionOrder order,
+              MfgOrderPO link)>
+                             CreateOneMfgBundleAsync(
+                 OrderSlim mo,
+                 OrderDetailSlim detail,
+                 MfgContext ctx,
+                 Guid actorId, DateTime now, CancellationToken ct);
     }
 }

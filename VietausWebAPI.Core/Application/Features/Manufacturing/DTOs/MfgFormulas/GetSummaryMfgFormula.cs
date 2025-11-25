@@ -13,8 +13,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas
         public string? ExternalId { get; set; }
         public string? Name { get; set; }
         public decimal? TotalPrice { get; set; }
-        public bool? isStandard { get; set; }
-        public bool? IsSelect { get; set; }
+        public DateTime? FormulaSourceIdCreatedDate { get; set; }
 
         public virtual ICollection<GetSampleMfgFormulaMaterial> ManufacturingFormulaMaterials { get; set; } = new List<GetSampleMfgFormulaMaterial>();
     }

@@ -59,6 +59,15 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Materials
 
         }
 
+        [HttpGet("PriceHistory")]
+        public async Task<ActionResult<PagedResult<GetPriceHistory>>> GetMaterialPriceHistoryById(
+            [FromQuery] MaterialQuery query,
+            CancellationToken ct = default)
+        {
+            var result = await _materialService.GetMaterialPriceHistoryByIdAsync(query, ct);
+            return Ok(result);
+        }
+
         [HttpGet("materialsupplier")]
         public async Task<ActionResult<PagedResult<GetMaterialSupplier>>> GetMaterialSupplier(
             [FromQuery] MaterialQuery query,
@@ -69,7 +78,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Materials
         }
 
         [HttpPatch("upsert")]
-        public async Task<IActionResult> UpsertMaterial([FromBody] GetMaterial req)
+        public async Task<IActionResult> UpsertMaterial([FromBody] PatchMaterial req)
         {
             if (req == null)
             {

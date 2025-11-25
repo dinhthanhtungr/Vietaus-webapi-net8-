@@ -20,21 +20,11 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas
         public string? Status { get; set; }
         public decimal? TotalPrice { get; set; }
 
-        public FormulaSource SourceType { get; set; }                     // "FromVA" hoặc "FromVU"
-
-        public Guid? SourceManufacturingFormulaId { get; set; }
-        public string? SourceManufacturingExternalIdSnapshot { get; set; } // ví dụ: mã của nguồn lúc copy
-
-        public Guid? SourceVUFormulaId { get; set; }
-        public string? SourceVUExternalIdSnapshot { get; set; }
+        //public FormulaSource SourceType { get; set; }                     // "FromVA" hoặc "FromVU"
 
         public bool IsSelect { get; set; }
-        public bool IsActive { get; set; }
         public bool IsStandard { get; set; }
         public string? Note { get; set; }
-
-        public DateTime UpdatedDate { get; set; }
-        public Guid UpdatedBy { get; set; }
 
         public virtual ICollection<PatchMfgFormulaMaterial> ManufacturingFormulaMaterials { get; set; } = new List<PatchMfgFormulaMaterial>();
     }

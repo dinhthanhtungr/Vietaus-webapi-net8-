@@ -17,18 +17,18 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Planning
             _scheduealService = scheduealService;
         }
 
-        [HttpGet("GetPaged")]
-        public async Task<IActionResult> GetScheduealPaged([FromQuery] SchedualQuery? query)
-        {
-            var result = await _scheduealService.GetSchedualPageAsync(query);
-            return Ok(result);
-        }
+        //[HttpGet("GetPaged")]
+        //public async Task<IActionResult> GetScheduealPaged([FromQuery] SchedualQuery? query)
+        //{
+        //    var result = await _scheduealService.GetSchedualPageAsync(query);
+        //    return Ok(result);
+        //}
 
-        [HttpGet("GetById/{ExternalId}")]
-        public async Task<IActionResult> GetScheduealById(string ExternalId)
-        {
-            var result = await _scheduealService.GetScheduealByIdAsync(ExternalId);
-            return Ok(result);
-        }
+        //[HttpGet("GetById/{ExternalId}")]
+        //public async Task<IActionResult> GetScheduealById(string ExternalId)
+        //{
+        //    var result = await _scheduealService.GetScheduealByIdAsync(ExternalId);
+        //    return Ok(result);
+        //}
     }
 }

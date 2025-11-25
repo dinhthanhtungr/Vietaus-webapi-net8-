@@ -36,20 +36,6 @@ namespace VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts
         Task<string?> GetLatestExternalIdStartsWithAsync(string prefix);
 
         /// <summary>
-        /// Lấy danh sach nhân viên phân trang
-        /// </summary>
-        /// <param name="keyword"></param>
-        /// <returns></returns>
-        Task<PagedResult<Employee>> GetPagedAsync(EmployeeQuery? keyword);
-
-        /// <summary>
-        /// láy danh sách nhân viên có tài khoản
-        /// </summary>
-        /// <param name="keyword"></param>
-        /// <returns></returns>
-        Task<PagedResult<ApplicationUser>> GetPagedAccoutAsync(EmployeeQuery? keyword);
-
-        /// <summary>
         /// 
         /// </summary>
         /// <param name="query"></param>

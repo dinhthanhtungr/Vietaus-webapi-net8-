@@ -49,7 +49,7 @@
 //        {
 //            // 2) Lưu file (chỉ service biết folder quy ước)
 //            var ext = Path.GetExtension(originalFileName);
-//            var imageId = Guid.NewGuid();
+//            var imageId = Guid.CreateVersion7();
 //            var fileNameOnDisk = $"{imageId:N}{(string.IsNullOrEmpty(ext) ? ".jpg" : ext)}";
 //            var folder = $"uploads/sample-requests/{sampleRequestId:N}";
 //            var (publicUrl, storageKey) = await _storage.SaveAsync(content, contentType, fileNameOnDisk, folder);

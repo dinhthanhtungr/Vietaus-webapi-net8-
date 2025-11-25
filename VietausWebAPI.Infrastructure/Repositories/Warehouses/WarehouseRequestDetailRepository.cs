@@ -5,8 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContracts;
-using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.WebAPI.DatabaseContext;
+using VietausWebAPI.Core.Domain.Entities.WarehouseSchema;
+using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Warehouses
 {

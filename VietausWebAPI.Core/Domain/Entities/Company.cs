@@ -1,7 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using VietausWebAPI.Core.Domain.Entities.AuditSchema;
+using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
+using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 using VietausWebAPI.Core.Domain.Entities.MROSchema;
+using VietausWebAPI.Core.Domain.Entities.OrderSchema;
+using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
+using VietausWebAPI.Core.Domain.Entities.WarehouseSchema;
 
 namespace VietausWebAPI.Core.Domain.Entities;
 
@@ -13,17 +19,25 @@ public partial class Company
 
     public string? Code { get; set; }
 
+    public string? Address { get; set; }
+    public string? Country { get; set; }
+    public string? ZipCode { get; set; }
+    public string? Phone { get; set; }
+    public string? Email { get; set; }
+    public bool IsActive { get; set; } = true;
+
+
     public DateTime? CreatedDate { get; set; }
 
-    public Guid? CreatedBy { get; set; }
+    public Guid? CreatedBy { get; set; }    
 
     public DateTime? UpdatedDate { get; set; }
 
     public Guid? UpdatedBy { get; set; }
 
-    public virtual ICollection<Branch> Branches { get; set; } = new List<Branch>();
+    //public virtual ICollection<Branch> Branches { get; set; } = new List<Branch>();
     public virtual ICollection<Employee> Employees { get; set; } = new List<Employee>();
-    public virtual ICollection<EquipmentMRO> Equipments { get; set; } = new List<EquipmentMRO>();
+    //public virtual ICollection<EquipmentMRO> Equipments { get; set; } = new List<EquipmentMRO>();
 
     public virtual ICollection<Category> Categories { get; set; } = new List<Category>();
 
@@ -53,10 +67,11 @@ public partial class Company
     public virtual ICollection<PurchaseOrder> PurchaseOrders { get; set; } = new List<PurchaseOrder>();
 
     public virtual ICollection<SampleRequest> SampleRequests { get; set; } = new List<SampleRequest>();
+    public virtual ICollection<SampleRequest> SampleRequestBranchs { get; set; } = new List<SampleRequest>();
 
     public virtual ICollection<Supplier> Suppliers { get; set; } = new List<Supplier>();
 
-    public virtual ICollection<SupplyRequest> SupplyRequests { get; set; } = new List<SupplyRequest>();
+    //public virtual ICollection<SupplyRequest> SupplyRequests { get; set; } = new List<SupplyRequest>();
 
     public virtual ICollection<WarehouseShelfStock> WarehouseShelfStocks { get; set; } = new List<WarehouseShelfStock>();
     public virtual ICollection<WarehouseRequest> WarehouseRequests { get; set; } = new List<WarehouseRequest>();
@@ -67,6 +82,18 @@ public partial class Company
     /// <summary>
     /// MRO
     /// </summary>
-    public virtual ICollection<IncidentHeaderMRO> IncidentHeaderMROs { get; set; } = new List<IncidentHeaderMRO>();
+
+    /// <summary>
+    /// manufacturing
+    /// </summary>
+    public virtual ICollection<ProductionSelectVersion> ProductionSelectVersions { get; set; } = new List<ProductionSelectVersion>();
+    public virtual ICollection<ProductStandardFormula> ProductStandardFormulas { get; set; } = new List<ProductStandardFormula>();
+
+    // Warehouse
+    public virtual ICollection<WarehouseShelves> WarehouseShelves { get; set; } = new List<WarehouseShelves>();
+    public virtual ICollection<WarehouseShelfLedger> WarehouseShelfLedgers { get; set; } = new List<WarehouseShelfLedger>();
+    public virtual ICollection<WarehouseVoucher> WarehouseVouchers { get; set; } = new List<WarehouseVoucher>();
+
+
 
 }

@@ -1,12 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
+using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.RepositoriesContracts;
-using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.WebAPI.DatabaseContext;
+using VietausWebAPI.Core.Domain.Entities.AuditSchema;
+using Microsoft.EntityFrameworkCore;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Audits
 {

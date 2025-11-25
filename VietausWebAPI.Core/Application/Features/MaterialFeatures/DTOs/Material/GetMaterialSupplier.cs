@@ -8,8 +8,8 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
 {
     public class GetMaterialSupplier
     {
-        public Guid SupplierId { get; set; }
-        public string? SupplierName { get; set; }   
+        public Guid? MaterialSupplierId { get; set; }
+        public string? SupplierName { get; set; }
         public string? ExternalId { get; set; }
         public decimal? CurrentPrice { get; set; }
         public string? Currency { get; set; } // "VND"

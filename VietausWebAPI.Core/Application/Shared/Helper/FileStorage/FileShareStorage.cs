@@ -19,9 +19,9 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.FileStorage
             // relativeFolder ví dụ: $"orders/{orderId}/Contract"
             var folder = Path.Combine(_opt.RootPath, relativeFolder);
             Directory.CreateDirectory(folder);
-
+                
             var safe = Path.GetFileName(fileName); // chống path traversal
-            var key = $"{DateTime.Now:yyyyMMddHHmmssfff}_{Guid.NewGuid():N}_{safe}";
+            var key = $"{DateTime.Now:yyyyMMddHHmmssfff}_{Guid.CreateVersion7():N}_{safe}";
             var full = Path.Combine(folder, key);
 
             await using (var fs = new FileStream(full, FileMode.CreateNew, FileAccess.Write, FileShare.Read, 81920, true))

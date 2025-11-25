@@ -24,31 +24,31 @@ namespace VietausWebAPI.Core.Application.Features.Planning.Services
             _mapper = mapper;
         }
 
-        public async Task<PagedResult<SchedualMfgDTO>> GetSchedualPageAsync(SchedualQuery scheduealQuery)
-        {
-            var repository = await _unitOfWork.ScheduealRepository.GetSchedualPageAsync(scheduealQuery);
-            var pageResult = _mapper.Map<PagedResult<SchedualMfgDTO>>(repository);
+        //public async Task<PagedResult<SchedualMfgDTO>> GetSchedualPageAsync(SchedualQuery scheduealQuery)
+        //{
+        //    var repository = await _unitOfWork.ScheduealRepository.GetSchedualPageAsync(scheduealQuery);
+        //    var pageResult = _mapper.Map<PagedResult<SchedualMfgDTO>>(repository);
 
 
-            if (repository == null)
-            {
-                throw new InvalidOperationException("SchedualMfg is not registered in the unit of work.");
-            }
+        //    if (repository == null)
+        //    {
+        //        throw new InvalidOperationException("SchedualMfg is not registered in the unit of work.");
+        //    }
 
-            return pageResult;
-        }
+        //    return pageResult;
+        //}
 
-        public async Task<SchedualMfgDTO> GetScheduealByIdAsync(string externalId)
-        {
-            var repository = await _unitOfWork.ScheduealRepository.GetScheduealByIdAsync(externalId);
-            var result = _mapper.Map<SchedualMfgDTO>(repository);
+        //public async Task<SchedualMfgDTO> GetScheduealByIdAsync(string externalId)
+        //{
+        //    var repository = await _unitOfWork.ScheduealRepository.GetScheduealByIdAsync(externalId);
+        //    var result = _mapper.Map<SchedualMfgDTO>(repository);
 
-            if(result == null)
-            { 
-                throw new InvalidOperationException($"Schedual with  ID {externalId} not found.");
-            }
+        //    if(result == null)
+        //    { 
+        //        throw new InvalidOperationException($"Schedual with  ID {externalId} not found.");
+        //    }
 
-            return result;
-        }
+        //    return result;
+        //}
     }
 }

@@ -11,11 +11,21 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.ServiceContract
 {
     public interface IDeliveryOrderService
     {
-        Task<OperationResult> CreateAsync(PostDeliveryOrder postDeliveryOrder, CancellationToken ct = default);
+
+
+        // ======================================================================== Get ======================================================================== 
         Task<PagedResult<GetSampleDelivery>> GetAllAsync(DeliveryOrderQuery query, CancellationToken ct = default);
-        Task<PagedResult<GetPODeliveryOrder>> GetSelectableLinesAsync(DeliveryOrderQuery query, CancellationToken ct = default);
-        Task<PagedResult<GetDeliverer>> GetAllDelivererAsync (DelivererQuery query, CancellationToken ct = default);
-        Task<GetDeliveryOrder> GetAsync (Guid query, CancellationToken ct = default);
+        //Tạm thời cmt lại để thử chức năng mới
+        //Task<PagedResult<GetPODeliveryOrder>> GetSelectableLinesAsync(DeliveryOrderQuery query, CancellationToken ct = default);
+        Task<OperationResult<PagedResult<GetPODeliveryOrder>>> GetSelectableLinesAsync(DeliveryOrderQuery query, CancellationToken ct = default);
+        Task<PagedResult<GetDeliverer>> GetAllDelivererAsync(DelivererQuery query, CancellationToken ct = default);
+        Task<GetDeliveryOrder> GetAsync(Guid query, CancellationToken ct = default);
+
+        // ======================================================================== Post ======================================================================== 
+        //Task<OperationResult> CreateAsync(PostDeliveryOrder postDeliveryOrder, CancellationToken ct = default);
+        Task<OperationResult<GetDeliveryOrder>> CreateAsync(PostDeliveryOrder request, CancellationToken ct = default);
+
+        // ======================================================================== Patch ======================================================================== 
         Task<OperationResult> UpdateAsync(PatchDeliveryOrder putDeliveryOrder, CancellationToken ct = default);
         Task<OperationResult> SoftDeleteAsync(Guid id, CancellationToken ct = default);
         //Task<OperationResult> AssignDeliverersAsync(AssignDeliverersCommand commkand, CancellationToken ct = default);

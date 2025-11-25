@@ -1,0 +1,24 @@
+﻿using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
+
+namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
+{
+    public partial class ApplicationDbContext
+    {
+        public virtual DbSet<MfgProductionOrder> MfgProductionOrders { get; set; } = default!;
+        public virtual DbSet<ManufacturingFormulaMaterial> ManufacturingFormulaMaterials { get; set; } = default!;
+        public virtual DbSet<ManufacturingFormula> ManufacturingFormulas { get; set; } = default!;
+        public virtual DbSet<ManufacturingFormulaVersion> ManufacturingFormulaVersions { get; set; } = default!;
+        public virtual DbSet<ManufacturingFormulaVersionItem> ManufacturingFormulaVersionItems { get; set; } = default!;
+        public virtual DbSet<ProductionSelectVersion> ProductionSelectVersions { get; set; } = default!;
+        public virtual DbSet<ProductStandardFormula> ProductStandardFormulas { get; set; } = default!;
+        public virtual DbSet<MfgOrderPO> MfgOrderPOs { get; set; } = default!;
+        public virtual DbSet<SchedualMfg> SchedualMfgs { get; set; } = default!;
+    }
+}

@@ -10,9 +10,9 @@ using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.Querys.Supplier;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.TransferCustomerDTOs;
-using VietausWebAPI.Core.Application.Shared.Helper;
+using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
-using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 using VietausWebAPI.Core.Repositories_Contracts;
 
 namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services

@@ -5,23 +5,20 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.HR.DTOs.Groups;
 using VietausWebAPI.Core.Application.Features.HR.Querys.Groups;
+using VietausWebAPI.Core.Application.Shared.Helper.Repository;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts
 {
-    public interface IGroupRepository
+    public interface IGroupRepository : IRepository<Group>
     {
         /// <summary>
         /// Tạo nhóm mới
         /// </summary>
         /// <returns></returns>
         Task CreateNewGroupAsync(Group group);
-        /// <summary>
-        /// Lấy danh sách nhóm
-        /// </summary>
-        /// <returns></returns>
-        Task<PagedResult<Group>> GetAllGroupsAsync(GroupQuery? query);
+
         /// <summary>
         /// Lấy thông tin cụ thể một group
         /// </summary>

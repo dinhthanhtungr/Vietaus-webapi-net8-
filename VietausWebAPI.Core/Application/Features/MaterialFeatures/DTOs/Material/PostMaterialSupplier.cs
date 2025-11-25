@@ -8,11 +8,10 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
 {
     public class PostMaterialSupplier
     {
-        public Guid SupplierId { get; set; }
+        public Guid? SupplierId { get; set; }   
         public int? MinDeliveryDays { get; set; } = 1;
         public decimal? CurrentPrice { get; set; }
         public string? Currency { get; set; } = "VND";
         public bool? IsPreferred { get; set; }
-        public bool? isActive { get; set; } = true;
     }
 }

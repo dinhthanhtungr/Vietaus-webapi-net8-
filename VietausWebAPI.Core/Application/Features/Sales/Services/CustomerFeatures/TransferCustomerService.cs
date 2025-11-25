@@ -12,6 +12,7 @@ using VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.CustomerFea
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 using VietausWebAPI.Core.Repositories_Contracts;
 
 namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeatures
@@ -73,7 +74,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                 // 1) Ghi header + items
                 var log = new CustomerTransferLog
                 {
-                    Id = Guid.NewGuid(),
+                    Id = Guid.CreateVersion7(),
                     FromEmployeeId = req.FromEmployeeId,
                     ToEmployeeId = req.ToEmployeeId,
                     FromGroupId = req.FromGroupId,

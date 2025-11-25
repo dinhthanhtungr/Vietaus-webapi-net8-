@@ -7,7 +7,7 @@ namespace VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts
 {
     public interface IScheduealRepository
     {
-        Task<PagedResult<SchedualMfg>> GetSchedualPageAsync(SchedualQuery scheduealQuery);
-        Task<SchedualMfg> GetScheduealByIdAsync(string externalId);
+        //Task<PagedResult<SchedualMfg>> GetSchedualPageAsync(SchedualQuery scheduealQuery);
+        //Task<SchedualMfg> GetScheduealByIdAsync(string externalId);
     }
 }

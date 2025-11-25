@@ -1,12 +1,16 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
+using System;
+using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Attachments.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.CompanyFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.FormulaFeatures;
-using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.QAQCFeature;
+//using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.QAQCFeature;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Notifications.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
@@ -14,246 +18,212 @@ using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.Mercha
 using VietausWebAPI.Core.Application.Features.TimelineFeature.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContracts;
 using VietausWebAPI.Core.Repositories_Contracts;
-using VietausWebAPI.Infrastructure.Repositories.Sales;
-using VietausWebAPI.WebAPI.DatabaseContext;
-
+using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
+using VietausWebAPI.Infrastructure.Repositories.Labs;
 
 namespace VietausWebAPI.Infrastructure.DataUnitOfWork
 {
-    public class UnitOfWork : IUnitOfWork
+    /// <summary>
+    /// File CORE: giữ DbContext, constructor duy nhất, methods Tx/Save/Dispose.
+    /// Tất cả Properties được tách sang các file partial theo module.
+    /// </summary>
+    public sealed partial class UnitOfWork : IUnitOfWork
     {
         private readonly ApplicationDbContext _context;
 
+        public UnitOfWork(
+            ApplicationDbContext context,
 
-        /// <summary>
-        /// Khai báo các repository
-        /// </summary>
-        /// 
+            // ==== Attachments ====
+            IAttachmentCollectionRepository attachmentCollectionRepository,
+            IAttachmentModelRepository attachmentModelRepository,
 
-        // Attachment
-        public IAttachmentCollectionRepository AttachmentCollectionRepository { get; }
-        public IAttachmentModelRepository AttachmentModelRepository { get; }
+            // ==== Company/Common ====
+            ICompanyRepository companyRepository,
+            IEmployeesRepository employeesCommonRepository,
 
-        public IEmployeesRepository EmployeesCommonRepository { get; }
-        // HR
-        public IEmployeesRepository EmployeesRepository { get; }
-        public IGroupRepository GroupRepository { get; }
-        public IMemberInGroupRepository MemberInGroupRepository { get; }
-        
-        // Sale
-        public ICustomerRepository CustomerRepository { get; }
-        public ITransferCustomerRepository TransferCustomerRepository { get; }
-        public ICustomerAssignmentRepository CustomerAssignmentRepository { get; }
-        public ICustomerTransferLogRepository CustomerTransferLogRepository { get; }
-        public IMerchandiseOrderRepository MerchandiseOrderRepository { get; }
-        //public IMerchandiseOrderLogRepository MerchandiseOrderLogRepository { get; }
-        //public IAttachmentRepository AttachmentRepository { get; }
-        // Labs
-        public IProductStandardRepository ProductStandardRepository { get; }
-        public IProductInspectionRepository ProductInspectionRepository { get; }
-        public IProductTestRepository ProductTestRepository { get; }
-        public IMfgProductionOrdersPlanRepository MfgProductionOrdersPlanRepository { get; }
-        public IQCDetailRepository IQCDetailRepository { get; }
-        public IProductRepository ProductRepository { get; }
-        public ISampleRequestRepository SampleRequestRepository { get; }
-        //public ISampleRequestImageRepository SampleRequestImageRepository { get; }
-        public IFormulaRepository FormulaRepository { get; }
-        public IFormulaMaterialRepository FormulaMaterialRepository { get; }
-        // Planning
-        public IScheduealRepository ScheduealRepository { get; }
+            // ==== HR ====
+            IApplicationUserRepository applicationUserRepository,
+            IEmployeesRepository employeesRepository,
+            IGroupRepository groupRepository,
+            IMemberInGroupRepository memberInGroupRepository,
 
-        //MfgProductOrder
-        public IMfgProductionOrdersPlanRepository IMfgProductionOrdersPlanRepository { get; }
+            // ==== Sales ====
+            ICustomerRepository customerRepository,
+            ITransferCustomerRepository transferCustomerRepository,
+            ICustomerAssignmentRepository customerAssignmentRepository,
+            ICustomerTransferLogRepository customerTransferLogRepository,
+            IMerchandiseOrderRepository merchandiseOrderRepository,
 
-        //Material
-        public IMaterialRepository MaterialRepository { get; }
-        public ISupplierRepository SupplierRepository { get; }
-        public ICategoryRepository CategoryRepository { get; }
-        public IMaterialsSupplierRepository MaterialsSupplierRepository { get; }
-        public IPriceHistorieRepository PriceHistorieRepository { get; }
+            // ==== Labs (QA/QC, Formula, Sample) ====
+            //IProductStandardRepository productStandardRepository,
+            //IProductInspectionRepository productInspectionRepository,
+            //IProductTestRepository productTestRepository,
+            IManufacturingFormulaVersionRepository manufacturingFormulaVersionRepository,
+            IFormulaRepository formulaRepository,
+            IFormulaMaterialRepository formulaMaterialRepository,
+            ISampleRequestRepository sampleRequestRepository,
 
-        // Manufacturing
-        public IMfgProductionOrderRepository MfgProductionOrderRepository { get; }
-        public IManufacturingFormulaMaterialRepository ManufacturingFormulaMaterialRepository { get; }
-        //public IManufacturingFormulaLogRepository ManufacturingFormulaLogRepository { get; }
-        public IManufacturingFormulaRepository ManufacturingFormulaRepository { get; }
+            // ==== Planning ====
+            IScheduealRepository scheduealRepository,
+            //IMfgProductionOrdersPlanRepository mfgProductionOrdersPlanRepository,
+            //IMfgProductionOrdersPlanRepository iMfgProductionOrdersPlanRepository, // bạn đang dùng 2 biến cho cùng 1 interface
 
-        // Warehouses
-        public IWarehouseShelfStockRepository WarehouseShelfStockRepository { get; }
-        public IWarehouseTempStockRepository WarehouseTempStockRepository { get; }
-        public IWarehouseRequestDetailRepository WarehouseRequestDetailRepository { get; }
-        public IWarehouseRequestRepository WarehouseRequestRepository { get; }
+            // ==== QAQC Detail (thuộc Labs) ====
+            //IQCDetailRepository iQCDetailRepository,
 
-        // Delivery
-        public IDeliveryOrderRepository DeliveryOrderRepository { get; }
-        public IDelivererRepository DelivererRepository { get; }
-        public IDeliveryOrderDetailRepository DeliveryOrderDetailRepository { get; }
-        public IDelivererInforRepository DelivererInforRepository { get; }
-        public IDeliveryOrderPORepository DeliveryOrderPORepository { get; }
+            // ==== Product (bạn đang để trong Manufacturing namespace) ====
+            IProductRepository productRepository,
 
-        // Purchase
+            // ==== Material ====
+            IMaterialRepository materialRepository,
+            ISupplierRepository supplierRepository,
+            ICategoryRepository categoryRepository,
+            IMaterialsSupplierRepository materialsSupplierRepository,
+            IPriceHistorieRepository priceHistorieRepository,
 
-        public IPurchaseOrderRepository PurchaseOrderRepository { get; }
-        public IPurchaseOrderDetailRepository PurchaseOrderDetailRepository { get; }
-        public IPurchaseOrderSnapshotRepository PurchaseOrderSnapshotRepository { get; }
+            // ==== Manufacturing ====
+            IMfgProductionOrderRepository mfgProductionOrderRepository,
+            IManufacturingFormulaMaterialRepository manufacturingFormulaMaterialRepository,
+            IManufacturingFormulaRepository manufacturingFormulaRepository,
+            IProductStandardFormulaRepository productStandardFormulaRepository,
+            IProductionSelectVersionRepository productionSelectVersionRepository,
+            IMfgOrderPORepository mfgOrderPORepository,
+            ISchedualMfgRepository schedualMfgRepository,
 
+            // ==== Warehouse ====
+            IWarehouseShelfStockRepository warehouseShelfStockRepository,
+            IWarehouseTempStockRepository warehouseTempStockRepository,
+            IWarehouseRequestDetailRepository warehouseRequestDetailRepository,
+            IWarehouseRequestRepository warehouseRequestRepository,
 
-        // Audit
-        public IEventLogRepository EventLogRepository { get; }
-        /// <summary>
-        /// Khởi tạo UnitOfWork
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="requestMaterialRepository"></param>
-        /// <param name="approvalHistoryMaterialRepository"></param>
-        /// <param name="supplyRequestsMaterialDatumRepository"></param>
-        /// <param name="inventoryReceiptsRepository"></param>
-        /// <param name="employeesCommonRepository"></param>
-        public UnitOfWork(ApplicationDbContext context
-            , IAttachmentCollectionRepository attachmentCollectionRepository
-            , IAttachmentModelRepository attachmentModelRepository
-            , IEmployeesRepository employeesCommonRepository
-            , IProductStandardRepository productStandardRepository
-            , IProductInspectionRepository productInspectionRepository
-            , IProductTestRepository productTestRepository
-            , IMfgProductionOrdersPlanRepository mfgProductionOrdersPlanRepository
-            , IQCDetailRepository iQCDetailRepository
-            , IScheduealRepository scheduealRepository
-            , IMfgProductionOrdersPlanRepository iMfgProductionOrdersPlanRepository
-            , IEmployeesRepository employeesRepository
-            , IGroupRepository groupRepository
-            , ICustomerRepository customerRepository
-            , ITransferCustomerRepository transferCustomerRepository
-            , ICustomerAssignmentRepository customerAssignmentRepository
-            , ICustomerTransferLogRepository customerTransferLogRepository
-            , IMemberInGroupRepository memberInGroupRepository
-            , ISampleRequestRepository sampleRequestRepository
-            , IProductRepository productRepository
-            //, ISampleRequestImageRepository sampleRequestImageRepository
-            , IMaterialRepository materialRepository
-            , ISupplierRepository supplierRepository
-            , ICategoryRepository categoryRepository
-            , IMaterialsSupplierRepository materialsSupplierRepository
-            , IPriceHistorieRepository priceHistorieRepository
-            , IFormulaRepository formulaRepository
-            , IFormulaMaterialRepository formulaMaterialRepository
-            , IMerchandiseOrderRepository merchandiseOrderRepository
-            //, IMerchandiseOrderLogRepository merchandiseOrderLogRepository
-            //, IAttachmentRepository attachmentRepository
-            , IMfgProductionOrderRepository mfgProductionOrderRepository
-            , IManufacturingFormulaMaterialRepository manufacturingFormulaMaterialRepository
-            , IManufacturingFormulaRepository manufacturingFormulaRepository
-            //, IManufacturingFormulaLogRepository manufacturingFormulaLogRepository
-            , IWarehouseShelfStockRepository warehouseShelfStockRepository
-            , IWarehouseTempStockRepository warehouseTempStockRepository
-            , IWarehouseRequestDetailRepository warehouseRequestDetailRepository
-            , IWarehouseRequestRepository warehouseRequestRepository
-            , IDeliveryOrderRepository deliveryOrderRepository
-            , IDelivererRepository delivererRepository
-            , IDeliveryOrderDetailRepository deliveryOrderDetailRepository
-            , IDelivererInforRepository delivererInforRepository
-            , IDeliveryOrderPORepository deliveryOrderPORepository
-            , IPurchaseOrderRepository purchaseOrderRepository
-            , IPurchaseOrderDetailRepository purchaseOrderDetailRepository
-            , IPurchaseOrderSnapshotRepository purchaseOrderSnapshotRepository
-            , IEventLogRepository eventLogRepository
-            )
+            // ==== Delivery ====
+            IDeliveryOrderRepository deliveryOrderRepository,
+            IDeliveryOrderDetailRepository deliveryOrderDetailRepository,
+            IDelivererRepository delivererRepository,
+            IDelivererInforRepository delivererInforRepository,
+            IDeliveryOrderPORepository deliveryOrderPORepository,
 
+            // ==== Purchase ====
+            IPurchaseOrderRepository purchaseOrderRepository,
+            IPurchaseOrderDetailRepository purchaseOrderDetailRepository,
+            IPurchaseOrderSnapshotRepository purchaseOrderSnapshotRepository,
+            IPurchaseOrderLinkRepository purchaseOrderLinkRepository,
+
+            // ==== Audit / Timeline ====
+            IEventLogRepository eventLogRepository,
+
+            // ==== Notifications (MỚI THÊM) ====
+            INotificationRepository notifications,
+            INotificationRecipientRepository notificationRecipients,
+            INotificationUserStateRepository notificationUserStates,
+            IUserNotificationSettingRepository userNotificationSettings,
+            INotificationTemplateRepository notificationTemplates,
+            IOutboxMessageRepository outboxMessages
+        )
         {
             _context = context;
-            //Attachment
+
+            // ===== Attachments =====
             AttachmentCollectionRepository = attachmentCollectionRepository;
             AttachmentModelRepository = attachmentModelRepository;
 
-            // Labs
-            ProductStandardRepository = productStandardRepository;
-            ProductInspectionRepository = productInspectionRepository;
-            ProductTestRepository = productTestRepository;
-            MfgProductionOrdersPlanRepository = mfgProductionOrdersPlanRepository;
-            IQCDetailRepository = iQCDetailRepository;
-            ScheduealRepository = scheduealRepository;
-            IMfgProductionOrdersPlanRepository = iMfgProductionOrdersPlanRepository;
+            // ===== Company/Common =====
+            CompanyRepository = companyRepository;
+            EmployeesCommonRepository = employeesCommonRepository;
+
+            // ===== HR =====
+            ApplicationUserRepository = applicationUserRepository;
             EmployeesRepository = employeesRepository;
             GroupRepository = groupRepository;
+            MemberInGroupRepository = memberInGroupRepository;
+
+            // ===== Sales =====
             CustomerRepository = customerRepository;
             TransferCustomerRepository = transferCustomerRepository;
             CustomerAssignmentRepository = customerAssignmentRepository;
             CustomerTransferLogRepository = customerTransferLogRepository;
-            MemberInGroupRepository = memberInGroupRepository;
+            MerchandiseOrderRepository = merchandiseOrderRepository;
+
+            // ===== Labs =====
+            //ProductStandardRepository = productStandardRepository;
+            //ProductInspectionRepository = productInspectionRepository;
+            //ProductTestRepository = productTestRepository;
+            ManufacturingFormulaVersionRepository = manufacturingFormulaVersionRepository;
+            FormulaRepository = formulaRepository;
+            FormulaMaterialRepository = formulaMaterialRepository;
             SampleRequestRepository = sampleRequestRepository;
+
+            // ===== Planning =====
+            ScheduealRepository = scheduealRepository;
+            //IMfgProductionOrdersPlanRepository = iMfgProductionOrdersPlanRepository;
+
+            // ===== QAQC Detail =====
+            //IQCDetailRepository = iQCDetailRepository;
+
+            // ===== Product =====
             ProductRepository = productRepository;
-            //SampleRequestImageRepository = sampleRequestImageRepository;
+
+            // ===== Material =====
             MaterialRepository = materialRepository;
             SupplierRepository = supplierRepository;
             CategoryRepository = categoryRepository;
             MaterialsSupplierRepository = materialsSupplierRepository;
             PriceHistorieRepository = priceHistorieRepository;
-            FormulaRepository = formulaRepository;
-            FormulaMaterialRepository = formulaMaterialRepository;
-            MerchandiseOrderRepository = merchandiseOrderRepository;
-            //MerchandiseOrderLogRepository = merchandiseOrderLogRepository;
-            //AttachmentRepository = attachmentRepository;
 
+            // ===== Manufacturing =====
             MfgProductionOrderRepository = mfgProductionOrderRepository;
             ManufacturingFormulaMaterialRepository = manufacturingFormulaMaterialRepository;
             ManufacturingFormulaRepository = manufacturingFormulaRepository;
-            //ManufacturingFormulaLogRepository = manufacturingFormulaLogRepository;
+            ProductStandardFormulaRepository = productStandardFormulaRepository;
+            ProductionSelectVersionRepository = productionSelectVersionRepository;
+            MfgOrderPORepository = mfgOrderPORepository;
+            SchedualMfgRepository = schedualMfgRepository;
 
+            // ===== Warehouse =====
             WarehouseShelfStockRepository = warehouseShelfStockRepository;
             WarehouseTempStockRepository = warehouseTempStockRepository;
             WarehouseRequestDetailRepository = warehouseRequestDetailRepository;
             WarehouseRequestRepository = warehouseRequestRepository;
 
+            // ===== Delivery =====
             DeliveryOrderRepository = deliveryOrderRepository;
-            DelivererInforRepository = delivererInforRepository;
-            DelivererRepository = delivererRepository;
             DeliveryOrderDetailRepository = deliveryOrderDetailRepository;
+            DelivererRepository = delivererRepository;
+            DelivererInforRepository = delivererInforRepository;
             DeliveryOrderPORepository = deliveryOrderPORepository;
 
+            // ===== Purchase =====
             PurchaseOrderRepository = purchaseOrderRepository;
             PurchaseOrderDetailRepository = purchaseOrderDetailRepository;
             PurchaseOrderSnapshotRepository = purchaseOrderSnapshotRepository;
-        
+            PurchaseOrderLinkRepository = purchaseOrderLinkRepository;
+
+            // ===== Audit / Timeline =====
             EventLogRepository = eventLogRepository;
+
+            // ===== Notifications (MỚI THÊM) =====
+            Notifications = notifications;
+            NotificationRecipients = notificationRecipients;
+            NotificationUserStates = notificationUserStates;
+            UserNotificationSettings = userNotificationSettings;
+            NotificationTemplates = notificationTemplates;
+            OutboxMessages = outboxMessages;
         }
-        /// <summary>
-        /// Bắt đầu một transaction
-        /// </summary>
-        /// <returns></returns>
+
+        // ==== Tx/Save/Dispose ====
         public async Task<IDbContextTransaction> BeginTransactionAsync()
-        {
-            return await _context.Database.BeginTransactionAsync();
-        }
-        /// <summary>
-        /// Commit transaction
-        /// </summary>
-        /// <returns></returns>
+            => await _context.Database.BeginTransactionAsync();
+
         public async Task CommitTransactionAsync()
-        {
-            await _context.Database.CommitTransactionAsync();
-        }
-        /// <summary>
-        /// Rollback transaction
-        /// </summary>
-        /// <returns></returns>
+            => await _context.Database.CommitTransactionAsync();
+
         public async Task RollbackTransactionAsync()
-        {
-            await _context.Database.RollbackTransactionAsync();
-        }
-        /// <summary>
-        /// Lưu thay đổi vào database
-        /// </summary>
-        /// <returns></returns>
+            => await _context.Database.RollbackTransactionAsync();
+
         public async Task<int> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync();
-        }
-        /// <summary>
-        /// Hủy bỏ context
-        /// </summary>
-        public void Dispose()
-        {
-            _context.Dispose();
-        }
+            => await _context.SaveChangesAsync();
+
+        public void Dispose() => _context.Dispose();
     }
 }

@@ -13,7 +13,7 @@ namespace VietausWebAPI.Core.Domain.Entities.MROSchema
         public string AreaName { get; set; } = default!;
 
         public virtual ICollection<EquipmentMRO> Equipments { get; set; } = new List<EquipmentMRO>();
-        public virtual ICollection<IncidentHeaderMRO> IncidentHeaderMROs { get; set; } = new List<IncidentHeaderMRO>();
+        //public virtual ICollection<IncidentHeaderMRO> IncidentHeaderMROs { get; set; } = new List<IncidentHeaderMRO>();
 
     }
 }

@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Application\Features\CompanyFeatures\Helpers\" />
     <Folder Include="Domain\Security\Policys\" />
   </ItemGroup>
 

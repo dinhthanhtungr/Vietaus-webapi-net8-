@@ -8,9 +8,10 @@ using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadServic
 using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseWriteServices;
 using VietausWebAPI.Core.Application.Features.Warehouse.Queries;
 using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
+using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
-using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.Core.Domain.Enums;
+using VietausWebAPI.Core.Domain.Entities.WarehouseSchema;
+using VietausWebAPI.Core.Domain.Enums.WareHouses;
 using VietausWebAPI.Core.Repositories_Contracts;
 using static QuestPDF.Helpers.Colors;
 
@@ -19,16 +20,20 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
     public class WarehouseReservationService : IWarehouseReservationService
     {
         private readonly IUnitOfWork _unitOfWork;
-        
-        public WarehouseReservationService(IUnitOfWork unitOfWork)
+        private readonly ICurrentUser _currentUser;
+
+        public WarehouseReservationService(IUnitOfWork unitOfWork, ICurrentUser currentUser)
         {
             _unitOfWork = unitOfWork;
+            _currentUser = currentUser;
         }
 
         public async Task<OperationResult> ReserveAvailabilityAsync(CreateVaSnapshotAndReservations req, CancellationToken ct)
         {
             static string Norm(string s) => s?.Trim().ToUpperInvariant() ?? string.Empty;
 
+            req.companyId = _currentUser.CompanyId;
+            req.createdBy = _currentUser.EmployeeId;
 
             // 0) Kiểm tra đầu vào
             if (req == null || req.reservations == null || req.reservations.Count == 0)
@@ -68,11 +73,11 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             }
 
             // 2) Lấy VaCode từ header công thức (fallback: dùng manufacturingFormulaId)
-            var vaCode = await _unitOfWork.ManufacturingFormulaRepository.Query()
-                .Where(f => f.ManufacturingFormulaId == req.manufacturingFormulaId)
+            var vaCode = await _unitOfWork.MfgProductionOrderRepository.Query()
+                .Where(f => f.MfgProductionOrderId == req.manufacturingId)
                 .Select(f => f.ExternalId)
                 .FirstOrDefaultAsync(ct);
-            vaCode ??= req.manufacturingFormulaId.ToString();
+            vaCode ??= req.manufacturingId.ToString();
             var vaCodeNorm = Norm(vaCode);
 
             await using var tx = await _unitOfWork.BeginTransactionAsync();

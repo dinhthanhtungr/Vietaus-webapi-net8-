@@ -90,7 +90,7 @@
 //                // 6) Lưu metadata
 //                attachments.Add(new OrderAttachment
 //                {
-//                    AttachmentId = Guid.NewGuid(),
+//                    AttachmentId = Guid.CreateVersion7(),
 //                    MerchandiseOrderId = orderId,
 //                    Slot = slot,
 //                    FileName = Path.GetFileName(f.FileName),

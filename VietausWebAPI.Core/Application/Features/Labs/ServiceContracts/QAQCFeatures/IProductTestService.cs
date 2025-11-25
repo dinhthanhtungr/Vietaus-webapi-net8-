@@ -1,19 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductTestFeature;
-using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductTestFeature;
-using VietausWebAPI.Core.Application.Shared.Models.PageModels;
-using VietausWebAPI.Core.Domain.Entities;
+﻿//using System;
+//using System.Collections.Generic;
+//using System.Linq;
+//using System.Text;
+//using System.Threading.Tasks;
+//using Microsoft.AspNetCore.Mvc.RazorPages;
+//using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductTestFeature;
+//using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductTestFeature;
+//using VietausWebAPI.Core.Application.Shared.Models.PageModels;
+//using VietausWebAPI.Core.Domain.Entities;
 
-namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.QAQCFeatures
-{
-    public interface IProductTestService
-    {
-        Task<PagedResult<ProductTestDTO>> GetAllAsync(ProductTestQuery productTest);
-        Task<ProductTestDTO> GetPagedByIdAsync(string ExternalId);
-    }
-}
+//namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.QAQCFeatures
+//{
+//    public interface IProductTestService
+//    {
+//        Task<PagedResult<ProductTestDTO>> GetAllAsync(ProductTestQuery productTest);
+//        Task<ProductTestDTO> GetPagedByIdAsync(string ExternalId);
+//    }
+//}

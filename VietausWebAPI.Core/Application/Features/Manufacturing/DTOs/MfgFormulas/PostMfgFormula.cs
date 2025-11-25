@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOrders;
+using VietausWebAPI.Core.Domain.Enums.Formulas;
 
 namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas
 {
@@ -11,35 +12,32 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas
     {
         public Guid ManufacturingFormulaId { get; set; }
         public string? ExternalId { get; set; }
+        public string status { get; set; } = string.Empty;
+
+        public Guid? mfgProductionOrderId { get; set; }
         public string? MfgProductionOrderExternalId { get; set; }
         public string? Name { get; set; }
 
-        public Guid mfgProductionOrderId { get; set; }
-        public string? Status { get; set; }
-        public decimal? TotalPrice { get; set; }
+        // các field từ MfgProductionOrder bạn muốn hiển thị
+        public Guid ProductId { get; set; }
+        public string? ProductNameSnapshot { get; set; }
+        public string? ProductExternalIdSnapshot { get; set; }
+        public bool IsRecycle { get; set; } // Lấy từ Product.IsRecycle
+        public string? CustomerNameSnapshot { get; set; }
 
-        public Guid VUFormulaId { get; set; }
-        public string FormulaExternalIdSnapshot { get; set; } = string.Empty;
+        public decimal? SaleTotalPrice { get; set; } // từ MerchandiseOrder.TotalPrice qua MfgProductionOrder giá sale lên
+        public int TotalQuantityRequest { get; set; }
+        public Guid? VUFormulaId { get; set; } // ID công thức từ VU nếu có sales chọn trên đơn hàng
+        public string? FormulaExternalIdSnapshot { get; set; } 
 
-        public Guid? SourceManufacturingFormulaId { get; set; }
-        public string? SourceManufacturingExternalIdSnapshot { get; set; } // ví dụ: mã của nguồn lúc copy
+        public FormulaSource? SourceType { get; set; }            // "FromVA" hoặc "FromVU"
 
-        public Guid? SourceVUFormulaId { get; set; }
-        public string? SourceVUExternalIdSnapshot { get; set; }
-
-        public string? SourceType { get; set; }                     // "FromVA" hoặc "FromVU"
+        public Guid FormulaSourceId { get; set; } // ID của công thức gốc (có thể là ManufacturingFormulaId hoặc VUFormulaId tùy SourceType)
+        public string FormulaSourceNameSnapshot { get; set; } = string.Empty;// Tên công thức gốc
 
         public bool IsSelect { get; set; }
-        public bool IsActive { get; set; }
         public bool IsStandard { get; set; }
         public string? Note { get; set; }
-
-        public DateTime? createdDate { get; set; }
-        public Guid CreatedBy { get; set; }
-        public DateTime? UpdatedDate { get; set; }
-        public Guid? UpdatedBy { get; set; }
-        public Guid? companyId { get; set; }
-
-        public virtual ICollection<PatchMfgFormulaMaterial> ManufacturingFormulaMaterials { get; set; } = new List<PatchMfgFormulaMaterial>();
+        public virtual ICollection<PostManufacturingFormulaMaterial> ManufacturingFormulaMaterials { get; set; } = new List<PostManufacturingFormulaMaterial>();
     }
 }

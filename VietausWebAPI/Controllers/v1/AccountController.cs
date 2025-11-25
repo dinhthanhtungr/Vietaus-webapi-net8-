@@ -1,8 +1,6 @@
-﻿using VietausWebAPI.WebAPI.DatabaseContext;
-using VietausWebAPI.Core.DTO;
+﻿using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
 using VietausWebAPI.Core.Identity;
-using VietausWebAPI.Core.Service;
-using VietausWebAPI.Core.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Shared.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +10,8 @@ using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pag
 using System.Data;
 using System.Security.Claims;
 using System.Runtime.Intrinsics.X86;
+using VietausWebAPI.Core.Application.Features.Shared.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Shared.DTO;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1._0
 {

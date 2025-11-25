@@ -10,6 +10,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Querys.Materi
     public class MaterialQuery : PaginationQuery
     {
         public Guid? MaterialId { get; set; }
+        public Guid? MaterialSupplierId { get; set; }
         public Guid? CategoryId { get; set; }
         public string? Keyword { get; set; }
         public Guid? SupplierId { get; set; }

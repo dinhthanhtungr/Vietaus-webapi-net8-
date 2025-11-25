@@ -155,7 +155,7 @@ namespace VietausWebAPI.Core.Application.Features.Attachments.Services
                 SizeBytes = file.Length,
                 StoragePath = relativePath,
                 IsActive = true,
-                CreateDate = DateTime.UtcNow, // bổ sung audit thời gian
+                CreateDate = DateTime.Now, // bổ sung audit thời gian
                 CreateBy = userId,            // nếu muốn theo dõi người upload
                                               // ContentHash = await ComputeSHA256Async(file, ct), // nếu cần chống trùng
             };

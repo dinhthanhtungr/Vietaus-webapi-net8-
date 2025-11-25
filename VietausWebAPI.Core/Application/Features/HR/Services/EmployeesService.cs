@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ using VietausWebAPI.Core.Application.Features.HR.DTOs.Groups;
 using VietausWebAPI.Core.Application.Features.HR.Querys.Employees;
 using VietausWebAPI.Core.Application.Features.HR.Querys.Groups;
 using VietausWebAPI.Core.Application.Features.HR.ServiceContracts;
-using VietausWebAPI.Core.Application.Shared.Helper;
+using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Identity;
@@ -22,6 +23,7 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
     public class EmployeesService : IEmployeesService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly IMapper _mapper;
 
         /// <summary>
@@ -29,10 +31,11 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
         /// </summary>
         /// <param name="unitOfWork"></param>
         /// <param name="mapper"></param>
-        public EmployeesService(IUnitOfWork unitOfWork, IMapper mapper)
+        public EmployeesService(IUnitOfWork unitOfWork, IMapper mapper, UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _userManager = userManager;
         }
 
 
@@ -50,53 +53,187 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
 
         public async Task<PagedResult<AccountDTOs>> GetPagedAccoutAsync(EmployeeQuery? query)
         {
-            var pagedResult = await _unitOfWork.EmployeesRepository.GetPagedAccoutAsync(query);
-            try
+            // 1) Chuẩn hoá query
+            query ??= new EmployeeQuery();
+
+            var pageIndex = query.PageNumber > 0 ? query.PageNumber : 1;
+            var pageSize = query.PageSize > 0 ? query.PageSize : 10;
+            var keyword = query.keyword;
+
+            // 2) Base query từ repository (mặc định NoTracking)
+            var q = _unitOfWork.ApplicationUserRepository.Query()
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                    .AsQueryable();
+
+            // 3) Filter theo keyword
+            if (!string.IsNullOrWhiteSpace(keyword))
             {
-                var pagedResultMapped = _mapper.Map<PagedResult<AccountDTOs>>(pagedResult);
+                var kw = keyword.Trim().ToLower();
 
-                // lấy danh sách userId từ kết quả đã phân trang
-                //var userIds = pagedResultMapped.Items.Select(x => x.Id).ToList();
+                q = q.Where(u =>
+                    (u.UserName ?? "").ToLower().Contains(kw) ||
+                    (u.Email ?? "").ToLower().Contains(kw) ||
+                    (u.personName ?? "").ToLower().Contains(kw)
+                );
 
-                // Truy ấn thông tin về phân quyền của người dùng
-
-
-                return pagedResultMapped;
             }
-            catch (Exception ex)
-            {
-                throw new Exception($"Lỗi khi lấy danh sách nhân viên: {ex.Message}", ex);
-            }
+
+            // 4) Tổng số bản ghi sau khi filter
+            var totalCount = await q.CountAsync();
+
+            // 5) Lấy 1 trang & map thẳng sang DTO + Roles
+            var items = await q
+                .OrderBy(u => u.UserName)
+                .Skip((pageIndex - 1) * pageSize)
+                .Take(pageSize)
+                .Select(u => new AccountDTOs
+                {
+                    Id = u.Id,
+                    personName = u.personName,
+                    UserName = u.UserName,
+                    Email = u.Email,
+                    Roles = u.UserRoles
+                        .Where(ur => ur.IsActive && ur.Role != null)
+                        .Select(ur => ur.Role!.Name!)
+                        .ToList(),
+                    CancelRoles = new List<string>() // để trống, dùng khi cập nhật quyền
+                })
+                .ToListAsync();
+
+            // 6) Trả về PagedResult
+            return new PagedResult<AccountDTOs>(
+                items,
+                totalCount,
+                pageIndex,
+                pageSize
+            );
         }
 
+        /// <summary>
+        /// Lấy danh sách nhóm
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public async Task<PagedResult<GetGroupDTOs>> GetAllGroupsAsync(GroupQuery? query)
         {
-            var pagedResult = await _unitOfWork.GroupRepository.GetAllGroupsAsync(query);
+            query ??= new GroupQuery();
 
-            try
+            var pageIndex = query.PageNumber > 0 ? query.PageNumber : 1;
+            var pageSize = query.PageSize > 0 ? query.PageSize : 10;
+            var keyword = query.keyword?.Trim();
+            var q = _unitOfWork.GroupRepository.Query()
+                .AsQueryable();
+
+            var totalCount = await q.CountAsync();   
+            // 3) Filter theo keyword (không phân biệt hoa/thường)
+            if (!string.IsNullOrWhiteSpace(keyword))
             {
-                var pagedResultMapped = _mapper.Map<PagedResult<GetGroupDTOs>>(pagedResult);
-                return pagedResultMapped;
+                var kw = keyword.ToLower();
+
+                q = q.Where(g =>
+                    (g.Name != null && g.Name.ToLower().Contains(kw)) ||
+                    (g.ExternalId != null && g.ExternalId.ToLower().Contains(kw)) ||
+                    (g.GroupType != null && g.GroupType.ToLower().Contains(kw))
+                );
             }
-            catch (Exception ex)
-            {
-                throw new Exception($"Lỗi khi lấy danh sách nhóm: {ex.Message}", ex);
-            }
+
+
+            var items = await q
+                .Include(g => g.MemberInGroups) 
+                    .ThenInclude(gm => gm.ProfileNavigation)// hoặc GroupMembers, tuỳ bạn đặt tên
+                .OrderBy(g => g.Name)
+                .Skip((pageIndex - 1) * pageSize)
+                .Take(pageSize)
+                .Select(g => new GetGroupDTOs
+                {
+                    GroupId = g.GroupId,
+                    GroupType = g.GroupType,
+                    ExternalId = g.ExternalId,
+                    Name = g.Name,
+                    LeaderName = g.MemberInGroups
+                                .FirstOrDefault(m => m.IsAdmin == true && m.ProfileNavigation != null && m.ProfileNavigation.FullName != null) != null
+                                    ? g.MemberInGroups.FirstOrDefault(m => m.IsAdmin == true && m.ProfileNavigation != null && m.ProfileNavigation.FullName != null)!.ProfileNavigation!.FullName!
+                                    : null,
+                    CreatedDate = g.CreatedDate,
+                    CreatedBy = g.CreatedBy,
+                    MemberCount = g.MemberInGroups.Count()   // hoặc g.GroupMembers.Count()
+                })
+                .ToListAsync();
+
+            return new PagedResult<GetGroupDTOs>(
+                items,
+                totalCount,
+                pageIndex,
+                pageSize
+            );
         }
 
-        public async Task<PagedResult<EmployeeSummary>> GetPagedAsync(EmployeeQuery? query)
+        public async Task<PagedResult<EmployeeSummary>> GetPagedAsync(
+            EmployeeQuery? query)
         {
-            var pagedResult = await _unitOfWork.EmployeesRepository.GetPagedAsync(query);
             try
             {
-                var pagedResultMapped = _mapper.Map<PagedResult<EmployeeSummary>>(pagedResult);
-                return pagedResultMapped;
+                // 1) Chuẩn hoá query
+                query ??= new EmployeeQuery();
+
+                if (query.PageNumber <= 0) query.PageNumber = 1;
+                if (query.PageSize <= 0) query.PageSize = 15;
+
+                // 2) Base query
+                var q = _unitOfWork.EmployeesRepository.Query()
+                    .Include(e => e.Part)
+                    .AsQueryable(); // VERY IMPORTANT: để var / IQueryable, đừng gán kiểu IIncludableQueryable
+
+                // 3) Lọc theo keyword (Postgres ILIKE)
+                if (!string.IsNullOrWhiteSpace(query.keyword))
+                {
+                    var kw = $"%{query.keyword.Trim()}%";
+
+                    q = q.Where(e =>
+                        (e.FullName != null && EF.Functions.ILike(e.FullName, kw)) ||
+                        (e.Email != null && EF.Functions.ILike(e.Email, kw)) ||
+                        (e.ExternalId != null && EF.Functions.ILike(e.ExternalId, kw))
+                    );
+                }
+
+                // 4) Map sang EmployeeSummary + sort
+                var qSummary = q
+                    .OrderByDescending(e => e.DateHired)
+                    .Select(e => new EmployeeSummary
+                    {
+                        EmployeeId = e.EmployeeId,
+                        ExternalId = e.ExternalId,
+                        FullName = e.FullName ?? string.Empty,
+                        Email = e.Email,
+                        Gender = e.Gender,
+                        PartName = e.Part != null ? e.Part.PartName : null, // đổi Name nếu Part có prop khác
+                        PhoneNumber = e.PhoneNumber,
+                        DateHired = e.DateHired
+                    });
+
+                // 5) Đếm tổng + phân trang
+                var totalCount = await qSummary.CountAsync();
+
+                var items = await qSummary
+                    .Skip((query.PageNumber - 1) * query.PageSize)
+                    .Take(query.PageSize)
+                    .ToListAsync();
+
+                return new PagedResult<EmployeeSummary>(
+                    items,
+                    totalCount,
+                    query.PageNumber,
+                    query.PageSize
+                );
             }
             catch (Exception ex)
             {
                 throw new Exception($"Lỗi khi lấy danh sách nhân viên: {ex.Message}", ex);
             }
         }
+
         /// <summary>
         /// Thêm mới nhân viên
         /// </summary>

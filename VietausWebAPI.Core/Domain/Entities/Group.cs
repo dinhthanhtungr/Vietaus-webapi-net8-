@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 
- namespace VietausWebAPI.Core.Domain.Entities;
+namespace VietausWebAPI.Core.Domain.Entities;
 
 public partial class Group
 {

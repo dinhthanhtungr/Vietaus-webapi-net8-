@@ -8,9 +8,9 @@ using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.Querys;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
-using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 using VietausWebAPI.Infrastructure.Utilities;
-using VietausWebAPI.WebAPI.DatabaseContext;
+using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Sales
 {
@@ -208,7 +208,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
                 {
                     var newAddress = new Address
                     {
-                        AddressId = Guid.NewGuid(),
+                        AddressId = Guid.CreateVersion7(),
                         CustomerId = existingCustomer.CustomerId,
                         AddressLine = incomingAddress.AddressLine,
                         City = incomingAddress.City,
@@ -279,7 +279,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
                 {
                     var newContact = new Contact
                     {
-                        ContactId = Guid.NewGuid(),
+                        ContactId = Guid.CreateVersion7(),
                         CustomerId = existingCustomer.CustomerId,
                         FirstName = incomingContact.FirstName,
                         LastName = incomingContact.LastName,

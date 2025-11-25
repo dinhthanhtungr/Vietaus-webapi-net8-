@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Attachments.RepositoriesContracts;
 using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
 using VietausWebAPI.Infrastructure.Helpers.Repositories;
-using VietausWebAPI.WebAPI.DatabaseContext;
+using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Attachments
 {

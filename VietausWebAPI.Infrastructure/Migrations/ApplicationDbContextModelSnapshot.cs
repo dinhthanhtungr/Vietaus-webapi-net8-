@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using VietausWebAPI.WebAPI.DatabaseContext;
+using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
 
 #nullable disable
 
@@ -111,100 +111,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Address", b =>
-                {
-                    b.Property<Guid>("AddressId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("AddressId")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<string>("AddressLine")
-                        .HasColumnType("citext")
-                        .HasColumnName("AddressLine");
-
-                    b.Property<string>("City")
-                        .HasColumnType("citext")
-                        .HasColumnName("City");
-
-                    b.Property<string>("Country")
-                        .HasColumnType("citext")
-                        .HasColumnName("Country");
-
-                    b.Property<Guid>("CustomerId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CustomerId");
-
-                    b.Property<string>("District")
-                        .HasColumnType("citext")
-                        .HasColumnName("District");
-
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("IsActive");
-
-                    b.Property<bool?>("IsPrimary")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsPrimary");
-
-                    b.Property<string>("PostalCode")
-                        .HasColumnType("citext")
-                        .HasColumnName("PostalCode");
-
-                    b.Property<string>("Province")
-                        .HasColumnType("citext")
-                        .HasColumnName("Province");
-
-                    b.HasKey("AddressId")
-                        .HasName("PK__Address__091C2A1BCCA306B0");
-
-                    b.HasIndex("CustomerId")
-                        .HasDatabaseName("IX_Address_CustomerId");
-
-                    b.HasIndex("CustomerId", "IsPrimary")
-                        .HasDatabaseName("IX_Address_Customer_IsPrimary");
-
-                    b.ToTable("Address", "Customer");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ApprovalHistory", b =>
-                {
-                    b.Property<Guid>("ApprovalId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("ApprovalID");
-
-                    b.Property<DateTime?>("ApprovalDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("ApprovalStatus")
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<Guid?>("EmployeeId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("EmployeeID");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("RequestId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("RequestID");
-
-                    b.HasKey("ApprovalId")
-                        .HasName("PK__Approval__328477D4B3FEB4F1");
-
-                    b.HasIndex(new[] { "EmployeeId" }, "IX_ApprovalHistory_EmployeeID");
-
-                    b.HasIndex(new[] { "RequestId" }, "IX_ApprovalHistory_RequestID");
-
-                    b.ToTable("ApprovalHistory", "SupplyRequest");
-                });
-
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.AttachmentSchema.AttachmentCollection", b =>
                 {
                     b.Property<Guid>("AttachmentCollectionId")
@@ -212,8 +118,13 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("AttachmentCollectionID");
 
+                    b.Property<Guid?>("MaterialId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("AttachmentCollectionId")
                         .HasName("PK__AttachmentCollection__B3C4DAF6D3F2E2B3");
+
+                    b.HasIndex("MaterialId");
 
                     b.ToTable("AttachmentCollection", "Attachment");
                 });
@@ -294,117 +205,66 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("code_counters", "Audit");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Branch", b =>
-                {
-                    b.Property<Guid>("BranchId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<Guid>("UpdatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.HasKey("BranchId")
-                        .HasName("PK__Branches__A1682FC5D195FBDD");
-
-                    b.HasIndex(new[] { "CompanyId" }, "IX_Branches_CompanyId");
-
-                    b.HasIndex(new[] { "CreatedBy" }, "IX_Branches_CreatedBy");
-
-                    b.HasIndex(new[] { "UpdatedBy" }, "IX_Branches_UpdatedBy");
-
-                    b.ToTable("Branches", "company");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Category", b =>
-                {
-                    b.Property<Guid>("CategoryId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ExternalId")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("Types")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.HasKey("CategoryId")
-                        .HasName("PK__Categori__19093A0B0352530F");
-
-                    b.HasIndex(new[] { "CompanyId" }, "IX_Categories_CompanyId");
-
-                    b.ToTable("Categories", "Material");
-                });
-
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Company", b =>
                 {
                     b.Property<Guid>("CompanyId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
+                        .HasColumnName("companyId")
                         .HasDefaultValueSql("gen_random_uuid()");
 
+                    b.Property<string>("Address")
+                        .HasColumnType("text")
+                        .HasColumnName("address");
+
                     b.Property<string>("Code")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .IsRequired()
+                        .HasColumnType("citext")
+                        .HasColumnName("companyExternalId");
+
+                    b.Property<string>("Country")
+                        .HasColumnType("text")
+                        .HasColumnName("country");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("createdBy");
 
                     b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("createdDate");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("text")
+                        .HasColumnName("email");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("isActive");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("text")
+                        .HasColumnName("phone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("updatedBy");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("updatedDate");
+
+                    b.Property<string>("ZipCode")
+                        .HasColumnType("text")
+                        .HasColumnName("zipCode");
 
                     b.HasKey("CompanyId")
                         .HasName("PK__Companie__2D971CAC11C45530");
@@ -416,7 +276,67 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("Companies", "company");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Contact", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerSchema.Address", b =>
+                {
+                    b.Property<Guid>("AddressId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("AddressId")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("AddressLine")
+                        .HasColumnType("citext")
+                        .HasColumnName("AddressLine");
+
+                    b.Property<string>("City")
+                        .HasColumnType("citext")
+                        .HasColumnName("City");
+
+                    b.Property<string>("Country")
+                        .HasColumnType("citext")
+                        .HasColumnName("Country");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CustomerId");
+
+                    b.Property<string>("District")
+                        .HasColumnType("citext")
+                        .HasColumnName("District");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("IsActive");
+
+                    b.Property<bool?>("IsPrimary")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsPrimary");
+
+                    b.Property<string>("PostalCode")
+                        .HasColumnType("citext")
+                        .HasColumnName("PostalCode");
+
+                    b.Property<string>("Province")
+                        .HasColumnType("citext")
+                        .HasColumnName("Province");
+
+                    b.HasKey("AddressId")
+                        .HasName("PK__Address__091C2A1BCCA306B0");
+
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("IX_Address_CustomerId");
+
+                    b.HasIndex("CustomerId", "IsPrimary")
+                        .HasDatabaseName("IX_Address_Customer_IsPrimary");
+
+                    b.ToTable("Address", "Customer");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerSchema.Contact", b =>
                 {
                     b.Property<Guid>("ContactId")
                         .ValueGeneratedOnAdd()
@@ -440,6 +360,9 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("citext")
                         .HasColumnName("Gender");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<bool?>("IsPrimary")
                         .HasColumnType("boolean");
 
@@ -460,7 +383,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("Contacts", "Customer");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Customer", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerSchema.Customer", b =>
                 {
                     b.Property<Guid>("CustomerId")
                         .ValueGeneratedOnAdd()
@@ -563,7 +486,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("Customer", "Customer");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerAssignment", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerSchema.CustomerAssignment", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -641,7 +564,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("CustomerAssignment", "Customer");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerTransferLog", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerSchema.CustomerTransferLog", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -709,7 +632,26 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("CustomerTransferLog", "Customer");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Deliverer", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerSchema.DetailCustomerTransfer", b =>
+                {
+                    b.Property<Guid>("LogId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LogId");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CustomerId");
+
+                    b.HasKey("LogId", "CustomerId")
+                        .HasName("PK_DetailCustomerTransfer");
+
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("IX_DetailCustomerTransfer_CustomerId");
+
+                    b.ToTable("DetailCustomerTransfer", "Customer");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DeliverySchema.Deliverer", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -733,7 +675,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("Deliverer", "DeliveryOrder");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DelivererInfor", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DeliverySchema.DelivererInfor", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -763,7 +705,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("DelivererInfor", "DeliveryOrder");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DeliveryOrder", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DeliverySchema.DeliveryOrder", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -778,10 +720,12 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreatedDate");
 
                     b.Property<string>("CustomerExternalIdSnapShot")
-                        .HasColumnType("citext");
+                        .HasColumnType("citext")
+                        .HasColumnName("CustomerExternalIdSnapShot");
 
                     b.Property<Guid>("CustomerId")
                         .HasColumnType("uuid");
@@ -789,22 +733,25 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Property<string>("DeliveryAddress")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("EmployeeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("EmployeeId1")
-                        .HasColumnType("uuid");
+                    b.Property<decimal?>("DeliveryPrice")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("DeliveryPrice");
 
                     b.Property<string>("ExternalId")
-                        .HasColumnType("citext");
+                        .HasColumnType("citext")
+                        .HasColumnName("ExternalId");
 
                     b.Property<bool>("HasPrinted")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("HasPrinted");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                        .HasDefaultValue(true)
+                        .HasColumnName("IsActive");
 
                     b.Property<string>("Note")
                         .HasColumnType("text");
@@ -823,7 +770,9 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("Status");
 
                     b.Property<string>("TaxNumber")
                         .HasColumnType("text");
@@ -832,14 +781,11 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("UpdatedDate");
 
                     b.HasKey("Id")
                         .HasName("PK__DeliveryOrder__A2F6B5D8D1C1E3E3");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.HasIndex("EmployeeId1");
 
                     b.HasIndex(new[] { "CompanyId" }, "IX_DeliveryOrders_CompanyId");
 
@@ -852,7 +798,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("DeliveryOrders", "DeliveryOrder");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DeliveryOrderDetail", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DeliverySchema.DeliveryOrderDetail", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -871,18 +817,12 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Property<bool>("IsAttach")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                        .HasDefaultValue(false);
 
                     b.Property<string>("LotNoList")
                         .HasColumnType("citext");
 
                     b.Property<Guid?>("MerchandiseOrderDetailId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("MerchandiseOrderExternalIdSnapShot")
-                        .HasColumnType("citext");
-
-                    b.Property<Guid?>("MerchandiseOrderId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("NumOfBags")
@@ -898,7 +838,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("ProductNameSnapShot")
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<decimal>("Quantity")
                         .HasPrecision(18, 3)
@@ -907,20 +848,16 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.HasKey("Id")
                         .HasName("PK__DeliveryOrderDetail__A2F6B5D8D1C1E3E3");
 
-                    b.HasIndex("DeliveryOrderId", "MerchandiseOrderId");
-
-                    b.HasIndex("MerchandiseOrderDetailId", "MerchandiseOrderId");
-
                     b.HasIndex(new[] { "DeliveryOrderId" }, "IX_DeliveryOrderDetail_DeliveryOrderId");
 
-                    b.HasIndex(new[] { "ProductId" }, "IX_DeliveryOrderDetail_ProductId");
+                    b.HasIndex(new[] { "MerchandiseOrderDetailId" }, "IX_DeliveryOrderDetail_MerchandiseOrderDetailId");
 
-                    b.HasIndex(new[] { "MerchandiseOrderId" }, "IX_DeliveryOrderDetails_ID");
+                    b.HasIndex(new[] { "ProductId" }, "IX_DeliveryOrderDetail_ProductId");
 
                     b.ToTable("DeliveryOrderDetail", "DeliveryOrder");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DeliveryOrderPO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DeliverySchema.DeliveryOrderPO", b =>
                 {
                     b.Property<Guid>("DeliveryOrderId")
                         .HasColumnType("uuid");
@@ -931,35 +868,693 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<int?>("WarehouseRequestId")
+                    b.Property<int?>("WarehouseRequestRequestId")
                         .HasColumnType("integer");
 
                     b.HasKey("DeliveryOrderId", "MerchandiseOrderId");
 
                     b.HasIndex("MerchandiseOrderId");
 
-                    b.HasIndex("WarehouseRequestId");
+                    b.HasIndex("WarehouseRequestRequestId");
 
                     b.ToTable("DeliveryOrderPO", "DeliveryOrder");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DetailCustomerTransfer", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DevandqaSchema.ProductInspection", b =>
                 {
-                    b.Property<Guid>("LogId")
+                    b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("LogId");
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<Guid>("CustomerId")
+                    b.Property<string>("Antistatic")
+                        .HasColumnType("citext")
+                        .HasColumnName("antistatic");
+
+                    b.Property<string>("BatchId")
+                        .HasColumnType("citext")
+                        .HasColumnName("batch_id");
+
+                    b.Property<string>("BlackDots")
+                        .HasColumnType("citext")
+                        .HasColumnName("black_dots");
+
+                    b.Property<string>("ColorDeltaE")
+                        .HasColumnType("citext")
+                        .HasColumnName("color_delta_e");
+
+                    b.Property<DateTime?>("CreateDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("create_date");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("citext")
+                        .HasColumnName("created_by");
+
+                    b.Property<bool?>("DefectBlackDot")
+                        .HasColumnType("boolean")
+                        .HasColumnName("Defect_BlackDot");
+
+                    b.Property<bool?>("DefectDusty")
+                        .HasColumnType("boolean")
+                        .HasColumnName("Defect_Dusty");
+
+                    b.Property<bool?>("DefectImpurity")
+                        .HasColumnType("boolean")
+                        .HasColumnName("Defect_Impurity");
+
+                    b.Property<bool?>("DefectMoist")
+                        .HasColumnType("boolean")
+                        .HasColumnName("Defect_Moist");
+
+                    b.Property<bool?>("DefectShortFiber")
+                        .HasColumnType("boolean")
+                        .HasColumnName("Defect_ShortFiber");
+
+                    b.Property<bool?>("DefectWrongColor")
+                        .HasColumnType("boolean")
+                        .HasColumnName("Defect_WrongColor");
+
+                    b.Property<bool?>("DeliveryAccepted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("delivery_accepted");
+
+                    b.Property<string>("Density")
+                        .HasColumnType("citext")
+                        .HasColumnName("density");
+
+                    b.Property<bool?>("DwellTime")
+                        .HasColumnType("boolean")
+                        .HasColumnName("dwell_time");
+
+                    b.Property<string>("Elongation")
+                        .HasColumnType("citext")
+                        .HasColumnName("elongation");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("expiry_date");
+
+                    b.Property<string>("ExternalId")
+                        .HasColumnType("citext")
+                        .HasColumnName("external_id");
+
+                    b.Property<string>("FlexuralModulus")
+                        .HasColumnType("citext")
+                        .HasColumnName("flexural_modulus");
+
+                    b.Property<string>("FlexuralStrength")
+                        .HasColumnType("citext")
+                        .HasColumnName("flexural_strength");
+
+                    b.Property<string>("Hardness")
+                        .HasColumnType("citext")
+                        .HasColumnName("hardness");
+
+                    b.Property<string>("ImpactResistance")
+                        .HasColumnType("citext")
+                        .HasColumnName("impact_resistance");
+
+                    b.Property<bool?>("IsAntistaticPass")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_antistatic_pass");
+
+                    b.Property<bool?>("IsColorDeltaEpass")
+                        .HasColumnType("boolean")
+                        .HasColumnName("IsColorDeltaEPass");
+
+                    b.Property<bool?>("IsDensityPass")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_density_pass");
+
+                    b.Property<bool?>("IsElongationPass")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_elongation_pass");
+
+                    b.Property<bool?>("IsFlexuralModulusPass")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_flexural_modulus_pass");
+
+                    b.Property<bool?>("IsFlexuralStrengthPass")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_flexural_strength_pass");
+
+                    b.Property<bool?>("IsHardnessPass")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_hardness_pass");
+
+                    b.Property<bool?>("IsImpactResistancePass")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_impact_resistance_pass");
+
+                    b.Property<bool?>("IsMeshAttached")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_mesh_attached");
+
+                    b.Property<bool?>("IsMfrpass")
+                        .HasColumnType("boolean")
+                        .HasColumnName("IsMFRPass");
+
+                    b.Property<bool?>("IsMoisturePass")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_moisture_pass");
+
+                    b.Property<bool?>("IsPackingSpecPass")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_packing_spec_pass");
+
+                    b.Property<bool?>("IsParticleSizePass")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_particle_size_pass");
+
+                    b.Property<bool?>("IsShapePass")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_shape_pass");
+
+                    b.Property<bool?>("IsStorageConditionPass")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_storage_condition_pass");
+
+                    b.Property<bool?>("IsTensileStrengthPass")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_tensile_strength_pass");
+
+                    b.Property<DateTime?>("ManufacturingDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("manufacturing_date");
+
+                    b.Property<string>("MeshType")
+                        .HasColumnType("citext")
+                        .HasColumnName("mesh_type");
+
+                    b.Property<string>("Mfr")
+                        .HasColumnType("citext")
+                        .HasColumnName("MFR");
+
+                    b.Property<bool?>("MigrationTest")
+                        .HasColumnType("boolean")
+                        .HasColumnName("migration_test");
+
+                    b.Property<string>("Moisture")
+                        .HasColumnType("citext")
+                        .HasColumnName("moisture");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("citext")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("PackingSpec")
+                        .HasColumnType("citext")
+                        .HasColumnName("packing_spec");
+
+                    b.Property<string>("ParticleSize")
+                        .HasColumnType("citext")
+                        .HasColumnName("particle_size");
+
+                    b.Property<string>("ProductCode")
+                        .HasColumnType("citext")
+                        .HasColumnName("product_code");
+
+                    b.Property<string>("ProductName")
+                        .HasColumnType("citext")
+                        .HasColumnName("product_name");
+
+                    b.Property<Guid?>("ProductStandardId")
                         .HasColumnType("uuid")
-                        .HasColumnName("CustomerId");
+                        .HasColumnName("product_standard_id");
 
-                    b.HasKey("LogId", "CustomerId")
-                        .HasName("PK_DetailCustomerTransfer");
+                    b.Property<string>("Shape")
+                        .HasColumnType("citext")
+                        .HasColumnName("shape");
 
-                    b.HasIndex("CustomerId")
-                        .HasDatabaseName("IX_DetailCustomerTransfer_CustomerId");
+                    b.Property<string>("StorageCondition")
+                        .HasColumnType("citext")
+                        .HasColumnName("storage_condition");
 
-                    b.ToTable("DetailCustomerTransfer", "Customer");
+                    b.Property<string>("TensileStrength")
+                        .HasColumnType("citext")
+                        .HasColumnName("tensile_strength");
+
+                    b.Property<string>("Types")
+                        .HasColumnType("citext")
+                        .HasColumnName("types");
+
+                    b.Property<bool?>("VisualCheck")
+                        .HasColumnType("boolean")
+                        .HasColumnName("visual_check");
+
+                    b.Property<int?>("Weight")
+                        .HasColumnType("integer")
+                        .HasColumnName("weight");
+
+                    b.HasKey("Id")
+                        .HasName("PK__ProductI__3214EC072F6AD3E1");
+
+                    b.HasIndex("CreateDate")
+                        .HasDatabaseName("ix_productinspection_create_date");
+
+                    b.HasIndex("ExternalId")
+                        .HasDatabaseName("ix_productinspection_external_id");
+
+                    b.HasIndex("BatchId", "CreateDate")
+                        .HasDatabaseName("ix_productinspection_batch_create_date");
+
+                    b.HasIndex("ProductCode", "CreateDate")
+                        .HasDatabaseName("ix_productinspection_product_create_date");
+
+                    b.ToTable("ProductInspection", (string)null);
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DevandqaSchema.ProductStandard", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("BlackDots")
+                        .HasColumnType("citext")
+                        .HasColumnName("blackdots");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("companyid");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("createddate");
+
+                    b.Property<string>("DeltaE")
+                        .HasColumnType("citext")
+                        .HasColumnName("deltae");
+
+                    b.Property<string>("Density")
+                        .HasColumnType("citext")
+                        .HasColumnName("density");
+
+                    b.Property<string>("DwellTime")
+                        .HasColumnType("citext")
+                        .HasColumnName("dwelltime");
+
+                    b.Property<string>("ElongationAtBreak")
+                        .HasColumnType("citext")
+                        .HasColumnName("elongationatbreak");
+
+                    b.Property<string>("FlexuralModulus")
+                        .HasColumnType("citext")
+                        .HasColumnName("flexuralmodulus");
+
+                    b.Property<string>("FlexuralStrength")
+                        .HasColumnType("citext")
+                        .HasColumnName("flexuralstrength");
+
+                    b.Property<string>("Hardness")
+                        .HasColumnType("citext")
+                        .HasColumnName("hardness");
+
+                    b.Property<string>("IzodImpactStrength")
+                        .HasColumnType("citext")
+                        .HasColumnName("izodimpactstrength");
+
+                    b.Property<string>("MeltIndex")
+                        .HasColumnType("citext")
+                        .HasColumnName("meltindex");
+
+                    b.Property<string>("MigrationTest")
+                        .HasColumnType("citext")
+                        .HasColumnName("migrationtest");
+
+                    b.Property<string>("Moisture")
+                        .HasColumnType("citext")
+                        .HasColumnName("moisture");
+
+                    b.Property<string>("PelletSize")
+                        .HasColumnType("citext")
+                        .HasColumnName("pelletsize");
+
+                    b.Property<string>("ProductExternalId")
+                        .HasColumnType("citext")
+                        .HasColumnName("productexternalid");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("productid");
+
+                    b.Property<string>("Shape")
+                        .HasColumnType("citext")
+                        .HasColumnName("shape");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("citext")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TensileStrength")
+                        .HasColumnType("citext")
+                        .HasColumnName("tensilestrength");
+
+                    b.Property<int>("Weight")
+                        .HasColumnType("integer")
+                        .HasColumnName("weight");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("CreatedDate")
+                        .HasDatabaseName("ix_productstandard_createddate");
+
+                    b.HasIndex("ProductId")
+                        .HasDatabaseName("ix_productstandard_productid");
+
+                    b.ToTable("ProductStandard", "devandga");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DevandqaSchema.ProductTest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("expirydate");
+
+                    b.Property<string>("ExternalId")
+                        .HasColumnType("citext")
+                        .HasColumnName("externalid");
+
+                    b.Property<DateTime>("ManufacturingDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("manufacturingdate");
+
+                    b.Property<string>("ProductCustomerExternalId")
+                        .HasColumnType("citext")
+                        .HasColumnName("product_customerexternalid");
+
+                    b.Property<string>("ProductExternalId")
+                        .HasColumnType("citext")
+                        .HasColumnName("product_externalid");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<string>("ProductName")
+                        .HasColumnType("citext")
+                        .HasColumnName("product_name");
+
+                    b.Property<string>("ProductPackage")
+                        .HasColumnType("citext")
+                        .HasColumnName("product_package");
+
+                    b.Property<int>("ProductWeight")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_weight");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId")
+                        .HasDatabaseName("ix_producttest_productid");
+
+                    b.HasIndex("ProductExternalId", "ManufacturingDate")
+                        .HasDatabaseName("ix_producttest_externalid_mfgdate");
+
+                    b.ToTable("ProductTest", "devandga");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DevandqaSchema.QcPassDetailHistory", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("BatchNo")
+                        .HasColumnType("citext")
+                        .HasColumnName("batchno");
+
+                    b.Property<string>("ColorCode")
+                        .HasColumnType("citext")
+                        .HasColumnName("colorcode");
+
+                    b.Property<decimal?>("DeltaE")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("deltae");
+
+                    b.Property<string>("DensityResult")
+                        .HasColumnType("citext")
+                        .HasColumnName("densityresult");
+
+                    b.Property<decimal?>("DensitySperm3")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("densitysperm3");
+
+                    b.Property<decimal?>("Diameter")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("diameter");
+
+                    b.Property<decimal?>("DiameterResult")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("diameterresult");
+
+                    b.Property<decimal?>("ElongationMpa")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("elongationmpa");
+
+                    b.Property<string>("ElongationResult")
+                        .HasColumnType("citext")
+                        .HasColumnName("elongationresult");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employeeid");
+
+                    b.Property<string>("EqualToStandard")
+                        .HasColumnType("citext")
+                        .HasColumnName("equaltostandard");
+
+                    b.Property<bool>("FlagBlackDot")
+                        .HasColumnType("boolean")
+                        .HasColumnName("flagblackdot");
+
+                    b.Property<bool>("FlagDust")
+                        .HasColumnType("boolean")
+                        .HasColumnName("flagdust");
+
+                    b.Property<bool>("FlagRound")
+                        .HasColumnType("boolean")
+                        .HasColumnName("flaground");
+
+                    b.Property<bool>("FlagSwirl")
+                        .HasColumnType("boolean")
+                        .HasColumnName("flagswirl");
+
+                    b.Property<bool>("FlagWrongColor")
+                        .HasColumnType("boolean")
+                        .HasColumnName("flagwrongcolor");
+
+                    b.Property<decimal?>("FlexModulusMpa")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("flexmodulusmpa");
+
+                    b.Property<string>("FlexModulusResult")
+                        .HasColumnType("citext")
+                        .HasColumnName("flexmodulusresult");
+
+                    b.Property<decimal?>("FlexuralStrengthMpa")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("flexuralstrengthmpa");
+
+                    b.Property<string>("FlexuralStrengthResult")
+                        .HasColumnType("citext")
+                        .HasColumnName("flexuralstrengthresult");
+
+                    b.Property<string>("HardnessResult")
+                        .HasColumnType("citext")
+                        .HasColumnName("hardnessresult");
+
+                    b.Property<decimal?>("HardnessShoreD")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("hardnessshored");
+
+                    b.Property<decimal?>("ImpactKJPerM2")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("impactkjperm2");
+
+                    b.Property<string>("ImpactResult")
+                        .HasColumnType("citext")
+                        .HasColumnName("impactresult");
+
+                    b.Property<bool>("KeepSample")
+                        .HasColumnType("boolean")
+                        .HasColumnName("keepsample");
+
+                    b.Property<string>("MachineId")
+                        .HasColumnType("citext")
+                        .HasColumnName("machineid");
+
+                    b.Property<decimal?>("Mfr")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("mfr");
+
+                    b.Property<string>("MfrResult")
+                        .HasColumnType("citext")
+                        .HasColumnName("mfrresult");
+
+                    b.Property<decimal?>("Moisture")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("moisture");
+
+                    b.Property<decimal?>("MoistureResult")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("moistureresult");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<decimal?>("PackingSpecKg")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("packingspeckg");
+
+                    b.Property<string>("ParticleSize")
+                        .HasColumnType("citext")
+                        .HasColumnName("particlesize");
+
+                    b.Property<decimal?>("ParticleSizeResult")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("particlesizeresult");
+
+                    b.Property<bool>("PrintSample")
+                        .HasColumnType("boolean")
+                        .HasColumnName("printsample");
+
+                    b.Property<DateTime>("QcDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("qcdate");
+
+                    b.Property<int>("QcRound")
+                        .HasColumnType("integer")
+                        .HasColumnName("qcround");
+
+                    b.Property<decimal?>("StaticOhm")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("staticohm");
+
+                    b.Property<string>("StaticResult")
+                        .HasColumnType("citext")
+                        .HasColumnName("staticresult");
+
+                    b.Property<string>("StatusQc")
+                        .HasColumnType("citext")
+                        .HasColumnName("statusqc");
+
+                    b.Property<decimal?>("StorageTempC")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("storagetempc");
+
+                    b.Property<string>("StorageTempResult")
+                        .HasColumnType("citext")
+                        .HasColumnName("storagetempresult");
+
+                    b.Property<decimal?>("TensileStrengthMpa")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("tensilestrengthmpa");
+
+                    b.Property<string>("TensileStrengthResult")
+                        .HasColumnType("citext")
+                        .HasColumnName("tensilestrengthresult");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QcDate")
+                        .HasDatabaseName("ix_qcpassdetailhistory_qcdate");
+
+                    b.HasIndex("BatchNo", "QcRound")
+                        .HasDatabaseName("ix_qcpassdetailhistory_batch_round");
+
+                    b.HasIndex("MachineId", "QcDate")
+                        .HasDatabaseName("ix_qcpassdetailhistory_machine_qcdate");
+
+                    b.ToTable("qc_pass_detail_history", "devandga");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DevandqaSchema.QcPassHistory", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("BatchNo")
+                        .HasColumnType("citext")
+                        .HasColumnName("batchno");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employeeid");
+
+                    b.Property<string>("MachineId")
+                        .HasColumnType("citext")
+                        .HasColumnName("machineid");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<DateTime>("QcDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("qcdate");
+
+                    b.Property<int>("QcRound")
+                        .HasColumnType("integer")
+                        .HasColumnName("qcround");
+
+                    b.Property<string>("StatusQc")
+                        .HasColumnType("citext")
+                        .HasColumnName("statusqc");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QcDate")
+                        .HasDatabaseName("ix_qcpasshistory_qcdate");
+
+                    b.HasIndex("BatchNo", "QcRound")
+                        .HasDatabaseName("ix_qcpasshistory_batch_round");
+
+                    b.HasIndex("MachineId", "QcDate")
+                        .HasDatabaseName("ix_qcpasshistory_machine_qcdate");
+
+                    b.ToTable("qc_pass_history", "devandga");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Employee", b =>
@@ -1024,6 +1619,583 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.HasIndex(new[] { "PartId" }, "IX_Employees_PartID");
 
                     b.ToTable("Employees", "hr");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyGroup", b =>
+                {
+                    b.Property<short>("GroupId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasColumnName("group_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<short>("GroupId"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("citext")
+                        .HasColumnName("code");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("citext")
+                        .HasColumnName("name");
+
+                    b.HasKey("GroupId")
+                        .HasName("pk_energy_groups");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_energy_groups_code");
+
+                    b.ToTable("groups", "energy");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyGroupTariffMap", b =>
+                {
+                    b.Property<short>("GroupId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("group_id");
+
+                    b.Property<DateOnly>("ValidFrom")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("date")
+                        .HasColumnName("valid_from")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.Property<int>("TariffId")
+                        .HasColumnType("integer")
+                        .HasColumnName("tariff_id");
+
+                    b.Property<DateOnly?>("ValidTo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("date")
+                        .HasColumnName("valid_to")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.HasKey("GroupId", "ValidFrom")
+                        .HasName("pk_energy_group_tariff_map");
+
+                    b.HasIndex("TariffId")
+                        .HasDatabaseName("ix_energy_gtm_tariff");
+
+                    b.HasIndex("GroupId", "ValidFrom")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_energy_gtm_group_validfrom_desc");
+
+                    b.ToTable("group_tariff_map", "energy");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyMeter", b =>
+                {
+                    b.Property<long>("MeterId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("meter_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("MeterId"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("citext")
+                        .HasColumnName("code");
+
+                    b.Property<short>("GroupId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("group_id");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<decimal>("Multiplier")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(10, 4)
+                        .HasColumnType("numeric(10,4)")
+                        .HasDefaultValue(1.0000m)
+                        .HasColumnName("multiplier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("citext")
+                        .HasColumnName("name");
+
+                    b.HasKey("MeterId")
+                        .HasName("pk_energy_meters");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_energy_meters_code");
+
+                    b.HasIndex("GroupId", "IsActive", "MeterId")
+                        .IsDescending(false, false, true)
+                        .HasDatabaseName("ix_energy_meters_group_active");
+
+                    b.ToTable("meters", "energy");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyMeterCommConfig", b =>
+                {
+                    b.Property<long>("MeterId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("meter_id");
+
+                    b.Property<int?>("BaudRate")
+                        .HasColumnType("integer")
+                        .HasColumnName("baud_rate");
+
+                    b.Property<short?>("DataBits")
+                        .HasColumnType("smallint")
+                        .HasColumnName("data_bits");
+
+                    b.Property<string>("Parity")
+                        .HasColumnType("text")
+                        .HasColumnName("parity");
+
+                    b.Property<string>("Protocol")
+                        .HasColumnType("text")
+                        .HasColumnName("protocol");
+
+                    b.Property<int?>("RegKwhAddr")
+                        .HasColumnType("integer")
+                        .HasColumnName("reg_kwh_addr");
+
+                    b.Property<short?>("RegKwhLen")
+                        .HasColumnType("smallint")
+                        .HasColumnName("reg_kwh_len");
+
+                    b.Property<decimal?>("Scale")
+                        .HasPrecision(12, 6)
+                        .HasColumnType("numeric(12,6)")
+                        .HasColumnName("scale");
+
+                    b.Property<string>("SerialPort")
+                        .HasColumnType("text")
+                        .HasColumnName("serial_port");
+
+                    b.Property<short?>("SlaveId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("slave_id");
+
+                    b.Property<short?>("StopBits")
+                        .HasColumnType("smallint")
+                        .HasColumnName("stop_bits");
+
+                    b.Property<string>("WordOrder")
+                        .HasColumnType("text")
+                        .HasColumnName("word_order");
+
+                    b.HasKey("MeterId")
+                        .HasName("pk_energy_meter_comm_config");
+
+                    b.ToTable("meter_comm_config", "energy");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyMeterGroupHistory", b =>
+                {
+                    b.Property<long>("MeterId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("meter_id");
+
+                    b.Property<DateTime>("ValidFrom")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("valid_from")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.Property<short>("GroupId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("group_id");
+
+                    b.Property<DateTime?>("ValidTo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("valid_to")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.HasKey("MeterId", "ValidFrom")
+                        .HasName("pk_energy_meter_group_history");
+
+                    b.HasIndex("GroupId");
+
+                    b.HasIndex("MeterId")
+                        .HasDatabaseName("ix_energy_mgh_meter");
+
+                    b.HasIndex("MeterId", "ValidFrom")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_energy_mgh_meter_validfrom_desc");
+
+                    b.ToTable("meter_group_history", "energy");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyReadingsHourly", b =>
+                {
+                    b.Property<long>("MeterId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("meter_id");
+
+                    b.Property<DateTime>("TsUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("ts_utc")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.Property<decimal>("KwhImport")
+                        .HasPrecision(14, 5)
+                        .HasColumnType("numeric(14,5)")
+                        .HasColumnName("kwh_import");
+
+                    b.Property<string>("Quality")
+                        .HasColumnType("text")
+                        .HasColumnName("quality");
+
+                    b.Property<string>("Source")
+                        .HasColumnType("text")
+                        .HasColumnName("source");
+
+                    b.HasKey("MeterId", "TsUtc")
+                        .HasName("pk_energy_readings_hourly");
+
+                    b.HasIndex("MeterId", "TsUtc")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_energy_rh_meter_ts_desc");
+
+                    b.ToTable("readings_hourly", "energy");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyReadingsHourlyVn", b =>
+                {
+                    b.Property<long>("MeterId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("meter_id");
+
+                    b.Property<DateTime>("TsHourVn")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("ts_hour_vn")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.Property<decimal>("KwhImport")
+                        .HasPrecision(14, 5)
+                        .HasColumnType("numeric(14,5)")
+                        .HasColumnName("kwh_import");
+
+                    b.Property<string>("Quality")
+                        .HasColumnType("text")
+                        .HasColumnName("quality");
+
+                    b.Property<string>("Source")
+                        .HasColumnType("text")
+                        .HasColumnName("source");
+
+                    b.HasKey("MeterId", "TsHourVn")
+                        .HasName("pk_energy_readings_hourly_vn");
+
+                    b.HasIndex("TsHourVn")
+                        .HasDatabaseName("ix_energy_rhvn_tshour");
+
+                    b.HasIndex("MeterId", "TsHourVn")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_energy_rhvn_meter_tshour_desc");
+
+                    b.ToTable("readings_hourly_vn", "energy");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyRegisterSnapshot", b =>
+                {
+                    b.Property<long>("MeterId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("meter_id");
+
+                    b.Property<DateTime>("TsUtc")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("ts_utc");
+
+                    b.Property<decimal>("KwhTotal")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("kwh_total");
+
+                    b.Property<string>("Source")
+                        .HasColumnType("citext")
+                        .HasColumnName("source");
+
+                    b.HasKey("MeterId", "TsUtc")
+                        .HasName("pk_energy_register_snapshots");
+
+                    b.HasIndex("MeterId", "TsUtc")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_energy_register_snapshots_meter_ts");
+
+                    b.ToTable("register_snapshots", "energy");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTariff", b =>
+                {
+                    b.Property<int>("TariffId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("tariff_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TariffId"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("citext")
+                        .HasColumnName("code");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("citext")
+                        .HasDefaultValue("VND")
+                        .HasColumnName("currency");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("citext")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("citext")
+                        .HasColumnName("note");
+
+                    b.Property<string>("Utility")
+                        .HasColumnType("citext")
+                        .HasColumnName("utility");
+
+                    b.HasKey("TariffId")
+                        .HasName("pk_energy_tariffs");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_energy_tariffs_code");
+
+                    b.ToTable("tariffs", "energy");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTariffBandRate", b =>
+                {
+                    b.Property<int>("VersionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("version_id");
+
+                    b.Property<string>("Band")
+                        .HasColumnType("citext")
+                        .HasColumnName("band");
+
+                    b.Property<decimal>("PriceVndPerKwh")
+                        .HasPrecision(12, 4)
+                        .HasColumnType("numeric(12,4)")
+                        .HasColumnName("price_vnd_per_kwh");
+
+                    b.HasKey("VersionId", "Band")
+                        .HasName("pk_energy_tariff_band_rates");
+
+                    b.HasIndex("VersionId")
+                        .HasDatabaseName("ix_energy_tariff_band_rates_version");
+
+                    b.ToTable("tariff_band_rates", "energy");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTariffVersion", b =>
+                {
+                    b.Property<int>("VersionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("version_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("VersionId"));
+
+                    b.Property<decimal>("DemandRateVndPerKw")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("demand_rate_vnd_per_kw");
+
+                    b.Property<decimal>("FuelAdjVndPerKwh")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(12, 4)
+                        .HasColumnType("numeric(12,4)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("fuel_adj_vnd_per_kwh");
+
+                    b.Property<decimal>("ServiceFixedVndPerMonth")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("service_fixed_vnd_per_month");
+
+                    b.Property<int>("TariffId")
+                        .HasColumnType("integer")
+                        .HasColumnName("tariff_id");
+
+                    b.Property<DateTime>("ValidFrom")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("date")
+                        .HasColumnName("valid_from")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.Property<DateTime?>("ValidTo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("date")
+                        .HasColumnName("valid_to")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.Property<decimal>("VatRate")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(6, 4)
+                        .HasColumnType("numeric(6,4)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("vat_rate");
+
+                    b.HasKey("VersionId")
+                        .HasName("pk_energy_tariff_versions");
+
+                    b.HasIndex("TariffId")
+                        .HasDatabaseName("ix_energy_tariff_versions_tariff_id");
+
+                    b.HasIndex("TariffId", "ValidFrom")
+                        .IsUnique()
+                        .HasDatabaseName("ux_energy_tariff_versions_tariff_validfrom");
+
+                    b.ToTable("tariff_versions", "energy");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTouCalendar", b =>
+                {
+                    b.Property<int>("CalendarId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("calendar_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CalendarId"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("code");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("date")
+                        .HasColumnName("end_date")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.Property<DateOnly?>("StartDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("date")
+                        .HasColumnName("start_date")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.Property<string>("Tz")
+                        .HasColumnType("text")
+                        .HasColumnName("tz");
+
+                    b.HasKey("CalendarId")
+                        .HasName("pk_energy_tou_calendar");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_energy_tou_calendar_code");
+
+                    b.ToTable("tou_calendar", "energy");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTouException", b =>
+                {
+                    b.Property<int>("ExceptionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("exception_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ExceptionId"));
+
+                    b.Property<string>("Band")
+                        .HasColumnType("text")
+                        .HasColumnName("band");
+
+                    b.Property<int>("CalendarId")
+                        .HasColumnType("integer")
+                        .HasColumnName("calendar_id");
+
+                    b.Property<DateTime>("EndTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("end_time")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<DateTime>("StartTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("start_time")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.Property<DateOnly>("TheDate")
+                        .HasColumnType("date")
+                        .HasColumnName("the_date");
+
+                    b.HasKey("ExceptionId")
+                        .HasName("pk_energy_tou_exceptions");
+
+                    b.HasIndex("CalendarId", "TheDate")
+                        .HasDatabaseName("ix_energy_tou_exc_calendar_date");
+
+                    b.HasIndex("CalendarId", "TheDate", "Band", "StartTime")
+                        .IsUnique()
+                        .HasDatabaseName("ux_energy_tou_exc_unique_slot");
+
+                    b.ToTable("tou_exceptions", "energy");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTouWindow", b =>
+                {
+                    b.Property<int>("WindowId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("window_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("WindowId"));
+
+                    b.Property<string>("Band")
+                        .HasColumnType("text")
+                        .HasColumnName("band");
+
+                    b.Property<int>("CalendarId")
+                        .HasColumnType("integer")
+                        .HasColumnName("calendar_id");
+
+                    b.Property<DateTime>("EndTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("end_time")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.Property<DateTime>("StartTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("start_time")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.Property<short>("Weekday")
+                        .HasColumnType("smallint")
+                        .HasColumnName("weekday");
+
+                    b.HasKey("WindowId")
+                        .HasName("pk_energy_tou_windows");
+
+                    b.HasIndex("CalendarId", "Weekday", "StartTime")
+                        .IsUnique()
+                        .HasDatabaseName("ux_energy_tou_windows_cal_wd_start");
+
+                    b.ToTable("tou_windows", "energy");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EventLog", b =>
@@ -1097,176 +2269,301 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("EventLogs", "Audit");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Formula", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ForscadaSchema.InfoBatForPlc", b =>
                 {
-                    b.Property<Guid>("FormulaId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("FormulaId")
-                        .HasDefaultValueSql("gen_random_uuid()");
+                    b.Property<int?>("D0")
+                        .HasColumnType("integer")
+                        .HasColumnName("d0");
 
-                    b.Property<Guid?>("CheckBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CheckBy");
+                    b.Property<int?>("D1")
+                        .HasColumnType("integer")
+                        .HasColumnName("d1");
 
-                    b.Property<DateTime?>("CheckDate")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("CheckDate");
+                    b.Property<int?>("D2")
+                        .HasColumnType("integer")
+                        .HasColumnName("d2");
 
-                    b.Property<Guid?>("CompanyId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CompanyId");
+                    b.Property<int?>("D3")
+                        .HasColumnType("integer")
+                        .HasColumnName("d3");
 
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatedBy");
+                    b.Property<int?>("D4")
+                        .HasColumnType("integer")
+                        .HasColumnName("d4");
 
-                    b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamp without time zone");
+                    b.Property<int?>("D5")
+                        .HasColumnType("integer")
+                        .HasColumnName("d5");
 
-                    b.Property<string>("ExternalId")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("ExternalId");
+                    b.Property<int?>("D6")
+                        .HasColumnType("integer")
+                        .HasColumnName("d6");
 
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("IsActive");
+                    b.Property<int?>("D7")
+                        .HasColumnType("integer")
+                        .HasColumnName("d7");
 
-                    b.Property<bool>("IsSelect")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsSelect");
+                    b.Property<int?>("D8")
+                        .HasColumnType("integer")
+                        .HasColumnName("d8");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("Name");
+                    b.Property<int?>("D9")
+                        .HasColumnType("integer")
+                        .HasColumnName("d9");
 
-                    b.Property<string>("Note")
+                    b.Property<string>("MachineId")
                         .HasColumnType("text")
-                        .HasColumnName("Note");
+                        .HasColumnName("machineid");
 
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("ProductId");
-
-                    b.Property<Guid?>("SentBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("SentBy");
-
-                    b.Property<DateTime?>("SentDate")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("SentDate");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasDefaultValue("Draft")
-                        .HasColumnName("Status");
-
-                    b.Property<decimal>("TotalPrice")
-                        .HasPrecision(16, 2)
-                        .HasColumnType("numeric(16,2)")
-                        .HasColumnName("TotalPrice");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("UpdatedBy");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.HasKey("FormulaId")
-                        .HasName("PK__Formulas__227429A55C6F1195");
-
-                    b.HasIndex("CheckBy")
-                        .HasDatabaseName("IX_Formulas_CheckBy");
-
-                    b.HasIndex("CompanyId")
-                        .HasDatabaseName("IX_Formulas_CompanyId");
-
-                    b.HasIndex("CreatedBy")
-                        .HasDatabaseName("IX_Formulas_CreatedBy");
-
-                    b.HasIndex("ProductId")
-                        .HasDatabaseName("IX_Formulas_ProductId");
-
-                    b.HasIndex("SentBy")
-                        .HasDatabaseName("IX_Formulas_SentBy");
-
-                    b.HasIndex("UpdatedBy")
-                        .HasDatabaseName("IX_Formulas_UpdatedBy");
-
-                    b.HasIndex("CompanyId", "IsActive", "CreatedDate", "ProductId")
-                        .IsDescending(false, false, true, true)
-                        .HasDatabaseName("IX_ProductId_Company_IsActive_CreatedDateDesc");
-
-                    b.ToTable("Formulas", "SampleRequests");
+                    b.ToTable("infobatfor_plc", "forscada");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.FormulaMaterial", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ForscadaSchema.InfoProForPlc", b =>
                 {
-                    b.Property<Guid>("FormulaMaterialId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("gen_random_uuid()");
+                    b.Property<int?>("D0")
+                        .HasColumnType("integer")
+                        .HasColumnName("d0");
 
-                    b.Property<Guid>("CategoryId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("D1")
+                        .HasColumnType("integer")
+                        .HasColumnName("d1");
 
-                    b.Property<Guid>("FormulaId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("D2")
+                        .HasColumnType("integer")
+                        .HasColumnName("d2");
 
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                    b.Property<int?>("D3")
+                        .HasColumnType("integer")
+                        .HasColumnName("d3");
 
-                    b.Property<string>("MaterialExternalIdSnapshot")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<int?>("D4")
+                        .HasColumnType("integer")
+                        .HasColumnName("d4");
 
-                    b.Property<Guid>("MaterialId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("D5")
+                        .HasColumnType("integer")
+                        .HasColumnName("d5");
 
-                    b.Property<string>("MaterialNameSnapshot")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                    b.Property<int?>("D6")
+                        .HasColumnType("integer")
+                        .HasColumnName("d6");
 
-                    b.Property<decimal>("Quantity")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("numeric(18,6)");
+                    b.Property<int?>("D7")
+                        .HasColumnType("integer")
+                        .HasColumnName("d7");
 
-                    b.Property<decimal>("TotalPrice")
-                        .HasPrecision(16, 2)
-                        .HasColumnType("numeric(16,2)");
+                    b.Property<int?>("D8")
+                        .HasColumnType("integer")
+                        .HasColumnName("d8");
 
-                    b.Property<string>("Unit")
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                    b.Property<int?>("D9")
+                        .HasColumnType("integer")
+                        .HasColumnName("d9");
 
-                    b.Property<decimal>("UnitPrice")
-                        .HasPrecision(16, 2)
-                        .HasColumnType("numeric(16,2)");
+                    b.Property<string>("MachineId")
+                        .HasColumnType("text")
+                        .HasColumnName("machineid");
 
-                    b.HasKey("FormulaMaterialId")
-                        .HasName("PK__FormulaM__0315C60A1F19742A");
+                    b.ToTable("infoprofor_plc", "forscada");
+                });
 
-                    b.HasIndex("CategoryId");
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ForscadaSchema.OperatorForRecordToPlc", b =>
+                {
+                    b.Property<int?>("D0")
+                        .HasColumnType("integer")
+                        .HasColumnName("d0");
 
-                    b.HasIndex(new[] { "FormulaId" }, "IX_FormulaMaterials_FormulaId");
+                    b.Property<int?>("D1")
+                        .HasColumnType("integer")
+                        .HasColumnName("d1");
 
-                    b.HasIndex(new[] { "MaterialId" }, "IX_FormulaMaterials_MaterialId");
+                    b.Property<int?>("D10")
+                        .HasColumnType("integer")
+                        .HasColumnName("d10");
 
-                    b.ToTable("FormulaMaterials", "SampleRequests");
+                    b.Property<int?>("D11")
+                        .HasColumnType("integer")
+                        .HasColumnName("d11");
+
+                    b.Property<int?>("D2")
+                        .HasColumnType("integer")
+                        .HasColumnName("d2");
+
+                    b.Property<int?>("D3")
+                        .HasColumnType("integer")
+                        .HasColumnName("d3");
+
+                    b.Property<int?>("D4")
+                        .HasColumnType("integer")
+                        .HasColumnName("d4");
+
+                    b.Property<int?>("D5")
+                        .HasColumnType("integer")
+                        .HasColumnName("d5");
+
+                    b.Property<int?>("D6")
+                        .HasColumnType("integer")
+                        .HasColumnName("d6");
+
+                    b.Property<int?>("D7")
+                        .HasColumnType("integer")
+                        .HasColumnName("d7");
+
+                    b.Property<int?>("D8")
+                        .HasColumnType("integer")
+                        .HasColumnName("d8");
+
+                    b.Property<int?>("D9")
+                        .HasColumnType("integer")
+                        .HasColumnName("d9");
+
+                    b.Property<string>("MachineId")
+                        .HasColumnType("text")
+                        .HasColumnName("machineid");
+
+                    b.ToTable("operatorforrecordto_plc", "forscada");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ForscadaSchema.ProductionPlanPlpu", b =>
+                {
+                    b.Property<string>("BatchNo")
+                        .HasColumnType("text")
+                        .HasColumnName("batchno");
+
+                    b.Property<string>("Color")
+                        .HasColumnType("text")
+                        .HasColumnName("color");
+
+                    b.Property<string>("MachineId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("machineid");
+
+                    b.Property<string>("Note1")
+                        .HasColumnType("text")
+                        .HasColumnName("note1");
+
+                    b.Property<string>("Note2")
+                        .HasColumnType("text")
+                        .HasColumnName("note2");
+
+                    b.Property<string>("Note3")
+                        .HasColumnType("text")
+                        .HasColumnName("note3");
+
+                    b.Property<int?>("Number")
+                        .HasColumnType("integer")
+                        .HasColumnName("number");
+
+                    b.Property<string>("ProductionCode")
+                        .HasColumnType("text")
+                        .HasColumnName("productioncode");
+
+                    b.Property<DateTime?>("RequestDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("requestdate");
+
+                    b.ToTable("productionplan_plpu", "forscada");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ForscadaSchema.ProductionStatus", b =>
+                {
+                    b.Property<string>("BatchNo")
+                        .HasColumnType("text")
+                        .HasColumnName("batchno");
+
+                    b.Property<string>("Color")
+                        .HasColumnType("text")
+                        .HasColumnName("color");
+
+                    b.Property<string>("MachineId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("machineid");
+
+                    b.Property<string>("Note1")
+                        .HasColumnType("text")
+                        .HasColumnName("note1");
+
+                    b.Property<string>("Note2")
+                        .HasColumnType("text")
+                        .HasColumnName("note2");
+
+                    b.Property<string>("Note3")
+                        .HasColumnType("text")
+                        .HasColumnName("note3");
+
+                    b.Property<string>("Note4")
+                        .HasColumnType("text")
+                        .HasColumnName("note4");
+
+                    b.Property<string>("ProductionCode")
+                        .HasColumnType("text")
+                        .HasColumnName("productioncode");
+
+                    b.Property<DateTime?>("RequestDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("requestdate");
+
+                    b.ToTable("productionstatus", "forscada");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ForscadaSchema.ShiftLeaderForRecordToPlc", b =>
+                {
+                    b.Property<int?>("D0")
+                        .HasColumnType("integer")
+                        .HasColumnName("d0");
+
+                    b.Property<int?>("D1")
+                        .HasColumnType("integer")
+                        .HasColumnName("d1");
+
+                    b.Property<int?>("D10")
+                        .HasColumnType("integer")
+                        .HasColumnName("d10");
+
+                    b.Property<int?>("D11")
+                        .HasColumnType("integer")
+                        .HasColumnName("d11");
+
+                    b.Property<int?>("D2")
+                        .HasColumnType("integer")
+                        .HasColumnName("d2");
+
+                    b.Property<int?>("D3")
+                        .HasColumnType("integer")
+                        .HasColumnName("d3");
+
+                    b.Property<int?>("D4")
+                        .HasColumnType("integer")
+                        .HasColumnName("d4");
+
+                    b.Property<int?>("D5")
+                        .HasColumnType("integer")
+                        .HasColumnName("d5");
+
+                    b.Property<int?>("D6")
+                        .HasColumnType("integer")
+                        .HasColumnName("d6");
+
+                    b.Property<int?>("D7")
+                        .HasColumnType("integer")
+                        .HasColumnName("d7");
+
+                    b.Property<int?>("D8")
+                        .HasColumnType("integer")
+                        .HasColumnName("d8");
+
+                    b.Property<int?>("D9")
+                        .HasColumnType("integer")
+                        .HasColumnName("d9");
+
+                    b.Property<string>("MachineId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("machineid");
+
+                    b.ToTable("shiftleaderforrecordto_plc", "forscada");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Group", b =>
@@ -1332,6 +2629,210 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("Groups", "company");
                 });
 
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HistoryRecordSchema.AssignTask", b =>
+                {
+                    b.Property<long>("AssignId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("assign_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("AssignId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("MachineId")
+                        .IsRequired()
+                        .HasColumnType("citext")
+                        .HasColumnName("machineid");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<Guid?>("OperatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("operator");
+
+                    b.Property<short>("ShiftId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("shiftid");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_assign_created");
+
+                    b.HasIndex("ShiftId")
+                        .HasDatabaseName("ix_assign_shift");
+
+                    b.HasIndex("MachineId", "CreatedAt")
+                        .HasDatabaseName("ix_assign_machine_created");
+
+                    b.ToTable("assign_task", "historyrecords");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HistoryRecordSchema.EventHistory", b =>
+                {
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<short>("EventId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("event_id");
+
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("eventhistory_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("MachineId")
+                        .HasColumnType("citext")
+                        .HasColumnName("machine_id");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_eventhistory_eventdate");
+
+                    b.HasIndex("MachineId", "CreatedAt")
+                        .HasDatabaseName("ix_eventhistory_machine_eventdate");
+
+                    b.ToTable("EventHistory", "historyrecords");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HistoryRecordSchema.MachineHistory", b =>
+                {
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("EnergyTotalOfDay")
+                        .HasColumnType("integer")
+                        .HasColumnName("energy_total_of_day");
+
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("machine_history_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("MachineCleansingEnergyOfDay")
+                        .HasColumnType("integer")
+                        .HasColumnName("machine_cleansing_energy_of_day");
+
+                    b.Property<int>("MachineCleansingTimeOfDay")
+                        .HasColumnType("integer")
+                        .HasColumnName("machine_cleansing_time_of_day");
+
+                    b.Property<int>("ProducingEnergyOfDay")
+                        .HasColumnType("integer")
+                        .HasColumnName("producing_energy_of_day");
+
+                    b.Property<int>("ProducingTimeOfDay")
+                        .HasColumnType("integer")
+                        .HasColumnName("producing_time_of_day");
+
+                    b.Property<int>("WaitingEnergyOfDay")
+                        .HasColumnType("integer")
+                        .HasColumnName("waiting_energy_of_day");
+
+                    b.Property<int>("WaitingTimeOfDay")
+                        .HasColumnType("integer")
+                        .HasColumnName("waiting_time_of_day");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_machinehistory_created_at");
+
+                    b.ToTable("machine_history", "historyrecords");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HistoryRecordSchema.PlanGetbackHistory", b =>
+                {
+                    b.Property<string>("ColorCode")
+                        .HasColumnType("citext")
+                        .HasColumnName("colorcode");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ExternalId")
+                        .HasColumnType("citext")
+                        .HasColumnName("externalid");
+
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+
+                    b.Property<Guid>("PerformedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("performedby");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("text")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("StatusBefore")
+                        .HasColumnType("citext")
+                        .HasColumnName("statusbefore");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_plan_getback_history_created_at");
+
+                    b.HasIndex("ColorCode", "CreatedAt")
+                        .HasDatabaseName("ix_plan_getback_history_colorcode_created_at");
+
+                    b.HasIndex("ExternalId", "CreatedAt")
+                        .HasDatabaseName("ix_plan_getback_history_externalid_created_at");
+
+                    b.ToTable("plan_getback_history", "historyrecords");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HistoryRecordSchema.Shift", b =>
+                {
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<short>("ShiftId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("shiftid");
+
+                    b.Property<string>("ShiftName")
+                        .HasColumnType("citext")
+                        .HasColumnName("shiftname");
+
+                    b.HasIndex("ShiftName")
+                        .HasDatabaseName("ix_shifts_name");
+
+                    b.ToTable("shifts", "historyrecords");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HistoryRecordSchema.ShiftsEvent", b =>
+                {
+                    b.Property<short>("EventId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("eventid");
+
+                    b.Property<string>("EventIdName")
+                        .HasColumnType("citext")
+                        .HasColumnName("eventidname");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.HasIndex("EventIdName")
+                        .HasDatabaseName("ix_shiftsevent_name");
+
+                    b.ToTable("shiftsevent", "historyrecords");
+                });
+
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.IdCounter", b =>
                 {
                     b.Property<Guid>("CompanyId")
@@ -1351,7 +2852,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("IdCounters", "public");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MRO.AreaMRO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.AreaMRO", b =>
                 {
                     b.Property<int>("AreaId")
                         .ValueGeneratedOnAdd()
@@ -1380,7 +2881,62 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("areas", "mro");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MRO.EquipmentMRO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.EquipmentDetailMRO", b =>
+                {
+                    b.Property<int>("EquipmentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("equipment_id");
+
+                    b.Property<DateTime?>("CommissioningDate")
+                        .HasColumnType("date")
+                        .HasColumnName("commissioning_date");
+
+                    b.Property<int?>("EquipmentTypeId")
+                        .HasColumnType("integer")
+                        .HasColumnName("equipmenttype_id");
+
+                    b.Property<string>("Manufacturer")
+                        .HasColumnType("text")
+                        .HasColumnName("manufacturer");
+
+                    b.Property<string>("Model")
+                        .HasColumnType("text")
+                        .HasColumnName("model");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<DateTime?>("PurchaseDate")
+                        .HasColumnType("date")
+                        .HasColumnName("purchase_date");
+
+                    b.Property<string>("SerialNo")
+                        .HasColumnType("text")
+                        .HasColumnName("serial_no");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<DateTime?>("WarrantyUntil")
+                        .HasColumnType("date")
+                        .HasColumnName("warranty_until");
+
+                    b.HasKey("EquipmentId")
+                        .HasName("pk_equipment_details");
+
+                    b.HasIndex("EquipmentTypeId")
+                        .HasDatabaseName("ix_equipment_details_equipmenttype_id");
+
+                    b.ToTable("equipment_details", "mro");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.EquipmentMRO", b =>
                 {
                     b.Property<int>("EquipmentId")
                         .ValueGeneratedOnAdd()
@@ -1397,9 +2953,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Property<int>("AreaId")
                         .HasColumnType("integer")
                         .HasColumnName("area_id");
-
-                    b.Property<Guid?>("CompanyId")
-                        .HasColumnType("uuid");
 
                     b.Property<string>("EquipmentExternalId")
                         .IsRequired()
@@ -1428,9 +2981,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("part_id");
 
-                    b.Property<Guid?>("PartId1")
-                        .HasColumnType("uuid");
-
                     b.HasKey("EquipmentId")
                         .HasName("pk_equipment");
 
@@ -1438,8 +2988,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasDatabaseName("ix_equipment_area_externalid");
 
                     b.HasIndex("AreaId");
-
-                    b.HasIndex("CompanyId");
 
                     b.HasIndex("FactoryExternalId")
                         .HasDatabaseName("ix_equipment_factory_externalid");
@@ -1449,8 +2997,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.HasIndex("PartId");
 
-                    b.HasIndex("PartId1");
-
                     b.HasIndex("FactoryId", "EquipmentExternalId")
                         .IsUnique()
                         .HasDatabaseName("ux_equipment_factory_extid");
@@ -1458,7 +3004,250 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("equipment", "mro");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MRO.IncidentHeaderMRO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.EquipmentSpecMRO", b =>
+                {
+                    b.Property<int>("SpecId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("spec_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SpecId"));
+
+                    b.Property<DateTime?>("EnteredAt")
+                        .HasColumnType("timestamp")
+                        .HasColumnName("entered_at");
+
+                    b.Property<Guid?>("EnteredBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("entered_by");
+
+                    b.Property<int>("EquipmentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("equipment_id");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<string>("SpecKey")
+                        .HasColumnType("text")
+                        .HasColumnName("spec_key");
+
+                    b.Property<string>("SpecValue")
+                        .HasColumnType("text")
+                        .HasColumnName("spec_value");
+
+                    b.Property<string>("Unit")
+                        .HasColumnType("text")
+                        .HasColumnName("unit");
+
+                    b.HasKey("SpecId")
+                        .HasName("pk_equipment_specs");
+
+                    b.HasIndex("EquipmentId")
+                        .HasDatabaseName("ix_equipment_specs_equipment_id");
+
+                    b.ToTable("equipment_specs", "mro");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.EquipmentTypeMRO", b =>
+                {
+                    b.Property<int>("EquipmentTypeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("equipmenttype_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("EquipmentTypeId"));
+
+                    b.Property<string>("EquipmentTypeName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("equipmenttype_name");
+
+                    b.HasKey("EquipmentTypeId")
+                        .HasName("pk_equipmenttype");
+
+                    b.HasIndex("EquipmentTypeName")
+                        .HasDatabaseName("ix_equipmenttype_name");
+
+                    b.ToTable("equipmenttype", "mro");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.ImprovementHdrMRO", b =>
+                {
+                    b.Property<long>("ProposalId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("proposal_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("ProposalId"));
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("approved_at");
+
+                    b.Property<Guid?>("ApprovedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approved_by");
+
+                    b.Property<string>("AreaExternalId")
+                        .HasColumnType("text")
+                        .HasColumnName("area_externalid");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("closed_at");
+
+                    b.Property<Guid?>("ClosedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("closed_by");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<DateTime?>("DoneAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("done_at");
+
+                    b.Property<Guid?>("DoneBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("done_by");
+
+                    b.Property<string>("EquipmentExternalId")
+                        .HasColumnType("text")
+                        .HasColumnName("equipment_externalid");
+
+                    b.Property<string>("FactoryExternalId")
+                        .HasColumnType("text")
+                        .HasColumnName("factory_externalid");
+
+                    b.Property<string>("ProposalExternal")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("proposal_external");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<Guid?>("StartedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("started_by");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Draft")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("title");
+
+                    b.HasKey("ProposalId")
+                        .HasName("pk_improvement_hdr");
+
+                    b.HasIndex("ApprovedBy");
+
+                    b.HasIndex("AreaExternalId")
+                        .HasDatabaseName("ix_improvement_hdr_area_externalid");
+
+                    b.HasIndex("ClosedBy");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("DoneBy");
+
+                    b.HasIndex("EquipmentExternalId")
+                        .HasDatabaseName("ix_improvement_hdr_equipment_externalid");
+
+                    b.HasIndex("StartedBy");
+
+                    b.HasIndex("FactoryExternalId", "ProposalExternal")
+                        .IsUnique()
+                        .HasDatabaseName("ux_improvement_hdr_factory_proposal_external");
+
+                    b.HasIndex("FactoryExternalId", "Status", "CreatedAt", "ProposalId")
+                        .IsDescending(false, false, true, true)
+                        .HasDatabaseName("ix_improvement_hdr_factory_status_created_desc");
+
+                    b.ToTable("improvement_hdr", "mro");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.ImprovementHistoryMRO", b =>
+                {
+                    b.Property<long>("HistoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("history_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("HistoryId"));
+
+                    b.Property<string>("Action")
+                        .HasColumnType("text")
+                        .HasColumnName("action");
+
+                    b.Property<decimal?>("Minutes")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("minutes");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<DateTime?>("PerformedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("performed_at");
+
+                    b.Property<Guid?>("PerformedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("performed_by");
+
+                    b.Property<string>("ProposalExternal")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("proposal_external");
+
+                    b.Property<long>("ProposalId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("proposal_id");
+
+                    b.Property<string>("Summary")
+                        .HasColumnType("text")
+                        .HasColumnName("summary");
+
+                    b.Property<string>("WoRef")
+                        .HasColumnType("text")
+                        .HasColumnName("wo_ref");
+
+                    b.HasKey("HistoryId")
+                        .HasName("pk_improvementhistory");
+
+                    b.HasIndex("PerformedBy")
+                        .HasDatabaseName("ix_imprhist_performed_by");
+
+                    b.HasIndex("ProposalId", "PerformedAt", "HistoryId")
+                        .IsDescending(false, true, true)
+                        .HasDatabaseName("ix_imprhist_proposal_performed_desc");
+
+                    b.ToTable("improvementhistory", "mro");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.IncidentHeaderMRO", b =>
                 {
                     b.Property<long>("IncidentId")
                         .ValueGeneratedOnAdd()
@@ -1475,9 +3264,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("area_id");
 
-                    b.Property<int?>("AreaMROAreaId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime?>("ClosedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("closed_at");
@@ -1489,9 +3275,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
                         .HasColumnName("company_id");
-
-                    b.Property<Guid?>("CompanyId1")
-                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone")
@@ -1514,18 +3297,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("done_by");
 
-                    b.Property<Guid?>("EmployeeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("EmployeeId1")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("EmployeeId2")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("EmployeeId3")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("EquipmentCode")
                         .HasColumnType("text")
                         .HasColumnName("equipment_code");
@@ -1533,9 +3304,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Property<int?>("EquipmentId")
                         .HasColumnType("integer")
                         .HasColumnName("equipment_id");
-
-                    b.Property<int?>("EquipmentMROEquipmentId")
-                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("ExecAt")
                         .HasColumnType("timestamp without time zone")
@@ -1582,11 +3350,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.HasIndex("AreaId")
                         .HasDatabaseName("ix_incident_hdr_area");
 
-                    b.HasIndex("AreaMROAreaId");
-
                     b.HasIndex("ClosedBy");
-
-                    b.HasIndex("CompanyId1");
 
                     b.HasIndex("CreatedAt")
                         .HasDatabaseName("ix_incident_hdr_created_at");
@@ -1594,16 +3358,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.HasIndex("CreatedBy");
 
                     b.HasIndex("DoneBy");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.HasIndex("EmployeeId1");
-
-                    b.HasIndex("EmployeeId2");
-
-                    b.HasIndex("EmployeeId3");
-
-                    b.HasIndex("EquipmentMROEquipmentId");
 
                     b.HasIndex("ExecBy");
 
@@ -1620,7 +3374,281 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("incident_hdr", "mro");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MRO.RackMRO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.IncidentLineMRO", b =>
+                {
+                    b.Property<long>("IncidentLineId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("incidenthistory_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("IncidentLineId"));
+
+                    b.Property<string>("Action")
+                        .HasColumnType("text")
+                        .HasColumnName("action");
+
+                    b.Property<string>("CorrectiveAction")
+                        .HasColumnType("text")
+                        .HasColumnName("corrective_action");
+
+                    b.Property<decimal?>("CostEstimate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("cost_estimate");
+
+                    b.Property<int?>("DowntimeMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("downtime_minutes");
+
+                    b.Property<string>("IncidentCode")
+                        .IsRequired()
+                        .HasColumnType("citext")
+                        .HasColumnName("incident_code");
+
+                    b.Property<long>("IncidentId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("incident_id");
+
+                    b.Property<DateTime?>("PerformedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("performed_at");
+
+                    b.Property<Guid?>("PerformedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("performed_by");
+
+                    b.Property<string>("PreventiveAction")
+                        .HasColumnType("text")
+                        .HasColumnName("preventive_action");
+
+                    b.Property<string>("RootCause")
+                        .HasColumnType("text")
+                        .HasColumnName("root_cause");
+
+                    b.Property<long?>("StockOutId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("stock_out_id");
+
+                    b.Property<string>("Summary")
+                        .HasColumnType("text")
+                        .HasColumnName("summary");
+
+                    b.Property<string>("WoRef")
+                        .HasColumnType("citext")
+                        .HasColumnName("wo_ref");
+
+                    b.HasKey("IncidentLineId")
+                        .HasName("pk_incidenthistory");
+
+                    b.HasIndex("IncidentId")
+                        .HasDatabaseName("ix_incidenthistory_incident");
+
+                    b.HasIndex("PerformedBy")
+                        .HasDatabaseName("ix_incidenthistory_performed_by");
+
+                    b.HasIndex("StockOutId")
+                        .HasDatabaseName("ix_incidenthistory_stockout");
+
+                    b.HasIndex("IncidentId", "PerformedAt", "IncidentLineId")
+                        .IsDescending(false, true, true)
+                        .HasDatabaseName("ix_incidenthistory_incident_performed_desc");
+
+                    b.ToTable("incidenthistory", "mro");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.MovementMRO", b =>
+                {
+                    b.Property<Guid>("MovementId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("movement_id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<int?>("FromSlotId")
+                        .HasColumnType("integer")
+                        .HasColumnName("fromslot_id");
+
+                    b.Property<Guid>("MaterialId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("material_id");
+
+                    b.Property<string>("MoveBy")
+                        .HasColumnType("text")
+                        .HasColumnName("move_by");
+
+                    b.Property<DateTime>("MovedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("moved_at");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<int>("Qty")
+                        .HasColumnType("integer")
+                        .HasColumnName("qty");
+
+                    b.Property<string>("RequestExternal")
+                        .HasColumnType("text")
+                        .HasColumnName("requestexternal");
+
+                    b.Property<int?>("ToSlotId")
+                        .HasColumnType("integer")
+                        .HasColumnName("toslot_id");
+
+                    b.HasKey("MovementId")
+                        .HasName("pk_movements");
+
+                    b.HasIndex("FromSlotId")
+                        .HasDatabaseName("ix_movements_fromslot");
+
+                    b.HasIndex("ToSlotId")
+                        .HasDatabaseName("ix_movements_toslot");
+
+                    b.HasIndex("MaterialId", "MovedAt", "MovementId")
+                        .IsDescending(false, true, true)
+                        .HasDatabaseName("ix_movements_material_moved_desc");
+
+                    b.ToTable("movements", "mro");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.PmPlanHistoryMRO", b =>
+                {
+                    b.Property<long>("HistId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("hist_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("HistId"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("action");
+
+                    b.Property<string>("Details")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("details");
+
+                    b.Property<decimal?>("MinutesSpent")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("minutesspent");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<DateTime?>("PerformedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("performed_at");
+
+                    b.Property<Guid?>("PerformedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("performed_by");
+
+                    b.Property<string>("PlanExternalId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("plan_externalid");
+
+                    b.Property<long>("PlanId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("plan_id");
+
+                    b.Property<string>("WoRef")
+                        .HasColumnType("text")
+                        .HasColumnName("wo_ref");
+
+                    b.HasKey("HistId")
+                        .HasName("pk_pmplanhistory");
+
+                    b.HasIndex("PerformedBy")
+                        .HasDatabaseName("ix_pmplanhist_performed_by");
+
+                    b.HasIndex("PlanId", "PerformedAt", "HistId")
+                        .IsDescending(false, true, true)
+                        .HasDatabaseName("ix_pmplanhist_plan_performed_desc");
+
+                    b.ToTable("pmplanhistory", "mro");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.PmPlanMRO", b =>
+                {
+                    b.Property<long>("PlanId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("plan_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("PlanId"));
+
+                    b.Property<DateTime>("AnchorDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("anchor_date");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("DepartmentExternalId")
+                        .HasColumnType("text")
+                        .HasColumnName("department_externalid");
+
+                    b.Property<string>("EquipmentExternalId")
+                        .HasColumnType("text")
+                        .HasColumnName("equipment_externalid");
+
+                    b.Property<string>("FactoryExternalId")
+                        .HasColumnType("text")
+                        .HasColumnName("factory_externalid");
+
+                    b.Property<string>("IntervalUnit")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("interval_unit");
+
+                    b.Property<int>("IntervalVal")
+                        .HasColumnType("integer")
+                        .HasColumnName("interval_val");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("PlanExternalId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("plan_externalid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Draft")
+                        .HasColumnName("status");
+
+                    b.HasKey("PlanId")
+                        .HasName("pk_pmplan");
+
+                    b.HasIndex("EquipmentExternalId")
+                        .HasDatabaseName("ix_pmplan_equipment_externalid");
+
+                    b.HasIndex("FactoryExternalId", "PlanExternalId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_pmplan_factory_plan_external");
+
+                    b.HasIndex("FactoryExternalId", "Status", "CreatedAt", "PlanId")
+                        .IsDescending(false, false, true, true)
+                        .HasDatabaseName("ix_pmplan_factory_status_created_desc");
+
+                    b.ToTable("pmplan", "mro");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.RackMRO", b =>
                 {
                     b.Property<int>("RackId")
                         .ValueGeneratedOnAdd()
@@ -1656,7 +3684,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("racks", "mro");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MRO.SlotMRO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.SlotMRO", b =>
                 {
                     b.Property<int>("SlotId")
                         .ValueGeneratedOnAdd()
@@ -1704,7 +3732,252 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("slots", "mro");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MRO.WarehouseMRO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.StockOutHeaderMRO", b =>
+                {
+                    b.Property<long>("StockOutId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("stock_out_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("StockOutId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("FactoryCode")
+                        .HasColumnType("text")
+                        .HasColumnName("factory_code");
+
+                    b.Property<Guid>("FactoryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("factory_id");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<DateTime?>("PostedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("posted_at");
+
+                    b.Property<Guid?>("PostedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("posted_by");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("text")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("SourceCode")
+                        .HasColumnType("text")
+                        .HasColumnName("source_code");
+
+                    b.Property<long?>("SourceId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("source_id");
+
+                    b.Property<string>("SourceType")
+                        .HasColumnType("text")
+                        .HasColumnName("source_type");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Draft")
+                        .HasColumnName("status");
+
+                    b.Property<string>("StockOutCode")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("stock_out_code");
+
+                    b.HasKey("StockOutId")
+                        .HasName("pk_stock_out_hdr");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("PostedBy");
+
+                    b.HasIndex("SourceId");
+
+                    b.HasIndex("FactoryId", "StockOutCode")
+                        .IsUnique()
+                        .HasDatabaseName("ux_stock_out_code_per_factory");
+
+                    b.HasIndex("FactoryId", "Status", "CreatedAt", "StockOutId")
+                        .IsDescending(false, false, true, true)
+                        .HasDatabaseName("ix_stock_out_hdr_factory_status_created_desc");
+
+                    b.ToTable("stock_out_hdr", "mro");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.StockOutLineMRO", b =>
+                {
+                    b.Property<long>("LineId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("line_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("LineId"));
+
+                    b.Property<string>("MaterialExternalId")
+                        .HasColumnType("text")
+                        .HasColumnName("material_externalid");
+
+                    b.Property<Guid>("MaterialId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("material_id");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<int>("Qty")
+                        .HasColumnType("integer")
+                        .HasColumnName("qty");
+
+                    b.Property<string>("SlotCode")
+                        .HasColumnType("text")
+                        .HasColumnName("slot_code");
+
+                    b.Property<long>("StockOutId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("stock_out_id");
+
+                    b.Property<string>("Uom")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("uom");
+
+                    b.HasKey("LineId")
+                        .HasName("pk_stock_out_line");
+
+                    b.HasIndex("MaterialId")
+                        .HasDatabaseName("ix_stock_out_line_material_id");
+
+                    b.HasIndex("StockOutId")
+                        .HasDatabaseName("ix_stock_out_line_stock_out_id");
+
+                    b.ToTable("stock_out_line", "mro");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.TransferDetailMRO", b =>
+                {
+                    b.Property<long>("TransferDetailId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("transferdetail_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("TransferDetailId"));
+
+                    b.Property<int?>("FromSlotId")
+                        .HasColumnType("integer")
+                        .HasColumnName("fromslot_id");
+
+                    b.Property<Guid>("MaterialId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("material_id");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<decimal>("Qty")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("numeric(18,3)")
+                        .HasColumnName("qty");
+
+                    b.Property<int?>("ToSlotId")
+                        .HasColumnType("integer")
+                        .HasColumnName("toslot_id");
+
+                    b.Property<long>("TransferHeaderId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("transferheaders_id");
+
+                    b.HasKey("TransferDetailId")
+                        .HasName("pk_transferdetails");
+
+                    b.HasIndex("FromSlotId")
+                        .HasDatabaseName("ix_transferdetails_fromslot");
+
+                    b.HasIndex("MaterialId")
+                        .HasDatabaseName("ix_transferdetails_material");
+
+                    b.HasIndex("ToSlotId")
+                        .HasDatabaseName("ix_transferdetails_toslot");
+
+                    b.HasIndex("TransferHeaderId")
+                        .HasDatabaseName("ix_transferdetails_header");
+
+                    b.ToTable("transferdetails", "mro");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.TransferHeaderMRO", b =>
+                {
+                    b.Property<long>("TransferHeaderId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("transferheaders_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("TransferHeaderId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<bool>("Posted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("posted");
+
+                    b.Property<DateTime?>("PostedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("posted_at");
+
+                    b.Property<Guid?>("PostedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("posted_by");
+
+                    b.Property<string>("TransferHeaderExternalId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("transferheaders_externalid");
+
+                    b.HasKey("TransferHeaderId")
+                        .HasName("pk_transferheaders");
+
+                    b.HasIndex("CreatedBy")
+                        .HasDatabaseName("ix_transferheaders_created_by");
+
+                    b.HasIndex("PostedBy");
+
+                    b.HasIndex("TransferHeaderExternalId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_transferheaders_externalid");
+
+                    b.HasIndex("Posted", "CreatedAt", "TransferHeaderId")
+                        .IsDescending(false, true, true)
+                        .HasDatabaseName("ix_transferheaders_posted_created_desc");
+
+                    b.ToTable("transferheaders", "mro");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.WarehouseMRO", b =>
                 {
                     b.Property<int>("WarehouseId")
                         .ValueGeneratedOnAdd()
@@ -1733,7 +4006,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("warehouses", "mro");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MRO.ZoneMRO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.ZoneMRO", b =>
                 {
                     b.Property<int>("ZoneId")
                         .ValueGeneratedOnAdd()
@@ -1769,7 +4042,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("zones", "mro");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingFormula", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormula", b =>
                 {
                     b.Property<Guid>("ManufacturingFormulaId")
                         .ValueGeneratedOnAdd()
@@ -1777,160 +4050,107 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("manufacturingFormulaId")
                         .HasDefaultValueSql("gen_random_uuid()");
 
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uuid")
-                        .HasColumnName("createdBy");
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_date");
 
                     b.Property<string>("ExternalId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("FormulaExternalIdSnapshot")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("citext")
+                        .HasColumnName("external_id");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(true)
-                        .HasColumnName("isActive");
-
-                    b.Property<bool>("IsSelect")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("isSelect");
-
-                    b.Property<bool>("IsStandard")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("isStandard");
-
-                    b.Property<string>("MfgProductionOrderExternalId")
-                        .HasColumnType("text")
-                        .HasColumnName("mfgProductionOrderExternalId");
+                        .HasColumnName("is_active");
 
                     b.Property<string>("Name")
-                        .HasColumnType("text")
+                        .IsRequired()
+                        .HasColumnType("citext")
                         .HasColumnName("name");
 
                     b.Property<string>("Note")
-                        .HasColumnType("text")
+                        .HasColumnType("citext")
                         .HasColumnName("note");
 
                     b.Property<string>("SourceManufacturingExternalIdSnapshot")
-                        .HasColumnType("text");
+                        .HasColumnType("citext")
+                        .HasColumnName("source_manufacturing_externalid_snapshot");
 
                     b.Property<Guid?>("SourceManufacturingFormulaId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_manufacturing_formula_id");
 
-                    b.Property<string>("SourceType")
-                        .HasColumnType("text");
+                    b.Property<int>("SourceType")
+                        .HasColumnType("integer");
 
                     b.Property<string>("SourceVUExternalIdSnapshot")
-                        .HasColumnType("text");
+                        .HasColumnType("citext")
+                        .HasColumnName("source_vu_externalid_snapshot");
 
                     b.Property<Guid?>("SourceVUFormulaId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_vu_formula_id");
 
                     b.Property<string>("Status")
-                        .HasColumnType("text")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasDefaultValue("New")
                         .HasColumnName("status");
 
                     b.Property<decimal?>("TotalPrice")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
-                        .HasColumnName("totalPrice");
+                        .HasColumnName("total_price");
 
-                    b.Property<Guid?>("UpdatedBy")
+                    b.Property<Guid>("UpdatedBy")
                         .HasColumnType("uuid")
-                        .HasColumnName("updatedBy");
+                        .HasColumnName("updated_by");
 
-                    b.Property<DateTime?>("UpdatedDate")
+                    b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("timestamp without time zone")
-                        .HasColumnName("updatedDate");
-
-                    b.Property<Guid>("VUFormulaId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("companyId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("companyId");
-
-                    b.Property<DateTime?>("createdDate")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("createdDate");
-
-                    b.Property<Guid>("mfgProductionOrderId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("mfgProductionOrderId");
+                        .HasColumnName("updated_date");
 
                     b.HasKey("ManufacturingFormulaId")
                         .HasName("PK__ManufacturingFormulas__manufacturingFormulaId");
 
-                    b.HasIndex("CreatedBy");
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_mfg_formulas_company_id");
 
-                    b.HasIndex("SourceManufacturingFormulaId");
+                    b.HasIndex("CreatedBy")
+                        .HasDatabaseName("ix_mfg_formulas_created_by");
 
-                    b.HasIndex("SourceVUFormulaId");
+                    b.HasIndex("SourceManufacturingFormulaId")
+                        .HasDatabaseName("ix_mfg_formulas_source_mfg_formula_id");
+
+                    b.HasIndex("SourceVUFormulaId")
+                        .HasDatabaseName("ix_mfg_formulas_source_vu_formula_id");
 
                     b.HasIndex("UpdatedBy");
 
-                    b.HasIndex("VUFormulaId")
+                    b.HasIndex("CompanyId", "ExternalId")
                         .IsUnique()
-                        .HasDatabaseName("ux_mfg_formula_isstandard_one_per_vu")
-                        .HasFilter("\"isStandard\" = TRUE AND \"isActive\" = TRUE");
+                        .HasDatabaseName("ux_mfg_formulas_company_external_id");
 
-                    b.HasIndex("companyId");
+                    b.HasIndex("CompanyId", "IsActive", "CreatedDate", "ManufacturingFormulaId")
+                        .IsDescending(false, false, true, true)
+                        .HasDatabaseName("ix_mfg_formulas_company_active_created_desc");
 
-                    b.HasIndex("mfgProductionOrderId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_mfg_formula_isselect_one_per_order")
-                        .HasFilter("\"isSelect\" = TRUE AND \"isActive\" = TRUE");
-
-                    b.HasIndex(new[] { "mfgProductionOrderId" }, "IX_ManufacturingFormulas_mfgProductionOrderId");
-
-                    b.ToTable("ManufacturingFormulas", "manufacturing");
+                    b.ToTable("manufacturing_formulas", "manufacturing");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingFormulaLog", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("Id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<int>("Action")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Comment")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("ManufacturingFormulaId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("PerformedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("PerformedByNameSnapshot")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("PerformedDate")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("PerformedDate");
-
-                    b.HasKey("Id")
-                        .HasName("PK__ManufacturingFormulaLog__Id");
-
-                    b.HasIndex("PerformedBy");
-
-                    b.HasIndex(new[] { "ManufacturingFormulaId" }, "IX_ManufacturingFormulaLog_ManufacturingFormulaId");
-
-                    b.ToTable("ManufacturingFormulaLog", "manufacturing");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingFormulaMaterial", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormulaMaterial", b =>
                 {
                     b.Property<Guid>("ManufacturingFormulaMaterialId")
                         .ValueGeneratedOnAdd()
@@ -1940,20 +4160,138 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("uuid")
-                        .HasColumnName("categoryId");
+                        .HasColumnName("category_id");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("LotNo")
-                        .HasColumnType("text")
-                        .HasColumnName("lotNo");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
 
                     b.Property<Guid>("ManufacturingFormulaId")
                         .HasColumnType("uuid")
-                        .HasColumnName("manufacturingFormulaId");
+                        .HasColumnName("manufacturing_formula_id");
 
                     b.Property<string>("MaterialExternalIdSnapshot")
+                        .HasColumnType("text")
+                        .HasColumnName("material_externalid_snapshot");
+
+                    b.Property<Guid>("MaterialId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("material_id");
+
+                    b.Property<string>("MaterialNameSnapshot")
+                        .HasColumnType("text")
+                        .HasColumnName("material_name_snapshot");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("quantity");
+
+                    b.Property<decimal>("TotalPrice")
+                        .HasPrecision(16, 2)
+                        .HasColumnType("numeric(16,2)")
+                        .HasColumnName("total_price");
+
+                    b.Property<string>("Unit")
+                        .HasColumnType("text")
+                        .HasColumnName("unit");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(16, 2)
+                        .HasColumnType("numeric(16,2)")
+                        .HasColumnName("unit_price");
+
+                    b.HasKey("ManufacturingFormulaMaterialId")
+                        .HasName("PK__ManufacturingFormulaMaterials__manufacturingFormulaMaterialId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("ManufacturingFormulaId")
+                        .HasDatabaseName("ix_mfm_formula_id");
+
+                    b.HasIndex("MaterialId");
+
+                    b.HasIndex("ManufacturingFormulaId", "MaterialId")
+                        .HasDatabaseName("ix_mfm_formula_material");
+
+                    b.HasIndex("ManufacturingFormulaId", "MaterialId", "CategoryId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_mfm_formula_material_unique_active")
+                        .HasFilter("\"is_active\" = TRUE");
+
+                    b.ToTable("ManufacturingFormulaMaterials", "manufacturing");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormulaVersion", b =>
+                {
+                    b.Property<Guid>("ManufacturingFormulaVersionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("manufacturingFormulaVersionId")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTime?>("EffectiveFrom")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("effectiveFrom");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("effectiveTo");
+
+                    b.Property<Guid>("ManufacturingFormulaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("citext")
+                        .HasDefaultValue("Draft")
+                        .HasColumnName("status");
+
+                    b.Property<int>("VersionNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("versionNo");
+
+                    b.HasKey("ManufacturingFormulaVersionId")
+                        .HasName("PK__ManufacturingFormulaVersions__manufacturingFormulaVersionId");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_mf_versions_status");
+
+                    b.HasIndex("ManufacturingFormulaId", "VersionNo")
+                        .IsUnique()
+                        .HasDatabaseName("ux_mf_versions_formula_versionno");
+
+                    b.HasIndex("ManufacturingFormulaId", "EffectiveFrom", "EffectiveTo")
+                        .HasDatabaseName("ix_mf_versions_period");
+
+                    b.ToTable("ManufacturingFormulaVersions", "manufacturing");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormulaVersionItem", b =>
+                {
+                    b.Property<Guid>("ManufacturingFormulaVersionItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("manufacturingFormulaVersionItemId")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("category_id");
+
+                    b.Property<Guid>("ManufacturingFormulaVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("manufacturingFormulaVersionId");
+
+                    b.Property<string>("MaterialExternalIdSnapshot")
+                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("materialExternalIdSnapshot");
 
@@ -1962,47 +4300,427 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("materialId");
 
                     b.Property<string>("MaterialNameSnapshot")
+                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("materialNameSnapshot");
 
                     b.Property<decimal>("Quantity")
                         .HasPrecision(18, 6)
-                        .HasColumnType("numeric(18,6)");
-
-                    b.Property<Guid?>("StockId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("stockId");
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("quantity");
 
                     b.Property<decimal>("TotalPrice")
                         .HasPrecision(16, 2)
-                        .HasColumnType("numeric(16,2)");
+                        .HasColumnType("numeric(16,2)")
+                        .HasColumnName("totalPrice");
 
                     b.Property<string>("Unit")
+                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("unit");
 
                     b.Property<decimal>("UnitPrice")
                         .HasPrecision(16, 2)
-                        .HasColumnType("numeric(16,2)");
+                        .HasColumnType("numeric(16,2)")
+                        .HasColumnName("unitPrice");
 
-                    b.HasKey("ManufacturingFormulaMaterialId")
-                        .HasName("PK__ManufacturingFormulaMaterials__manufacturingFormulaMaterialId");
+                    b.HasKey("ManufacturingFormulaVersionItemId")
+                        .HasName("pk_mf_version_items");
 
                     b.HasIndex("CategoryId");
 
-                    b.HasIndex("ManufacturingFormulaId");
+                    b.HasIndex("ManufacturingFormulaVersionId")
+                        .HasDatabaseName("ix_mf_version_items_version");
 
                     b.HasIndex("MaterialId");
 
-                    b.ToTable("ManufacturingFormulaMaterials", "manufacturing");
+                    b.HasIndex("ManufacturingFormulaVersionId", "MaterialId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_mfm_version_items_version_material");
+
+                    b.ToTable("ManufacturingFormulaVersionItems", "manufacturing");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Material", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.MfgOrderPO", b =>
+                {
+                    b.Property<Guid>("MerchandiseOrderDetailId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("MerchandiseOrderDetailId");
+
+                    b.Property<Guid>("MfgProductionOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("MfgProductionOrderId");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("IsActive");
+
+                    b.HasKey("MerchandiseOrderDetailId", "MfgProductionOrderId")
+                        .HasName("PK_MfgOrderPOs");
+
+                    b.HasIndex("MerchandiseOrderDetailId")
+                        .HasDatabaseName("IX_MfgOrderPOs_DetailId");
+
+                    b.HasIndex("MfgProductionOrderId")
+                        .HasDatabaseName("IX_MfgOrderPOs_MfgOrderId");
+
+                    b.HasIndex("MerchandiseOrderDetailId", "IsActive")
+                        .IsUnique()
+                        .HasDatabaseName("UX_MfgOrderPOs_Detail_Active")
+                        .HasFilter("\"IsActive\" = TRUE");
+
+                    b.HasIndex("MfgProductionOrderId", "IsActive")
+                        .IsUnique()
+                        .HasDatabaseName("UX_MfgOrderPOs_MfgOrder_Active")
+                        .HasFilter("\"IsActive\" = TRUE");
+
+                    b.ToTable("MfgOrderPOs", "manufacturing");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.MfgProductionOrder", b =>
+                {
+                    b.Property<Guid>("MfgProductionOrderId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("mfgProductionOrderId")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("BagType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bag_type");
+
+                    b.Property<string>("ColorName")
+                        .HasColumnType("citext")
+                        .HasColumnName("color_name");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_date");
+
+                    b.Property<string>("CustomerExternalIdSnapshot")
+                        .HasColumnType("citext")
+                        .HasColumnName("customer_externalid_snapshot");
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("CustomerNameSnapshot")
+                        .HasColumnType("citext")
+                        .HasColumnName("customer_name_snapshot");
+
+                    b.Property<DateTime?>("ExpectedDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("expected_date");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasColumnType("citext")
+                        .HasColumnName("external_id");
+
+                    b.Property<string>("FormulaExternalIdSnapshot")
+                        .HasColumnType("citext")
+                        .HasColumnName("formula_externalid_snapshot");
+
+                    b.Property<Guid?>("FormulaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("formula_id");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("LabNote")
+                        .HasColumnType("text")
+                        .HasColumnName("lab_note");
+
+                    b.Property<DateTime?>("ManufacturingDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("manufacturing_date");
+
+                    b.Property<int?>("NumOfBatches")
+                        .HasColumnType("integer")
+                        .HasColumnName("num_of_batches");
+
+                    b.Property<string>("PlpuNote")
+                        .HasColumnType("text")
+                        .HasColumnName("plpu_note");
+
+                    b.Property<string>("ProductExternalIdSnapshot")
+                        .HasColumnType("citext")
+                        .HasColumnName("product_externalid_snapshot");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<string>("ProductNameSnapshot")
+                        .HasColumnType("citext")
+                        .HasColumnName("product_name_snapshot");
+
+                    b.Property<string>("QcCheck")
+                        .HasColumnType("text")
+                        .HasColumnName("qc_check");
+
+                    b.Property<DateTime>("RequiredDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("required_date");
+
+                    b.Property<string>("Requirement")
+                        .HasColumnType("text")
+                        .HasColumnName("requirement");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("citext")
+                        .HasDefaultValue("New")
+                        .HasColumnName("status");
+
+                    b.Property<string>("StepOfProduct")
+                        .HasColumnType("text")
+                        .HasColumnName("step_of_product");
+
+                    b.Property<int?>("TotalQuantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_quantity");
+
+                    b.Property<int>("TotalQuantityRequest")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_quantity_request");
+
+                    b.Property<decimal>("UnitPriceAgreed")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unit_price_agreed");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("updated_date");
+
+                    b.HasKey("MfgProductionOrderId")
+                        .HasName("PK__MfgProductionOrders__MfgProductionOrderId");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("UpdatedBy");
+
+                    b.HasIndex("CompanyId", "ExternalId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_mpo_company_externalid");
+
+                    b.HasIndex("CompanyId", "ProductId", "IsActive")
+                        .HasDatabaseName("ix_mpo_company_product_active");
+
+                    b.HasIndex("CompanyId", "IsActive", "CreatedDate", "MfgProductionOrderId")
+                        .IsDescending(false, false, true, true)
+                        .HasDatabaseName("ix_mpo_company_active_createddesc");
+
+                    b.HasIndex("CompanyId", "Status", "ExpectedDate", "MfgProductionOrderId")
+                        .IsDescending(false, false, true, true)
+                        .HasDatabaseName("ix_mpo_company_status_expecteddesc");
+
+                    b.HasIndex("CompanyId", "Status", "RequiredDate", "MfgProductionOrderId")
+                        .IsDescending(false, false, true, true)
+                        .HasDatabaseName("ix_mpo_company_status_requireddesc");
+
+                    b.ToTable("MfgProductionOrders", "manufacturing");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ProductStandardFormula", b =>
+                {
+                    b.Property<Guid>("ProductStandardFormulaId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_standard_formula_id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid?>("ClosedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("closed_by");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<Guid>("ManufacturingFormulaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("manufacturing_formula_id");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("citext")
+                        .HasColumnName("note");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<DateTime>("ValidFrom")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("valid_from");
+
+                    b.Property<DateTime?>("ValidTo")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("valid_to");
+
+                    b.HasKey("ProductStandardFormulaId")
+                        .HasName("pk_product_standard_formulas");
+
+                    b.HasIndex("ClosedBy");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_psf_company");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("ManufacturingFormulaId")
+                        .HasDatabaseName("ix_psf_formula");
+
+                    b.HasIndex("ProductId")
+                        .HasDatabaseName("ix_psf_product");
+
+                    b.HasIndex("CompanyId", "ProductId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_psf_company_product_current")
+                        .HasFilter("\"valid_to\" IS NULL");
+
+                    b.HasIndex("ProductId", "ValidFrom")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_psf_product_validfrom_desc");
+
+                    b.ToTable("product_standard_formulas", "manufacturing");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ProductionSelectVersion", b =>
+                {
+                    b.Property<Guid>("ProductionSelectVersionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("production_select_version_id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid?>("ClosedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("closed_by");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<Guid>("ManufacturingFormulaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("manufacturing_formula_id");
+
+                    b.Property<Guid>("MfgProductionOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("mfg_production_order_id");
+
+                    b.Property<DateTime>("ValidFrom")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("valid_from");
+
+                    b.Property<DateTime?>("ValidTo")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("valid_to");
+
+                    b.HasKey("ProductionSelectVersionId")
+                        .HasName("pk_production_select_versions");
+
+                    b.HasIndex("ClosedBy");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("ManufacturingFormulaId")
+                        .HasDatabaseName("ix_psv_formula");
+
+                    b.HasIndex("MfgProductionOrderId")
+                        .HasDatabaseName("ix_psv_mpo");
+
+                    b.HasIndex("CompanyId", "MfgProductionOrderId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_psv_current_per_order")
+                        .HasFilter("\"valid_to\" IS NULL");
+
+                    b.HasIndex("MfgProductionOrderId", "ValidFrom")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_psv_mpo_validfrom_desc");
+
+                    b.ToTable("production_select_versions", "manufacturing");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Category", b =>
+                {
+                    b.Property<Guid>("CategoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ExternalId")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool?>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Types")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("CategoryId")
+                        .HasName("PK__Categori__19093A0B0352530F");
+
+                    b.HasIndex(new[] { "CompanyId" }, "IX_Categories_CompanyId");
+
+                    b.ToTable("Categories", "Material");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Material", b =>
                 {
                     b.Property<Guid>("MaterialId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid?>("AttachmentCollectionId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Barcode")
                         .HasMaxLength(16)
@@ -2031,10 +4749,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Property<string>("ExternalId")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
-
-                    b.Property<string>("ImagePath")
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
 
                     b.Property<bool?>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -2078,7 +4792,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("Materials", "Material");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialsSupplier", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.MaterialsSupplier", b =>
                 {
                     b.Property<Guid>("MaterialsSuppliersId")
                         .ValueGeneratedOnAdd()
@@ -2143,6 +4857,226 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("Materials_Suppliers", "Material");
                 });
 
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.PriceHistory", b =>
+                {
+                    b.Property<Guid>("PriceHistoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CreateDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("createDate");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("createdBy");
+
+                    b.Property<string>("Currency")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("currency");
+
+                    b.Property<Guid?>("MaterialId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MaterialsSuppliersId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("materialsSuppliersId");
+
+                    b.Property<decimal?>("OldPrice")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("oldPrice");
+
+                    b.Property<Guid?>("SupplierId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("PriceHistoryId")
+                        .HasName("PK__PriceHis__A927CACB4B3A2EAC");
+
+                    b.HasIndex("CreateDate")
+                        .HasDatabaseName("ix_pricehistory_createDate");
+
+                    b.HasIndex("MaterialId");
+
+                    b.HasIndex("SupplierId");
+
+                    b.HasIndex("MaterialsSuppliersId", "CreateDate")
+                        .HasDatabaseName("ix_pricehistory_supplier_date");
+
+                    b.HasIndex(new[] { "CreatedBy" }, "IX_PriceHistory_CreatedBy");
+
+                    b.HasIndex(new[] { "MaterialsSuppliersId" }, "IX_PriceHistory_MaterialsSuppliersId");
+
+                    b.ToTable("PriceHistory", "Material");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Supplier", b =>
+                {
+                    b.Property<Guid>("SupplierId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("ExternalId")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("FaxNumber")
+                        .HasColumnType("text");
+
+                    b.Property<bool?>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("IssueDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("IssuedPlace")
+                        .HasColumnType("citext");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RegistrationNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("SupplierName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("TaxNumber")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Website")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("SupplierId")
+                        .HasName("PK__Supplier__4BE666B4029CD1B8");
+
+                    b.HasIndex("UpdatedBy");
+
+                    b.HasIndex(new[] { "CompanyId" }, "IX_Suppliers_CompanyId");
+
+                    b.HasIndex(new[] { "CreatedBy" }, "IX_Suppliers_CreatedBy");
+
+                    b.ToTable("Suppliers", "Material");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.SupplierAddress", b =>
+                {
+                    b.Property<Guid>("AddressId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("AddressLine")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Country")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("District")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool?>("IsPrimary")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Province")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("AddressId")
+                        .HasName("PK__Supplier__091C2AFB0B8862E7");
+
+                    b.HasIndex(new[] { "SupplierId" }, "IX_SupplierAddresses_SupplierId");
+
+                    b.ToTable("SupplierAddresses", "Material");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.SupplierContact", b =>
+                {
+                    b.Property<Guid>("ContactId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("FirstName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Gender")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<bool?>("IsPrimary")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LastName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("ContactId")
+                        .HasName("PK__Supplier__5C66259B7A3571DD");
+
+                    b.HasIndex(new[] { "SupplierId" }, "IX_SupplierContacts_SupplierId");
+
+                    b.ToTable("SupplierContacts", "Material");
+                });
+
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MemberInGroup", b =>
                 {
                     b.Property<Guid>("MemberId")
@@ -2188,7 +5122,319 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("MemberInGroup", "company");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MerchandiseOrder", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MfgProductionOrdersPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("createdDate");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("expiryDate");
+
+                    b.Property<string>("ExternalId")
+                        .HasColumnType("citext")
+                        .HasColumnName("externalId");
+
+                    b.Property<double?>("ProductAddRate")
+                        .HasColumnType("double precision")
+                        .HasColumnName("product_addRate");
+
+                    b.Property<string>("ProductCustomerExternalId")
+                        .HasColumnType("citext")
+                        .HasColumnName("product_customerExternalId");
+
+                    b.Property<string>("ProductExpiryType")
+                        .HasColumnType("citext")
+                        .HasColumnName("product_expiryType");
+
+                    b.Property<string>("ProductExternalId")
+                        .HasColumnType("citext")
+                        .HasColumnName("product_externalId");
+
+                    b.Property<Guid?>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<double?>("ProductMaxTemp")
+                        .HasColumnType("double precision")
+                        .HasColumnName("product_maxTemp");
+
+                    b.Property<string>("ProductName")
+                        .HasColumnType("citext")
+                        .HasColumnName("product_name");
+
+                    b.Property<string>("ProductPackage")
+                        .HasColumnType("citext")
+                        .HasColumnName("product_package");
+
+                    b.Property<double?>("ProductRecycleRate")
+                        .HasColumnType("double precision")
+                        .HasColumnName("product_recycleRate");
+
+                    b.Property<bool?>("ProductRohsStandard")
+                        .HasColumnType("boolean")
+                        .HasColumnName("product_rohsStandard");
+
+                    b.Property<double?>("ProductWeight")
+                        .HasColumnType("double precision")
+                        .HasColumnName("product_weight");
+
+                    b.Property<string>("Requirement")
+                        .HasColumnType("citext")
+                        .HasColumnName("requirement");
+
+                    b.HasKey("Id")
+                        .HasName("PK__MfgProdu__3213E83F2188AAF5");
+
+                    b.ToTable("MfgProductionOrdersPlan", (string)null);
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Notifications.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasPrecision(6)
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_date");
+
+                    b.Property<string>("Link")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("link");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("message");
+
+                    b.Property<string>("PayloadJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("payload_json");
+
+                    b.Property<int>("Severity")
+                        .HasColumnType("integer")
+                        .HasColumnName("severity");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("topic");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "Topic", "CreatedDate")
+                        .HasDatabaseName("ix_notifications_company_topic_created");
+
+                    b.ToTable("notifications", "notification");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Notifications.NotificationRecipient", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("NotificationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("notification_id");
+
+                    b.Property<string>("TargetRole")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("target_role");
+
+                    b.Property<Guid?>("TargetTeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_team_id");
+
+                    b.Property<Guid?>("TargetUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NotificationId")
+                        .HasDatabaseName("ix_notification_recipients_notification");
+
+                    b.HasIndex("TargetRole")
+                        .HasDatabaseName("ix_notification_recipients_target_role");
+
+                    b.HasIndex("TargetTeamId")
+                        .HasDatabaseName("ix_notification_recipients_target_team");
+
+                    b.HasIndex("TargetUserId")
+                        .HasDatabaseName("ix_notification_recipients_target_user");
+
+                    b.ToTable("notification_recipients", "notification");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Notifications.NotificationTemplate", b =>
+                {
+                    b.Property<string>("TemplateKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("template_key");
+
+                    b.Property<string>("Locale")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("locale");
+
+                    b.Property<string>("MessageFormat")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("message_format");
+
+                    b.Property<string>("TitleFormat")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("title_format");
+
+                    b.HasKey("TemplateKey", "Locale");
+
+                    b.ToTable("notification_templates", "notification");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Notifications.NotificationUserState", b =>
+                {
+                    b.Property<Guid>("NotificationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("notification_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_archived");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_read");
+
+                    b.Property<DateTime?>("ReadDate")
+                        .HasPrecision(6)
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("read_date");
+
+                    b.HasKey("NotificationId", "UserId");
+
+                    b.HasIndex("NotificationId")
+                        .HasDatabaseName("ix_notification_user_states_notification");
+
+                    b.HasIndex("UserId", "IsRead")
+                        .HasDatabaseName("ix_notification_user_states_user_read");
+
+                    b.ToTable("notification_user_states", "notification");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Notifications.OutboxMessage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasPrecision(6)
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Error")
+                        .HasColumnType("text")
+                        .HasColumnName("error");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("payload_json");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasPrecision(6)
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("processed_at");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProcessedAt")
+                        .HasDatabaseName("ix_outbox_unprocessed")
+                        .HasFilter("processed_at IS NULL");
+
+                    b.ToTable("outbox_messages", "notification");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Notifications.UserNotificationSetting", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<string>("Channels")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("channels");
+
+                    b.Property<string>("Locale")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("locale");
+
+                    b.Property<int>("MinSeverity")
+                        .HasColumnType("integer")
+                        .HasColumnName("min_severity");
+
+                    b.Property<TimeSpan?>("QuietFrom")
+                        .HasColumnType("interval")
+                        .HasColumnName("quiet_from");
+
+                    b.Property<TimeSpan?>("QuietTo")
+                        .HasColumnType("interval")
+                        .HasColumnName("quiet_to");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("user_notification_settings", "notification");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.OrderSchema.MerchandiseOrder", b =>
                 {
                     b.Property<Guid>("MerchandiseOrderId")
                         .ValueGeneratedOnAdd()
@@ -2351,7 +5597,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("MerchandiseOrders", "Orders");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MerchandiseOrderDetail", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.OrderSchema.MerchandiseOrderDetail", b =>
                 {
                     b.Property<Guid>("MerchandiseOrderDetailId")
                         .ValueGeneratedOnAdd()
@@ -2442,8 +5688,10 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
+                        .HasDefaultValue("New")
                         .HasColumnName("Status");
 
                     b.Property<decimal>("TotalPriceAgreed")
@@ -2479,284 +5727,224 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("MerchandiseOrderDetails", "Orders");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MfgProductionOrder", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.OrderSchema.PurchaseOrder", b =>
                 {
-                    b.Property<Guid>("MfgProductionOrderId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("mfgProductionOrderId")
-                        .HasDefaultValueSql("gen_random_uuid()");
+                    b.Property<Guid>("PurchaseOrderId")
+                        .HasColumnType("uuid");
 
-                    b.Property<string>("BagType")
-                        .HasColumnType("text")
-                        .HasColumnName("bagType");
+                    b.Property<string>("Comment")
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("CompanyId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("companyId");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreateDate")
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("createdBy");
-
-                    b.Property<string>("CustomerExternalIdSnapshot")
-                        .HasColumnType("text")
-                        .HasColumnName("customerExternalIdSnapshot");
-
-                    b.Property<Guid?>("CustomerId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("CustomerNameSnapshot")
-                        .HasColumnType("text")
-                        .HasColumnName("customerNameSnapshot");
-
-                    b.Property<DateTime?>("ExpectedDate")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("expectedDate");
 
                     b.Property<string>("ExternalId")
-                        .HasColumnType("citext")
-                        .HasColumnName("externalId");
-
-                    b.Property<string>("FormulaExternalIdSnapshot")
-                        .HasColumnType("text")
-                        .HasColumnName("formulaExternalIdSnapshot");
-
-                    b.Property<Guid?>("FormulaId")
-                        .HasColumnType("uuid");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<bool?>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("isActive");
+                        .HasDefaultValue(true);
 
-                    b.Property<string>("LabNote")
-                        .HasColumnType("text")
-                        .HasColumnName("labNote");
+                    b.Property<string>("OrderType")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
-                    b.Property<DateTime?>("ManufacturingDate")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("manufacturingDate");
-
-                    b.Property<string>("MerchandiseOrderExternalId")
-                        .HasColumnType("citext")
-                        .HasColumnName("merchandiseOrderExternalId");
-
-                    b.Property<Guid>("MerchandiseOrderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int?>("NumOfBatches")
-                        .HasColumnType("integer")
-                        .HasColumnName("numOfBatches");
-
-                    b.Property<string>("PlpuNote")
-                        .HasColumnType("text")
-                        .HasColumnName("plpuNote");
-
-                    b.Property<string>("ProductExternalIdSnapshot")
-                        .HasColumnType("citext")
-                        .HasColumnName("productExternalIdSnapshot");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ProductNameSnapshot")
-                        .HasColumnType("citext")
-                        .HasColumnName("productNameSnapshot");
-
-                    b.Property<string>("ProductionType")
-                        .HasColumnType("citext")
-                        .HasColumnName("productionType");
-
-                    b.Property<string>("QcCheck")
+                    b.Property<string>("PLPUComment")
                         .HasColumnType("text");
 
-                    b.Property<decimal?>("QualifiedQuantity")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("qualifiedQuantity");
+                    b.Property<Guid?>("PurchaseOrderSnapshotId")
+                        .HasColumnType("uuid");
 
-                    b.Property<decimal?>("RejectedQuantity")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("rejectedQuantity");
+                    b.Property<DateTime?>("RealDeliveryDate")
+                        .HasColumnType("timestamp without time zone");
 
-                    b.Property<string>("Requirement")
-                        .HasColumnType("text")
-                        .HasColumnName("requirement");
+                    b.Property<DateTime?>("RequestDeliveryDate")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Status")
-                        .HasColumnType("text")
-                        .HasColumnName("status");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
-                    b.Property<int?>("TotalQuantity")
-                        .HasColumnType("integer")
-                        .HasColumnName("totalQuantity");
-
-                    b.Property<int?>("TotalQuantityRequest")
-                        .HasColumnType("integer")
-                        .HasColumnName("totalQuantityRequest");
-
-                    b.Property<decimal>("UnitPriceAgreed")
-                        .HasColumnType("numeric");
+                    b.Property<Guid?>("SupplierId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("updatedBy");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("updatedDate");
+                        .HasColumnType("timestamp without time zone");
 
-                    b.Property<decimal?>("WasteQuantity")
+                    b.HasKey("PurchaseOrderId")
+                        .HasName("PK__Purchase__036BACA44B53DA7A");
+
+                    b.HasIndex("PurchaseOrderSnapshotId");
+
+                    b.HasIndex(new[] { "CompanyId" }, "IX_PurchaseOrders_CompanyId");
+
+                    b.HasIndex(new[] { "CreatedBy" }, "IX_PurchaseOrders_CreatedBy");
+
+                    b.HasIndex(new[] { "SupplierId" }, "IX_PurchaseOrders_SupplierId");
+
+                    b.HasIndex(new[] { "UpdatedBy" }, "IX_PurchaseOrders_UpdatedBy");
+
+                    b.ToTable("PurchaseOrders", "Orders");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.OrderSchema.PurchaseOrderDetail", b =>
+                {
+                    b.Property<Guid>("PurchaseOrderDetailId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("PurchaseOrderDetailId")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<decimal?>("BaseCostSnapshot")
                         .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("wasteQuantity");
+                        .HasColumnType("numeric(18,2)");
 
-                    b.Property<DateTime?>("requiredDate")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("requiredDate");
+                    b.Property<DateTime?>("BaseDateSnapshot")
+                        .HasColumnType("timestamp without time zone");
 
-                    b.HasKey("MfgProductionOrderId")
-                        .HasName("PK__MfgProductionOrders__MfgProductionOrderId");
+                    b.Property<DateTime?>("DeliveryDate")
+                        .HasColumnType("timestamp without time zone");
 
-                    b.HasIndex("CreatedBy");
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
 
-                    b.HasIndex("CustomerId");
+                    b.Property<string>("MaterialExternalIDSnapshot")
+                        .HasColumnType("citext");
+
+                    b.Property<Guid>("MaterialId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("MaterialNameSnapshot")
+                        .HasColumnType("citext");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Package")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PurchaseOrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("RealQuantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal?>("RequestQuantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal?>("TotalPriceAgreed")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal?>("UnitPriceAgreed")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.HasKey("PurchaseOrderDetailId")
+                        .HasName("PK__Purchase__5026B698A94EFE60");
+
+                    b.HasIndex(new[] { "MaterialId" }, "IX_PurchaseOrderDetails_MaterialId");
+
+                    b.HasIndex(new[] { "PurchaseOrderId" }, "IX_PurchaseOrderDetails_PurchaseOrderId");
+
+                    b.ToTable("PurchaseOrderDetails", "Orders");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.OrderSchema.PurchaseOrderLink", b =>
+                {
+                    b.Property<Guid>("PurchaseOrderLinkId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("PurchaseOrderLinkId")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("MerchandiseOrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PurchaseOrderId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("PurchaseOrderLinkId")
+                        .HasName("PK__PurchaseOrderLink__5026B698A94EFE60");
 
                     b.HasIndex("MerchandiseOrderId");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex("PurchaseOrderId");
 
-                    b.HasIndex("UpdatedBy");
-
-                    b.HasIndex("CompanyId", "ExternalId")
-                        .IsUnique();
-
-                    b.HasIndex(new[] { "MerchandiseOrderExternalId" }, "IX_MfgProductionOrders_MerchandiseOrderExternalId");
-
-                    b.HasIndex(new[] { "CompanyId" }, "IX_MfgProductionOrders_companyId");
-
-                    b.HasIndex(new[] { "CustomerExternalIdSnapshot" }, "IX_MfgProductionOrders_customerExternalIdSnapshot");
-
-                    b.HasIndex(new[] { "ProductExternalIdSnapshot" }, "IX_MfgProductionOrders_productExternalIdSnapshot");
-
-                    b.HasIndex(new[] { "Status" }, "IX_MfgProductionOrders_status");
-
-                    b.HasIndex(new[] { "Status", "ExpectedDate" }, "IX_MfgProductionOrders_status_expectedDate");
-
-                    b.HasIndex(new[] { "Status", "requiredDate" }, "IX_MfgProductionOrders_status_requiredDate");
-
-                    b.ToTable("MfgProductionOrders", "manufacturing");
+                    b.ToTable("PurchaseOrderLink", "Orders");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MfgProductionOrderLog", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.OrderSchema.PurchaseOrderSnapshot", b =>
                 {
-                    b.Property<Guid>("LogId")
+                    b.Property<Guid>("PurchaseOrderSnapshotId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("CreatedBy")
                         .HasColumnType("uuid")
-                        .HasColumnName("createdBy");
+                        .HasColumnName("PurchaseOrderSnapshotId")
+                        .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<DateTime>("CreatedDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("createDate")
-                        .HasDefaultValueSql("timezone('utc', now())");
+                    b.Property<string>("DeliveryAddress")
+                        .HasColumnType("text");
 
-                    b.Property<Guid>("MfgProductionOrderId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("EmailSnapshot")
+                        .HasColumnType("text");
 
-                    b.Property<string>("Status")
+                    b.Property<string>("EmployeeExternalIdSnapshot")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("LogId")
-                        .HasName("PK__MfgProductionOrderLogs__LogId");
+                    b.Property<string>("EmployeeFullNameSnapshot")
+                        .IsRequired()
+                        .HasColumnType("text");
 
-                    b.HasIndex("CreatedBy");
+                    b.Property<string>("PaymentTypes")
+                        .HasColumnType("text");
 
-                    b.HasIndex("MfgProductionOrderId");
+                    b.Property<string>("PhoneNumberSnapshot")
+                        .HasColumnType("text");
 
-                    b.ToTable("MfgProductionOrderLogs", "manufacturing");
-                });
+                    b.Property<string>("SupplierAddressSnapshot")
+                        .HasColumnType("text");
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MfgProductionOrdersPlan", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                    b.Property<string>("SupplierContactSnapshot")
+                        .HasColumnType("text");
 
-                    b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("createdDate");
+                    b.Property<string>("SupplierExternalIdSnapshot")
+                        .HasColumnType("text");
 
-                    b.Property<DateTime?>("ExpiryDate")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("expiryDate");
+                    b.Property<string>("SupplierNameSnapshot")
+                        .HasColumnType("text");
 
-                    b.Property<string>("ExternalId")
-                        .HasColumnType("citext")
-                        .HasColumnName("externalId");
+                    b.Property<string>("SupplierPhoneNumberSnapshot")
+                        .HasColumnType("text");
 
-                    b.Property<double?>("ProductAddRate")
-                        .HasColumnType("double precision")
-                        .HasColumnName("product_addRate");
+                    b.Property<decimal?>("TotalPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
-                    b.Property<string>("ProductCustomerExternalId")
-                        .HasColumnType("citext")
-                        .HasColumnName("product_customerExternalId");
+                    b.Property<int?>("Vat")
+                        .HasColumnType("integer");
 
-                    b.Property<string>("ProductExpiryType")
-                        .HasColumnType("citext")
-                        .HasColumnName("product_expiryType");
+                    b.HasKey("PurchaseOrderSnapshotId")
+                        .HasName("PK__PurchaseOrderSnapshot__5026B698A94EFE60");
 
-                    b.Property<string>("ProductExternalId")
-                        .HasColumnType("citext")
-                        .HasColumnName("product_externalId");
-
-                    b.Property<Guid?>("ProductId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("product_id");
-
-                    b.Property<double?>("ProductMaxTemp")
-                        .HasColumnType("double precision")
-                        .HasColumnName("product_maxTemp");
-
-                    b.Property<string>("ProductName")
-                        .HasColumnType("citext")
-                        .HasColumnName("product_name");
-
-                    b.Property<string>("ProductPackage")
-                        .HasColumnType("citext")
-                        .HasColumnName("product_package");
-
-                    b.Property<double?>("ProductRecycleRate")
-                        .HasColumnType("double precision")
-                        .HasColumnName("product_recycleRate");
-
-                    b.Property<bool?>("ProductRohsStandard")
-                        .HasColumnType("boolean")
-                        .HasColumnName("product_rohsStandard");
-
-                    b.Property<double?>("ProductWeight")
-                        .HasColumnType("double precision")
-                        .HasColumnName("product_weight");
-
-                    b.Property<string>("Requirement")
-                        .HasColumnType("citext")
-                        .HasColumnName("requirement");
-
-                    b.HasKey("Id")
-                        .HasName("PK__MfgProdu__3213E83F2188AAF5");
-
-                    b.ToTable("MfgProductionOrdersPlan", (string)null);
+                    b.ToTable("PurchaseOrderSnapshot", "Orders");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Part", b =>
@@ -2785,63 +5973,326 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("Parts", "hr");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PriceHistory", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PrintectSchema.HistoryPrintLabelForAll", b =>
                 {
-                    b.Property<Guid>("PriceHistoryId")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ExternalId")
+                        .HasColumnType("citext")
+                        .HasColumnName("externalid");
+
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("historyprintlabelforall_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+
+                    b.Property<int?>("LogNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("lognumber");
+
+                    b.Property<int>("NumberOfCopies")
+                        .HasColumnType("integer")
+                        .HasColumnName("numberofcopies");
+
+                    b.Property<DateTime?>("ProductionDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("productiondate");
+
+                    b.Property<short?>("ShiftId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("shiftid");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_hpla_created_at");
+
+                    b.HasIndex("ExternalId", "CreatedAt")
+                        .HasDatabaseName("ix_hpla_externalid_created_at");
+
+                    b.HasIndex("LogNumber", "CreatedAt")
+                        .HasDatabaseName("ix_hpla_lognumber_created_at");
+
+                    b.ToTable("history_print_label_for_all", "printect");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PrintectSchema.LabelElement", b =>
+                {
+                    b.Property<string>("Alignment")
+                        .HasColumnType("citext")
+                        .HasColumnName("alignment");
+
+                    b.Property<bool>("Bold")
+                        .HasColumnType("boolean")
+                        .HasColumnName("bold");
+
+                    b.Property<long>("ElementId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("elementid");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("ElementId"));
+
+                    b.Property<string>("FontName")
+                        .HasColumnType("citext")
+                        .HasColumnName("fontname");
+
+                    b.Property<int>("FontSize")
+                        .HasColumnType("integer")
+                        .HasColumnName("fontsize");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("integer")
+                        .HasColumnName("height");
+
+                    b.Property<bool>("Italic")
+                        .HasColumnType("boolean")
+                        .HasColumnName("italic");
+
+                    b.Property<string>("LabelType")
+                        .HasColumnType("citext")
+                        .HasColumnName("labeltype");
+
+                    b.Property<string>("PrefixText")
+                        .HasColumnType("text")
+                        .HasColumnName("prefixtext");
+
+                    b.Property<string>("RenderType")
+                        .HasColumnType("citext")
+                        .HasColumnName("rendertype");
+
+                    b.Property<int>("TemplateId")
+                        .HasColumnType("integer")
+                        .HasColumnName("templateid");
+
+                    b.Property<string>("ValueType")
+                        .HasColumnType("citext")
+                        .HasColumnName("valuetype");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("integer")
+                        .HasColumnName("width");
+
+                    b.Property<int>("X")
+                        .HasColumnType("integer")
+                        .HasColumnName("x");
+
+                    b.Property<int>("Y")
+                        .HasColumnType("integer")
+                        .HasColumnName("y");
+
+                    b.HasIndex("TemplateId")
+                        .HasDatabaseName("ix_labelelements_templateid");
+
+                    b.HasIndex("TemplateId", "LabelType")
+                        .HasDatabaseName("ix_labelelements_template_labeltype");
+
+                    b.ToTable("labelelements", "printect");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PrintectSchema.LabelTemplate", b =>
+                {
+                    b.Property<int>("HeightMm")
+                        .HasColumnType("integer")
+                        .HasColumnName("heightmm");
+
+                    b.Property<string>("LabelType")
+                        .HasColumnType("citext")
+                        .HasColumnName("labeltype");
+
+                    b.Property<int>("TemplateId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("templateid");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("TemplateId"));
+
+                    b.Property<int>("WidthMm")
+                        .HasColumnType("integer")
+                        .HasColumnName("widthmm");
+
+                    b.HasIndex("WidthMm", "HeightMm", "LabelType")
+                        .IsUnique()
+                        .HasDatabaseName("ux_labeltemplates_size_type");
+
+                    b.ToTable("labeltemplates", "printect");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Formula", b =>
+                {
+                    b.Property<Guid>("FormulaId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("FormulaId")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid?>("CheckBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CheckBy");
+
+                    b.Property<DateTime?>("CheckDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CheckDate");
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CompanyId");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("ExternalId");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("IsActive");
+
+                    b.Property<bool>("IsSelect")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsSelect");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("Name");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("Note");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ProductId");
+
+                    b.Property<Guid?>("SentBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("SentBy");
+
+                    b.Property<DateTime?>("SentDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("SentDate");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasDefaultValue("Draft")
+                        .HasColumnName("Status");
+
+                    b.Property<decimal>("TotalPrice")
+                        .HasPrecision(16, 2)
+                        .HasColumnType("numeric(16,2)")
+                        .HasColumnName("TotalPrice");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("UpdatedBy");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("FormulaId")
+                        .HasName("PK__Formulas__227429A55C6F1195");
+
+                    b.HasIndex("CheckBy")
+                        .HasDatabaseName("IX_Formulas_CheckBy");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("IX_Formulas_CompanyId");
+
+                    b.HasIndex("CreatedBy")
+                        .HasDatabaseName("IX_Formulas_CreatedBy");
+
+                    b.HasIndex("ProductId")
+                        .HasDatabaseName("IX_Formulas_ProductId");
+
+                    b.HasIndex("SentBy")
+                        .HasDatabaseName("IX_Formulas_SentBy");
+
+                    b.HasIndex("UpdatedBy")
+                        .HasDatabaseName("IX_Formulas_UpdatedBy");
+
+                    b.HasIndex("CompanyId", "IsActive", "CreatedDate", "ProductId")
+                        .IsDescending(false, false, true, true)
+                        .HasDatabaseName("IX_ProductId_Company_IsActive_CreatedDateDesc");
+
+                    b.ToTable("Formulas", "SampleRequests");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.FormulaMaterial", b =>
+                {
+                    b.Property<Guid>("FormulaMaterialId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<DateTime?>("CreateDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<Guid?>("CreatedBy")
+                    b.Property<Guid>("CategoryId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Currency")
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
-                    b.Property<Guid?>("EmployeeId")
+                    b.Property<Guid>("FormulaId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<bool?>("IsActive")
+                    b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
 
+                    b.Property<string>("MaterialExternalIdSnapshot")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<Guid>("MaterialId")
                         .HasColumnType("uuid");
 
-                    b.Property<decimal?>("NewPrice")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("numeric(18,4)");
+                    b.Property<string>("MaterialNameSnapshot")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
-                    b.Property<decimal?>("OldPrice")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("numeric(18,4)");
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
 
-                    b.Property<Guid>("SupplierId")
-                        .HasColumnType("uuid");
+                    b.Property<decimal>("TotalPrice")
+                        .HasPrecision(16, 2)
+                        .HasColumnType("numeric(16,2)");
 
-                    b.HasKey("PriceHistoryId")
-                        .HasName("PK__PriceHis__A927CACB4B3A2EAC");
+                    b.Property<string>("Unit")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
 
-                    b.HasIndex("EmployeeId");
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(16, 2)
+                        .HasColumnType("numeric(16,2)");
 
-                    b.HasIndex(new[] { "CreatedBy" }, "IX_PriceHistory_CreatedBy");
+                    b.HasKey("FormulaMaterialId")
+                        .HasName("PK__FormulaM__0315C60A1F19742A");
 
-                    b.HasIndex(new[] { "MaterialId" }, "IX_PriceHistory_MaterialId");
+                    b.HasIndex("CategoryId");
 
-                    b.HasIndex(new[] { "SupplierId" }, "IX_PriceHistory_SupplierId");
+                    b.HasIndex(new[] { "FormulaId" }, "IX_FormulaMaterials_FormulaId");
 
-                    b.ToTable("PriceHistory", "Material");
+                    b.HasIndex(new[] { "MaterialId" }, "IX_FormulaMaterials_MaterialId");
+
+                    b.ToTable("FormulaMaterials", "SampleRequests");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Product", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Product", b =>
                 {
                     b.Property<Guid>("ProductId")
                         .ValueGeneratedOnAdd()
@@ -3040,678 +6491,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("Products", "SampleRequests");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ProductInspection", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Antistatic")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("BatchId")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("BlackDots")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("ColorDeltaE")
-                        .HasColumnType("citext");
-
-                    b.Property<DateTime?>("CreateDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("citext");
-
-                    b.Property<bool?>("DefectBlackDot")
-                        .HasColumnType("boolean")
-                        .HasColumnName("Defect_BlackDot");
-
-                    b.Property<bool?>("DefectDusty")
-                        .HasColumnType("boolean")
-                        .HasColumnName("Defect_Dusty");
-
-                    b.Property<bool?>("DefectImpurity")
-                        .HasColumnType("boolean")
-                        .HasColumnName("Defect_Impurity");
-
-                    b.Property<bool?>("DefectMoist")
-                        .HasColumnType("boolean")
-                        .HasColumnName("Defect_Moist");
-
-                    b.Property<bool?>("DefectShortFiber")
-                        .HasColumnType("boolean")
-                        .HasColumnName("Defect_ShortFiber");
-
-                    b.Property<bool?>("DefectWrongColor")
-                        .HasColumnType("boolean")
-                        .HasColumnName("Defect_WrongColor");
-
-                    b.Property<bool?>("DeliveryAccepted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Density")
-                        .HasColumnType("citext");
-
-                    b.Property<bool?>("DwellTime")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Elongation")
-                        .HasColumnType("citext");
-
-                    b.Property<DateTime?>("ExpiryDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("ExternalId")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("FlexuralModulus")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("FlexuralStrength")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("Hardness")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("ImpactResistance")
-                        .HasColumnType("citext");
-
-                    b.Property<bool?>("IsAntistaticPass")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool?>("IsColorDeltaEpass")
-                        .HasColumnType("boolean")
-                        .HasColumnName("IsColorDeltaEPass");
-
-                    b.Property<bool?>("IsDensityPass")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool?>("IsElongationPass")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool?>("IsFlexuralModulusPass")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool?>("IsFlexuralStrengthPass")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool?>("IsHardnessPass")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool?>("IsImpactResistancePass")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool?>("IsMeshAttached")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool?>("IsMfrpass")
-                        .HasColumnType("boolean")
-                        .HasColumnName("IsMFRPass");
-
-                    b.Property<bool?>("IsMoisturePass")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool?>("IsPackingSpecPass")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool?>("IsParticleSizePass")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool?>("IsShapePass")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool?>("IsStorageConditionPass")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool?>("IsTensileStrengthPass")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("ManufacturingDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("MeshType")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("Mfr")
-                        .HasColumnType("citext")
-                        .HasColumnName("MFR");
-
-                    b.Property<bool?>("MigrationTest")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Moisture")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("PackingSpec")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("ParticleSize")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("ProductCode")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("ProductName")
-                        .HasColumnType("citext");
-
-                    b.Property<Guid?>("ProductStandardId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Shape")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("StorageCondition")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("TensileStrength")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("Types")
-                        .HasColumnType("citext");
-
-                    b.Property<bool?>("VisualCheck")
-                        .HasColumnType("boolean");
-
-                    b.Property<int?>("Weight")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id")
-                        .HasName("PK__ProductI__3214EC072F6AD3E1");
-
-                    b.ToTable("ProductInspection", (string)null);
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ProductStandard", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("BlackDots")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("ColourCode")
-                        .HasColumnType("citext")
-                        .HasColumnName("colourCode");
-
-                    b.Property<Guid?>("CompanyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("CustomerExternalId")
-                        .HasColumnType("citext")
-                        .HasColumnName("customerExternalId");
-
-                    b.Property<string>("DeltaE")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("Density")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("DwellTime")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("ElongationAtBreak")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("ExternalId")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("FlexuralModulus")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("FlexuralStrength")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("Hardness")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("IzodImpactStrength")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("MeltIndex")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("MigrationTest")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("Moisture")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("Package")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("PelletSize")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("ProductExternalId")
-                        .HasColumnType("citext");
-
-                    b.Property<Guid?>("ProductId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Shape")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("Status")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("TensileStrength")
-                        .HasColumnType("citext");
-
-                    b.Property<int?>("Weight")
-                        .HasColumnType("integer")
-                        .HasColumnName("weight");
-
-                    b.HasKey("Id")
-                        .HasName("PK__ProductS__3214EC0715B96228");
-
-                    b.ToTable("ProductStandard", (string)null);
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ProductTest", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime?>("ExpiryDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("ExternalId")
-                        .HasColumnType("citext")
-                        .HasColumnName("externalId");
-
-                    b.Property<DateTime?>("ManufacturingDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("ProductCustomerExternalId")
-                        .HasColumnType("citext")
-                        .HasColumnName("product_customerExternalId");
-
-                    b.Property<string>("ProductExternalId")
-                        .HasColumnType("citext")
-                        .HasColumnName("product_externalId");
-
-                    b.Property<Guid?>("ProductId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("product_id");
-
-                    b.Property<string>("ProductName")
-                        .HasColumnType("citext")
-                        .HasColumnName("product_name");
-
-                    b.Property<string>("ProductPackage")
-                        .HasColumnType("citext")
-                        .HasColumnName("product_package");
-
-                    b.Property<int?>("ProductWeight")
-                        .HasColumnType("integer")
-                        .HasColumnName("product_weight");
-
-                    b.HasKey("Id")
-                        .HasName("PK__ProductT__3213E83F975320C1");
-
-                    b.ToTable("ProductTest", (string)null);
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PurchaseOrder", b =>
-                {
-                    b.Property<Guid>("PurchaseOrderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Comment")
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("CompanyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("CreateDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ExternalId")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("OrderType")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("PLPUComment")
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("PurchaseOrderSnapshotId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("RealDeliveryDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<DateTime?>("RequestDeliveryDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("Status")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<Guid?>("SupplierId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.HasKey("PurchaseOrderId")
-                        .HasName("PK__Purchase__036BACA44B53DA7A");
-
-                    b.HasIndex("PurchaseOrderSnapshotId");
-
-                    b.HasIndex(new[] { "CompanyId" }, "IX_PurchaseOrders_CompanyId");
-
-                    b.HasIndex(new[] { "CreatedBy" }, "IX_PurchaseOrders_CreatedBy");
-
-                    b.HasIndex(new[] { "SupplierId" }, "IX_PurchaseOrders_SupplierId");
-
-                    b.HasIndex(new[] { "UpdatedBy" }, "IX_PurchaseOrders_UpdatedBy");
-
-                    b.ToTable("PurchaseOrders", "Orders");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PurchaseOrderDetail", b =>
-                {
-                    b.Property<Guid>("PurchaseOrderDetailId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("PurchaseOrderDetailId")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<decimal?>("BaseCostSnapshot")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<DateTime?>("BaseDateSnapshot")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<DateTime?>("DeliveryDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("MaterialExternalIDSnapshot")
-                        .HasColumnType("citext");
-
-                    b.Property<Guid>("MaterialId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("MaterialNameSnapshot")
-                        .HasColumnType("citext");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("Package")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("PurchaseOrderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal?>("RealQuantity")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal?>("RequestQuantity")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal?>("TotalPriceAgreed")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal?>("UnitPriceAgreed")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.HasKey("PurchaseOrderDetailId")
-                        .HasName("PK__Purchase__5026B698A94EFE60");
-
-                    b.HasIndex(new[] { "MaterialId" }, "IX_PurchaseOrderDetails_MaterialId");
-
-                    b.HasIndex(new[] { "PurchaseOrderId" }, "IX_PurchaseOrderDetails_PurchaseOrderId");
-
-                    b.ToTable("PurchaseOrderDetails", "Orders");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PurchaseOrderLink", b =>
-                {
-                    b.Property<Guid>("PurchaseOrderLinkId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("PurchaseOrderLinkId")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid?>("MerchandiseOrderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("PurchaseOrderId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("PurchaseOrderLinkId")
-                        .HasName("PK__PurchaseOrderLink__5026B698A94EFE60");
-
-                    b.HasIndex("MerchandiseOrderId");
-
-                    b.HasIndex("PurchaseOrderId");
-
-                    b.ToTable("PurchaseOrderLink", "Orders");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PurchaseOrderSnapshot", b =>
-                {
-                    b.Property<Guid>("PurchaseOrderSnapshotId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("PurchaseOrderSnapshotId")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<string>("DeliveryAddress")
-                        .HasColumnType("text");
-
-                    b.Property<string>("EmailSnapshot")
-                        .HasColumnType("text");
-
-                    b.Property<string>("EmployeeExternalIdSnapshot")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("EmployeeFullNameSnapshot")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("PaymentTypes")
-                        .HasColumnType("text");
-
-                    b.Property<string>("PhoneNumberSnapshot")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SupplierAddressSnapshot")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SupplierContactSnapshot")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SupplierExternalIdSnapshot")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SupplierNameSnapshot")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SupplierPhoneNumberSnapshot")
-                        .HasColumnType("text");
-
-                    b.Property<decimal?>("TotalPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<int?>("Vat")
-                        .HasColumnType("integer");
-
-                    b.HasKey("PurchaseOrderSnapshotId")
-                        .HasName("PK__PurchaseOrderSnapshot__5026B698A94EFE60");
-
-                    b.ToTable("PurchaseOrderSnapshot", "Orders");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PurchaseOrderStatusHistory", b =>
-                {
-                    b.Property<int>("StatusHistoryId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("StatusHistoryId"));
-
-                    b.Property<DateTime?>("ChangedDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<Guid?>("EmployeeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("PurchaseOrderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("StatusFrom")
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<string>("StatusTo")
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.HasKey("StatusHistoryId")
-                        .HasName("PK__Purchase__DB973491370CD24F");
-
-                    b.HasIndex(new[] { "EmployeeId" }, "IX_PurchaseOrderStatusHistory_EmployeeId");
-
-                    b.HasIndex(new[] { "PurchaseOrderId" }, "IX_PurchaseOrderStatusHistory_PurchaseOrderId");
-
-                    b.ToTable("PurchaseOrderStatusHistory", "Orders");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PurchaseOrdersSchedule", b =>
-                {
-                    b.Property<Guid>("PurchaseOrdersScheduleId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<DateTime?>("DeliveryDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<Guid>("PurchaseOrderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<double?>("Quantity")
-                        .HasColumnType("double precision");
-
-                    b.Property<string>("Status")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.HasKey("PurchaseOrdersScheduleId")
-                        .HasName("PK__Purchase__658C1532BFBEF664");
-
-                    b.HasIndex(new[] { "PurchaseOrderId" }, "IX_PurchaseOrdersSchedules_PurchaseOrderId");
-
-                    b.ToTable("PurchaseOrdersSchedules", "Orders");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Qcdetail", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<string>("BatchExternalId")
-                        .HasColumnType("citext");
-
-                    b.Property<Guid?>("BatchId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("MachineExternalId")
-                        .IsRequired()
-                        .HasColumnType("citext");
-
-                    b.HasKey("Id")
-                        .HasName("PK__QCDetail__3214EC07937EA2C5");
-
-                    b.HasIndex(new[] { "BatchId" }, "IX_QCDetail_BatchId")
-                        .IsUnique();
-
-                    b.ToTable("QCDetail", (string)null);
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.RequestDetail", b =>
-                {
-                    b.Property<int>("DetailId")
-                        .HasColumnType("integer")
-                        .HasColumnName("DetailID");
-
-                    b.Property<Guid?>("MaterialId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("MaterialID");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("RequestId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("RequestID");
-
-                    b.Property<string>("RequestStatus")
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<int?>("RequestedQuantity")
-                        .HasColumnType("integer");
-
-                    b.HasKey("DetailId")
-                        .HasName("PK__RequestD__135C314D66D34B2A");
-
-                    b.HasIndex(new[] { "MaterialId" }, "IX_RequestDetail_MaterialID");
-
-                    b.HasIndex(new[] { "RequestId" }, "IX_RequestDetail_RequestID");
-
-                    b.ToTable("RequestDetail", "SupplyRequest");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequest", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.SampleRequest", b =>
                 {
                     b.Property<Guid>("SampleRequestId")
                         .ValueGeneratedOnAdd()
@@ -3728,8 +6508,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("AttachmentCollectionId");
 
                     b.Property<Guid>("BranchId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("BranchId");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
@@ -3916,316 +6695,499 @@ namespace VietausWebAPI.Infrastructure.Migrations
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SchedualMfg", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("Id");
 
-                    b.Property<string>("BagType")
-                        .HasColumnType("citext");
+                    b.Property<int?>("Area")
+                        .HasColumnType("integer")
+                        .HasColumnName("Area");
+
+                    b.Property<string>("BTPStatus")
+                        .HasColumnType("citext")
+                        .HasColumnName("BTPStatus");
 
                     b.Property<string>("ColorCode")
-                        .HasColumnType("citext");
+                        .HasColumnType("citext")
+                        .HasColumnName("ColorCode");
 
                     b.Property<string>("ColorName")
-                        .HasColumnType("citext");
+                        .HasColumnType("citext")
+                        .HasColumnName("ColorName");
 
                     b.Property<DateTime?>("CreatedDate")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("createdDate");
 
-                    b.Property<string>("CustomerExternalId")
-                        .HasColumnType("citext");
-
-                    b.Property<DateTime?>("CustomerRequiredDate")
-                        .HasColumnType("timestamp without time zone");
-
                     b.Property<DateTime?>("ExpectedCompletionDate")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("ExpectedCompletionDate");
 
-                    b.Property<DateTime?>("ExpectedDeliveryDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("ExternalId")
-                        .HasColumnType("citext");
+                    b.Property<int?>("Idpk")
+                        .HasColumnType("integer")
+                        .HasColumnName("Idpk");
 
                     b.Property<string>("MachineId")
-                        .HasColumnType("citext");
+                        .HasColumnType("citext")
+                        .HasColumnName("MachineId");
 
                     b.Property<Guid?>("MfgProductionOrderId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("MfgProductionOrderId");
 
                     b.Property<string>("Note")
-                        .HasColumnType("citext");
+                        .HasColumnType("citext")
+                        .HasColumnName("Note");
 
                     b.Property<int?>("Number")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("Number");
 
                     b.Property<DateTime?>("PlanDate")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("PlanDate");
 
                     b.Property<double?>("ProductAddRate")
-                        .HasColumnType("double precision");
-
-                    b.Property<string>("ProductCustomerExternalId")
-                        .HasColumnType("text");
+                        .HasColumnType("double precision")
+                        .HasColumnName("ProductAddRate");
 
                     b.Property<string>("ProductExpiryType")
-                        .HasColumnType("text");
+                        .HasColumnType("citext")
+                        .HasColumnName("ProductExpiryType");
 
                     b.Property<Guid?>("ProductId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("ProductId");
 
                     b.Property<double?>("ProductMaxTemp")
-                        .HasColumnType("double precision");
-
-                    b.Property<string>("ProductName")
-                        .HasColumnType("text");
+                        .HasColumnType("double precision")
+                        .HasColumnName("ProductMaxTemp");
 
                     b.Property<double?>("ProductRecycleRate")
-                        .HasColumnType("double precision");
+                        .HasColumnType("double precision")
+                        .HasColumnName("ProductRecycleRate");
 
                     b.Property<bool?>("ProductRohsStandard")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("ProductRohsStandard");
 
                     b.Property<double?>("ProductWeight")
-                        .HasColumnType("double precision");
+                        .HasColumnType("double precision")
+                        .HasColumnName("ProductWeight");
 
                     b.Property<string>("Qcstatus")
                         .HasColumnType("citext")
                         .HasColumnName("QCStatus");
 
                     b.Property<int?>("Quantity")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("Quantity");
+
+                    b.Property<bool?>("ReachStandard")
+                        .HasColumnType("boolean")
+                        .HasColumnName("ReachStandard");
 
                     b.Property<string>("Status")
-                        .HasColumnType("citext");
+                        .HasColumnType("citext")
+                        .HasColumnName("Status");
+
+                    b.Property<int?>("StepOfProduct")
+                        .HasColumnType("integer")
+                        .HasColumnName("StepOfProduct");
 
                     b.Property<string>("VerifyBatches")
-                        .HasColumnType("citext");
+                        .HasColumnType("citext")
+                        .HasColumnName("VerifyBatches");
 
                     b.Property<string>("requirement")
-                        .HasColumnType("text");
+                        .HasColumnType("citext")
+                        .HasColumnName("requirement");
 
                     b.HasKey("Id")
                         .HasName("PK__Schedual__3214EC07A98DEC4E");
 
+                    b.HasIndex("MfgProductionOrderId");
+
+                    b.HasIndex("ProductId");
+
                     b.ToTable("SchedualMfg", "Schedual");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Supplier", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ShiftReportSchema.EndOfShiftReportDetailForAll", b =>
                 {
-                    b.Property<Guid>("SupplierId")
+                    b.Property<string>("ExternalId")
+                        .HasColumnType("citext")
+                        .HasColumnName("externalid");
+
+                    b.Property<decimal?>("NetWeight")
+                        .HasPrecision(16, 3)
+                        .HasColumnType("numeric(16,3)")
+                        .HasColumnName("netweight");
+
+                    b.Property<string>("ProductType")
+                        .HasColumnType("text")
+                        .HasColumnName("producttype");
+
+                    b.Property<long>("ShiftReportDetailForAllId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("gen_random_uuid()");
+                        .HasColumnType("bigint")
+                        .HasColumnName("shiftreportdetailforall_id");
 
-                    b.Property<Guid?>("CompanyId")
-                        .HasColumnType("uuid");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("ShiftReportDetailForAllId"));
 
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
+                    b.Property<decimal?>("WeightStockedKg")
+                        .HasPrecision(16, 3)
+                        .HasColumnType("numeric(16,3)")
+                        .HasColumnName("weightstockedkg");
 
-                    b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamp without time zone");
+                    b.HasIndex("ExternalId")
+                        .HasDatabaseName("ix_eosrdf_externalid");
+
+                    b.ToTable("endofshiftreportdetailforall", "shiftreports");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ShiftReportSchema.EndOfShiftReportForAll", b =>
+                {
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<string>("ExternalId")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("citext")
+                        .HasColumnName("externalid");
 
-                    b.Property<string>("FaxNumber")
-                        .HasColumnType("text");
-
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<DateTime?>("IssueDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("IssuedPlace")
-                        .HasColumnType("citext");
+                    b.Property<Guid>("MachineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("machineid");
 
                     b.Property<string>("Note")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("text")
+                        .HasColumnName("note");
 
-                    b.Property<string>("Phone")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                    b.Property<Guid>("Operator")
+                        .HasColumnType("uuid")
+                        .HasColumnName("operator");
 
-                    b.Property<int>("Priority")
-                        .HasColumnType("integer");
+                    b.Property<string>("ProductCode")
+                        .HasColumnType("citext")
+                        .HasColumnName("productcode");
 
-                    b.Property<string>("RegistrationNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<string>("ProductStatus")
+                        .HasColumnType("text")
+                        .HasColumnName("productstatus");
 
-                    b.Property<string>("SupplierName")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                    b.Property<short>("ShiftId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("shiftid");
 
-                    b.Property<string>("TaxNumber")
-                        .HasColumnType("text");
+                    b.Property<long>("ShiftReportForAllId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("shiftreportforall_id");
 
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("ShiftReportForAllId"));
 
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp without time zone");
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_eosrf_created_at");
 
-                    b.Property<string>("Website")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                    b.HasIndex("ProductCode")
+                        .HasDatabaseName("ix_eosrf_productcode");
 
-                    b.HasKey("SupplierId")
-                        .HasName("PK__Supplier__4BE666B4029CD1B8");
+                    b.HasIndex("MachineId", "ShiftId")
+                        .HasDatabaseName("ix_eosrf_machine_shift");
 
-                    b.HasIndex("UpdatedBy");
-
-                    b.HasIndex(new[] { "CompanyId" }, "IX_Suppliers_CompanyId");
-
-                    b.HasIndex(new[] { "CreatedBy" }, "IX_Suppliers_CreatedBy");
-
-                    b.ToTable("Suppliers", "Material");
+                    b.ToTable("endofshiftreportforall", "shiftreports");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SupplierAddress", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ShiftReportSchema.OperationHistoryMd", b =>
                 {
-                    b.Property<Guid>("AddressId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("gen_random_uuid()");
+                    b.Property<int?>("Act1")
+                        .HasColumnType("integer")
+                        .HasColumnName("act1");
 
-                    b.Property<string>("AddressLine")
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
+                    b.Property<int?>("Act10")
+                        .HasColumnType("integer")
+                        .HasColumnName("act10");
 
-                    b.Property<string>("City")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<int?>("Act11")
+                        .HasColumnType("integer")
+                        .HasColumnName("act11");
 
-                    b.Property<string>("Country")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<int?>("Act12")
+                        .HasColumnType("integer")
+                        .HasColumnName("act12");
 
-                    b.Property<string>("District")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<int?>("Act13")
+                        .HasColumnType("integer")
+                        .HasColumnName("act13");
 
-                    b.Property<bool?>("IsPrimary")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
+                    b.Property<int?>("Act2")
+                        .HasColumnType("integer")
+                        .HasColumnName("act2");
 
-                    b.Property<string>("PostalCode")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                    b.Property<int?>("Act3")
+                        .HasColumnType("integer")
+                        .HasColumnName("act3");
 
-                    b.Property<string>("Province")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<int?>("Act4")
+                        .HasColumnType("integer")
+                        .HasColumnName("act4");
 
-                    b.Property<Guid>("SupplierId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("Act5")
+                        .HasColumnType("integer")
+                        .HasColumnName("act5");
 
-                    b.HasKey("AddressId")
-                        .HasName("PK__Supplier__091C2AFB0B8862E7");
+                    b.Property<int?>("Act6")
+                        .HasColumnType("integer")
+                        .HasColumnName("act6");
 
-                    b.HasIndex(new[] { "SupplierId" }, "IX_SupplierAddresses_SupplierId");
+                    b.Property<int?>("Act7")
+                        .HasColumnType("integer")
+                        .HasColumnName("act7");
 
-                    b.ToTable("SupplierAddresses", "Material");
-                });
+                    b.Property<int?>("Act8")
+                        .HasColumnType("integer")
+                        .HasColumnName("act8");
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SupplierContact", b =>
-                {
-                    b.Property<Guid>("ContactId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("gen_random_uuid()");
+                    b.Property<int?>("Act9")
+                        .HasColumnType("integer")
+                        .HasColumnName("act9");
 
-                    b.Property<string>("Email")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("FirstName")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Gender")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<bool?>("IsPrimary")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("LastName")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Phone")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<Guid>("SupplierId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("ContactId")
-                        .HasName("PK__Supplier__5C66259B7A3571DD");
-
-                    b.HasIndex(new[] { "SupplierId" }, "IX_SupplierContacts_SupplierId");
-
-                    b.ToTable("SupplierContacts", "Material");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SupplyRequest", b =>
-                {
-                    b.Property<Guid>("RequestId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("RequestID");
-
-                    b.Property<string>("CancelNote")
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("CompanyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("timestamp without time zone");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<string>("ExternalId")
+                        .HasColumnType("text")
+                        .HasColumnName("externalId");
+
+                    b.Property<int?>("FeederSpeed")
+                        .HasColumnType("integer")
+                        .HasColumnName("feederspeed");
+
+                    b.Property<string>("ProductCode")
+                        .HasColumnType("text")
+                        .HasColumnName("productcode");
+
+                    b.Property<int?>("ScrewCurrent")
+                        .HasColumnType("integer")
+                        .HasColumnName("screwcurrent");
+
+                    b.Property<int?>("ScrewSpeed")
+                        .HasColumnType("integer")
+                        .HasColumnName("screwspeed");
+
+                    b.Property<int?>("Set1")
+                        .HasColumnType("integer")
+                        .HasColumnName("set1");
+
+                    b.Property<int?>("Set10")
+                        .HasColumnType("integer")
+                        .HasColumnName("set10");
+
+                    b.Property<int?>("Set11")
+                        .HasColumnType("integer")
+                        .HasColumnName("set11");
+
+                    b.Property<int?>("Set12")
+                        .HasColumnType("integer")
+                        .HasColumnName("set12");
+
+                    b.Property<int?>("Set13")
+                        .HasColumnType("integer")
+                        .HasColumnName("set13");
+
+                    b.Property<int?>("Set2")
+                        .HasColumnType("integer")
+                        .HasColumnName("set2");
+
+                    b.Property<int?>("Set3")
+                        .HasColumnType("integer")
+                        .HasColumnName("set3");
+
+                    b.Property<int?>("Set4")
+                        .HasColumnType("integer")
+                        .HasColumnName("set4");
+
+                    b.Property<int?>("Set5")
+                        .HasColumnType("integer")
+                        .HasColumnName("set5");
+
+                    b.Property<int?>("Set6")
+                        .HasColumnType("integer")
+                        .HasColumnName("set6");
+
+                    b.Property<int?>("Set7")
+                        .HasColumnType("integer")
+                        .HasColumnName("set7");
+
+                    b.Property<int?>("Set8")
+                        .HasColumnType("integer")
+                        .HasColumnName("set8");
+
+                    b.Property<int?>("Set9")
+                        .HasColumnType("integer")
+                        .HasColumnName("set9");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_op_history_created_at");
+
+                    b.HasIndex("ProductCode", "CreatedAt")
+                        .HasDatabaseName("ix_op_history_prod_created_at");
+
+                    b.ToTable("OperationHistory_MD", "shiftreports");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ShiftReportSchema.TempEndOfShiftReportForAll", b =>
+                {
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ExternalId")
+                        .HasColumnType("citext")
+                        .HasColumnName("externalid");
+
+                    b.Property<Guid>("MachineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("machineid");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<Guid>("Operator")
+                        .HasColumnType("uuid")
+                        .HasColumnName("operator");
+
+                    b.Property<string>("ProductCode")
+                        .HasColumnType("citext")
+                        .HasColumnName("productcode");
+
+                    b.Property<string>("ProductStatus")
+                        .HasColumnType("text")
+                        .HasColumnName("productstatus");
+
+                    b.Property<short>("ShiftId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("shiftid");
+
+                    b.Property<long>("TempShiftReportForAllId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("temshiftreportforall_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("TempShiftReportForAllId"));
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_temp_eosrf_created_at");
+
+                    b.HasIndex("MachineId", "ShiftId")
+                        .HasDatabaseName("ix_temp_eosrf_machine_shift");
+
+                    b.ToTable("tempendofshiftreportforall", "shiftreports");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SupplyRequestSchema.SupplyRequest", b =>
+                {
+                    b.Property<Guid>("SupplyRequestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("requestid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("createdby");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_date");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)")
-                        .HasColumnName("ExternalID");
+                        .HasColumnName("externalid");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<string>("Note")
-                        .HasColumnType("text");
-
-                    b.Property<string>("RequestSourceType")
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
+                        .HasColumnType("text")
+                        .HasColumnName("note");
 
                     b.Property<string>("RequestStatus")
+                        .IsRequired()
                         .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("requeststatus");
 
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
+                    b.HasKey("SupplyRequestId")
+                        .HasName("pk_supply_requests");
 
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp without time zone");
+                    b.HasIndex("CreatedBy")
+                        .HasDatabaseName("ix_supply_requests_createdby");
 
-                    b.HasKey("RequestId")
-                        .HasName("PK__SupplyRe__33A8519A7A78FE1B");
+                    b.HasIndex("ExternalId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_supply_requests_externalid");
 
-                    b.HasIndex(new[] { "CompanyId" }, "IX_SupplyRequests_CompanyId");
-
-                    b.HasIndex(new[] { "CreatedBy" }, "IX_SupplyRequests_CreatedBy");
-
-                    b.HasIndex(new[] { "UpdatedBy" }, "IX_SupplyRequests_UpdatedBy");
+                    b.HasIndex("RequestStatus", "CreatedDate")
+                        .HasDatabaseName("ix_supply_requests_status_createddate");
 
                     b.ToTable("SupplyRequests", "SupplyRequest");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SupplyRequestSchema.SupplyRequestDetail", b =>
+                {
+                    b.Property<int>("DetailId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("detailid");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DetailId"));
+
+                    b.Property<Guid>("MaterialId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("materialid");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<int?>("RealQuantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("real_quantity");
+
+                    b.Property<DateTime?>("ReceptDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("recept_date");
+
+                    b.Property<int>("RequestedQuantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("requestedquantity");
+
+                    b.Property<Guid>("SupplyRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requestid");
+
+                    b.HasKey("DetailId")
+                        .HasName("pk_supply_request_details");
+
+                    b.HasIndex("MaterialId")
+                        .HasDatabaseName("ix_sr_details_materialid");
+
+                    b.HasIndex("SupplyRequestId")
+                        .HasDatabaseName("ix_sr_details_requestid");
+
+                    b.HasIndex("SupplyRequestId", "MaterialId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_sr_details_request_material");
+
+                    b.ToTable("SupplyRequestDetails", "SupplyRequest");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Unit", b =>
@@ -4266,19 +7228,73 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("Units", "Material");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseRequest", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.UsagePurpose", b =>
+                {
+                    b.Property<int>("PurposeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("purposeId");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("PurposeId"));
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("isActive");
+
+                    b.Property<bool>("IsPickable")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("isPickable");
+
+                    b.Property<bool>("IsReceivable")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("isReceivable");
+
+                    b.Property<string>("PurposeCode")
+                        .IsRequired()
+                        .HasColumnType("citext")
+                        .HasColumnName("purposeCode");
+
+                    b.Property<string>("PurposeName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("purposeName");
+
+                    b.Property<string>("PurposeNote")
+                        .HasColumnType("text")
+                        .HasColumnName("purposeNote");
+
+                    b.HasKey("PurposeId")
+                        .HasName("PK__UsagePurposes__purposeId");
+
+                    b.HasIndex("PurposeCode")
+                        .IsUnique()
+                        .HasDatabaseName("ux_usagepurposes_purposecode");
+
+                    b.ToTable("UsagePurposes", "Warehouse");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseRequest", b =>
                 {
                     b.Property<int>("RequestId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("requestId");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("RequestId"));
 
                     b.Property<Guid>("CompanyId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("companyId");
 
                     b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("createdBy");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("timestamp without time zone");
@@ -4287,10 +7303,12 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<int>("ReqStatus")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("reqStatus");
 
                     b.Property<int>("ReqType")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("reqType");
 
                     b.Property<string>("RequestCode")
                         .IsRequired()
@@ -4298,10 +7316,12 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Property<string>("RequestName")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("requestName");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("updatedBy");
 
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("timestamp without time zone");
@@ -4322,11 +7342,12 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("WarehouseRequest", "Warehouse");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseRequestDetail", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseRequestDetail", b =>
                 {
                     b.Property<int>("DetailId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("detailId");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("DetailId"));
 
@@ -4349,7 +7370,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<int>("RequestId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("requestId");
 
                     b.Property<string>("StockStatus")
                         .IsRequired()
@@ -4357,117 +7379,419 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Property<decimal>("WeightKg")
                         .HasPrecision(18, 3)
-                        .HasColumnType("numeric(18,3)");
+                        .HasColumnType("numeric(18,3)")
+                        .HasColumnName("weightKg");
 
                     b.HasKey("DetailId")
-                        .HasName("PK__WareHouseRequestDetail__3214EC07A98DEC4E");
+                        .HasName("PK__WareHouseRequestDetail__detailId");
 
                     b.HasIndex(new[] { "RequestId" }, "IX_WarehouseRequestDetail_RequestCode");
 
                     b.ToTable("WarehouseRequestDetail", "Warehouse");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseShelfStock", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseShelfLedger", b =>
+                {
+                    b.Property<long>("LedgerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("ledgerId");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("LedgerId"));
+
+                    b.Property<decimal>("AfterKg")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("afterKg");
+
+                    b.Property<string>("AppSource")
+                        .HasColumnType("text")
+                        .HasColumnName("appSource");
+
+                    b.Property<decimal>("BeforeKg")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("beforeKg");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("companyId");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("createdAt")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("createdBy");
+
+                    b.Property<decimal>("DeltaKg")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("deltaKg");
+
+                    b.Property<string>("LotNumber")
+                        .HasColumnType("text")
+                        .HasColumnName("lotNumber");
+
+                    b.Property<string>("ProductCode")
+                        .HasColumnType("text")
+                        .HasColumnName("productCode");
+
+                    b.Property<int?>("PurposeId")
+                        .HasColumnType("integer")
+                        .HasColumnName("purposeId");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("text")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("RequestCode")
+                        .HasColumnType("text")
+                        .HasColumnName("requestCode");
+
+                    b.Property<int>("SlotId")
+                        .HasColumnType("integer")
+                        .HasColumnName("slotId");
+
+                    b.Property<long?>("VoucherDetailId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("voucherDetailId");
+
+                    b.Property<long?>("VoucherId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("voucherId");
+
+                    b.HasKey("LedgerId")
+                        .HasName("PK_WarehouseShelfLedger_LedgerId");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("SlotId");
+
+                    b.HasIndex("VoucherId")
+                        .HasDatabaseName("ix_wsledger_voucher");
+
+                    b.HasIndex("CompanyId", "SlotId", "CreatedAt")
+                        .HasDatabaseName("ix_wsledger_company_slot_created");
+
+                    b.ToTable("WarehouseShelfLedger", "Warehouse", t =>
+                        {
+                            t.HasCheckConstraint("ck_wsledger_flow", "\"afterKg\" = \"beforeKg\" + \"deltaKg\"");
+                        });
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseShelfStock", b =>
                 {
                     b.Property<int>("SlotId")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("SlotId"));
 
                     b.Property<int?>("Bags")
                         .HasColumnType("integer");
 
-                    b.Property<string>("BatchNo")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasColumnType("citext");
+                        .HasColumnType("citext")
+                        .HasColumnName("code");
 
                     b.Property<Guid>("CompanyId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("companyId");
 
                     b.Property<string>("LotKey")
-                        .HasColumnType("citext");
+                        .HasColumnType("citext")
+                        .HasColumnName("lotKey");
+
+                    b.Property<string>("LotNo")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("LotNo");
 
                     b.Property<decimal>("QtyKg")
                         .HasPrecision(18, 3)
-                        .HasColumnType("numeric(18,3)");
+                        .HasColumnType("numeric(18,3)")
+                        .HasColumnName("qtyKg");
 
-                    b.Property<string>("SlotCode")
+                    b.Property<string>("ShelfStockCode")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("ShelfStockCode");
+
+                    b.Property<int>("ShelfStockId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("ShelfStockId");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("ShelfStockId"));
 
                     b.Property<int>("StockType")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("stockType");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("updatedBy");
 
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("timestamp without time zone");
 
                     b.HasKey("SlotId")
-                        .HasName("PK__WarehouseShelfStock__3214EC07A98DEC4E");
+                        .HasName("PK__WarehouseShelfStock__slotId");
 
                     b.HasIndex("UpdatedBy");
 
-                    b.HasIndex("CompanyId", "Code");
+                    b.HasIndex("CompanyId", "Code")
+                        .HasDatabaseName("IX_WarehouseShelfStock_company_code");
 
-                    b.HasIndex("CompanyId", "Code", "LotKey");
+                    b.HasIndex("CompanyId", "Code", "LotKey")
+                        .HasDatabaseName("IX_WarehouseShelfStock_company_code_lot");
 
                     b.ToTable("WarehouseShelfStock", "Warehouse");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseTempStock", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseShelves", b =>
+                {
+                    b.Property<int>("SlotId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("ShelfStockId");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("SlotId"));
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("companyId");
+
+                    b.Property<decimal>("CurrentWeightKg")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("currentWeightKg");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("isActive");
+
+                    b.Property<DateTime?>("LastUpdated")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("lastUpdated")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<decimal>("MaxWeightKg")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("maxWeightKg");
+
+                    b.Property<string>("SlotCode")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("ShelfStockCode");
+
+                    b.HasKey("SlotId")
+                        .HasName("PK_WarehouseShelves_SlotId");
+
+                    b.HasIndex("LastUpdated")
+                        .HasDatabaseName("ix_warehouseshelves_lastupdated");
+
+                    b.HasIndex("CompanyId", "SlotCode")
+                        .IsUnique()
+                        .HasDatabaseName("ux_warehouseshelves_company_slotcode");
+
+                    b.ToTable("WarehouseShelves", "Warehouse");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseTempStock", b =>
                 {
                     b.Property<int>("TempId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("tempId");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("TempId"));
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasColumnType("citext");
+                        .HasColumnType("citext")
+                        .HasColumnName("code");
 
                     b.Property<Guid>("CompanyId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("companyId");
 
                     b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("createdBy");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("LotKey")
-                        .HasColumnType("citext");
+                        .HasColumnType("citext")
+                        .HasColumnName("lotKey");
 
                     b.Property<decimal?>("QtyRequest")
                         .HasPrecision(18, 3)
-                        .HasColumnType("numeric(18,3)");
+                        .HasColumnType("numeric(18,3)")
+                        .HasColumnName("qtyRequest");
 
                     b.Property<decimal?>("QtyUsed")
                         .HasColumnType("numeric");
 
                     b.Property<string>("ReserveStatus")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("reserveStatus");
 
                     b.Property<string>("VaCode")
                         .IsRequired()
-                        .HasColumnType("citext");
+                        .HasColumnType("citext")
+                        .HasColumnName("vaCode");
 
                     b.HasKey("TempId")
-                        .HasName("PK__WarehouseTempStock__3214EC07A98DEC4E");
+                        .HasName("PK__WarehouseTempStock__tempId");
 
                     b.HasIndex("CreatedBy");
 
-                    b.HasIndex("CompanyId", "VaCode");
+                    b.HasIndex("CompanyId", "VaCode")
+                        .HasDatabaseName("IX_WarehouseTempStock_company_va");
 
                     b.ToTable("WarehouseTempStock", "Warehouse");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseVoucher", b =>
+                {
+                    b.Property<long>("VoucherId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("voucherId");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("VoucherId"));
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("companyId");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("createdBy");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("createdDate");
+
+                    b.Property<Guid?>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("RequestId")
+                        .HasColumnType("integer")
+                        .HasColumnName("requestId");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<string>("VoucherCode")
+                        .IsRequired()
+                        .HasColumnType("citext")
+                        .HasColumnName("voucherCode");
+
+                    b.Property<int>("VoucherType")
+                        .HasColumnType("integer")
+                        .HasColumnName("voucherType");
+
+                    b.HasKey("VoucherId")
+                        .HasName("PK__WarehouseVouchers__voucherId");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("RequestId");
+
+                    b.HasIndex("CompanyId", "CreatedDate")
+                        .HasDatabaseName("ix_vouchers_company_created");
+
+                    b.HasIndex("CompanyId", "VoucherCode")
+                        .IsUnique()
+                        .HasDatabaseName("ux_vouchers_company_code");
+
+                    b.ToTable("WarehouseVouchers", "Warehouse");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseVoucherDetail", b =>
+                {
+                    b.Property<long>("VoucherDetailId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("voucherDetailId");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("VoucherDetailId"));
+
+                    b.Property<int?>("Bags")
+                        .HasColumnType("integer")
+                        .HasColumnName("bags");
+
+                    b.Property<bool>("IsIncrease")
+                        .HasColumnType("boolean")
+                        .HasColumnName("isIncrease");
+
+                    b.Property<int>("LineNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("lineNo");
+
+                    b.Property<string>("LotNumber")
+                        .HasColumnType("citext")
+                        .HasColumnName("lotNumber");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<string>("ProductCode")
+                        .IsRequired()
+                        .HasColumnType("citext")
+                        .HasColumnName("productCode");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("productName");
+
+                    b.Property<int?>("PurposeId")
+                        .HasColumnType("integer")
+                        .HasColumnName("purposeId");
+
+                    b.Property<decimal>("QtyKg")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("qtyKg");
+
+                    b.Property<int?>("SlotId")
+                        .HasColumnType("integer")
+                        .HasColumnName("slotId");
+
+                    b.Property<long>("VoucherId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("voucherId");
+
+                    b.HasKey("VoucherDetailId")
+                        .HasName("PK__WarehouseVoucherDetails__voucherDetailId");
+
+                    b.HasIndex("PurposeId");
+
+                    b.HasIndex("SlotId")
+                        .HasDatabaseName("ix_voucherdetails_slot");
+
+                    b.HasIndex("VoucherId", "LineNo")
+                        .IsUnique()
+                        .HasDatabaseName("ux_voucherdetails_voucher_lineno");
+
+                    b.ToTable("WarehouseVoucherDetails", "Warehouse");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Identity.ApplicationRole", b =>
@@ -4630,32 +7954,11 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Address", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.AttachmentSchema.AttachmentCollection", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Customer", "Customer")
-                        .WithMany("Addresses")
-                        .HasForeignKey("CustomerId")
-                        .IsRequired()
-                        .HasConstraintName("FK_Address_Customer");
-
-                    b.Navigation("Customer");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ApprovalHistory", b =>
-                {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "Employee")
-                        .WithMany("ApprovalHistories")
-                        .HasForeignKey("EmployeeId")
-                        .HasConstraintName("FK_ApprovalHistory_EmployeeID");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SupplyRequest", "Request")
-                        .WithMany("ApprovalHistories")
-                        .HasForeignKey("RequestId")
-                        .HasConstraintName("FK_ApprovalHistory_RequestID");
-
-                    b.Navigation("Employee");
-
-                    b.Navigation("Request");
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Material", null)
+                        .WithMany("AttachmentCollections")
+                        .HasForeignKey("MaterialId");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.AttachmentSchema.AttachmentModel", b =>
@@ -4680,47 +7983,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("CreatedByNavigation");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Branch", b =>
-                {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
-                        .WithMany("Branches")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK__Branches__Compan__0C70CFB4");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
-                        .WithMany("BranchCreatedByNavigations")
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_Branches_CreatedBy");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "UpdatedByNavigation")
-                        .WithMany("BranchUpdatedByNavigations")
-                        .HasForeignKey("UpdatedBy")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_Branches_UpdatedBy");
-
-                    b.Navigation("Company");
-
-                    b.Navigation("CreatedByNavigation");
-
-                    b.Navigation("UpdatedByNavigation");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Category", b =>
-                {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
-                        .WithMany("Categories")
-                        .HasForeignKey("CompanyId")
-                        .IsRequired()
-                        .HasConstraintName("FK_Categories_Company");
-
-                    b.Navigation("Company");
-                });
-
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Company", b =>
                 {
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
@@ -4738,9 +8000,20 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("UpdatedByNavigation");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Contact", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerSchema.Address", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Customer", "Customer")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.CustomerSchema.Customer", "Customer")
+                        .WithMany("Addresses")
+                        .HasForeignKey("CustomerId")
+                        .IsRequired()
+                        .HasConstraintName("FK_Address_Customer");
+
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerSchema.Contact", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.CustomerSchema.Customer", "Customer")
                         .WithMany("Contacts")
                         .HasForeignKey("CustomerId")
                         .IsRequired()
@@ -4749,7 +8022,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("Customer");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Customer", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerSchema.Customer", b =>
                 {
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
                         .WithMany("Customers")
@@ -4778,7 +8051,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("UpdatedByNavigation");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerAssignment", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerSchema.CustomerAssignment", b =>
                 {
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
                         .WithMany("CustomerAssignments")
@@ -4794,7 +8067,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_CustomerAssignment_CreatedBy");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Customer", "Customer")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.CustomerSchema.Customer", "Customer")
                         .WithMany("CustomerAssignments")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -4835,7 +8108,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("UpdatedByNavigation");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerTransferLog", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerSchema.CustomerTransferLog", b =>
                 {
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
                         .WithMany("CustomerTransferLogs")
@@ -4892,16 +8165,37 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("ToGroup");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Deliverer", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerSchema.DetailCustomerTransfer", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.DelivererInfor", "DelivererInfor")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.CustomerSchema.Customer", "Customer")
+                        .WithMany("DetailCustomerTransfers")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_DetailCustomerTransfer_Customer");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.CustomerSchema.CustomerTransferLog", "Log")
+                        .WithMany("DetailCustomerTransfers")
+                        .HasForeignKey("LogId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_DetailCustomerTransfer_Log");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Log");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DeliverySchema.Deliverer", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.DeliverySchema.DelivererInfor", "DelivererInfor")
                         .WithMany()
                         .HasForeignKey("DelivererInforId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_Deliverer_DelivererInforId");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.DeliveryOrder", "DeliveryOrder")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.DeliverySchema.DeliveryOrder", "DeliveryOrder")
                         .WithMany("Deliverers")
                         .HasForeignKey("DeliveryOrderId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -4913,7 +8207,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("DeliveryOrder");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DeliveryOrder", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DeliverySchema.DeliveryOrder", b =>
                 {
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
                         .WithMany()
@@ -4922,27 +8216,19 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasConstraintName("FK_DeliveryOrder_Company");
 
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
-                        .WithMany()
+                        .WithMany("DeliveryOrderCreatedByNavigations")
                         .HasForeignKey("CreatedBy")
                         .IsRequired()
                         .HasConstraintName("FK_DeliveryOrder_CreatedBy");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Customer", "Customer")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.CustomerSchema.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
                         .IsRequired()
                         .HasConstraintName("FK_DeliveryOrder_Customer");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", null)
-                        .WithMany("DeliveryOrderCreatedByNavigations")
-                        .HasForeignKey("EmployeeId");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", null)
-                        .WithMany("DeliveryOrderUpdatedByNavigations")
-                        .HasForeignKey("EmployeeId1");
-
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "UpdatedByNavigation")
-                        .WithMany()
+                        .WithMany("DeliveryOrderUpdatedByNavigations")
                         .HasForeignKey("UpdatedBy")
                         .HasConstraintName("FK_DeliveryOrder_UpdatedBy");
 
@@ -4955,39 +8241,26 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("UpdatedByNavigation");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DeliveryOrderDetail", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DeliverySchema.DeliveryOrderDetail", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.DeliveryOrder", "DeliveryOrder")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.DeliverySchema.DeliveryOrder", "DeliveryOrder")
                         .WithMany("Details")
                         .HasForeignKey("DeliveryOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_DeliveryOrderDetail_DeliveryOrder");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MerchandiseOrderDetail", null)
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.OrderSchema.MerchandiseOrderDetail", "MerchandiseOrderDetail")
                         .WithMany("DeliveryOrderDetails")
-                        .HasForeignKey("MerchandiseOrderDetailId");
+                        .HasForeignKey("MerchandiseOrderDetailId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_DeliveryOrderDetail_MerchandiseOrderDetail");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MerchandiseOrder", null)
-                        .WithMany("DeliveryOrderDetails")
-                        .HasForeignKey("MerchandiseOrderId");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Product", "Product")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Product", "Product")
                         .WithMany("DeliveryOrderDetails")
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("FK_DeliveryOrderDetail_Product");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.DeliveryOrderPO", null)
-                        .WithMany()
-                        .HasForeignKey("DeliveryOrderId", "MerchandiseOrderId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MerchandiseOrderDetail", "MerchandiseOrderDetail")
-                        .WithMany()
-                        .HasForeignKey("MerchandiseOrderDetailId", "MerchandiseOrderId")
-                        .HasPrincipalKey("MerchandiseOrderDetailId", "MerchandiseOrderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("FK_DeliveryOrderDetail_MerchandiseOrder");
 
                     b.Navigation("DeliveryOrder");
 
@@ -4996,51 +8269,47 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DeliveryOrderPO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DeliverySchema.DeliveryOrderPO", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.DeliveryOrder", "DeliveryOrder")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.DeliverySchema.DeliveryOrder", "DeliveryOrder")
                         .WithMany("DeliveryOrderPOs")
                         .HasForeignKey("DeliveryOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MerchandiseOrder", "MerchandiseOrder")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.OrderSchema.MerchandiseOrder", "MerchandiseOrder")
                         .WithMany("DeliveryOrderPOs")
                         .HasForeignKey("MerchandiseOrderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.WarehouseRequest", "WarehouseRequest")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseRequest", null)
                         .WithMany("DeliveryOrderPOs")
-                        .HasForeignKey("WarehouseRequestId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("WarehouseRequestRequestId");
 
                     b.Navigation("DeliveryOrder");
 
                     b.Navigation("MerchandiseOrder");
-
-                    b.Navigation("WarehouseRequest");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DetailCustomerTransfer", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DevandqaSchema.ProductStandard", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Customer", "Customer")
-                        .WithMany("DetailCustomerTransfers")
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
                         .IsRequired()
-                        .HasConstraintName("FK_DetailCustomerTransfer_Customer");
+                        .HasConstraintName("FK_ProductStandard_Company");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.CustomerTransferLog", "Log")
-                        .WithMany("DetailCustomerTransfers")
-                        .HasForeignKey("LogId")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("FK_DetailCustomerTransfer_Log");
+                        .HasConstraintName("FK_ProductStandard_CreatedBy");
 
-                    b.Navigation("Customer");
+                    b.Navigation("Company");
 
-                    b.Navigation("Log");
+                    b.Navigation("CreatedByNavigation");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Employee", b =>
@@ -5058,6 +8327,156 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("Company");
 
                     b.Navigation("Part");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyGroupTariffMap", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyGroup", "Group")
+                        .WithMany("EnergyGroupTariffMaps")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_energy_gtm_group");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTariff", "Tariff")
+                        .WithMany("EnergyGroupTariffMaps")
+                        .HasForeignKey("TariffId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_energy_gtm_tariff");
+
+                    b.Navigation("Group");
+
+                    b.Navigation("Tariff");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyMeter", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyGroup", "Group")
+                        .WithMany("Meters")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_energy_meters_group");
+
+                    b.Navigation("Group");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyMeterCommConfig", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyMeter", "Meter")
+                        .WithOne()
+                        .HasForeignKey("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyMeterCommConfig", "MeterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_energy_mcc_meter");
+
+                    b.Navigation("Meter");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyMeterGroupHistory", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyGroup", "Group")
+                        .WithMany()
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_energy_mgh_group");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyMeter", "Meter")
+                        .WithMany()
+                        .HasForeignKey("MeterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_energy_mgh_meter");
+
+                    b.Navigation("Group");
+
+                    b.Navigation("Meter");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyReadingsHourly", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyMeter", "Meter")
+                        .WithMany()
+                        .HasForeignKey("MeterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_energy_rh_meter");
+
+                    b.Navigation("Meter");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyReadingsHourlyVn", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyMeter", "Meter")
+                        .WithMany()
+                        .HasForeignKey("MeterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_energy_rhvn_meter");
+
+                    b.Navigation("Meter");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyRegisterSnapshot", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyMeter", "Meter")
+                        .WithMany()
+                        .HasForeignKey("MeterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_energy_register_snapshots_meter");
+
+                    b.Navigation("Meter");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTariffBandRate", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTariffVersion", "Version")
+                        .WithMany("BandRates")
+                        .HasForeignKey("VersionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_energy_tariff_band_rates_version");
+
+                    b.Navigation("Version");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTariffVersion", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTariff", "Tariff")
+                        .WithMany("Versions")
+                        .HasForeignKey("TariffId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_energy_tariff_versions_tariff");
+
+                    b.Navigation("Tariff");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTouException", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTouCalendar", "Calendar")
+                        .WithMany("Exceptions")
+                        .HasForeignKey("CalendarId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_energy_tou_exc_calendar");
+
+                    b.Navigation("Calendar");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTouWindow", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTouCalendar", "Calendar")
+                        .WithMany()
+                        .HasForeignKey("CalendarId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_energy_tou_windows_calendar");
+
+                    b.Navigation("Calendar");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EventLog", b =>
@@ -5090,86 +8509,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("Part");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Formula", b =>
-                {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CheckByNavigation")
-                        .WithMany("FormulaCheckByNavigations")
-                        .HasForeignKey("CheckBy")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("FK_Formulas_CheckBy");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
-                        .WithMany("Formulas")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("FK_Formulas_Company");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
-                        .WithMany("FormulaCreatedByNavigations")
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("FK_Formulas_CreatedBy");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Product", "Product")
-                        .WithMany("Formulas")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_Formulas_Product");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "SentByNavigation")
-                        .WithMany("FormulaSentByNavigations")
-                        .HasForeignKey("SentBy")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("FK_Formulas_SentBy");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "UpdatedByNavigation")
-                        .WithMany("FormulaUpdatedByNavigations")
-                        .HasForeignKey("UpdatedBy")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("FK_Formulas_UpdatedBy");
-
-                    b.Navigation("CheckByNavigation");
-
-                    b.Navigation("Company");
-
-                    b.Navigation("CreatedByNavigation");
-
-                    b.Navigation("Product");
-
-                    b.Navigation("SentByNavigation");
-
-                    b.Navigation("UpdatedByNavigation");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.FormulaMaterial", b =>
-                {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Category", "Category")
-                        .WithMany("FormulaMaterials")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_FormulaMaterials_Category");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Formula", "Formula")
-                        .WithMany("FormulaMaterials")
-                        .HasForeignKey("FormulaId")
-                        .IsRequired()
-                        .HasConstraintName("FK_FormulaMaterials_Formula");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Material", "Material")
-                        .WithMany("FormulaMaterials")
-                        .HasForeignKey("MaterialId")
-                        .IsRequired()
-                        .HasConstraintName("FK_FormulaMaterials_Material");
-
-                    b.Navigation("Category");
-
-                    b.Navigation("Formula");
-
-                    b.Navigation("Material");
-                });
-
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Group", b =>
                 {
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
@@ -5197,17 +8536,33 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("UpdatedByNavigation");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MRO.EquipmentMRO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.EquipmentDetailMRO", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MRO.AreaMRO", "Area")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MROSchema.EquipmentMRO", "Equipment")
+                        .WithMany("EquipmentDetails")
+                        .HasForeignKey("EquipmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_equipment_details_equipment");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MROSchema.EquipmentTypeMRO", "EquipmentType")
+                        .WithMany("EquipmentDetails")
+                        .HasForeignKey("EquipmentTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_equipment_details_equipmenttype");
+
+                    b.Navigation("Equipment");
+
+                    b.Navigation("EquipmentType");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.EquipmentMRO", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MROSchema.AreaMRO", "Area")
                         .WithMany("Equipments")
                         .HasForeignKey("AreaId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_equipment_area_id");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", null)
-                        .WithMany("Equipments")
-                        .HasForeignKey("CompanyId");
 
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Factory")
                         .WithMany()
@@ -5221,10 +8576,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_equipment_part_id");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Part", null)
-                        .WithMany("Equipments")
-                        .HasForeignKey("PartId1");
-
                     b.Navigation("Area");
 
                     b.Navigation("Factory");
@@ -5232,17 +8583,80 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("Part");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MRO.IncidentHeaderMRO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.EquipmentSpecMRO", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MRO.AreaMRO", "Area")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MROSchema.EquipmentMRO", "Equipment")
+                        .WithMany()
+                        .HasForeignKey("EquipmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_equipment_specs_equipment");
+
+                    b.Navigation("Equipment");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.ImprovementHdrMRO", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "ApprovedByNav")
+                        .WithMany()
+                        .HasForeignKey("ApprovedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_improvement_hdr_approved_by");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "ClosedByNav")
+                        .WithMany()
+                        .HasForeignKey("ClosedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_improvement_hdr_closed_by");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNav")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_improvement_hdr_created_by");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "DoneByNav")
+                        .WithMany()
+                        .HasForeignKey("DoneBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_improvement_hdr_done_by");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "StartedByNav")
+                        .WithMany()
+                        .HasForeignKey("StartedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_improvement_hdr_started_by");
+
+                    b.Navigation("ApprovedByNav");
+
+                    b.Navigation("ClosedByNav");
+
+                    b.Navigation("CreatedByNav");
+
+                    b.Navigation("DoneByNav");
+
+                    b.Navigation("StartedByNav");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.ImprovementHistoryMRO", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "PerformedByNav")
+                        .WithMany()
+                        .HasForeignKey("PerformedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_imprhist_performed_by");
+
+                    b.Navigation("PerformedByNav");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.IncidentHeaderMRO", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MROSchema.AreaMRO", "Area")
                         .WithMany()
                         .HasForeignKey("AreaId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_incident_hdr_area_id");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MRO.AreaMRO", null)
-                        .WithMany("IncidentHeaderMROs")
-                        .HasForeignKey("AreaMROAreaId");
 
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "ClosedByEmployee")
                         .WithMany()
@@ -5257,10 +8671,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_incident_hdr_company_id");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", null)
-                        .WithMany("IncidentHeaderMROs")
-                        .HasForeignKey("CompanyId1");
-
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByEmployee")
                         .WithMany()
                         .HasForeignKey("CreatedBy")
@@ -5273,31 +8683,11 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_incident_hdr_done_by");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", null)
-                        .WithMany("ClosedByNavigations")
-                        .HasForeignKey("EmployeeId");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", null)
-                        .WithMany("CreatedByNavigations")
-                        .HasForeignKey("EmployeeId1");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", null)
-                        .WithMany("DoneByNavigations")
-                        .HasForeignKey("EmployeeId2");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", null)
-                        .WithMany("ExecByNavigations")
-                        .HasForeignKey("EmployeeId3");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MRO.EquipmentMRO", "Equipment")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MROSchema.EquipmentMRO", "Equipment")
                         .WithMany()
                         .HasForeignKey("EquipmentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_incident_hdr_equipment_id");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MRO.EquipmentMRO", null)
-                        .WithMany("IncidentHeaderMROs")
-                        .HasForeignKey("EquipmentMROEquipmentId");
 
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "ExecByEmployee")
                         .WithMany()
@@ -5320,9 +8710,77 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("ExecByEmployee");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MRO.RackMRO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.IncidentLineMRO", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MRO.ZoneMRO", "Zone")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MROSchema.IncidentHeaderMRO", "Incident")
+                        .WithMany()
+                        .HasForeignKey("IncidentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_incidenthistory_incident");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "PerformedByEmployee")
+                        .WithMany()
+                        .HasForeignKey("PerformedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_incidenthistory_performed_by");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MROSchema.StockOutHeaderMRO", "StockOut")
+                        .WithMany()
+                        .HasForeignKey("StockOutId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_incidenthistory_stockout");
+
+                    b.Navigation("Incident");
+
+                    b.Navigation("PerformedByEmployee");
+
+                    b.Navigation("StockOut");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.MovementMRO", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MROSchema.SlotMRO", "SlotMROFrom")
+                        .WithMany()
+                        .HasForeignKey("FromSlotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_MovementMRO_SlotMROFrom");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Material", "Material")
+                        .WithMany()
+                        .HasForeignKey("MaterialId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_MovementMRO_material");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MROSchema.SlotMRO", "SlotMROTo")
+                        .WithMany()
+                        .HasForeignKey("ToSlotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_MovementMRO_SlotMROTo");
+
+                    b.Navigation("Material");
+
+                    b.Navigation("SlotMROFrom");
+
+                    b.Navigation("SlotMROTo");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.PmPlanHistoryMRO", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MROSchema.PmPlanMRO", "Plan")
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_pmplanhist_plan");
+
+                    b.Navigation("Plan");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.RackMRO", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MROSchema.ZoneMRO", "Zone")
                         .WithMany("Racks")
                         .HasForeignKey("ZoneId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -5332,9 +8790,9 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("Zone");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MRO.SlotMRO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.SlotMRO", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MRO.RackMRO", "Rack")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MROSchema.RackMRO", "Rack")
                         .WithMany("Slots")
                         .HasForeignKey("RackId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -5344,9 +8802,99 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("Rack");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MRO.ZoneMRO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.StockOutHeaderMRO", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MRO.WarehouseMRO", "Warehouse")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNav")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_stock_out_hdr_created_by");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Factory")
+                        .WithMany()
+                        .HasForeignKey("FactoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_stock_out_hdr_factory");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "PostedByNav")
+                        .WithMany()
+                        .HasForeignKey("PostedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_stock_out_hdr_posted_by");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MROSchema.IncidentHeaderMRO", "IncidentHeaderMRO")
+                        .WithMany("StockOutHeaderMRO")
+                        .HasForeignKey("SourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_stock_out_hdr_incident ");
+
+                    b.Navigation("CreatedByNav");
+
+                    b.Navigation("Factory");
+
+                    b.Navigation("IncidentHeaderMRO");
+
+                    b.Navigation("PostedByNav");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.StockOutLineMRO", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Material", "Material")
+                        .WithMany()
+                        .HasForeignKey("MaterialId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_stock_out_line_material");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MROSchema.StockOutHeaderMRO", "StockOut")
+                        .WithMany()
+                        .HasForeignKey("StockOutId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_stock_out_line_stock_out");
+
+                    b.Navigation("Material");
+
+                    b.Navigation("StockOut");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.TransferDetailMRO", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MROSchema.TransferHeaderMRO", "Header")
+                        .WithMany("Details")
+                        .HasForeignKey("TransferHeaderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_transferdetails_header");
+
+                    b.Navigation("Header");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.TransferHeaderMRO", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_transferheaders_created_by");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "Postor")
+                        .WithMany()
+                        .HasForeignKey("PostedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_transferheaders_posted_by");
+
+                    b.Navigation("Creator");
+
+                    b.Navigation("Postor");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.ZoneMRO", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MROSchema.WarehouseMRO", "Warehouse")
                         .WithMany("Zones")
                         .HasForeignKey("WarehouseId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -5356,8 +8904,15 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("Warehouse");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingFormula", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormula", b =>
                 {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
+                        .WithMany("ManufacturingFormulas")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK__Mf__companyId");
+
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
                         .WithMany("ManufacturingFormulaCreatedByNavigations")
                         .HasForeignKey("CreatedBy")
@@ -5365,13 +8920,13 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("FK__Mf__createdBy");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.ManufacturingFormula", "SourceManufacturingFormula")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormula", "SourceManufacturingFormula")
                         .WithMany()
                         .HasForeignKey("SourceManufacturingFormulaId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("FK__Mf__SourceManufacturingFormulaId");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Formula", "SourceVUFormula")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Formula", "SourceVUFormula")
                         .WithMany("ManufacturingFormulaSources")
                         .HasForeignKey("SourceVUFormulaId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -5381,81 +8936,37 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .WithMany("ManufacturingFormulaUpdatedByNavigations")
                         .HasForeignKey("UpdatedBy")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
                         .HasConstraintName("FK__Mf__updatedBy");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Formula", "VUFormula")
-                        .WithMany("ManufacturingFormulas")
-                        .HasForeignKey("VUFormulaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK__Mf__VUFormulaId");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
-                        .WithMany("ManufacturingFormulas")
-                        .HasForeignKey("companyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("FK__Mf__companyId");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MfgProductionOrder", "MfgProductionOrder")
-                        .WithMany("ManufacturingFormulas")
-                        .HasForeignKey("mfgProductionOrderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK__Mf__mfgProductionOrderId");
 
                     b.Navigation("Company");
 
                     b.Navigation("CreatedByNavigation");
-
-                    b.Navigation("MfgProductionOrder");
 
                     b.Navigation("SourceManufacturingFormula");
 
                     b.Navigation("SourceVUFormula");
 
                     b.Navigation("UpdatedByNavigation");
-
-                    b.Navigation("VUFormula");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingFormulaLog", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormulaMaterial", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.ManufacturingFormula", "ManufacturingFormula")
-                        .WithMany("ManufacturingFormulaLogs")
-                        .HasForeignKey("ManufacturingFormulaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK__Mf__ManufacturingFormulaLogs");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "PerformedByNavigation")
-                        .WithMany("PerformedByNavigations")
-                        .HasForeignKey("PerformedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK__Mf__performedBy");
-
-                    b.Navigation("ManufacturingFormula");
-
-                    b.Navigation("PerformedByNavigation");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingFormulaMaterial", b =>
-                {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Category", "Category")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Category", "Category")
                         .WithMany("ManufacturingFormulaMaterials")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK__Mfm__categoryId");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.ManufacturingFormula", "ManufacturingFormula")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormula", "ManufacturingFormula")
                         .WithMany("ManufacturingFormulaMaterials")
                         .HasForeignKey("ManufacturingFormulaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK__Mfm__manufacturingFormulaId");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Material", "Material")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Material", "Material")
                         .WithMany("ManufacturingFormulaMaterials")
                         .HasForeignKey("MaterialId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -5469,9 +8980,224 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("Material");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Material", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormulaVersion", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Category", "Category")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormula", "ManufacturingFormula")
+                        .WithMany("ManufacturingFormulaVersions")
+                        .HasForeignKey("ManufacturingFormulaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_mf_versions_formula");
+
+                    b.Navigation("ManufacturingFormula");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormulaVersionItem", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Category", "Category")
+                        .WithMany("Items")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK__Mfm__categoryId");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormulaVersion", "Version")
+                        .WithMany("Items")
+                        .HasForeignKey("ManufacturingFormulaVersionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK__Mfm__manufacturingFormulaId");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Material", "Material")
+                        .WithMany("Items")
+                        .HasForeignKey("MaterialId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK__Mfm__materialId");
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Material");
+
+                    b.Navigation("Version");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.MfgOrderPO", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.OrderSchema.MerchandiseOrderDetail", "Detail")
+                        .WithMany()
+                        .HasForeignKey("MerchandiseOrderDetailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_MfgOrderPOs_Detail");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.MfgProductionOrder", "ProductionOrder")
+                        .WithMany()
+                        .HasForeignKey("MfgProductionOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_MfgOrderPOs_MfgOrder");
+
+                    b.Navigation("Detail");
+
+                    b.Navigation("ProductionOrder");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.MfgProductionOrder", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
+                        .WithMany("MfgProductionOrders")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK__Mpo__companyId");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
+                        .WithMany("MfgProductionOrderCreatedByNavigations")
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK__Mpo__createdBy");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.CustomerSchema.Customer", "Customer")
+                        .WithMany("MfgProductionOrders")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK__Mpo__customerId");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Product", "Product")
+                        .WithMany("MfgProductionOrders")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK__Mpo__productId");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "UpdatedByNavigation")
+                        .WithMany("MfgProductionOrderUpdatedByNavigations")
+                        .HasForeignKey("UpdatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK__Mpo__updatedBy");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("CreatedByNavigation");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("UpdatedByNavigation");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ProductStandardFormula", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "ClosedByNavigation")
+                        .WithMany("ProductStandardFormulaClosedByNavigations")
+                        .HasForeignKey("ClosedBy")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_psf_closed_by");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
+                        .WithMany("ProductStandardFormulas")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_psf_company");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
+                        .WithMany("ProductStandardFormulaCreatedByNavigations")
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_psf_created_by");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormula", "ManufacturingFormula")
+                        .WithMany("ProductStandardFormulas")
+                        .HasForeignKey("ManufacturingFormulaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_psf_manufacturing_formula");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Product", "Product")
+                        .WithMany("ProductStandardFormulas")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_psf_product");
+
+                    b.Navigation("ClosedByNavigation");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("CreatedByNavigation");
+
+                    b.Navigation("ManufacturingFormula");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ProductionSelectVersion", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "ClosedByNavigation")
+                        .WithMany("ProductionSelectVersionClosedByNavigations")
+                        .HasForeignKey("ClosedBy")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_psv_closed_by");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
+                        .WithMany("ProductionSelectVersions")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_psv_company");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
+                        .WithMany("ProductionSelectVersionCreatedByNavigations")
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_psv_created_by");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormula", "ManufacturingFormula")
+                        .WithMany("ProductionSelectVersions")
+                        .HasForeignKey("ManufacturingFormulaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_psv_manufacturing_formula");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.MfgProductionOrder", "MfgProductionOrder")
+                        .WithMany("ProductionSelectVersions")
+                        .HasForeignKey("MfgProductionOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_psv_mfg_production_order");
+
+                    b.Navigation("ClosedByNavigation");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("CreatedByNavigation");
+
+                    b.Navigation("ManufacturingFormula");
+
+                    b.Navigation("MfgProductionOrder");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Category", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
+                        .WithMany("Categories")
+                        .HasForeignKey("CompanyId")
+                        .IsRequired()
+                        .HasConstraintName("FK_Categories_Company");
+
+                    b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Material", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Category", "Category")
                         .WithMany("Materials")
                         .HasForeignKey("CategoryId")
                         .IsRequired()
@@ -5502,20 +9228,20 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("UpdatedByNavigation");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialsSupplier", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.MaterialsSupplier", b =>
                 {
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
                         .WithMany("MaterialsSupplierCreatedByNavigations")
                         .HasForeignKey("CreatedBy")
                         .HasConstraintName("FK_MaterialsSuppliers_CreatedBy");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Material", "Material")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Material", "Material")
                         .WithMany("MaterialsSuppliers")
                         .HasForeignKey("MaterialId")
                         .IsRequired()
                         .HasConstraintName("FK_MaterialsSuppliers_Material");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Supplier", "Supplier")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Supplier", "Supplier")
                         .WithMany("MaterialsSuppliers")
                         .HasForeignKey("SupplierId")
                         .IsRequired()
@@ -5533,6 +9259,80 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("Supplier");
 
                     b.Navigation("UpdatedByNavigation");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.PriceHistory", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
+                        .WithMany("PriceHistoryCreatedByNavigations")
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_PriceHistory_Materials_CreatedBy");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Material", null)
+                        .WithMany("PriceHistories")
+                        .HasForeignKey("MaterialId");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.MaterialsSupplier", "MaterialsSuppliers")
+                        .WithMany("PriceHistories")
+                        .HasForeignKey("MaterialsSuppliersId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_pricehistory_materialsSuppliersId");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Supplier", null)
+                        .WithMany("PriceHistories")
+                        .HasForeignKey("SupplierId");
+
+                    b.Navigation("CreatedByNavigation");
+
+                    b.Navigation("MaterialsSuppliers");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Supplier", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
+                        .WithMany("Suppliers")
+                        .HasForeignKey("CompanyId")
+                        .HasConstraintName("FK_Suppliers_Company");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
+                        .WithMany("SupplierCreatedByNavigations")
+                        .HasForeignKey("CreatedBy")
+                        .HasConstraintName("FK_Suppliers_CreatedBy");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "UpdatedByNavigation")
+                        .WithMany("SupplierUpdatedByNavigations")
+                        .HasForeignKey("UpdatedBy")
+                        .HasConstraintName("FK_Supplier_UpdatedBy");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("CreatedByNavigation");
+
+                    b.Navigation("UpdatedByNavigation");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.SupplierAddress", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Supplier", "Supplier")
+                        .WithMany("SupplierAddresses")
+                        .HasForeignKey("SupplierId")
+                        .IsRequired()
+                        .HasConstraintName("FK_SupplierAddress_Supplier");
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.SupplierContact", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Supplier", "Supplier")
+                        .WithMany("SupplierContacts")
+                        .HasForeignKey("SupplierId")
+                        .IsRequired()
+                        .HasConstraintName("FK_SupplierContact_Supplier");
+
+                    b.Navigation("Supplier");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MemberInGroup", b =>
@@ -5555,7 +9355,80 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("ProfileNavigation");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MerchandiseOrder", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Notifications.Notification", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_notifications_company");
+
+                    b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Notifications.NotificationRecipient", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Notifications.Notification", "Notification")
+                        .WithMany("Recipients")
+                        .HasForeignKey("NotificationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_notification_recipients_notification");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Part", "TargetTeamNavigation")
+                        .WithMany("NotificationRecipients")
+                        .HasForeignKey("TargetTeamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_notification_recipients_team");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "TargetUserNavigation")
+                        .WithMany()
+                        .HasForeignKey("TargetUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_notification_recipients_user");
+
+                    b.Navigation("Notification");
+
+                    b.Navigation("TargetTeamNavigation");
+
+                    b.Navigation("TargetUserNavigation");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Notifications.NotificationUserState", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Notifications.Notification", "Notification")
+                        .WithMany("UserStates")
+                        .HasForeignKey("NotificationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_notification_user_states_notification");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_notification_user_states_user");
+
+                    b.Navigation("Notification");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Notifications.UserNotificationSetting", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_notification_settings_user");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.OrderSchema.MerchandiseOrder", b =>
                 {
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.AttachmentSchema.AttachmentCollection", "AttachmentCollection")
                         .WithMany()
@@ -5578,7 +9451,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_MerchandiseOrders_CreatedBy");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Customer", "Customer")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.CustomerSchema.Customer", "Customer")
                         .WithMany("MerchandiseOrders")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -5612,23 +9485,23 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("UpdatedByNavigation");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MerchandiseOrderDetail", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.OrderSchema.MerchandiseOrderDetail", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Formula", "Formula")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Formula", "Formula")
                         .WithMany("MerchandiseOrderDetails")
                         .HasForeignKey("FormulaId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_MerchandiseOrderDetails_FormulaId");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MerchandiseOrder", "MerchandiseOrder")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.OrderSchema.MerchandiseOrder", "MerchandiseOrder")
                         .WithMany("MerchandiseOrderDetails")
                         .HasForeignKey("MerchandiseOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_MerchandiseOrderDetails_MerchandiseOrderId");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Product", "Product")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Product", "Product")
                         .WithMany("MerchandiseOrderDetails")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -5642,113 +9515,164 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MfgProductionOrder", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.OrderSchema.PurchaseOrder", b =>
                 {
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
-                        .WithMany("MfgProductionOrders")
+                        .WithMany("PurchaseOrders")
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("FK__Mpo__companyId");
+                        .HasConstraintName("FK_PurchaseOrders_Company");
 
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
-                        .WithMany("MfgProductionOrderCreatedByNavigations")
+                        .WithMany("PurchaseOrderCreatedByNavigations")
                         .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("FK__Mpo__createdBy");
+                        .HasConstraintName("FK_PurchaseOrders_CreatedBy");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Customer", "Customer")
-                        .WithMany("MfgProductionOrders")
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("FK__Mpo__customerId");
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.OrderSchema.PurchaseOrderSnapshot", "PurchaseOrderSnapshot")
+                        .WithMany()
+                        .HasForeignKey("PurchaseOrderSnapshotId")
+                        .HasConstraintName("FK_PurchaseOrders_PurchaseOrderSnapshot");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MerchandiseOrder", "MerchandiseOrder")
-                        .WithMany("MfgProductionOrders")
-                        .HasForeignKey("MerchandiseOrderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK__Mpo__merchandiseOrderId");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Product", "Product")
-                        .WithMany("MfgProductionOrders")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK__Mpo__productId");
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Supplier", "Supplier")
+                        .WithMany("PurchaseOrders")
+                        .HasForeignKey("SupplierId")
+                        .HasConstraintName("FK_PurchaseOrders_SupplierId");
 
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "UpdatedByNavigation")
-                        .WithMany("MfgProductionOrderUpdatedByNavigations")
+                        .WithMany("PurchaseOrderUpdatedByNavigations")
                         .HasForeignKey("UpdatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("FK__Mpo__updatedBy");
+                        .HasConstraintName("FK_PurchaseOrders_UpdatedBy");
 
                     b.Navigation("Company");
 
                     b.Navigation("CreatedByNavigation");
 
-                    b.Navigation("Customer");
+                    b.Navigation("PurchaseOrderSnapshot");
 
-                    b.Navigation("MerchandiseOrder");
-
-                    b.Navigation("Product");
+                    b.Navigation("Supplier");
 
                     b.Navigation("UpdatedByNavigation");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MfgProductionOrderLog", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.OrderSchema.PurchaseOrderDetail", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
-                        .WithMany("MfgProductionOrderLogCreatedByNavigations")
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK__MfgProductionOrderLogs__createdBy");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MfgProductionOrder", "MfgProductionOrder")
-                        .WithMany("ManufacturingOrderLogs")
-                        .HasForeignKey("MfgProductionOrderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK__MfgProductionOrderLogs__MfgProductionOrderId");
-
-                    b.Navigation("CreatedByNavigation");
-
-                    b.Navigation("MfgProductionOrder");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PriceHistory", b =>
-                {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
-                        .WithMany("PriceHistoryCreatedByNavigations")
-                        .HasForeignKey("CreatedBy")
-                        .HasConstraintName("FK_PriceHistory_CreatedBy");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", null)
-                        .WithMany("PriceHistoryUpdatedByNavigations")
-                        .HasForeignKey("EmployeeId");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Material", "Material")
-                        .WithMany("PriceHistories")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Material", "Material")
+                        .WithMany("PurchaseOrderDetails")
                         .HasForeignKey("MaterialId")
                         .IsRequired()
-                        .HasConstraintName("FK_PriceHistory_Material");
+                        .HasConstraintName("FK_PurchaseOrderDetails_MaterialId");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Supplier", "Supplier")
-                        .WithMany("PriceHistories")
-                        .HasForeignKey("SupplierId")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.OrderSchema.PurchaseOrder", "PurchaseOrder")
+                        .WithMany("PurchaseOrderDetails")
+                        .HasForeignKey("PurchaseOrderId")
                         .IsRequired()
-                        .HasConstraintName("FK_PriceHistory_Supplier");
-
-                    b.Navigation("CreatedByNavigation");
+                        .HasConstraintName("FK_PurchaseOrderDetails_PurchaseOrderId");
 
                     b.Navigation("Material");
 
-                    b.Navigation("Supplier");
+                    b.Navigation("PurchaseOrder");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Product", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.OrderSchema.PurchaseOrderLink", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Category", "Category")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.OrderSchema.MerchandiseOrder", "MerchandiseOrder")
+                        .WithMany("PurchaseOrderLinks")
+                        .HasForeignKey("MerchandiseOrderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.OrderSchema.PurchaseOrder", "PurchaseOrder")
+                        .WithMany("PurchaseOrderLinks")
+                        .HasForeignKey("PurchaseOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MerchandiseOrder");
+
+                    b.Navigation("PurchaseOrder");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Formula", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CheckByNavigation")
+                        .WithMany("FormulaCheckByNavigations")
+                        .HasForeignKey("CheckBy")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_Formulas_CheckBy");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
+                        .WithMany("Formulas")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_Formulas_Company");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
+                        .WithMany("FormulaCreatedByNavigations")
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_Formulas_CreatedBy");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Product", "Product")
+                        .WithMany("Formulas")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Formulas_Product");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "SentByNavigation")
+                        .WithMany("FormulaSentByNavigations")
+                        .HasForeignKey("SentBy")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_Formulas_SentBy");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "UpdatedByNavigation")
+                        .WithMany("FormulaUpdatedByNavigations")
+                        .HasForeignKey("UpdatedBy")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_Formulas_UpdatedBy");
+
+                    b.Navigation("CheckByNavigation");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("CreatedByNavigation");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("SentByNavigation");
+
+                    b.Navigation("UpdatedByNavigation");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.FormulaMaterial", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Category", "Category")
+                        .WithMany("FormulaMaterials")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_FormulaMaterials_Category");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Formula", "Formula")
+                        .WithMany("FormulaMaterials")
+                        .HasForeignKey("FormulaId")
+                        .IsRequired()
+                        .HasConstraintName("FK_FormulaMaterials_Formula");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Material", "Material")
+                        .WithMany("FormulaMaterials")
+                        .HasForeignKey("MaterialId")
+                        .IsRequired()
+                        .HasConstraintName("FK_FormulaMaterials_Material");
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Formula");
+
+                    b.Navigation("Material");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Product", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Category", "Category")
                         .WithMany("Products")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.SetNull)
@@ -5783,139 +9707,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("UpdatedByNavigation");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PurchaseOrder", b =>
-                {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
-                        .WithMany("PurchaseOrders")
-                        .HasForeignKey("CompanyId")
-                        .HasConstraintName("FK_PurchaseOrders_Company");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
-                        .WithMany("PurchaseOrderCreatedByNavigations")
-                        .HasForeignKey("CreatedBy")
-                        .HasConstraintName("FK_PurchaseOrders_CreatedBy");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.PurchaseOrderSnapshot", "PurchaseOrderSnapshot")
-                        .WithMany()
-                        .HasForeignKey("PurchaseOrderSnapshotId")
-                        .HasConstraintName("FK_PurchaseOrders_PurchaseOrderSnapshot");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Supplier", "Supplier")
-                        .WithMany("PurchaseOrders")
-                        .HasForeignKey("SupplierId")
-                        .HasConstraintName("FK_PurchaseOrders_SupplierId");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "UpdatedByNavigation")
-                        .WithMany("PurchaseOrderUpdatedByNavigations")
-                        .HasForeignKey("UpdatedBy")
-                        .HasConstraintName("FK_PurchaseOrders_UpdatedBy");
-
-                    b.Navigation("Company");
-
-                    b.Navigation("CreatedByNavigation");
-
-                    b.Navigation("PurchaseOrderSnapshot");
-
-                    b.Navigation("Supplier");
-
-                    b.Navigation("UpdatedByNavigation");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PurchaseOrderDetail", b =>
-                {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Material", "Material")
-                        .WithMany("PurchaseOrderDetails")
-                        .HasForeignKey("MaterialId")
-                        .IsRequired()
-                        .HasConstraintName("FK_PurchaseOrderDetails_MaterialId");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.PurchaseOrder", "PurchaseOrder")
-                        .WithMany("PurchaseOrderDetails")
-                        .HasForeignKey("PurchaseOrderId")
-                        .IsRequired()
-                        .HasConstraintName("FK_PurchaseOrderDetails_PurchaseOrderId");
-
-                    b.Navigation("Material");
-
-                    b.Navigation("PurchaseOrder");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PurchaseOrderLink", b =>
-                {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MerchandiseOrder", "MerchandiseOrder")
-                        .WithMany("PurchaseOrderLinks")
-                        .HasForeignKey("MerchandiseOrderId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.PurchaseOrder", "PurchaseOrder")
-                        .WithMany("PurchaseOrderLinks")
-                        .HasForeignKey("PurchaseOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("MerchandiseOrder");
-
-                    b.Navigation("PurchaseOrder");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PurchaseOrderStatusHistory", b =>
-                {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "Employee")
-                        .WithMany("PurchaseOrderStatusHistories")
-                        .HasForeignKey("EmployeeId")
-                        .HasConstraintName("FK_PurchaseOrderStatusHistory_EmployeeId");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.PurchaseOrder", "PurchaseOrder")
-                        .WithMany("PurchaseOrderStatusHistories")
-                        .HasForeignKey("PurchaseOrderId")
-                        .IsRequired()
-                        .HasConstraintName("FK_PurchaseOrderStatusHistory_PurchaseOrderId");
-
-                    b.Navigation("Employee");
-
-                    b.Navigation("PurchaseOrder");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PurchaseOrdersSchedule", b =>
-                {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.PurchaseOrder", "PurchaseOrder")
-                        .WithMany("PurchaseOrdersSchedules")
-                        .HasForeignKey("PurchaseOrderId")
-                        .IsRequired()
-                        .HasConstraintName("FK_PurchaseOrdersSchedules_PurchaseOrderId");
-
-                    b.Navigation("PurchaseOrder");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Qcdetail", b =>
-                {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.ProductInspection", "Batch")
-                        .WithOne("Qcdetails")
-                        .HasForeignKey("VietausWebAPI.Core.Domain.Entities.Qcdetail", "BatchId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("FK_QCDetail_ProductInspection");
-
-                    b.Navigation("Batch");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.RequestDetail", b =>
-                {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Material", "Material")
-                        .WithMany("RequestDetails")
-                        .HasForeignKey("MaterialId")
-                        .HasConstraintName("FK_SupplyRequest_MaterialId");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SupplyRequest", "Request")
-                        .WithMany("RequestDetails")
-                        .HasForeignKey("RequestId")
-                        .HasConstraintName("FK_SupplyRequest_RequestID");
-
-                    b.Navigation("Material");
-
-                    b.Navigation("Request");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequest", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.SampleRequest", b =>
                 {
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.AttachmentSchema.AttachmentCollection", "AttachmentCollection")
                         .WithMany()
@@ -5924,12 +9716,12 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_SampleRequests_AttachmentCollection");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Branch", "Branch")
-                        .WithMany("SampleRequests")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Branch")
+                        .WithMany("SampleRequestBranchs")
                         .HasForeignKey("BranchId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("FK_SampleRequests_Branch");
+                        .HasConstraintName("FK_SampleRequests_BranchId");
 
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
                         .WithMany("SampleRequests")
@@ -5945,14 +9737,14 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_SampleRequests_CreatedBy");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Customer", "Customer")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.CustomerSchema.Customer", "Customer")
                         .WithMany("SampleRequests")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_SampleRequests_Customer");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Formula", "Formula")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Formula", "Formula")
                         .WithMany("SampleRequests")
                         .HasForeignKey("FormulaId")
                         .OnDelete(DeleteBehavior.SetNull)
@@ -5965,7 +9757,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_SampleRequests_Manager");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Product", "Product")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Product", "Product")
                         .WithMany("SampleRequests")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -6006,74 +9798,56 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("UpdatedByNavigation");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Supplier", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SchedualMfg", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
-                        .WithMany("Suppliers")
-                        .HasForeignKey("CompanyId")
-                        .HasConstraintName("FK_Suppliers_Company");
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.MfgProductionOrder", "MfgProductionOrder")
+                        .WithMany("SchedualMfgs")
+                        .HasForeignKey("MfgProductionOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_SchedualMfg_MfgProductionOrder_id");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
-                        .WithMany("SupplierCreatedByNavigations")
-                        .HasForeignKey("CreatedBy")
-                        .HasConstraintName("FK_Suppliers_CreatedBy");
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Product", "Product")
+                        .WithMany("SchedualMfgs")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_SchedualMfg_Product_id");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "UpdatedByNavigation")
-                        .WithMany("SupplierUpdatedByNavigations")
-                        .HasForeignKey("UpdatedBy")
-                        .HasConstraintName("FK_Supplier_UpdatedBy");
+                    b.Navigation("MfgProductionOrder");
 
-                    b.Navigation("Company");
-
-                    b.Navigation("CreatedByNavigation");
-
-                    b.Navigation("UpdatedByNavigation");
+                    b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SupplierAddress", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SupplyRequestSchema.SupplyRequest", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Supplier", "Supplier")
-                        .WithMany("SupplierAddresses")
-                        .HasForeignKey("SupplierId")
-                        .IsRequired()
-                        .HasConstraintName("FK_SupplierAddress_Supplier");
-
-                    b.Navigation("Supplier");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SupplierContact", b =>
-                {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Supplier", "Supplier")
-                        .WithMany("SupplierContacts")
-                        .HasForeignKey("SupplierId")
-                        .IsRequired()
-                        .HasConstraintName("FK_SupplierContact_Supplier");
-
-                    b.Navigation("Supplier");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SupplyRequest", b =>
-                {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
-                        .WithMany("SupplyRequests")
-                        .HasForeignKey("CompanyId")
-                        .HasConstraintName("FK_SupplyRequest_Company");
-
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
                         .WithMany("SupplyRequestCreatedByNavigations")
                         .HasForeignKey("CreatedBy")
-                        .HasConstraintName("FK_SupplyRequest_CreatedBy");
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "UpdatedByNavigation")
-                        .WithMany("SupplyRequestUpdatedByNavigations")
-                        .HasForeignKey("UpdatedBy")
-                        .HasConstraintName("FK_SupplyRequest_UpdatedBy");
-
-                    b.Navigation("Company");
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_supply_requests_createdby");
 
                     b.Navigation("CreatedByNavigation");
+                });
 
-                    b.Navigation("UpdatedByNavigation");
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SupplyRequestSchema.SupplyRequestDetail", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Material", "Material")
+                        .WithMany("SupplyRequestDetails")
+                        .HasForeignKey("MaterialId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_sr_details_material");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SupplyRequestSchema.SupplyRequest", "SupplyRequest")
+                        .WithMany("Details")
+                        .HasForeignKey("SupplyRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_sr_details_request");
+
+                    b.Navigation("Material");
+
+                    b.Navigation("SupplyRequest");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Unit", b =>
@@ -6086,7 +9860,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("CreatedByNavigation");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseRequest", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseRequest", b =>
                 {
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
                         .WithMany("WarehouseRequests")
@@ -6112,9 +9886,9 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("UpdatedByNavigation");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseRequestDetail", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseRequestDetail", b =>
                 {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.WarehouseRequest", "WarehouseRequest")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseRequest", "WarehouseRequest")
                         .WithMany("WarehouseRequestDetails")
                         .HasForeignKey("RequestId")
                         .IsRequired()
@@ -6123,7 +9897,36 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("WarehouseRequest");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseShelfStock", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseShelfLedger", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
+                        .WithMany("WarehouseShelfLedgers")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_WarehouseShelfLedger_Company");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
+                        .WithMany("WarehouseShelfLedgerCreatedByNavigations")
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_WarehouseShelfLedger_CreatedBy");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseShelves", "Shelf")
+                        .WithMany("Ledgers")
+                        .HasForeignKey("SlotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_WarehouseShelfLedger_SlotId");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("CreatedByNavigation");
+
+                    b.Navigation("Shelf");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseShelfStock", b =>
                 {
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
                         .WithMany("WarehouseShelfStocks")
@@ -6131,6 +9934,13 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_WarehouseShelfStock_Company");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseShelves", "WarehouseShelves")
+                        .WithMany("WarehouseShelfStocks")
+                        .HasForeignKey("SlotId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_WarehouseShelfStock_WarehouseShelf");
 
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "UpdatedByNavigation")
                         .WithMany("WarehouseShelfStockUpdatedByNavigations")
@@ -6140,9 +9950,23 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("Company");
 
                     b.Navigation("UpdatedByNavigation");
+
+                    b.Navigation("WarehouseShelves");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseTempStock", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseShelves", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
+                        .WithMany("WarehouseShelves")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_WarehouseShelves_Company");
+
+                    b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseTempStock", b =>
                 {
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
                         .WithMany("WarehouseTempStockCreatedByNavigations")
@@ -6152,6 +9976,67 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasConstraintName("FK_WarehouseTempStock_CreatedBy");
 
                     b.Navigation("CreatedByNavigation");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseVoucher", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Company", "Company")
+                        .WithMany("WarehouseVouchers")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_WarehouseVouchers_Company");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", "CreatedByNavigation")
+                        .WithMany("WarehouseVoucherCreatedByNavigations")
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_WarehouseVouchers_CreatedBy");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.Employee", null)
+                        .WithMany("WarehouseVoucherUpdatedByNavigations")
+                        .HasForeignKey("EmployeeId");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseRequest", "WarehouseRequest")
+                        .WithMany("WarehouseVouchers")
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_WarehouseVouchers_Request");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("CreatedByNavigation");
+
+                    b.Navigation("WarehouseRequest");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseVoucherDetail", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.UsagePurpose", "Purpose")
+                        .WithMany("VoucherDetails")
+                        .HasForeignKey("PurposeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_WarehouseVoucherDetails_Purpose");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseShelfStock", "Slot")
+                        .WithMany()
+                        .HasForeignKey("SlotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_WarehouseVoucherDetails_Slot");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseVoucher", "Voucher")
+                        .WithMany("Details")
+                        .HasForeignKey("VoucherId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_WarehouseVoucherDetails_Voucher");
+
+                    b.Navigation("Purpose");
+
+                    b.Navigation("Slot");
+
+                    b.Navigation("Voucher");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Identity.ApplicationUser", b =>
@@ -6188,26 +10073,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("Attachments");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Branch", b =>
-                {
-                    b.Navigation("SampleRequests");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Category", b =>
-                {
-                    b.Navigation("FormulaMaterials");
-
-                    b.Navigation("ManufacturingFormulaMaterials");
-
-                    b.Navigation("Materials");
-
-                    b.Navigation("Products");
-                });
-
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Company", b =>
                 {
-                    b.Navigation("Branches");
-
                     b.Navigation("Categories");
 
                     b.Navigation("CustomerAssignments");
@@ -6218,15 +10085,11 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Navigation("Employees");
 
-                    b.Navigation("Equipments");
-
                     b.Navigation("EventLogs");
 
                     b.Navigation("Formulas");
 
                     b.Navigation("Groups");
-
-                    b.Navigation("IncidentHeaderMROs");
 
                     b.Navigation("ManufacturingFormulas");
 
@@ -6236,22 +10099,32 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Navigation("MfgProductionOrders");
 
+                    b.Navigation("ProductStandardFormulas");
+
+                    b.Navigation("ProductionSelectVersions");
+
                     b.Navigation("Products");
 
                     b.Navigation("PurchaseOrders");
+
+                    b.Navigation("SampleRequestBranchs");
 
                     b.Navigation("SampleRequests");
 
                     b.Navigation("Suppliers");
 
-                    b.Navigation("SupplyRequests");
-
                     b.Navigation("WarehouseRequests");
 
+                    b.Navigation("WarehouseShelfLedgers");
+
                     b.Navigation("WarehouseShelfStocks");
+
+                    b.Navigation("WarehouseShelves");
+
+                    b.Navigation("WarehouseVouchers");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Customer", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerSchema.Customer", b =>
                 {
                     b.Navigation("Addresses");
 
@@ -6268,12 +10141,12 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("SampleRequests");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerTransferLog", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.CustomerSchema.CustomerTransferLog", b =>
                 {
                     b.Navigation("DetailCustomerTransfers");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DeliveryOrder", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.DeliverySchema.DeliveryOrder", b =>
                 {
                     b.Navigation("Deliverers");
 
@@ -6286,21 +10159,11 @@ namespace VietausWebAPI.Infrastructure.Migrations
                 {
                     b.Navigation("ApplicationUsers");
 
-                    b.Navigation("ApprovalHistories");
-
                     b.Navigation("AttachmentCreatedByNavigations");
-
-                    b.Navigation("BranchCreatedByNavigations");
-
-                    b.Navigation("BranchUpdatedByNavigations");
-
-                    b.Navigation("ClosedByNavigations");
 
                     b.Navigation("CompanyCreatedByNavigations");
 
                     b.Navigation("CompanyUpdatedByNavigations");
-
-                    b.Navigation("CreatedByNavigations");
 
                     b.Navigation("CustomerAssignmentCreatedByNavigations");
 
@@ -6322,11 +10185,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Navigation("DeliveryOrderUpdatedByNavigations");
 
-                    b.Navigation("DoneByNavigations");
-
                     b.Navigation("EventLogs");
-
-                    b.Navigation("ExecByNavigations");
 
                     b.Navigation("FormulaCheckByNavigations");
 
@@ -6362,23 +10221,23 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Navigation("MfgProductionOrderCreatedByNavigations");
 
-                    b.Navigation("MfgProductionOrderLogCreatedByNavigations");
-
                     b.Navigation("MfgProductionOrderUpdatedByNavigations");
-
-                    b.Navigation("PerformedByNavigations");
 
                     b.Navigation("PriceHistoryCreatedByNavigations");
 
-                    b.Navigation("PriceHistoryUpdatedByNavigations");
-
                     b.Navigation("ProductCreatedByNavigations");
+
+                    b.Navigation("ProductStandardFormulaClosedByNavigations");
+
+                    b.Navigation("ProductStandardFormulaCreatedByNavigations");
 
                     b.Navigation("ProductUpdatedByNavigations");
 
-                    b.Navigation("PurchaseOrderCreatedByNavigations");
+                    b.Navigation("ProductionSelectVersionClosedByNavigations");
 
-                    b.Navigation("PurchaseOrderStatusHistories");
+                    b.Navigation("ProductionSelectVersionCreatedByNavigations");
+
+                    b.Navigation("PurchaseOrderCreatedByNavigations");
 
                     b.Navigation("PurchaseOrderUpdatedByNavigations");
 
@@ -6396,30 +10255,45 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Navigation("SupplyRequestCreatedByNavigations");
 
-                    b.Navigation("SupplyRequestUpdatedByNavigations");
-
                     b.Navigation("Units");
 
                     b.Navigation("WarehouseRequestCreatedByNavigations");
 
                     b.Navigation("WarehouseRequestUpdatedByNavigations");
 
+                    b.Navigation("WarehouseShelfLedgerCreatedByNavigations");
+
                     b.Navigation("WarehouseShelfStockUpdatedByNavigations");
 
                     b.Navigation("WarehouseTempStockCreatedByNavigations");
+
+                    b.Navigation("WarehouseVoucherCreatedByNavigations");
+
+                    b.Navigation("WarehouseVoucherUpdatedByNavigations");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Formula", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyGroup", b =>
                 {
-                    b.Navigation("FormulaMaterials");
+                    b.Navigation("EnergyGroupTariffMaps");
 
-                    b.Navigation("ManufacturingFormulaSources");
+                    b.Navigation("Meters");
+                });
 
-                    b.Navigation("ManufacturingFormulas");
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTariff", b =>
+                {
+                    b.Navigation("EnergyGroupTariffMaps");
 
-                    b.Navigation("MerchandiseOrderDetails");
+                    b.Navigation("Versions");
+                });
 
-                    b.Navigation("SampleRequests");
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTariffVersion", b =>
+                {
+                    b.Navigation("BandRates");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.EnergyScheme.EnergyTouCalendar", b =>
+                {
+                    b.Navigation("Exceptions");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Group", b =>
@@ -6433,43 +10307,89 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("MemberInGroups");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MRO.AreaMRO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.AreaMRO", b =>
                 {
                     b.Navigation("Equipments");
-
-                    b.Navigation("IncidentHeaderMROs");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MRO.EquipmentMRO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.EquipmentMRO", b =>
                 {
-                    b.Navigation("IncidentHeaderMROs");
+                    b.Navigation("EquipmentDetails");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MRO.RackMRO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.EquipmentTypeMRO", b =>
+                {
+                    b.Navigation("EquipmentDetails");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.IncidentHeaderMRO", b =>
+                {
+                    b.Navigation("StockOutHeaderMRO");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.RackMRO", b =>
                 {
                     b.Navigation("Slots");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MRO.WarehouseMRO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.TransferHeaderMRO", b =>
+                {
+                    b.Navigation("Details");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.WarehouseMRO", b =>
                 {
                     b.Navigation("Zones");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MRO.ZoneMRO", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.ZoneMRO", b =>
                 {
                     b.Navigation("Racks");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingFormula", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormula", b =>
                 {
-                    b.Navigation("ManufacturingFormulaLogs");
-
                     b.Navigation("ManufacturingFormulaMaterials");
+
+                    b.Navigation("ManufacturingFormulaVersions");
+
+                    b.Navigation("ProductStandardFormulas");
+
+                    b.Navigation("ProductionSelectVersions");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Material", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormulaVersion", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.MfgProductionOrder", b =>
+                {
+                    b.Navigation("ProductionSelectVersions");
+
+                    b.Navigation("SchedualMfgs");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Category", b =>
                 {
                     b.Navigation("FormulaMaterials");
+
+                    b.Navigation("Items");
+
+                    b.Navigation("ManufacturingFormulaMaterials");
+
+                    b.Navigation("Materials");
+
+                    b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Material", b =>
+                {
+                    b.Navigation("AttachmentCollections");
+
+                    b.Navigation("FormulaMaterials");
+
+                    b.Navigation("Items");
 
                     b.Navigation("ManufacturingFormulaMaterials");
 
@@ -6479,74 +10399,15 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Navigation("PurchaseOrderDetails");
 
-                    b.Navigation("RequestDetails");
+                    b.Navigation("SupplyRequestDetails");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MerchandiseOrder", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.MaterialsSupplier", b =>
                 {
-                    b.Navigation("DeliveryOrderDetails");
-
-                    b.Navigation("DeliveryOrderPOs");
-
-                    b.Navigation("MerchandiseOrderDetails");
-
-                    b.Navigation("MfgProductionOrders");
-
-                    b.Navigation("PurchaseOrderLinks");
+                    b.Navigation("PriceHistories");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MerchandiseOrderDetail", b =>
-                {
-                    b.Navigation("DeliveryOrderDetails");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MfgProductionOrder", b =>
-                {
-                    b.Navigation("ManufacturingFormulas");
-
-                    b.Navigation("ManufacturingOrderLogs");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Part", b =>
-                {
-                    b.Navigation("Employees");
-
-                    b.Navigation("Equipments");
-
-                    b.Navigation("EventLogs");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Product", b =>
-                {
-                    b.Navigation("DeliveryOrderDetails");
-
-                    b.Navigation("Formulas");
-
-                    b.Navigation("MerchandiseOrderDetails");
-
-                    b.Navigation("MfgProductionOrders");
-
-                    b.Navigation("SampleRequests");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ProductInspection", b =>
-                {
-                    b.Navigation("Qcdetails")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.PurchaseOrder", b =>
-                {
-                    b.Navigation("PurchaseOrderDetails");
-
-                    b.Navigation("PurchaseOrderLinks");
-
-                    b.Navigation("PurchaseOrderStatusHistories");
-
-                    b.Navigation("PurchaseOrdersSchedules");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Supplier", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Supplier", b =>
                 {
                     b.Navigation("MaterialsSuppliers");
 
@@ -6559,18 +10420,100 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("SupplierContacts");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SupplyRequest", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Notifications.Notification", b =>
                 {
-                    b.Navigation("ApprovalHistories");
+                    b.Navigation("Recipients");
 
-                    b.Navigation("RequestDetails");
+                    b.Navigation("UserStates");
                 });
 
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseRequest", b =>
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.OrderSchema.MerchandiseOrder", b =>
+                {
+                    b.Navigation("DeliveryOrderPOs");
+
+                    b.Navigation("MerchandiseOrderDetails");
+
+                    b.Navigation("PurchaseOrderLinks");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.OrderSchema.MerchandiseOrderDetail", b =>
+                {
+                    b.Navigation("DeliveryOrderDetails");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.OrderSchema.PurchaseOrder", b =>
+                {
+                    b.Navigation("PurchaseOrderDetails");
+
+                    b.Navigation("PurchaseOrderLinks");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.Part", b =>
+                {
+                    b.Navigation("Employees");
+
+                    b.Navigation("EventLogs");
+
+                    b.Navigation("NotificationRecipients");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Formula", b =>
+                {
+                    b.Navigation("FormulaMaterials");
+
+                    b.Navigation("ManufacturingFormulaSources");
+
+                    b.Navigation("MerchandiseOrderDetails");
+
+                    b.Navigation("SampleRequests");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Product", b =>
+                {
+                    b.Navigation("DeliveryOrderDetails");
+
+                    b.Navigation("Formulas");
+
+                    b.Navigation("MerchandiseOrderDetails");
+
+                    b.Navigation("MfgProductionOrders");
+
+                    b.Navigation("ProductStandardFormulas");
+
+                    b.Navigation("SampleRequests");
+
+                    b.Navigation("SchedualMfgs");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SupplyRequestSchema.SupplyRequest", b =>
+                {
+                    b.Navigation("Details");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.UsagePurpose", b =>
+                {
+                    b.Navigation("VoucherDetails");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseRequest", b =>
                 {
                     b.Navigation("DeliveryOrderPOs");
 
                     b.Navigation("WarehouseRequestDetails");
+
+                    b.Navigation("WarehouseVouchers");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseShelves", b =>
+                {
+                    b.Navigation("Ledgers");
+
+                    b.Navigation("WarehouseShelfStocks");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.WarehouseSchema.WarehouseVoucher", b =>
+                {
+                    b.Navigation("Details");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Identity.ApplicationRole", b =>

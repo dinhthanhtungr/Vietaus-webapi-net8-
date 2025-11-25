@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
+using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
 using VietausWebAPI.Core.Domain.Enums.Manufacturings;
 
 namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
@@ -12,10 +14,11 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         public Guid MfgProductionOrderId { get; set; }
         public string ExternalId { get; set; } = string.Empty;
 
-        public string? ProductionType { get; set; }
+        //public string? ProductionType { get; set; }
         public Guid ProductId { get; set; }
         public string? ProductExternalIdSnapshot { get; set; }
         public string? ProductNameSnapshot { get; set; }
+        public string? ColorName { get; set; }
 
         public Guid? CustomerId { get; set; }
         public string? CustomerNameSnapshot { get; set; }
@@ -44,6 +47,7 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         public bool IsActive { get; set; }
 
         public string? QcCheck { get; set; }
+        public string? StepOfProduct { get; set; }
 
         public Guid CompanyId { get; set; }
         public DateTime CreatedDate { get; set; }
@@ -59,8 +63,8 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         public virtual Employee? UpdatedByNavigation { get; set; }
 
 
-        public virtual ICollection<ManufacturingFormula> ManufacturingFormulas { get; set; } = new List<ManufacturingFormula>();
-        public virtual ICollection<MfgProductionOrderLog> ManufacturingOrderLogs { get; set; } = new List<MfgProductionOrderLog>();
-
+        //public virtual ICollection<ManufacturingFormula> ManufacturingFormulas { get; set; } = new List<ManufacturingFormula>();
+        public virtual ICollection<ProductionSelectVersion> ProductionSelectVersions { get; set; } = new List<ProductionSelectVersion>();
+        public virtual ICollection<SchedualMfg> SchedualMfgs { get; set; } = new List<SchedualMfg>();
     }
 }

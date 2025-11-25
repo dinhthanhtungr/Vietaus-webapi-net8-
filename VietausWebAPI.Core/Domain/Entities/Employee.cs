@@ -3,8 +3,16 @@ using System;
 using System.Collections.Generic;
 using System.Net.Mail;
 using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
+using VietausWebAPI.Core.Domain.Entities.AuditSchema;
+using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
+using VietausWebAPI.Core.Domain.Entities.DeliverySchema;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
+using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 using VietausWebAPI.Core.Domain.Entities.MROSchema;
+using VietausWebAPI.Core.Domain.Entities.OrderSchema;
+using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
+using VietausWebAPI.Core.Domain.Entities.SupplyRequestSchema;
+using VietausWebAPI.Core.Domain.Entities.WarehouseSchema;
 using VietausWebAPI.Core.Identity;
 
 namespace VietausWebAPI.Core.Domain.Entities;
@@ -43,13 +51,10 @@ public partial class Employee
 
     public virtual ICollection<ApplicationUser> ApplicationUsers { get; set; } = new List<ApplicationUser>();
 
-    public virtual ICollection<ApprovalHistory> ApprovalHistories { get; set; } = new List<ApprovalHistory>();
+    //public virtual ICollection<ApprovalHistory> ApprovalHistories { get; set; } = new List<ApprovalHistory>();
    
     public virtual ICollection<AttachmentModel> AttachmentCreatedByNavigations { get; set; } = new List<AttachmentModel>(); // Fix for IDE0028
 
-    public virtual ICollection<Branch> BranchCreatedByNavigations { get; set; } = new List<Branch>();
-
-    public virtual ICollection<Branch> BranchUpdatedByNavigations { get; set; } = new List<Branch>();
 
     public virtual ICollection<Company> CompanyCreatedByNavigations { get; set; } = new List<Company>();
 
@@ -92,13 +97,9 @@ public partial class Employee
     public virtual ICollection<MaterialsSupplier> MaterialsSupplierCreatedByNavigations { get; set; } = new List<MaterialsSupplier>();
     public virtual ICollection<MaterialsSupplier> MaterialsSupplierUpdatedByNavigations { get; set; } = new List<MaterialsSupplier>();
 
-    public virtual ICollection<MfgProductionOrder> MfgProductionOrderCreatedByNavigations { get; set; } = new List<MfgProductionOrder>();
-    public virtual ICollection<MfgProductionOrder> MfgProductionOrderUpdatedByNavigations { get; set; } = new List<MfgProductionOrder>();
 
-    public virtual ICollection<MfgProductionOrderLog> MfgProductionOrderLogCreatedByNavigations { get; set; } = new List<MfgProductionOrderLog>();
+    //public virtual ICollection<MfgProductionOrderLog> MfgProductionOrderLogCreatedByNavigations { get; set; } = new List<MfgProductionOrderLog>();
 
-    public virtual ICollection<ManufacturingFormula> ManufacturingFormulaCreatedByNavigations { get; set; } = new List<ManufacturingFormula>();
-    public virtual ICollection<ManufacturingFormula> ManufacturingFormulaUpdatedByNavigations { get; set; } = new List<ManufacturingFormula>();
 
     //public virtual ICollection<ManufacturingFormulaLog> PerformedByNavigations { get; set; } = new List<ManufacturingFormulaLog>();
 
@@ -117,7 +118,7 @@ public partial class Employee
 
     public virtual ICollection<PriceHistory> PriceHistoryCreatedByNavigations { get; set; } = new List<PriceHistory>();
 
-    public virtual ICollection<PriceHistory> PriceHistoryUpdatedByNavigations { get; set; } = new List<PriceHistory>();
+    //public virtual ICollection<PriceHistory> PriceHistoryUpdatedByNavigations { get; set; } = new List<PriceHistory>();
 
     //public virtual ICollection<ProductChangedHistory> ProductChangedHistories { get; set; } = new List<ProductChangedHistory>();
 
@@ -128,7 +129,7 @@ public partial class Employee
 
     public virtual ICollection<PurchaseOrder> PurchaseOrderCreatedByNavigations { get; set; } = new List<PurchaseOrder>();
 
-    public virtual ICollection<PurchaseOrderStatusHistory> PurchaseOrderStatusHistories { get; set; } = new List<PurchaseOrderStatusHistory>();
+    //public virtual ICollection<PurchaseOrderStatusHistory> PurchaseOrderStatusHistories { get; set; } = new List<PurchaseOrderStatusHistory>();
 
     public virtual ICollection<PurchaseOrder> PurchaseOrderUpdatedByNavigations { get; set; } = new List<PurchaseOrder>();
 
@@ -144,8 +145,6 @@ public partial class Employee
 
     public virtual ICollection<SupplyRequest> SupplyRequestCreatedByNavigations { get; set; } = new List<SupplyRequest>();
 
-    public virtual ICollection<SupplyRequest> SupplyRequestUpdatedByNavigations { get; set; } = new List<SupplyRequest>();
-
     public virtual ICollection<Unit> Units { get; set; } = new List<Unit>();
 
     public virtual ICollection<WarehouseTempStock> WarehouseTempStockCreatedByNavigations { get; set; } = new List<WarehouseTempStock>();
@@ -154,11 +153,31 @@ public partial class Employee
     public virtual ICollection<WarehouseRequest> WarehouseRequestUpdatedByNavigations { get; set; } = new List<WarehouseRequest>();
 
     /// <summary>
-    /// MRO
+    /// ==================================== MRO Module ==================================== 
     /// </summary>
-    public virtual ICollection<IncidentHeaderMRO> CreatedByNavigations { get; set; } = new List<IncidentHeaderMRO>();
-    public virtual ICollection<IncidentHeaderMRO> ExecByNavigations { get; set; } = new List<IncidentHeaderMRO>();
-    public virtual ICollection<IncidentHeaderMRO> DoneByNavigations { get; set; } = new List<IncidentHeaderMRO>();
-    public virtual ICollection<IncidentHeaderMRO> ClosedByNavigations { get; set; } = new List<IncidentHeaderMRO>();
+    //public virtual ICollection<IncidentHeaderMRO> CreatedByNavigations { get; set; } = new List<IncidentHeaderMRO>();
+    //public virtual ICollection<IncidentHeaderMRO> ExecByNavigations { get; set; } = new List<IncidentHeaderMRO>();
+    //public virtual ICollection<IncidentHeaderMRO> DoneByNavigations { get; set; } = new List<IncidentHeaderMRO>();
+    //public virtual ICollection<IncidentHeaderMRO> ClosedByNavigations { get; set; } = new List<IncidentHeaderMRO>();
+
+    //public virtual ICollection<IncidentHeaderMRO> DoneByNavigations { get; set; } = new List<IncidentHeaderMRO>();
+    //public virtual ICollection<IncidentHeaderMRO> ClosedByNavigations { get; set; } = new List<IncidentHeaderMRO>();
+
+    /// <summary>
+    /// ==================================== MRO Module ==================================== 
+    /// </summary>
+    public virtual ICollection<MfgProductionOrder> MfgProductionOrderCreatedByNavigations { get; set; } = new List<MfgProductionOrder>();
+    public virtual ICollection<MfgProductionOrder> MfgProductionOrderUpdatedByNavigations { get; set; } = new List<MfgProductionOrder>();
+    public virtual ICollection<ManufacturingFormula> ManufacturingFormulaCreatedByNavigations { get; set; } = new List<ManufacturingFormula>();
+    public virtual ICollection<ManufacturingFormula> ManufacturingFormulaUpdatedByNavigations { get; set; } = new List<ManufacturingFormula>();
+    public virtual ICollection<ProductionSelectVersion> ProductionSelectVersionCreatedByNavigations { get; set; } = new List<ProductionSelectVersion>();
+    public virtual ICollection<ProductionSelectVersion> ProductionSelectVersionClosedByNavigations { get; set; } = new List<ProductionSelectVersion>();
+    public virtual ICollection<ProductStandardFormula> ProductStandardFormulaCreatedByNavigations { get; set; } = new List<ProductStandardFormula>();
+    public virtual ICollection<ProductStandardFormula> ProductStandardFormulaClosedByNavigations { get; set; } = new List<ProductStandardFormula>();
+
+    // Warehouse Schema
+    public virtual ICollection<WarehouseVoucher> WarehouseVoucherCreatedByNavigations { get; set; } = new List<WarehouseVoucher>();
+    public virtual ICollection<WarehouseVoucher> WarehouseVoucherUpdatedByNavigations { get; set; } = new List<WarehouseVoucher>();
+    public virtual ICollection<WarehouseShelfLedger> WarehouseShelfLedgerCreatedByNavigations { get; set; } = new List<WarehouseShelfLedger>();
 
 }

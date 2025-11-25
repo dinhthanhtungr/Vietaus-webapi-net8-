@@ -33,9 +33,6 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
         public bool? IsActive { get; set; }
 
         public string? Barcode { get; set; } //mã “master” để quét ra sản phẩm/vật tư (thường là GTIN/EAN-13).
-
-        public string? ImagePath { get; set; }
-        public Guid? UpdatedBy { get; set; }
         public List<GetMaterialSupplier> materialSuppliers { get; set; } = new List<GetMaterialSupplier>();
     }
 }

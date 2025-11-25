@@ -13,10 +13,11 @@ using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.Sam
 using VietausWebAPI.Core.Application.Features.Labs.Queries.CreateSampleRequest;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRequestFeature;
 using VietausWebAPI.Core.Application.Shared.Helper;
+using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
-using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
+using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
 using VietausWebAPI.Core.Repositories_Contracts;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
@@ -35,6 +36,147 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             _currentUser = currentUser;
         }
 
+        // ======================================================================== Get ======================================================================== 
+        /// <summary>
+        /// Trả về mẫu theo ID kèm sản phẩm và công thức (nếu có)
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task<GetSampleWithProductRequest> GetByIdAsync(Guid id, CancellationToken ct = default)
+        {
+            try
+            {
+                var dto = await _unitOfWork.SampleRequestRepository.Query()
+                    .AsNoTracking()
+                    .Where(c => c.SampleRequestId == id && c.IsActive == true)
+                    .ProjectTo<GetSampleWithProductRequest>(_mapper.ConfigurationProvider)
+                    .SingleOrDefaultAsync(ct);
+
+                if (dto is null) throw new KeyNotFoundException($"SampleRequest {id} not found");
+
+                if (dto.Sample?.Formula?.FormulaId != null)
+                {
+                    dto.Sample.Formula = await _unitOfWork.FormulaRepository.Query()
+                        .Where(f => f.FormulaId == dto.Sample.Formula.FormulaId)
+                        .ProjectTo<GetSampleFormula>(_mapper.ConfigurationProvider)
+                        .SingleOrDefaultAsync(ct);
+                }
+
+                else
+                {
+                    var productId = dto.Product?.ProductId;
+
+                    if (productId != null)
+                    {
+                        dto.Sample.Formula = await _unitOfWork.FormulaRepository.Query()
+                            .Where(f => f.ProductId == productId)
+                            // Nếu bạn CHƯA có ApprovedAt/CreatedAt/VersionNo, tạm xài ExternalId (đã pad cố định)
+                            .OrderByDescending(f => f.ExternalId)
+                            .ProjectTo<GetSampleFormula>(_mapper.ConfigurationProvider)
+                            .FirstOrDefaultAsync(ct);
+
+                    }
+                }
+                return dto;
+            }
+
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi lấy thông tin mẫu: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách mẫu với phân trang và lọc
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task<PagedResult<SampleRequestSummaryDTO>> GetAllAsync(SampleRequestQuery query, CancellationToken ct = default)
+        {
+            try
+            {
+                if (query.PageNumber <= 0) query.PageNumber = 1;
+                if (query.PageSize <= 0) query.PageSize = 15;
+
+                // Base query
+                var result = _unitOfWork.SampleRequestRepository
+                    .Query()
+                    .Where(c => c.IsActive == true);   // 👈 đưa IsActive lên sớm luôn
+
+                // 1) Keyword
+                if (!string.IsNullOrWhiteSpace(query.Keyword))
+                {
+                    var keyword = query.Keyword.Trim();
+
+                    result = result.Where(x =>
+                        (x.ExternalId ?? "").Contains(keyword) ||
+                        (x.CreatedByNavigation.ExternalId ?? "").Contains(keyword) ||
+                        (x.Product.ColourCode ?? "").Contains(keyword) ||
+                        (x.Customer.ExternalId ?? "").Contains(keyword) ||
+                        (x.Customer.CustomerName ?? "").Contains(keyword)
+                    );
+                }
+
+                // 2) Filter theo Status (multi-select)
+                if (query.Statuses is { Count: > 0 })
+                {
+                    var statuses = query.Statuses
+                        .Where(s => !string.IsNullOrWhiteSpace(s))
+                        .Select(s => s.Trim())
+                        .ToList();
+
+                    if (statuses.Count > 0)
+                    {
+                        result = result.Where(x => statuses.Contains(x.Status));
+                        // Nếu Status là enum: statuses.Contains(x.Status.ToString())
+                    }
+                }
+
+                // 3) Filter theo ngày (CreatedDate)
+                if (query.From.HasValue)
+                {
+                    var from = query.From.Value.Date; // bắt đầu từ 00:00
+                    result = result.Where(x => x.CreatedDate >= from);
+                }
+
+                if (query.To.HasValue)
+                {
+                    // Inclusive tới cuối ngày: < (To + 1 ngày)
+                    var toExclusive = query.To.Value.Date.AddDays(1);
+                    result = result.Where(x => x.CreatedDate < toExclusive);
+                }
+
+                // 4) Tổng số record sau filter
+                int totalCount = await result.CountAsync(ct);
+
+                // 5) Paging + sort + Project
+                var items = await result
+                    .OrderByDescending(c => c.ExternalId.Substring(3).PadLeft(10, '0'))
+                    .ThenByDescending(c => c.ExternalId.Substring(0, 3))
+                    .Skip((query.PageNumber - 1) * query.PageSize)
+                    .Take(query.PageSize)
+                    .ProjectTo<SampleRequestSummaryDTO>(_mapper.ConfigurationProvider)
+                    .ToListAsync(ct);
+
+                return new PagedResult<SampleRequestSummaryDTO>(
+                    items,
+                    totalCount,
+                    query.PageNumber,
+                    query.PageSize
+                );
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi lấy danh sách mẫu: {ex.Message}", ex);
+            }
+        }
+
+        // ======================================================================== Post ======================================================================== 
+
         /// <summary>
         /// Tạo mới yêu cầu mẫu kèm sản phẩm 
         /// </summary>
@@ -47,6 +189,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             // lấy info từ user đăng nhập
             var companyId = _currentUser.CompanyId;        // bạn tự xem ICurrentUser bạn đang expose thế nào
             var userId = _currentUser.EmployeeId;           // hoặc EmployeeId
+            var now = DateTime.Now;
 
             if (companyId == Guid.Empty)
                 throw new ArgumentException("CompanyId cannot be empty");
@@ -91,11 +234,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
 
                 // ép các field hệ thống (override luôn data client gửi)
                 sample.CompanyId = companyId;
-                sample.BranchId = sample.BranchId; // nếu client gửi rồi thì giữ, không thì lấy từ user
                 sample.CreatedBy = userId;
                 sample.UpdatedBy = userId;
-                sample.CreatedDate = DateTime.Now;
-                sample.UpdatedDate = DateTime.Now;
+                sample.CreatedDate = now;
+                sample.UpdatedDate = now;
                 sample.IsActive = true;
                 // status để client gửi cũng được, nhưng nếu muốn backend quyết thì:
                 if (string.IsNullOrWhiteSpace(sample.Status))
@@ -140,6 +282,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             }
         }
 
+        // ======================================================================== Patch ======================================================================== 
+
         /// <summary>
         /// Xóa mềm mẫu theo điều kiện (thực chất là cập nhật IsActive = false)
         /// </summary>
@@ -165,110 +309,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             {
                 await _unitOfWork.RollbackTransactionAsync();
                 throw new Exception($"Lỗi khi Thay đổi: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// Lấy danh sách mẫu với phân trang và lọc
-        /// </summary>
-        /// <param name="query"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public async Task<PagedResult<SampleRequestSummaryDTO>> GetAllAsync(SampleRequestQuery query, CancellationToken ct = default)
-        {
-            try
-            {
-                if (query.PageNumber <= 0) query.PageNumber = 1;
-                if (query.PageSize <= 0) query.PageSize = 15;
-
-                var result = _unitOfWork.SampleRequestRepository.Query();
-
-                if (!string.IsNullOrWhiteSpace(query.Keyword))
-                {
-                    var keyword = query.Keyword.Trim();
-
-                    // Tìm theo tên/mã NV hoặc tên/mã khách trong batch
-                    result = result.Where(x =>
-                        (x.ExternalId ?? "").Contains(keyword) ||
-                        (x.CreatedByNavigation.ExternalId ?? "").Contains(keyword) ||
-                        (x.Product.ColourCode ?? "").Contains(keyword) ||
-                        (x.Customer.ExternalId ?? "").Contains(keyword) ||
-                        (x.Customer.CustomerName ?? "").Contains(keyword) 
-                    );
-                }
-
-                if (query.CompanyId.HasValue && query.CompanyId.Value != Guid.Empty)
-                {
-                    result = result.Where(p => p.CompanyId == query.CompanyId.Value);
-                }
-
-                int totalCount = await result.CountAsync(ct);
-
-                var items = await result
-                    .Where(c => c.IsActive == true)
-                    .OrderByDescending(c => c.ExternalId.Substring(3).PadLeft(10, '0')) // "1" -> "0000000001"
-                    .ThenByDescending(c => c.ExternalId.Substring(0, 3))                // nếu cần giữ nhóm theo prefix
-                    .Skip((query.PageNumber - 1) * query.PageSize)
-                    .Take(query.PageSize)
-                    .ProjectTo<SampleRequestSummaryDTO>(_mapper.ConfigurationProvider)
-                    .ToListAsync(ct);
-                return new PagedResult<SampleRequestSummaryDTO>(items, totalCount, query.PageNumber, query.PageSize);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Lỗi khi lấy danh sách mẫu: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// Trả về mẫu theo ID kèm sản phẩm và công thức (nếu có)
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public async Task<GetSampleWithProductRequest> GetByIdAsync(Guid id, CancellationToken ct = default)
-        {
-            try
-            {
-                var dto = await _unitOfWork.SampleRequestRepository.Query()
-                    .AsNoTracking()
-                    .Where(c => c.SampleRequestId == id && c.IsActive == true)
-                    .ProjectTo<GetSampleWithProductRequest>(_mapper.ConfigurationProvider)
-                    .SingleOrDefaultAsync(ct);
-
-                if (dto is null) throw new KeyNotFoundException($"SampleRequest {id} not found");
-
-                if (dto.Sample?.Formula?.FormulaId != null)
-                {
-                    dto.Sample.Formula = await _unitOfWork.FormulaRepository.Query()
-                        .Where(f => f.FormulaId == dto.Sample.Formula.FormulaId)
-                        .ProjectTo<GetSampleFormula>(_mapper.ConfigurationProvider)
-                        .SingleOrDefaultAsync(ct);
-                }
-
-                else
-                {
-                    var productId = dto.Product?.ProductId;
-
-                    if (productId != null)
-                    {
-                        dto.Sample.Formula = await _unitOfWork.FormulaRepository.Query()
-                            .Where(f => f.ProductId == productId)
-                            // Nếu bạn CHƯA có ApprovedAt/CreatedAt/VersionNo, tạm xài ExternalId (đã pad cố định)
-                            .OrderByDescending(f => f.ExternalId)
-                            .ProjectTo<GetSampleFormula>(_mapper.ConfigurationProvider)
-                            .FirstOrDefaultAsync(ct);
-
-                    }
-                }
-                    return dto;
-            }
-
-            catch (Exception ex)
-            {
-                throw new Exception($"Lỗi khi lấy thông tin mẫu: {ex.Message}", ex);
             }
         }
 
@@ -330,7 +370,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 PatchHelper.SetIfRef(req.CustomerProductCode, () => existing.CustomerProductCode, v => existing.CustomerProductCode = v);
                 PatchHelper.SetIfNullable(req.FormulaId, () => existing.FormulaId, v => existing.FormulaId = v);
                 PatchHelper.SetIfRef(req.SaleComment, () => existing.SaleComment, v => existing.SaleComment = v);
-                PatchHelper.SetIf(req.BranchId, () => existing.BranchId, v => existing.BranchId = v);
                 PatchHelper.SetIfRef(req.Package, () => existing.Package, v => existing.Package = v);
 
                 // 4) Patch Product (nếu có)

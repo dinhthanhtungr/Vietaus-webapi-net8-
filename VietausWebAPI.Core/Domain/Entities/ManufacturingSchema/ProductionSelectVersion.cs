@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,8 +10,10 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
     public class ProductionSelectVersion
     {
         public Guid ProductionSelectVersionId { get; set; }
+
         public Guid MfgProductionOrderId { get; set; }
-        public Guid ManufacturingFormulaId { get; set; }
+        public Guid? ManufacturingFormulaId { get; set; }
+
 
         public DateTime ValidFrom { get; set; }
         public DateTime? ValidTo { get; set; }          // null = hiện hành
@@ -20,10 +23,10 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
 
         public Guid CompanyId { get; set; }
 
-        public virtual MfgProductionOrder MfgProductionOrder { get; set; } = null!;
-        public virtual ManufacturingFormula ManufacturingFormula { get; set; } = null!;
+        public virtual MfgProductionOrder MfgProductionOrder { get; set; } = null!;   
+        public virtual ManufacturingFormula? ManufacturingFormula { get; set; }
         public virtual Company? Company { get; set; }
         public virtual Employee? CreatedByNavigation { get; set; }
-        public virtual Employee? UpdatedByNavigation { get; set; }
+        public virtual Employee? ClosedByNavigation { get; set; }
     }
 }

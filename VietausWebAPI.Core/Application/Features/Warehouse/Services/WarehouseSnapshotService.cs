@@ -28,7 +28,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 
         //    var set = new WarehouseSnapshotSet
         //    {
-        //        SnapshotSetId = Guid.NewGuid(),
+        //        SnapshotSetId = Guid.CreateVersion7(),
         //        CompanyId = query.companyId,
         //        VaCode = query.vaCode,
         //        CreatedBy = query.createdBy,

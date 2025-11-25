@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 
 namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
 {
@@ -17,9 +18,6 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         public decimal Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }
-
-        public string? LotNo { get; set; } = string.Empty;
-        public Guid? StockId { get; set; }
 
         public string? MaterialNameSnapshot { get; set; }
         public string? MaterialExternalIdSnapshot { get; set; }

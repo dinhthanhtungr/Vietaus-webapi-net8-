@@ -24,7 +24,7 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.ServiceContrac
         /// <param name="query"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<PagedResult<GetMerchadiseTimeline>> GetMerchadiseTimelineAsync(TimelineQuery query, CancellationToken ct = default);
+        Task<OperationResult<PagedResult<GetMerchadiseTimeline>>> GetMerchadiseTimelineAsync(TimelineQuery query, CancellationToken ct = default);
 
         /// <summary>
         /// Lấy dữ liệu thông tin trạng thái của từng chi tiết trong đơn hàng theo timeline
@@ -32,7 +32,7 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.ServiceContrac
         /// <param name="query"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<PagedResult<GetMerchadiseTimelineInforDetail>> GetMerchadiseTimelineDetailAsync(TimelineQuery query, CancellationToken ct = default);
+        Task<OperationResult<PagedResult<GetMerchadiseTimelineInforDetail>>> GetMerchadiseTimelineDetailAsync(TimelineQuery query, CancellationToken ct = default);
 
         /// <summary>
         /// Lấy dữ liệu thông tin trạng thái đơn hàng theo timeline

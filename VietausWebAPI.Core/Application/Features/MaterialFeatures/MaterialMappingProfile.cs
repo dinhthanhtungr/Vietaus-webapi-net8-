@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs;
-using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 
 namespace VietausWebAPI.Core.Application.Features.MaterialFeatures
 {
@@ -71,13 +71,13 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures
 
 
             //PriceHistory
-            CreateMap<PostPriceHistory, PriceHistory>()
-                .ForMember(d => d.PriceHistoryId, o => o.Ignore())        // KHÔNG cho DTO ghi đè khóa chính
-                .ForMember(d => d.MaterialId, o => o.Ignore())           // ĐỂ EF tự set từ parent.Material.PriceHistories
-                .ForMember(d => d.Supplier, o => o.Ignore())            // KHÔNG map navigation để tránh EF chèn Supplier mới
-                .ForMember(d => d.IsActive, o => o.MapFrom(_ => true)) // Bản ghi giá mới tạo là "đang hiệu lực"
-                .ForMember(d => d.CreateDate, o => o.MapFrom(_ => DateTime.Now))
-                .ForMember(d => d.EndDate, o => o.MapFrom(_ => (DateTime?)null));
+            //CreateMap<PostPriceHistory, PriceHistory>()
+            //    .ForMember(d => d.PriceHistoryId, o => o.Ignore())        // KHÔNG cho DTO ghi đè khóa chính
+            //    .ForMember(d => d.MaterialId, o => o.Ignore())           // ĐỂ EF tự set từ parent.Material.PriceHistories
+            //    .ForMember(d => d.Supplier, o => o.Ignore())            // KHÔNG map navigation để tránh EF chèn Supplier mới
+            //    .ForMember(d => d.IsActive, o => o.MapFrom(_ => true)) // Bản ghi giá mới tạo là "đang hiệu lực"
+            //    .ForMember(d => d.CreateDate, o => o.MapFrom(_ => DateTime.Now))
+            //    .ForMember(d => d.EndDate, o => o.MapFrom(_ => (DateTime?)null));
 
 
 

@@ -12,7 +12,7 @@ namespace VietausWebAPI.Core.Application.Features.Planning.ServiceContracts
 {
     public interface IScheduealService
     {
-        Task<PagedResult<SchedualMfgDTO>> GetSchedualPageAsync(SchedualQuery scheduealQuery);
-        Task<SchedualMfgDTO> GetScheduealByIdAsync(string externalId);
+        //Task<PagedResult<SchedualMfgDTO>> GetSchedualPageAsync(SchedualQuery scheduealQuery);
+        //Task<SchedualMfgDTO> GetScheduealByIdAsync(string externalId);
     }
 }

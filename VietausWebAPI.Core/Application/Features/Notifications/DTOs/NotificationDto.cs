@@ -1,0 +1,31 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Enums.Notifications;
+
+namespace VietausWebAPI.Core.Application.Features.Notifications.DTOs
+{
+    public class NotificationDto
+    {
+        public Guid Id { get; set; } = Guid.CreateVersion7();
+
+        // Phân loại/tái sử dụng
+        public string Topic { get; set; } = default!;               // ví dụ: "Mfg.PriceExceeded"
+        public NotificationSeverity Severity { get; set; } = NotificationSeverity.Info;
+
+        // Nội dung hiển thị
+        public string Title { get; set; } = default!;
+        public string Message { get; set; } = default!;
+        public string? Link { get; set; }                            // deep-link
+        public string? PayloadJson { get; set; }                     // metadata linh hoạt (JSON)
+
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
+        public Guid CompanyId { get; set; }
+
+        // trạng thái theo user hiện tại
+        public bool IsRead { get; set; }
+        public DateTime? ReadDate { get; set; }
+    }
+}

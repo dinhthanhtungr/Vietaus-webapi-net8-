@@ -10,8 +10,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Queries.CreateSampleReque
 {
     public class SampleRequestQuery : PaginationQuery
     {
-        public Guid? CompanyId { get; set; }
         public string? Keyword { get; set; }
+        public List<string> Statuses { get; set; } = new List<string>();
         public DateTime? From { get; set; }
         public DateTime? To { get; set; }
     }

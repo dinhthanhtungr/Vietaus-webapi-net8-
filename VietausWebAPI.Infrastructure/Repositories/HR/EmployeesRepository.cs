@@ -12,7 +12,7 @@ using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Identity;
 using VietausWebAPI.Infrastructure.Utilities;
-using VietausWebAPI.WebAPI.DatabaseContext;
+using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace VietausWebAPI.Infrastructure.Repositories.HR
@@ -48,55 +48,6 @@ namespace VietausWebAPI.Infrastructure.Repositories.HR
                 .Select(e => e.ExternalId)
                 .FirstOrDefaultAsync();
         }
-
-        public async Task<PagedResult<ApplicationUser>> GetPagedAccoutAsync(EmployeeQuery? query)
-        {
-            var queryable = _context.Users
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
-                .AsNoTracking()
-                .AsQueryable();
-
-            if (query != null && !string.IsNullOrWhiteSpace(query.keyword))
-            {
-                var kw = $"%{query.keyword.Trim()}%";
-                queryable = queryable.Where(u =>
-                    (u.personName != null && EF.Functions.ILike(u.personName, kw)) ||
-                    (u.Email != null && EF.Functions.ILike(u.Email, kw)) ||
-                    (u.UserName != null && EF.Functions.ILike(u.UserName, kw))
-                );
-            }
-
-            // PageSize mặc định
-            if (query != null) query.PageSize = 15;
-
-            queryable = queryable.OrderByDescending(x => x.UserName);
-            return await QueryableExtensions.GetPagedAsync(queryable, query);
-        }
-
-        public async Task<PagedResult<Employee>> GetPagedAsync(EmployeeQuery? query)
-        {
-            var q = _context.Employees
-                .Include(e => e.Part)
-                .AsNoTracking()
-                .AsQueryable();
-
-            if (query != null && !string.IsNullOrWhiteSpace(query.keyword))
-            {
-                var kw = $"%{query.keyword.Trim()}%";
-                q = q.Where(x =>
-                    (x.FullName != null && EF.Functions.ILike(x.FullName, kw)) ||
-                    (x.Email != null && EF.Functions.ILike(x.Email, kw)) ||
-                    (x.ExternalId != null && EF.Functions.ILike(x.ExternalId, kw))
-                );
-            }
-
-            if (query != null) query.PageSize = 15;
-
-            q = q.OrderByDescending(x => x.DateHired);
-            return await QueryableExtensions.GetPagedAsync(q, query);
-        }
-
         public async Task PostEmployees(Employee employee)
         {
             await _context.Employees.AddAsync(employee);

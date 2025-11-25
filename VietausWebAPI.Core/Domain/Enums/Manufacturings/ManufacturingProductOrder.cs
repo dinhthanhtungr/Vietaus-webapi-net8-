@@ -43,6 +43,6 @@ namespace VietausWebAPI.Core.Domain.Enums.Manufacturings
     //Weighing = 15,           // Cân
     //Regrind = 16,            // Tái sinh
     //WarehouseReceived = 17   // Đã nhập kho (sau Produced, trước Completed)
-}
+    }
 
 }

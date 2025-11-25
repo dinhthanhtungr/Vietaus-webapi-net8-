@@ -10,9 +10,10 @@ using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.FormulaFeature;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.FormulaFeatures;
 using VietausWebAPI.Core.Application.Shared.Helper;
+using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
-using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
 using VietausWebAPI.Core.Domain.Enums.Products;
 using VietausWebAPI.Core.Repositories_Contracts;
 
@@ -30,6 +31,156 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
             _mapper = mapper;
             _currentUser = currentUser;
         }
+
+        // ======================================================================== Get ======================================================================== 
+        /// <summary>
+        /// Lấy danh sách công thức
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task<PagedResult<GetFormula>> GetAllAsync(FormulaQuery query, CancellationToken ct = default)
+        {
+            try
+            {
+                if (query.PageNumber <= 0) query.PageNumber = 1;
+                if (query.PageSize <= 0) query.PageSize = 10;
+
+                var q = _unitOfWork.FormulaRepository.Query().AsNoTracking();
+
+                if (!string.IsNullOrWhiteSpace(query.Keyword))
+                {
+                    var keyword = query.Keyword.Trim();
+                    q = q.Where(x =>
+                        (x.Name ?? "").Contains(keyword) ||
+                        (x.Product.ColourCode ?? "").Contains(keyword) ||
+                        (x.Product.Name ?? "").Contains(keyword)
+                    );
+                }
+
+                if (query.CompanyId is Guid cid && cid != Guid.Empty)
+                    q = q.Where(p => p.CompanyId == cid);
+
+                if (query.FormulaId is Guid fid && fid != Guid.Empty)
+                    q = q.Where(p => p.FormulaId == fid);
+
+                if (query.ProductId is Guid pid && pid != Guid.Empty)
+                    q = q.Where(p => p.ProductId == pid);
+
+                // Đếm trước
+                var totalCount = await q.CountAsync(ct);
+
+                // Sort + Paging trên ENTITY
+                q = q.Where(f => f.FormulaMaterials.Any(a => a.IsActive == true))
+                     .OrderByDescending(c => c.Name.Substring(1).PadLeft(10, '0'))
+                     .Skip((query.PageNumber - 1) * query.PageSize)
+                     .Take(query.PageSize);
+
+                // 👉 Projection tay để tính TotalPrice bằng giá gần nhất
+                var ms = _unitOfWork.MaterialsSupplierRepository.Query();
+
+                var items = await q
+                    .Where(f => f.FormulaMaterials.Any(a => a.IsActive == true)) // vẫn giữ rule active
+                    .OrderByDescending(c => c.Name.Substring(1).PadLeft(10, '0'))
+                    .Skip((query.PageNumber - 1) * query.PageSize)
+                    .Take(query.PageSize)
+                    .Select(f => new GetFormula
+                    {
+                        FormulaId = f.FormulaId,
+                        ExternalId = f.ExternalId,
+                        Name = f.Name,
+                        ProductCode = f.Product.ColourCode,
+                        Status = f.Status,
+                        CreatedDate = f.CreatedDate,
+                        IsSelect = f.IsSelect,
+
+                        CheckDate = f.CheckDate,
+                        CheckNameSnapshot = f.CheckByNavigation != null ? f.CheckByNavigation.FullName : null,
+                        SentDate = f.SentDate,
+                        SentByNameSnapshot = f.SentByNavigation != null ? f.SentByNavigation.FullName : null,
+
+                        CreatedByName = f.CreatedByNavigation != null ? (f.CreatedByNavigation.FullName).Trim() : null,
+
+                        TotalPrice = (decimal?)f.FormulaMaterials.Where(m => m.IsActive == true)
+                                    .Select(m =>
+                                        (m.Quantity) *
+                                        (
+                                            ms.Where(s => s.MaterialId == m.MaterialId && (s.IsActive ?? true))
+                                              .OrderByDescending(s => (DateTime?)(s.UpdatedDate ?? s.CreateDate))
+                                              .ThenByDescending(s => (s.IsPreferred ?? false))
+                                              .Select(s => (decimal?)s.CurrentPrice)
+                                              .FirstOrDefault() ?? 0m
+                                        )
+                                    ).Sum(),
+
+                        // ==== TÍNH TOTAL PRICE THEO RULE VA/VU ====
+                        //TotalPrice =
+                        //    // 1) Thử lấy theo VA: chọn VA IsStandard gần nhất, rồi SUM vật tư của VA
+                        //    (
+                        //        f.ManufacturingFormulaSources
+                        //         .Where(mf => mf.IsActive == true && mf.IsStandard == true)
+                        //         .OrderByDescending(mf => (DateTime?)(mf.UpdatedDate ))
+                        //         .Select(mf => (decimal?)              // Ép về decimal? để dùng ??
+                        //             mf.ManufacturingFormulaMaterials
+                        //               .Where(mm => mm.IsActive == true)
+                        //               .Select(mm =>
+                        //                   (mm.Quantity) *
+                        //                   (
+                        //                       ms.Where(s => s.MaterialId == mm.MaterialId && (s.IsActive ?? true))
+                        //                         .OrderByDescending(s => (DateTime?)(s.UpdatedDate ?? s.CreateDate))
+                        //                         .ThenByDescending(s => (s.IsPreferred ?? false))
+                        //                         .Select(s => (decimal?)s.CurrentPrice)
+                        //                         .FirstOrDefault() ?? 0m
+                        //                   )
+                        //               ).Sum()
+                        //         )
+                        //         .FirstOrDefault()
+                        //    )
+                        //    // 2) Nếu không có VA chuẩn → fallback về VU (FormulaMaterials)
+                        //    ??
+                        //    (
+                        //        (decimal?)
+                        //        f.FormulaMaterials
+                        //         .Where(m => m.IsActive == true)
+                        //         .Select(m =>
+                        //             (m.Quantity) *
+                        //             (
+                        //                 ms.Where(s => s.MaterialId == m.MaterialId && (s.IsActive ?? true))
+                        //                   .OrderByDescending(s => (DateTime?)(s.UpdatedDate ?? s.CreateDate))
+                        //                   .ThenByDescending(s => (s.IsPreferred ?? false))
+                        //                   .Select(s => (decimal?)s.CurrentPrice)
+                        //                   .FirstOrDefault() ?? 0m
+                        //             )
+                        //         ).Sum()
+                        //    ),
+
+                        materialFormulas = f.FormulaMaterials
+                                .Where(m => m.IsActive == true)
+                                .Select(m => new GetMaterialFormula
+                                {
+                                    MaterialId = m.MaterialId,
+                                    CategoryId = m.CategoryId,
+                                    Quantity = m.Quantity,
+                                    UnitPrice = m.UnitPrice,
+                                    TotalPrice = m.TotalPrice,
+                                    Unit = m.Unit,
+                                    MaterialNameSnapshot = m.MaterialNameSnapshot,
+                                    MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot
+                                }).ToList()
+                    })
+                    .ToListAsync(ct);
+
+
+                return new PagedResult<GetFormula>(items, totalCount, query.PageNumber, query.PageSize);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi lấy danh sách: {ex.Message}", ex);
+            }
+        }
+
+        // ======================================================================== Post ======================================================================== 
 
         /// <summary>
         /// Tạo công thức mới cho sản phẩm (theo VU)
@@ -105,140 +256,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
             }
         }
 
-        /// <summary>
-        /// Lấy danh sách công thức
-        /// </summary>
-        /// <param name="query"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public async Task<PagedResult<GetFormula>> GetAllAsync(FormulaQuery query, CancellationToken ct = default)
-        {
-            try
-            {
-                if (query.PageNumber <= 0) query.PageNumber = 1;
-                if (query.PageSize <= 0) query.PageSize = 10;
-
-                var q = _unitOfWork.FormulaRepository.Query().AsNoTracking();
-
-                if (!string.IsNullOrWhiteSpace(query.Keyword))
-                {
-                    var keyword = query.Keyword.Trim();
-                    q = q.Where(x =>
-                        (x.Name ?? "").Contains(keyword) ||
-                        (x.Product.ColourCode ?? "").Contains(keyword) ||
-                        (x.Product.Name ?? "").Contains(keyword)
-                    );
-                }
-
-                if (query.CompanyId is Guid cid && cid != Guid.Empty)
-                    q = q.Where(p => p.CompanyId == cid);
-
-                if (query.FormulaId is Guid fid && fid != Guid.Empty)
-                    q = q.Where(p => p.FormulaId == fid);
-
-                if (query.ProductId is Guid pid && pid != Guid.Empty)
-                    q = q.Where(p => p.ProductId == pid);
-
-                // Đếm trước
-                var totalCount = await q.CountAsync(ct);
-
-                // Sort + Paging trên ENTITY
-                q = q.Where(f => f.FormulaMaterials.Any(a => a.IsActive == true))
-                     .OrderByDescending(c => c.Name.Substring(1).PadLeft(10, '0'))
-                     .Skip((query.PageNumber - 1) * query.PageSize)
-                     .Take(query.PageSize);
-
-                // 👉 Projection tay để tính TotalPrice bằng giá gần nhất
-                var ms = _unitOfWork.MaterialsSupplierRepository.Query();
-
-                var items = await q
-                    .Where(f => f.FormulaMaterials.Any(a => a.IsActive == true)) // vẫn giữ rule active
-                    .OrderByDescending(c => c.Name.Substring(1).PadLeft(10, '0'))
-                    .Skip((query.PageNumber - 1) * query.PageSize)
-                    .Take(query.PageSize)
-                    .Select(f => new GetFormula
-                    {
-                        FormulaId = f.FormulaId,
-                        ExternalId = f.ExternalId,
-                        Name = f.Name,
-                        ProductCode = f.Product.ColourCode,
-                        Status = f.Status,
-                        CreatedDate = f.CreatedDate,
-                        IsSelect = f.IsSelect,
-
-                        CheckDate = f.CheckDate,
-                        CheckNameSnapshot = f.CheckByNavigation != null ? f.CheckByNavigation.FullName : null,
-                        SentDate = f.SentDate,
-                        SentByNameSnapshot = f.SentByNavigation != null ? f.SentByNavigation.FullName : null,
-
-                        CreatedByName = f.CreatedByNavigation != null ? (f.CreatedByNavigation.FullName).Trim() : null,
-                        
-                        // ==== TÍNH TOTAL PRICE THEO RULE VA/VU ====
-                        //TotalPrice =
-                        //    // 1) Thử lấy theo VA: chọn VA IsStandard gần nhất, rồi SUM vật tư của VA
-                        //    (
-                        //        f.ManufacturingFormulaSources
-                        //         .Where(mf => mf.IsActive == true && mf.IsStandard == true)
-                        //         .OrderByDescending(mf => (DateTime?)(mf.UpdatedDate ))
-                        //         .Select(mf => (decimal?)              // Ép về decimal? để dùng ??
-                        //             mf.ManufacturingFormulaMaterials
-                        //               .Where(mm => mm.IsActive == true)
-                        //               .Select(mm =>
-                        //                   (mm.Quantity) *
-                        //                   (
-                        //                       ms.Where(s => s.MaterialId == mm.MaterialId && (s.IsActive ?? true))
-                        //                         .OrderByDescending(s => (DateTime?)(s.UpdatedDate ?? s.CreateDate))
-                        //                         .ThenByDescending(s => (s.IsPreferred ?? false))
-                        //                         .Select(s => (decimal?)s.CurrentPrice)
-                        //                         .FirstOrDefault() ?? 0m
-                        //                   )
-                        //               ).Sum()
-                        //         )
-                        //         .FirstOrDefault()
-                        //    )
-                        //    // 2) Nếu không có VA chuẩn → fallback về VU (FormulaMaterials)
-                        //    ??
-                        //    (
-                        //        (decimal?)
-                        //        f.FormulaMaterials
-                        //         .Where(m => m.IsActive == true)
-                        //         .Select(m =>
-                        //             (m.Quantity) *
-                        //             (
-                        //                 ms.Where(s => s.MaterialId == m.MaterialId && (s.IsActive ?? true))
-                        //                   .OrderByDescending(s => (DateTime?)(s.UpdatedDate ?? s.CreateDate))
-                        //                   .ThenByDescending(s => (s.IsPreferred ?? false))
-                        //                   .Select(s => (decimal?)s.CurrentPrice)
-                        //                   .FirstOrDefault() ?? 0m
-                        //             )
-                        //         ).Sum()
-                        //    ),
-
-                            materialFormulas = f.FormulaMaterials
-                                .Where(m => m.IsActive == true)
-                                .Select(m => new GetMaterialFormula
-                                {
-                                    MaterialId = m.MaterialId,
-                                    CategoryId = m.CategoryId,
-                                    Quantity = m.Quantity,
-                                    UnitPrice = m.UnitPrice,
-                                    TotalPrice = m.TotalPrice,
-                                    Unit = m.Unit,
-                                    MaterialNameSnapshot = m.MaterialNameSnapshot,
-                                    MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot
-                                }).ToList()
-                    })
-                    .ToListAsync(ct);
-
-
-                return new PagedResult<GetFormula>(items, totalCount, query.PageNumber, query.PageSize);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Lỗi khi lấy danh sách: {ex.Message}", ex);
-            }
-        }
+        // ======================================================================== Patch ======================================================================== 
 
         /// <summary>
         /// Cập nhật dữ liệu công thức
@@ -369,7 +387,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                         // New link
                         link = new FormulaMaterial
                         {
-                            FormulaMaterialId = Guid.NewGuid(),
+                            FormulaMaterialId = Guid.CreateVersion7(),
                             FormulaId = formulaExist.FormulaId,
                             MaterialId = m.MaterialId,
                             CategoryId = m.CategoryId,

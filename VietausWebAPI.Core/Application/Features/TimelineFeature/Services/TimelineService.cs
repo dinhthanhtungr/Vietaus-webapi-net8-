@@ -10,8 +10,9 @@ using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.Manufacturing
 using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.MerchadiseTimeline;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.Queries;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.ServiceContracts;
+using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
-using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.AuditSchema;
 using VietausWebAPI.Core.Domain.Enums.Logs;
 using VietausWebAPI.Core.Repositories_Contracts;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
@@ -22,85 +23,15 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
     public class TimelineService : ITimelineService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ICurrentUser _currentUser;
 
-        public TimelineService(IUnitOfWork unitOfWork)
+        public TimelineService(IUnitOfWork unitOfWork, ICurrentUser currentUser)
         {
             _unitOfWork = unitOfWork;
+            _currentUser = currentUser;
         }
 
-        /// <summary>
-        /// Thêm một EventLog
-        /// </summary>
-        /// <param name="query"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public Task AddEventLogAsync(EventLogModels query, CancellationToken ct = default)
-        {
-            try
-            {
-                var EmployeeExisting = _unitOfWork.EmployeesRepository.Query()
-                    .FirstOrDefault(e => e.EmployeeId == query.employeeId); 
-
-                var newLog = new EventLog
-                {
-                    CompanyId = EmployeeExisting.CompanyId.GetValueOrDefault(),
-                    DepartmentId = EmployeeExisting.PartId ?? throw new Exception("Employee's PartId is null"),
-                    EmployeeID = query.employeeId,
-                    SourceId = query.sourceId,
-                    SourceCode = query.sourceCode ?? string.Empty,
-                    EventType = query.eventType,
-                    Status = query.status ?? string.Empty, // Fix: ensure Status is never null
-                    IsActive = true,
-                    CreatedDate = DateTime.Now,
-                    Note = query.note
-                };
-                return _unitOfWork.EventLogRepository.AddAsync(newLog, ct);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Lỗi khi thêm nhật ký sự kiện: " + ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Thêm nhiều EventLog
-        /// </summary>
-        /// <param name="queries"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public Task AddEventLogRangeAsync(IEnumerable<EventLogModels> queries, CancellationToken ct = default)
-        {
-            try
-            {
-                var newLogs = new List<EventLog>();
-                foreach (var query in queries)
-                {
-                    var EmployeeExisting = _unitOfWork.EmployeesRepository.Query()
-                        .FirstOrDefault(e => e.EmployeeId == query.employeeId);
-                    var newLog = new EventLog
-                    {
-                        CompanyId = EmployeeExisting.CompanyId.GetValueOrDefault(),
-                        DepartmentId = EmployeeExisting.PartId ?? throw new Exception("Employee's PartId is null"),
-                        EmployeeID = query.employeeId,
-                        SourceId = query.sourceId,
-                        SourceCode = query.sourceCode ?? string.Empty,
-                        EventType = query.eventType,
-                        Status = query.status ?? string.Empty, // Fix: ensure Status is never null
-                        IsActive = true,
-                        CreatedDate = DateTime.Now,
-                        Note = query.note
-                    };
-                    newLogs.Add(newLog);
-                }
-                return _unitOfWork.EventLogRepository.AddRangeAsync(newLogs,  ct);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Lỗi khi thêm nhật ký sự kiện: " + ex.Message);
-            }
-        }
+        // ======================================================================== Get ======================================================================== 
 
         /// <summary>
         /// Lấy dữ liệu thông tin trạng thái đơn hàng theo timeline
@@ -264,13 +195,12 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
         //}
 
         /// <summary>
-        /// Lấy dữ liệu cho timeline đơn hàng hàng hóa
+        /// Lấy dữ liệu cho timeline đơn hàng merchandise
         /// </summary>
         /// <param name="query"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<PagedResult<GetMerchadiseTimeline>> GetMerchadiseTimelineAsync(
-            TimelineQuery query, CancellationToken ct = default)
+        public async Task<OperationResult<PagedResult<GetMerchadiseTimeline>>> GetMerchadiseTimelineAsync(TimelineQuery query, CancellationToken ct = default)
         {
             // 0) Chuẩn hoá phân trang
             if (query.PageNumber <= 0) query.PageNumber = 1;
@@ -286,7 +216,6 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
             string? likeKw = kw is null ? null : $"%{kw}%";
 
             // 1) Base query: MerchandiseOrder
-            //    (chưa áp filter Logs/Delivery/MFG/Req — sẽ nối bằng Any(EXISTS))
             var baseQ = _unitOfWork.MerchandiseOrderRepository.Query()
                 .AsNoTracking()
                 .Where(mo => mo.IsActive == true);
@@ -299,41 +228,47 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
             if (likeKw != null)
             {
                 baseQ = baseQ.Where(mo =>
-                    // Tìm trên MerchandiseOrder / Customer
+                    // Tìm trên ExternalId của đơn
                     (mo.ExternalId != null && EF.Functions.ILike(mo.ExternalId, likeKw)) ||
-                    (mo.Customer != null && (
-                        (mo.Customer.CustomerName != null && EF.Functions.ILike(mo.Customer.CustomerName, likeKw)) ||
-                        (mo.Customer.ExternalId != null && EF.Functions.ILike(mo.Customer.ExternalId, likeKw))
-                    )) 
+
+                    // *** CHANGED: dùng snapshot của khách hàng thay vì join Customer (nhẹ hơn)
+                    (EF.Functions.ILike(mo.CustomerNameSnapshot, likeKw) ||
+                     EF.Functions.ILike(mo.CustomerExternalIdSnapshot, likeKw))
                 );
             }
 
-
             // 1.2) Áp range From/ToCreated theo CreatedScope
-            // Merchandise: áp trên chính MerchandiseOrder.CreateDate
+
+            // Merchandise: áp trên chính MerchandiseOrder.CreateDate (không đổi)
             if (hasCreatedRange && query.CreatedScope == TimelineScope.Merchandise.ToString())
             {
                 if (fromC.HasValue) baseQ = baseQ.Where(mo => mo.CreateDate >= fromC.Value);
                 if (toCExcl.HasValue) baseQ = baseQ.Where(mo => mo.CreateDate < toCExcl.Value);
             }
 
-            // Manufacturing: áp trên MfgProductionOrder.CreateDate thông qua EXISTS
+            // *** CHANGED: Manufacturing: bây giờ nối qua MfgOrderPO + MerchandiseOrderDetail + MfgProductionOrder
             if (hasCreatedRange && query.CreatedScope == TimelineScope.Manufacturing.ToString())
             {
                 baseQ = baseQ.Where(mo =>
-                    _unitOfWork.MfgProductionOrderRepository.Query(false)
-                        .Any(mfg =>
-                            mfg.IsActive == true &&
+                    _unitOfWork.MfgOrderPORepository.Query(false)
+                        .Any(link =>
+                            link.IsActive &&
 
-                            mfg.MerchandiseOrderId == mo.MerchandiseOrderId &&
-                            // TODO: đổi tên cột nếu không phải CreateDate
-                            (!fromC.HasValue || mfg.CreateDate >= fromC.Value) &&
-                            (!toCExcl.HasValue || mfg.CreateDate < toCExcl.Value)
+                            // Detail nằm trong đơn hàng này
+                            link.Detail.MerchandiseOrderId == mo.MerchandiseOrderId &&
+
+                            // ProductionOrder đang active
+                            link.ProductionOrder.IsActive &&
+
+                            // Filter theo CreatedDate của MfgProductionOrder
+                            (!fromC.HasValue || link.ProductionOrder.CreatedDate >= fromC.Value) &&
+                            (!toCExcl.HasValue || link.ProductionOrder.CreatedDate < toCExcl.Value)
                         )
                 );
             }
 
             // Delivery: áp trên DeliveryOrder.CreateDate thông qua bảng nối DeliveryOrderPO
+            // (giữ nguyên nếu schema DeliveryOrderPO vẫn giống cũ)
             if (hasCreatedRange && query.CreatedScope == TimelineScope.Delivery.ToString())
             {
                 baseQ = baseQ.Where(mo =>
@@ -341,31 +276,28 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                         .Any(dop =>
                             dop.IsActive &&
                             dop.MerchandiseOrderId == mo.MerchandiseOrderId &&
-                            // TODO: đổi tên cột nếu không phải CreateDate
                             (!fromC.HasValue || dop.DeliveryOrder.CreatedDate >= fromC.Value) &&
                             (!toCExcl.HasValue || dop.DeliveryOrder.CreatedDate < toCExcl.Value)
                         )
                 );
             }
 
-            // Requisition: áp trên Requisition(RequestDeliveryOrder).CreateDate
-            // Tuỳ schema: đổi Repository & navigation cho đúng.
+            // *** CHANGED: Requisition: MerchandiseOrderDetail.IsActive giờ là bool, DeliveryRequestDate không nullable
             if (hasCreatedRange && query.CreatedScope == TimelineScope.Requisition.ToString())
             {
                 baseQ = baseQ.Where(mo =>
                     _unitOfWork.MerchandiseOrderRepository.QueryDetail(false)
                         .Any(md =>
                             md.MerchandiseOrderId == mo.MerchandiseOrderId &&
-                            (md.IsActive == null || md.IsActive == true) &&
-                            md.DeliveryRequestDate != null &&
+                            md.IsActive &&
+
                             (!fromC.HasValue || md.DeliveryRequestDate >= fromC.Value) &&
                             (!toCExcl.HasValue || md.DeliveryRequestDate < toCExcl.Value)
                         )
                 );
             }
 
-
-            // 1.4) Lọc theo LOGS (CreatedBy, CompanyId, EventType, Status, Keyword trên Note/Status)
+            // 1.4) Lọc theo LOGS (CreatedBy, CompanyId, EventType, Status)
             bool hasLogFilter =
                 query.CreatedBy.HasValue ||
                 query.CompanyId.HasValue ||
@@ -398,20 +330,30 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                 {
                     MerchandiseOrderId = mo.MerchandiseOrderId,
                     ExternalId = mo.ExternalId ?? string.Empty,
-                    CreatedName = mo.CreatedByNavigation != null ? (mo.CreatedByNavigation.FullName ?? string.Empty) : string.Empty,
-                    CreatedDate = mo.CreateDate ,
-                    CustomerName = mo.Customer != null ? (mo.Customer.CustomerName ?? string.Empty) : string.Empty,
-                    CustomerExternalId = mo.Customer != null ? (mo.Customer.ExternalId ?? string.Empty) : string.Empty,
+
+                    CreatedName = mo.CreatedByNavigation != null
+                        ? (mo.CreatedByNavigation.FullName ?? string.Empty)
+                        : string.Empty,
+
+                    CreatedDate = mo.CreateDate,
+
+                    // *** CHANGED: dùng snapshot để đồng bộ với mô hình mới
+                    CustomerName = mo.CustomerNameSnapshot,
+                    CustomerExternalId = mo.CustomerExternalIdSnapshot,
+
                     Details = new List<GetMerchadiseTimelineDetail>()
                 })
                 .ToListAsync(ct);
 
             if (pageOrders.Count == 0)
-                return new PagedResult<GetMerchadiseTimeline>(pageOrders, totalCount, query.PageNumber, query.PageSize);
+                return OperationResult<PagedResult<GetMerchadiseTimeline>>.Ok(
+                    new PagedResult<GetMerchadiseTimeline>(
+                    pageOrders, totalCount, query.PageNumber, query.PageSize)
+                );
 
             var orderIds = pageOrders.Select(o => o.MerchandiseOrderId).ToList();
 
-            // 3) Lấy logs của các order trong trang (áp lại filter logs để Details hiển thị đúng)
+            // 3) Lấy logs của các order trong trang
             var logsQ = _unitOfWork.EventLogRepository.Query()
                 .Where(e => e.IsActive && orderIds.Contains(e.SourceId));
 
@@ -419,13 +361,6 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
             if (query.CompanyId.HasValue) logsQ = logsQ.Where(e => e.CompanyId == query.CompanyId.Value);
             if (query.EventType != default(EventType)) logsQ = logsQ.Where(e => e.EventType == query.EventType);
             if (!string.IsNullOrWhiteSpace(query.Status)) logsQ = logsQ.Where(e => e.Status == query.Status);
-
-            //if (likeKw != null)
-            //{
-            //    logsQ = logsQ.Where(e =>
-            //        (e.Note != null && EF.Functions.ILike(e.Note, likeKw)) ||
-            //        (e.Status != null && EF.Functions.ILike(e.Status, likeKw)));
-            //}
 
             var logs = await logsQ
                 .OrderBy(e => e.SourceId)
@@ -454,7 +389,10 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                         FullName = e.FullName ?? string.Empty,
                         CompanyName = e.Company != null ? e.Company.Name : string.Empty
                     })
-                    .ToDictionaryAsync(x => x.EmployeeId, x => (x.FullName, x.CompanyName), ct);
+                    .ToDictionaryAsync(
+                        x => x.EmployeeId,
+                        x => (x.FullName, x.CompanyName),
+                        ct);
             }
 
             // 5) Group logs -> details
@@ -477,61 +415,86 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                 if (grouped.TryGetValue(o.MerchandiseOrderId, out var details))
                     o.Details = details;
 
-            return new PagedResult<GetMerchadiseTimeline>(pageOrders, totalCount, query.PageNumber, query.PageSize);
+            return OperationResult<PagedResult<GetMerchadiseTimeline>>.Ok(
+                new PagedResult<GetMerchadiseTimeline>(
+                pageOrders, totalCount, query.PageNumber, query.PageSize)
+            );
         }
 
         /// <summary>
-        /// Lấy dữ liệu thông tin trạng thái của từng chi tiết trong đơn hàng theo timeline
+        /// Lấy dữ liệu thông tin trạng thái của từng chi tiết trong đơn hàng theo timeline của lệnh sản xuất Manufacturing
         /// </summary>
         /// <param name="query"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<PagedResult<GetMerchadiseTimelineInforDetail>> GetMerchadiseTimelineDetailAsync(TimelineQuery query, CancellationToken ct = default)
+        public async Task<OperationResult<PagedResult<GetMerchadiseTimelineInforDetail>>> GetMerchadiseTimelineDetailAsync(TimelineQuery query, CancellationToken ct = default)
         {
             if (query.PageNumber <= 0) query.PageNumber = 1;
             if (query.PageSize <= 0) query.PageSize = 15;
+
             if (query.id == Guid.Empty)
                 throw new Exception("Id đơn hàng không hợp lệ.");
 
             string? kw = string.IsNullOrWhiteSpace(query.Keyword) ? null : query.Keyword!.Trim();
 
-
-            // 1) Lấy lệnh sản xuất
-            var MfgExisting = await _unitOfWork.MfgProductionOrderRepository.Query(false)
-                .Where(m => m.MerchandiseOrderId == query.id && m.IsActive == true)
-                .Select(m => new
+            // ----------------------------------------------------
+            // 1) Lấy các lệnh sản xuất (MfgProductionOrder) gắn với đơn hàng này
+            //    => BÂY GIỜ nối qua bảng MfgOrderPO + MerchandiseOrderDetail
+            // ----------------------------------------------------
+            var mfgQ = _unitOfWork.MfgOrderPORepository.Query(false)
+                .Where(link =>
+                    link.IsActive &&
+                    link.Detail.MerchandiseOrderId == query.id &&          // đơn hàng này
+                    link.ProductionOrder.IsActive                           // MFG active
+                )
+                .Select(link => new
                 {
-                    m.MfgProductionOrderId,
-                    m.ExternalId,
+                    link.MfgProductionOrderId,
+                    link.ProductionOrder.ExternalId,
 
-                    ColourCode = m.ProductExternalIdSnapshot,
-                    ProductName = m.ProductNameSnapshot,
+                    ColourCode = link.ProductionOrder.ProductExternalIdSnapshot,
+                    ProductName = link.ProductionOrder.ProductNameSnapshot,
 
-                    ProductId = m.ProductId 
-                }).ToListAsync(ct);
+                    ProductId = link.ProductionOrder.ProductId
+                });
 
-            if (MfgExisting.Count == 0) 
-                return new PagedResult<GetMerchadiseTimelineInforDetail>(
-                    new List<GetMerchadiseTimelineInforDetail>(), // items
-                    0,                                            // totalCount
-                    query.PageNumber,                             // page
-                    query.PageSize                                // pageSize
+            // Nếu vì lý do nào đó 1 MFG gắn với nhiều detail, mình distinct theo MfgProductionOrderId
+            var mfgExisting = await mfgQ
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            var mfgDistinct = mfgExisting
+                .GroupBy(x => x.MfgProductionOrderId)
+                .Select(g => g.First())
+                .ToList();
+
+            if (mfgDistinct.Count == 0)
+            {
+                // FIX: Use OperationResult.Ok(data) instead of 4 arguments
+                return OperationResult<PagedResult<GetMerchadiseTimelineInforDetail>>.Ok(
+                    new PagedResult<GetMerchadiseTimelineInforDetail>(
+                        new List<GetMerchadiseTimelineInforDetail>(),
+                        0,
+                        query.PageNumber,
+                        query.PageSize
+                    )
                 );
+            }
 
-            var totalMfg = MfgExisting.Count;
-            if (totalMfg == 0)
-                return new PagedResult<GetMerchadiseTimelineInforDetail>(
-                    new List<GetMerchadiseTimelineInforDetail>(), 0, query.PageNumber, query.PageSize);
+            var totalMfg = mfgDistinct.Count;
 
+            // ----------------------------------------------------
+            // 2) Lấy các DeliveryOrder liên quan tới đơn hàng này
+            // ----------------------------------------------------
             var doIds = await _unitOfWork.DeliveryOrderPORepository.Query()
-                .Where(dop => dop.IsActive && dop.MerchandiseOrderId == query.id)
+                .Where(dop => dop.IsActive == true && dop.MerchandiseOrderId == query.id)
                 .Select(dop => dop.DeliveryOrderId)
                 .Distinct()
                 .ToListAsync(ct);
 
-            // Gom DO.ExternalId theo (ProductId, FormulaId) từ chi tiết DO
+            // Gom DO.ExternalId theo ProductId từ chi tiết DO
             var doByProduct = await _unitOfWork.DeliveryOrderDetailRepository.Query()
-                .Where(dod => doIds.Contains(dod.DeliveryOrderId))
+                .Where(dod => doIds.Contains(dod.DeliveryOrderId) && dod.IsActive == true)
                 .Select(dod => new
                 {
                     dod.ProductId,
@@ -546,46 +509,49 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                 })
                 .ToListAsync(ct);
 
-            // Map lookup nhanh: (ProductId, FormulaId) -> list ExternalIds
             var deliveryListStr = doByProduct.ToDictionary(
-                k => (k.ProductId),
+                k => k.ProductId,
                 v => v.DOList
             );
 
-
-
-            // 4) Lấy MerchandiseOrderDetail của đơn, gom theo (ProductId, FormulaId) để tính Request/Real
-            var MerchadiseExisting = await _unitOfWork.MerchandiseOrderRepository.QueryDetail()
-                .Where(d => d.MerchandiseOrderId == query.id && (d.IsActive == null || d.IsActive == true))
+            // ----------------------------------------------------
+            // 3) Lấy MerchandiseOrderDetail của đơn để map Request/Real
+            //    Model mới: IsActive là bool, DeliveryRequestDate KHÔNG nullable
+            // ----------------------------------------------------
+            var merchDetails = await _unitOfWork.MerchandiseOrderRepository.QueryDetail(false)
+                .Where(d => d.MerchandiseOrderId == query.id && d.IsActive == true)
                 .Select(d => new
                 {
                     d.ProductId,
                     RequestQuantity = d.ExpectedQuantity,
-                    RealQuantity = d.RealQuantity ?? 0,
-                    DeliveryRequestDate = d.DeliveryRequestDate   // DateTime?/DateOnly?
+                    RealQuantity = d.DeliveryOrderDetails
+                                    .Where(dd => dd.IsActive == true)
+                                    .Sum(dd => (decimal?)dd.Quantity) ?? 0m,
+                    d.DeliveryRequestDate
                 })
                 .ToDictionaryAsync(x => x.ProductId, x => x, ct);
 
-            //var qtyMap = MerchadiseExisting.ToDictionary(
-            //    k => (k.ProductId),
-            //    v => (Request: (decimal?)v.RequestQuantity, Real: (decimal?)v.RealQuantity));
-
+            // ----------------------------------------------------
             // 4) Phân trang theo MFG
+            // ----------------------------------------------------
             var page = Math.Max(1, query.PageNumber);
             var size = Math.Max(1, query.PageSize);
 
-            var pageMfg = MfgExisting
-                .OrderBy(x => x.ExternalId) // tuỳ bạn: sắp xếp theo ExternalId hoặc theo LastLog (nâng cấp sau)
+            var pageMfg = mfgDistinct
+                .OrderBy(x => x.ExternalId) // hoặc theo CreatedDate log nếu sau này muốn nâng cấp
                 .Skip((page - 1) * size)
                 .Take(size)
                 .ToList();
 
             var pageMfgIds = pageMfg.Select(x => x.MfgProductionOrderId).ToList();
 
+            // ----------------------------------------------------
             // 5) Lấy log của các MFG trong trang hiện tại
+            // ----------------------------------------------------
             var logsQ = _unitOfWork.EventLogRepository.Query()
                 .AsNoTracking()
                 .Where(e => e.IsActive && pageMfgIds.Contains(e.SourceId));
+
             if (!string.IsNullOrWhiteSpace(query.Status))
                 logsQ = logsQ.Where(e => e.Status == query.Status);
 
@@ -603,7 +569,9 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                 })
                 .ToListAsync(ct);
 
+            // ----------------------------------------------------
             // 6) Resolve người tạo + công ty
+            // ----------------------------------------------------
             var creatorIds = logRows.Select(l => l.EmployeeID).Distinct().ToList();
             var empMap = creatorIds.Count == 0
                 ? new Dictionary<Guid, (string FullName, string CompanyName)>()
@@ -626,18 +594,23 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                     {
                         Status = l.Status ?? string.Empty,
                         CreatedDate = l.CreatedDate,
-                        CreatedByName = empMap.TryGetValue(l.EmployeeID, out var emp) ? emp.FullName : string.Empty,
-                        CompanyName = empMap.TryGetValue(l.EmployeeID, out var emp2) ? emp2.CompanyName : string.Empty,
+                        CreatedByName = empMap.TryGetValue(l.EmployeeID, out var emp)
+                            ? emp.FullName
+                            : string.Empty,
+                        CompanyName = empMap.TryGetValue(l.EmployeeID, out var emp2)
+                            ? emp2.CompanyName
+                            : string.Empty,
                         Note = l.Note
                     }).ToList()
                 );
 
+            // ----------------------------------------------------
             // 7) Build items cho trang hiện tại
+            // ----------------------------------------------------
             var items = pageMfg.Select(m =>
             {
                 var doList = deliveryListStr.TryGetValue(m.ProductId, out var list) ? list : new List<string>();
-                // map qty theo (ProductId, FormulaId)
-                var hasDetail = MerchadiseExisting.TryGetValue(m.ProductId, out var md);
+                var hasDetail = merchDetails.TryGetValue(m.ProductId, out var md);
 
                 return new GetMerchadiseTimelineInforDetail
                 {
@@ -648,23 +621,103 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
 
                     RequestQuantity = hasDetail ? (decimal?)md.RequestQuantity : null,
                     RealQuantity = hasDetail ? (decimal?)md.RealQuantity : null,
-
-                    // thêm ngày yêu cầu:
-                    // Nếu DTO có field:
-                    RequestDate = hasDetail ? (md.DeliveryRequestDate) : default(DateTime),
+                    RequestDate = hasDetail ? md.DeliveryRequestDate : default, // model mới: non-nullable
 
                     Details = detailsByMfg.TryGetValue(m.MfgProductionOrderId, out var ds)
-                                ? ds.OrderByDescending(d => d.CreatedDate).ToList()
-                                : new List<GetMerchadiseTimelineDetail>()
+                        ? ds.OrderByDescending(d => d.CreatedDate).ToList()
+                        : new List<GetMerchadiseTimelineDetail>()
                 };
             }).ToList();
 
+            // ----------------------------------------------------
             // 8) Trả về PageResult
-            return new PagedResult<GetMerchadiseTimelineInforDetail>(items, totalMfg, page, size);
+            // ----------------------------------------------------
+            // FIX: Use OperationResult.Ok(data) instead of 4 arguments
+            return OperationResult<PagedResult<GetMerchadiseTimelineInforDetail>>.Ok(
+                new PagedResult<GetMerchadiseTimelineInforDetail>(items, totalMfg, page, size)
+            );
         }
+
+        // ======================================================================== Post ======================================================================== 
+      
+        /// <summary>
+        /// Thêm một EventLog
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public Task AddEventLogAsync(EventLogModels query, CancellationToken ct = default)
+        {
+            try
+            {
+                var EmployeeExisting = _unitOfWork.EmployeesRepository.Query()
+                    .FirstOrDefault(e => e.EmployeeId == query.employeeId); 
+
+                var newLog = new EventLog
+                {
+                    CompanyId = EmployeeExisting.CompanyId.GetValueOrDefault(),
+                    DepartmentId = EmployeeExisting.PartId ?? throw new Exception("Employee's PartId is null"),
+                    EmployeeID = query.employeeId,
+                    SourceId = query.sourceId,
+                    SourceCode = query.sourceCode ?? string.Empty,
+                    EventType = query.eventType,
+                    Status = query.status ?? string.Empty, // Fix: ensure Status is never null
+                    IsActive = true,
+                    CreatedDate = DateTime.Now,
+                    Note = query.note
+                };
+                return _unitOfWork.EventLogRepository.AddAsync(newLog, ct);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Lỗi khi thêm nhật ký sự kiện: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Thêm nhiều EventLog
+        /// </summary>
+        /// <param name="queries"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public Task AddEventLogRangeAsync(IEnumerable<EventLogModels> queries, CancellationToken ct = default)
+        {
+            try
+            {
+                var newLogs = new List<EventLog>();
+                foreach (var query in queries)
+                {
+                    var EmployeeExisting = _unitOfWork.EmployeesRepository.Query()
+                        .FirstOrDefault(e => e.EmployeeId == query.employeeId);
+                    var newLog = new EventLog
+                    {
+                        CompanyId = EmployeeExisting.CompanyId.GetValueOrDefault(),
+                        DepartmentId = EmployeeExisting.PartId ?? throw new Exception("Employee's PartId is null"),
+                        EmployeeID = query.employeeId,
+                        SourceId = query.sourceId,
+                        SourceCode = query.sourceCode ?? string.Empty,
+                        EventType = query.eventType,
+                        Status = query.status ?? string.Empty, // Fix: ensure Status is never null
+                        IsActive = true,
+                        CreatedDate = DateTime.Now,
+                        Note = query.note
+                    };
+                    newLogs.Add(newLog);
+                }
+                return _unitOfWork.EventLogRepository.AddRangeAsync(newLogs,  ct);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Lỗi khi thêm nhật ký sự kiện: " + ex.Message);
+            }
+        }
+
+
     }
 
-    // tiện helper để AddRange khi khởi tạo list có capacity
+    // ======================================================================== Helper ======================================================================== 
     file static class ListExt
     {
         public static List<T> Also<T>(this List<T> list, Action<List<T>> act)

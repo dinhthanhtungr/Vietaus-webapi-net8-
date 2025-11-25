@@ -4,25 +4,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.CompanyFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts;
-using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.WebAPI.DatabaseContext;
+using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
+using VietausWebAPI.Infrastructure.Helpers.Repositories;
+using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Materials
 {
-    public class CategoryRepository : ICategoryRepository
+    public class CategoryRepository : Repository<Category>, ICategoryRepository
     {
-        private readonly ApplicationDbContext _context;
-
-        public CategoryRepository(ApplicationDbContext dbContext)
+        public CategoryRepository(ApplicationDbContext dbContext) : base(dbContext)
         {
-            _context = dbContext;
-        }
-
-        public IQueryable<Category> Query(bool track = false)
-        {
-            var db = _context.Categories.AsQueryable();
-            return track ? db : db.AsNoTracking();
         }
     }
 }

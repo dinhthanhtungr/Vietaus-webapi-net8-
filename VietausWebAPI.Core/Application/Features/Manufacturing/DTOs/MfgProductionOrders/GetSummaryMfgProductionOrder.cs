@@ -20,7 +20,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProducti
         public string? CustomerExternalIdSnapshot { get; set; }
         public int? TotalQuantity { get; set; }
         public string? Status { get; set; }
-        public DateTime? DateTime { get; set; }
+        public DateTime? CreatedDate { get; set; }
         public string? BagType { get; set; }
     }
 }

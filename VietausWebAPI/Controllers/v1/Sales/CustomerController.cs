@@ -5,12 +5,13 @@ using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.Querys;
 using VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.CustomerFeatures;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.WebAPI.Helpers.Securities.Roles;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
 {
     [ApiController]
     [Route("api/customer")]
-    [AllowAnonymous]
+    [Authorize]
     public class CustomerController : Controller
     {
         private readonly ICustomerService _customerService;
@@ -19,7 +20,9 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
         {
             _customerService = customerService;
         }
+
         [HttpPost("AddCustomer")]
+        [Authorize(Roles = RoleSets.Sales)]
         public async Task<IActionResult> AddCustomer([FromBody] PostCustomer customer)
         {
             if (customer == null)
@@ -36,7 +39,9 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
                 return BadRequest(result.Message);
             }
         }
+
         [HttpGet("GetAllCustomer")]
+        [Authorize(Roles = RoleSets.CanSeeAllCustomer)]
         public async Task<IActionResult> GetAllCustomer([FromQuery] CustomerQuery? query)
         {
             var result = await _customerService.GetAllAsync(query);
@@ -44,6 +49,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
         }
 
         [HttpGet("GetCustomerByIdAsync")]
+        //[Authorize(Roles = RoleSets.Sales)]
         public async Task<IActionResult> GetCustomerByIdAsync(Guid id)
         {
             if (id == Guid.Empty)
@@ -59,6 +65,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
         }
 
         [HttpPatch("DeleteCustomerByIdAsync")]
+        [Authorize(Roles = RoleSets.Deleters)]
         public async Task<IActionResult> DeleteCustomerByIdAsync(Guid id)
         {
             if (id == Guid.Empty)
@@ -77,6 +84,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
         }
 
         [HttpPatch("UpdateCustomerAsync")]
+        [Authorize(Roles = RoleSets.Sales)]
         public async Task<IActionResult> UpdateCustomerAsync([FromBody] PatchCustomer customer)
         {
             if (customer == null || customer.CustomerId == Guid.Empty)
@@ -90,6 +98,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
         }
 
         [HttpGet("GetCustomerByEmployeeAssignment")]
+        [Authorize(Roles = RoleSets.Sales)]
         public async Task<IActionResult> GetCustomerByEmployeeAssignment(
             [FromQuery] CustomerQuery query,
             CancellationToken ct = default)

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
-using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 
 namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts
 {

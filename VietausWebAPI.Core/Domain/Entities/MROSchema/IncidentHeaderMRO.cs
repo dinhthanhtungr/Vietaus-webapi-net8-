@@ -53,5 +53,8 @@ namespace VietausWebAPI.Core.Domain.Entities.MROSchema
         public Employee? ExecByEmployee { get; set; }
         public Employee? DoneByEmployee { get; set; }
         public Employee? ClosedByEmployee { get; set; }
+
+        public virtual ICollection<StockOutHeaderMRO> StockOutHeaderMRO { get; set; } = new List<StockOutHeaderMRO>();
+
     }
 }

@@ -5,6 +5,7 @@ using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Features.Labs.Helpers;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.QAQCFeature.ProductInspectionFeature;
+using VietausWebAPI.Core.Application.Shared.Helper.Pdfs;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
 {

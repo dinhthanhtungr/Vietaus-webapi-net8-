@@ -11,7 +11,7 @@ using VietausWebAPI.Core.Application.Features.PurchaseFeatures.DTOs.Material_war
 using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadServices;
 using VietausWebAPI.Core.Application.Features.Warehouse.Queries;
 using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
-using VietausWebAPI.Core.Domain.Enums;
+using VietausWebAPI.Core.Domain.Enums.WareHouses;
 using VietausWebAPI.Core.Repositories_Contracts;
 
 namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
@@ -166,6 +166,70 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 .ToList();
 
         }
+
+        // ======================================================================== Helper ======================================================================== 
+
+        /// <summary>
+        /// Lấy dictionary thông tin tồn kho VA của các NVL trong công thức sản xuất
+        /// </summary>
+        /// <param name="manufacturingFormulaId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Dictionary<string, VaAvailabilityVm>> GetVaAvailabilityDictAsync(
+            Guid manufacturingFormulaId,
+            CancellationToken ct = default)
+        {
+                    var mfm = _unitOfWork.ManufacturingFormulaMaterialRepository.Query()
+                        .Where(x => x.ManufacturingFormulaId == manufacturingFormulaId
+                                 && x.IsActive
+                                 && x.MaterialExternalIdSnapshot != null);
+
+                    var materials = await mfm
+                        .Select(x => x.MaterialExternalIdSnapshot!)
+                        .Distinct()
+                        .ToListAsync(ct);
+
+                    if (materials.Count == 0)
+                        return new Dictionary<string, VaAvailabilityVm>();
+
+                    // chuẩn hóa
+                    var mats = materials
+                        .Select(m => m.Trim().ToUpperInvariant())
+                        .ToList();
+
+                    var onHand = await _unitOfWork.WarehouseShelfStockRepository.Query()
+                        .Where(s => s.Code != null && s.Code != "")
+                        .Where(s => mats.Contains(s.Code!.Trim().ToUpper()))
+                        .GroupBy(s => s.Code!.Trim().ToUpper())
+                        .Select(g => new { Code = g.Key, OnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m })
+                        .ToDictionaryAsync(x => x.Code, x => x.OnHandKg, ct);
+
+                    var reserved = await _unitOfWork.WarehouseTempStockRepository.Query()
+                        .Where(t => t.Code != null && t.Code != ""
+                                 && mats.Contains(t.Code!.Trim().ToUpper())
+                                 && t.ReserveStatus == ReserveStatus.Open.ToString())
+                        .GroupBy(t => t.Code!.Trim().ToUpper())
+                        .Select(g => new { Code = g.Key, ReservedOpenKg = g.Sum(x => (decimal?)x.QtyRequest) ?? 0m })
+                        .ToDictionaryAsync(x => x.Code, x => x.ReservedOpenKg, ct);
+
+                    // ghép dict
+                    var dict = new Dictionary<string, VaAvailabilityVm>();
+
+                    foreach (var codeUpper in mats)
+                    {
+                        var on = onHand.TryGetValue(codeUpper, out var v1) ? v1 : 0m;
+                        var rv = reserved.TryGetValue(codeUpper, out var v2) ? v2 : 0m;
+
+                        dict[codeUpper] = new VaAvailabilityVm(
+                            Code: codeUpper,
+                            OnHandKg: on,
+                            ReservedOpenAllKg: rv,
+                            AvailableKg: on - rv
+                        );
+                    }
+
+                    return dict;
+                }
 
     }
 }

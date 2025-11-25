@@ -12,16 +12,16 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs
 
         public string? ExternalId { get; set; }
 
-        public string? CustomerName { get; set; }
+        public string CustomerName { get; set; } = string.Empty;
 
         //public Guid? EmployeeId { get; set; }
-        public PostCustomerAssignment? CustomerAssignment { get; set; }
+        public PostCustomerAssignment CustomerAssignment { get; set; } = new PostCustomerAssignment();
 
-        public string? CustomerGroup { get; set; }
+        public string CustomerGroup { get; set; } = string.Empty;
 
-        public string? ApplicationName { get; set; }
+        public string ApplicationName { get; set; } = string.Empty;
 
-        public string? RegistrationNumber { get; set; }
+        public string RegistrationNumber { get; set; } = string.Empty;
         public DateTime? IssueDate { get; set; }
         public string? IssuedPlace { get; set; }
         public string? FaxNumber { get; set; }
@@ -42,7 +42,6 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs
         public Guid? UpdatedBy { get; set; }
 
         public Guid? CompanyId { get; set; }
-        public bool? IsActive { get; set; } = true;
 
         public List<PostAddress> Addresses { get; set; } = new List<PostAddress>();
 

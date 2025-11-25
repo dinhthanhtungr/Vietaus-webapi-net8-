@@ -1,46 +1,69 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
+using System.Security.Claims;
+using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Repositories_Contracts;
 
 namespace VietausWebAPI.WebAPI.Hubs
 {
-    // {"protocol":"json","version":1}
-    public sealed class NotificationHub : Hub
+    [Authorize] // quan trọng: kết nối phải có JWT
+    public class NotificationHub : Hub
     {
-        private readonly ILogger<NotificationHub> _logger;
-        private readonly IUserConnectionService _userConnectionService;
-        public NotificationHub(ILogger<NotificationHub> logger, IUserConnectionService userConnectionService)
+        private readonly ICurrentUser _CurrentId = null!;
+        public NotificationHub(ICurrentUser currentUser)
         {
-            _logger = logger;
-            _userConnectionService = userConnectionService;
+            _CurrentId = currentUser;
         }
-
         public override async Task OnConnectedAsync()
         {
-            var userId = Context.User?.FindFirst("sub")?.Value;
-            var role = Context.User?.FindFirst("role")?.Value;
+            
+            //var companyClaim = Context.User?.FindFirst("company_id")?.Value;
+            //var userClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            //                ?? Context.User?.FindFirst("employee_id")?.Value;
 
-            if (!string.IsNullOrEmpty(userId))
+            var userClaim = _CurrentId.EmployeeId.ToString();
+            var companyClaim = _CurrentId.CompanyId.ToString();
+
+            var companyKey = companyClaim is null ? null : Guid.Parse(companyClaim).ToString("N");
+
+            if (companyKey != null)
+                await Groups.AddToGroupAsync(Context.ConnectionId, $"company:{companyKey}");
+
+            if (Guid.TryParse(userClaim, out var userId))
+                await Groups.AddToGroupAsync(Context.ConnectionId, $"user:{userId}");
+
+            var roles = Context.User?.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value.Trim().ToUpperInvariant())
+                .Distinct()
+                .ToList() ?? new();
+
+            foreach (var r in roles)
             {
-                await _userConnectionService.AddUserConnection(userId, Context.ConnectionId, role);
-                _logger.LogInformation($"User {userId} connected with connectionId {Context.ConnectionId}");
+                if (companyKey != null)
+                    await Groups.AddToGroupAsync(Context.ConnectionId, $"role:{companyKey}:{r}");
             }
 
             await base.OnConnectedAsync();
-
-            //await Clients.All.SendAsync("UserConnected", /*Context.ConnectionId + */$"{Context.ConnectionId} has joined");
-            //await base.OnConnectedAsync();
         }
 
-        public override async Task OnDisconnectedAsync(Exception exception)
+        // Giữ lại các API thủ công nếu cần
+        public Task JoinCompany(string companyId)
+            => Groups.AddToGroupAsync(Context.ConnectionId, $"company:{companyId}");
+
+        public Task JoinUser(string userId)
+            => Groups.AddToGroupAsync(Context.ConnectionId, $"user:{userId}");
+
+        public async Task JoinRole(string companyId, string roleName)
         {
-            var userId = Context.User?.FindFirst("sub")?.Value;
-            //var role = Context.User?.FindFirst("role")?.Value;
-            if (!string.IsNullOrEmpty(userId))
-            {
-                await _userConnectionService.RemoveUserConnection(userId, Context.ConnectionId);
-                _logger.LogInformation($"User {userId} disconnected with connectionId {Context.ConnectionId}");
-            }
-            await base.OnDisconnectedAsync(exception);
+            var roles = Context.User?.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value.Trim().ToUpperInvariant())
+                .ToHashSet() ?? new HashSet<string>();
+
+            var normalized = roleName.Trim().ToUpperInvariant();
+            if (roles.Contains(normalized))
+                await Groups.AddToGroupAsync(Context.ConnectionId, $"role:{companyId}:{normalized}");
         }
     }
 }
