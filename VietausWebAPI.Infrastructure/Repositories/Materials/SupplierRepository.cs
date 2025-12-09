@@ -9,7 +9,7 @@ using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContr
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
-using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
+using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Materials
 {

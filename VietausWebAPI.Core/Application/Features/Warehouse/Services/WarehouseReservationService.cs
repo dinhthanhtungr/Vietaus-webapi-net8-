@@ -4,15 +4,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.EventLogDtos;
 using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadServices;
 using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseWriteServices;
 using VietausWebAPI.Core.Application.Features.Warehouse.Queries;
 using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
+using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
+using VietausWebAPI.Core.Domain.Entities.DeliverySchema;
+using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 using VietausWebAPI.Core.Domain.Entities.WarehouseSchema;
+using VietausWebAPI.Core.Domain.Enums.Logs;
 using VietausWebAPI.Core.Domain.Enums.WareHouses;
-using VietausWebAPI.Core.Repositories_Contracts;
 using static QuestPDF.Helpers.Colors;
 
 namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
@@ -21,12 +26,16 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUser _currentUser;
+        private readonly IExternalIdService _externalIdService;
 
-        public WarehouseReservationService(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+        public WarehouseReservationService(IUnitOfWork unitOfWork, ICurrentUser currentUser, IExternalIdService externalIdService)
         {
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;
+            _externalIdService = externalIdService;
         }
+
+
 
         public async Task<OperationResult> ReserveAvailabilityAsync(CreateVaSnapshotAndReservations req, CancellationToken ct)
         {
@@ -135,6 +144,161 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             return new OperationResult() { Success = true, Message = "Reserved successfully" };
         }
 
+
+        // ======================================================================== Update ========================================================================
+        public async Task EnsureWarehouseIssueRequestAsync(
+            MfgProductionOrder existing,
+            DateTime now,
+            Guid userId,
+            Guid companyId,
+            CancellationToken ct)
+        {
+            // --- IDENTITY / TRÙNG LẶP ---
+            // Ưu tiên kiểm theo SourceId nếu bạn có cột trong WarehouseRequest (khuyến nghị thêm)
+            var wrQuery = _unitOfWork.WarehouseRequestRepository.Query(track: false);
+
+            // Nếu CHƯA có cột nguồn, kiểm bằng RequestCode (pattern duy nhất theo ExternalId)
+            var requestCode = await _externalIdService.NextAsync("PXK", ct: ct);
+            var existedWR = await wrQuery.FirstOrDefaultAsync(
+                x => x.RequestCode == requestCode && x.IsActive, ct);
+
+            if (existedWR != null)
+            {
+                // Đã có phiếu → thôi, không tạo nữa (idempotent)
+                return;
+            }
+
+            // --- LẤY CÔNG THỨC (VERSION HIỆN HÀNH) ---
+            // Version hiện hành = ValidTo == null
+            var currentVersion = await _unitOfWork.ProductionSelectVersionRepository.Query(false)
+                .Where(v => v.MfgProductionOrderId == existing.MfgProductionOrderId && v.ValidTo == null)
+                .Select(v => new { v.ManufacturingFormulaId })
+                .FirstOrDefaultAsync(ct);
+
+            if (currentVersion == null || currentVersion.ManufacturingFormulaId == null)
+            {
+                // Không có version/công thức → tuỳ business: có thể bỏ qua hoặc ném lỗi domain
+                // Ở đây mình chọn "bỏ qua" (không tạo phiếu)
+                return;
+            }
+
+            // Lấy NVL trong công thức
+            var mats = await _unitOfWork.ManufacturingFormulaMaterialRepository.Query(false)
+                .Where(m => m.ManufacturingFormulaId == currentVersion.ManufacturingFormulaId && m.IsActive)
+                .Select(m => new
+                {
+                    m.MaterialId,
+                    m.MaterialExternalIdSnapshot,
+                    m.MaterialNameSnapshot,
+                    m.Quantity,
+                    m.Unit
+                })
+                .ToListAsync(ct);
+
+            if (mats.Count == 0)
+                return;
+
+            // Tính hệ số nhân (ví dụ theo số mẻ)
+            var batches = existing.NumOfBatches ?? 1m;
+
+            // --- TẠO HEADER ---
+            var wr = new WarehouseRequest
+            {
+                // RequestId: auto
+                RequestCode = requestCode,                 // unique theo LSX
+                ReqStatus = WarehouseRequestStatus.Pending,                       // tuỳ enum của bạn
+                RequestName = $"Xuất NVL cho LSX {existing.ExternalId}",
+                IsActive = true,
+                ReqType = WareHouseRequestType.ExportForProduction,
+
+                CompanyId = companyId,
+                CreatedDate = now,
+                CreatedBy = userId,
+                UpdatedDate = now,
+                UpdatedBy = userId,
+            };
+
+            await _unitOfWork.WarehouseRequestRepository.AddAsync(wr, ct);
+            await _unitOfWork.SaveChangesAsync(); // để có RequestId cho detail
+
+            // --- TẠO DETAIL ---
+            var details = new List<WarehouseRequestDetail>(mats.Count);
+            foreach (var m in mats)
+            {
+                details.Add(new WarehouseRequestDetail
+                {
+                    // DetailId: auto
+                    RequestId = wr.RequestId,
+                    ProductCode = m.MaterialExternalIdSnapshot ?? "",   // mã NVL
+                    ProductName = m.MaterialNameSnapshot ?? "",         // tên NVL
+
+                    LotNumber = null,          // để kho pick lot sau
+                    WeightKg = m.Quantity * batches, // KHỐI LƯỢNG YÊU CẦU
+                    StockStatus = StockType.RawMaterial.ToString(),   // tuỳ enum string của bạn
+                    IsActive = true
+                });
+            }
+
+            await _unitOfWork.WarehouseRequestDetailRepository.AddRangeAsync(details, ct);
+        }
+
+
+        public async Task EnsureWarehouseRequestForDOAsync(
+            DeliveryOrder deliveryOrder,
+            DateTime now,
+            Guid userId,
+            Guid companyId,
+            CancellationToken ct)
+        {
+            // Idempotent: đã có XK cho PGH này chưa?
+            var existed = _unitOfWork.WarehouseRequestRepository.Query(track: false);
+
+            if (existed != null) return;
+
+            // (Nếu chưa có cột SourceType/SourceId, dùng codeFromRequest và đặt UNIQUE)
+            var requestCode = await _externalIdService.NextAsync("PXK", ct: ct);
+
+            // Gộp theo mã sản phẩm để kho dễ xử lý
+            var detailGroups = deliveryOrder.Details
+                .Where(d => d.IsActive)
+                .GroupBy(d => new { d.ProductExternalIdSnapShot, d.ProductNameSnapShot })
+                .Select(g => new
+                {
+                    g.Key.ProductExternalIdSnapShot,
+                    g.Key.ProductNameSnapShot,
+                    Quantity = g.Sum(x => x.Quantity),
+                    NumOfBags = g.Sum(x => x.NumOfBags)
+                })
+                .ToList();
+
+            var wr = new WarehouseRequest
+            {
+                RequestCode = requestCode,
+                ReqStatus = WarehouseRequestStatus.Pending,
+                RequestName = $"Xuất kho cho PGH {deliveryOrder.ExternalId}",
+                IsActive = true,
+                ReqType = WareHouseRequestType.ExportForSales,
+                codeFromRequest = deliveryOrder.ExternalId ?? "", // nếu bạn vẫn muốn lưu
+
+                CompanyId = companyId,
+                CreatedBy = userId,
+                CreatedDate = now,
+                UpdatedBy = userId,
+                UpdatedDate = now
+            };
+
+            wr.WarehouseRequestDetails = detailGroups.Select(d => new WarehouseRequestDetail
+            {
+                ProductCode = d.ProductExternalIdSnapShot ?? "",
+                ProductName = d.ProductNameSnapShot ?? "",
+                WeightKg = d.Quantity,        // chú ý: nếu Quantity≠kg thì quy đổi trước
+                BagNumber = d.NumOfBags,
+                StockStatus = StockType.FinishedGood.ToString(),
+                IsActive = true
+            }).ToList();
+
+            await _unitOfWork.WarehouseRequestRepository.AddAsync(wr, ct);
+        }
 
         /// <summary>
         /// Hàm kiểm tra "freshness" của danh sách mã NVL so với expected xem có thay đổi không.

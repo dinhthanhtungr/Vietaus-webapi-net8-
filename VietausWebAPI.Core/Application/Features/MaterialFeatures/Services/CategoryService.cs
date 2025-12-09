@@ -10,7 +10,7 @@ using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Categories;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.Querys.Catergories;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
@@ -69,5 +69,43 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
             }
         }
 
+        public async Task<OperationResult<PagedResult<GetUnit>>> GetUnitsAsync(UnitQuery query, CancellationToken ct)
+        {
+            try
+            {
+                if (query.PageNumber <= 0) query.PageNumber = 1;
+                if (query.PageSize <= 0) query.PageSize = 100;
+
+                var baseQuery = _unitOfWork.UnitRepository.Query();
+
+                var totalItems = await baseQuery.CountAsync(ct);
+
+
+                var items = await baseQuery
+                    .OrderBy(c => c.Name) // hoặc CategoryId cho ổn định
+                    .Skip((query.PageNumber - 1) * query.PageSize)
+                    .Take(query.PageSize)
+                    .Select(c => new GetUnit
+                    {
+                        Id = c.UnitId,
+                        Name = c.Name ?? "",
+                    })
+                    .ToListAsync(ct);
+
+                var pagedResult = new PagedResult<GetUnit>(
+                    items,
+                    totalItems,
+                    query.PageNumber,
+                    query.PageSize
+                );
+
+                return OperationResult<PagedResult<GetUnit>>.Ok(pagedResult);
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
     }
 }

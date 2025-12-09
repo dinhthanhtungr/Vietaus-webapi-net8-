@@ -11,5 +11,6 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContract
     {
         IQueryable<WarehouseRequestDetail> Query(bool track = true);
         Task AddAsync(WarehouseRequestDetail warehouseRequestDetail, CancellationToken ct = default);
+        Task AddRangeAsync(IEnumerable<WarehouseRequestDetail> warehouseRequestDetails, CancellationToken ct = default);
     }
 }

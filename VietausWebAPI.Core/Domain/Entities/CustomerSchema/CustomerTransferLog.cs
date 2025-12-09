@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using VietausWebAPI.Core.Domain.Entities.CompanySchema;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
+using VietausWebAPI.Core.Domain.Enums.CustomerEnum;
 
 namespace VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 
@@ -16,6 +19,7 @@ public partial class CustomerTransferLog
     public Guid ToGroupId { get; set; }
 
     public string? Note { get; set; }
+    public TransferType TransferType { get; set; }
 
     public DateTime CreatedDate { get; set; }
 

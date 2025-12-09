@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 
 namespace VietausWebAPI.Core.Application.Features.Shared.Service
 {

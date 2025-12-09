@@ -28,15 +28,6 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier
         public string? IssuedPlace { get; set; }
 
         public string? FaxNumber { get; set; }
-
-        public DateTime? CreatedDate { get; set; }
-
-        public Guid? CreatedBy { get; set; }
-        public DateTime? UpdatedDate { get; set; }
-
-        public Guid? UpdatedBy { get; set; }
-        public Guid? CompanyId { get; set; }
-        public bool? IsActive { get; set; }
         public List<PostSupplierAddress> SupplierAddresses { get; set; } = new List<PostSupplierAddress>();
 
         public List<PostSupplierContact> SupplierContacts { get; set; } = new List<PostSupplierContact>();

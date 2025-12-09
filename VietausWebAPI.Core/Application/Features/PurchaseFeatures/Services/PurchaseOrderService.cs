@@ -24,7 +24,7 @@ using VietausWebAPI.Core.Domain.Entities.OrderSchema;
 using VietausWebAPI.Core.Domain.Enums.Logs;
 using VietausWebAPI.Core.Domain.Enums.Orders;
 using VietausWebAPI.Core.Domain.Enums.WareHouses;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
@@ -55,120 +55,114 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
         /// <param name="ct"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task<PagedResult<GetSamplePurchaseOrder>> GetAllAsync(PurchaseOrderQuery query, CancellationToken ct = default)
+        public async Task<OperationResult<PagedResult<GetSamplePurchaseOrder>>> GetAllAsync(
+            PurchaseOrderQuery query, CancellationToken ct = default)
         {
             try
             {
+                // Guard + default
+                query ??= new PurchaseOrderQuery();
                 if (query.PageNumber <= 0) query.PageNumber = 1;
                 if (query.PageSize <= 0) query.PageSize = 15;
 
                 var skip = (query.PageNumber - 1) * query.PageSize;
 
-                var baseQ = _unitOfWork.PurchaseOrderLinkRepository.Query()
+                // PHÂN TRANG THEO PURCHASE ORDER (header)
+                var poQ = _unitOfWork.PurchaseOrderRepository.Query()
+                    .AsNoTracking()
                     .Where(po => po.IsActive == true);
 
+                // ---- Filters ----
                 if (query.SupplierId.HasValue)
-                {
-                    baseQ = baseQ.Where(po => po.PurchaseOrder.SupplierId == query.SupplierId.Value);
-                }
+                    poQ = poQ.Where(po => po.SupplierId == query.SupplierId.Value);
 
                 if (!string.IsNullOrWhiteSpace(query.Status))
-                {
-                    baseQ = baseQ.Where(po => po.PurchaseOrder.Status == query.Status);
-                }
+                    poQ = poQ.Where(po => po.Status == query.Status);
 
                 if (!string.IsNullOrWhiteSpace(query.OrderType))
-                {
-                    baseQ = baseQ.Where(po => po.PurchaseOrder.OrderType == query.OrderType);
-                }
+                    poQ = poQ.Where(po => po.OrderType == query.OrderType);
 
                 if (query.From.HasValue)
-                {
-                    baseQ = baseQ.Where(po => po.PurchaseOrder.CreateDate >= query.From.Value);
-                }
+                    poQ = poQ.Where(po => po.CreateDate >= query.From.Value);
 
                 if (query.To.HasValue)
-                {
-                    baseQ = baseQ.Where(po => po.PurchaseOrder.CreateDate <= query.To.Value);
-                }
+                    poQ = poQ.Where(po => po.CreateDate <= query.To.Value);
 
                 if (!string.IsNullOrWhiteSpace(query.Keyword))
                 {
                     var kw = query.Keyword.Trim();
-                    baseQ = baseQ.Where(po =>
-                        (po.PurchaseOrder.Supplier.SupplierName ?? "").Contains(kw) ||
-                        (po.PurchaseOrder.Supplier.ExternalId ?? "").Contains(kw) ||
-                        (po.PurchaseOrder.ExternalId ?? "").Contains(kw) ||
-                        (po.MerchandiseOrder.ExternalId ?? "").Contains(kw) ||
-                        po.PurchaseOrder.PurchaseOrderDetails.Any(p => (p.MaterialExternalIDSnapshot ?? "").Contains(kw))
-
+                    poQ = poQ.Where(po =>
+                        ((po.Supplier.SupplierName ?? "").Contains(kw)) ||
+                        ((po.Supplier.ExternalId ?? "").Contains(kw)) ||
+                        ((po.ExternalId ?? "").Contains(kw)) ||
+                        // tìm theo MerchandiseOrder.ExternalId qua bảng link
+                        po.PurchaseOrderLinks.Any(l => (l.MerchandiseOrder.ExternalId ?? "").Contains(kw)) ||
+                        // tìm theo chi tiết
+                        po.PurchaseOrderDetails.Any(d => (d.MaterialExternalIDSnapshot ?? "").Contains(kw))
                     );
                 }
-                var totalCount = await baseQ.CountAsync(ct);
 
-                // Bước 1: project ra anonymous object, KHÔNG dùng string.Join trong SQL
-                var raw = await baseQ
-                    .OrderByDescending(link => link.PurchaseOrder.CreateDate)
+                // Count trước khi phân trang
+                var totalCount = await poQ.CountAsync(ct);
+
+                // Lấy page các PO (header)
+                var poPage = await poQ
+                    .OrderByDescending(po => po.CreateDate)
                     .Skip(skip)
                     .Take(query.PageSize)
-                    .Select(link => new
+                    .Select(po => new
                     {
-                        PO = link.PurchaseOrder,
-                        MerchandiseExternalIds = link.PurchaseOrder.PurchaseOrderLinks
+                        PO = po,
+                        // Lấy list Merchandise ExternalIds qua link (để lát nữa Join ở memory)
+                        MerchandiseExternalIds = po.PurchaseOrderLinks
                             .Where(l => l.MerchandiseOrder != null)
                             .Select(l => l.MerchandiseOrder.ExternalId)
                             .Distinct()
                             .ToList(),
 
-                        Details = link.PurchaseOrder.PurchaseOrderDetails
-                            .Select(d => new GetSamplePurchaseOrderDetail
-                            {
-                                MaterialExternalIDSnapshot = d.MaterialExternalIDSnapshot,
-                                MaterialNameSnapshot = d.MaterialNameSnapshot,
-                                UnitPriceAgreed = d.UnitPriceAgreed,
-                                RequestQuantity = d.RequestQuantity,
-                                RealQuantity = d.RealQuantity
-                            })
-                            .ToList()
+                        // Lấy luôn detail cần hiển thị
+                        Details = po.PurchaseOrderDetails.Select(d => new GetSamplePurchaseOrderDetail
+                        {
+                            MaterialExternalIDSnapshot = d.MaterialExternalIDSnapshot,
+                            MaterialNameSnapshot = d.MaterialNameSnapshot,
+                            UnitPriceAgreed = d.UnitPriceAgreed,
+                            RequestQuantity = d.RequestQuantity,
+                            RealQuantity = d.RealQuantity
+                        }).ToList()
                     })
                     .ToListAsync(ct);
 
-                // Bước 2: map sang DTO thật, dùng string.Join ở memory
-                var headers = raw
-                    // nếu muốn 1 PO duy nhất, tránh duplicate vì nhiều link:
-                    .GroupBy(x => x.PO.PurchaseOrderId)
-                    .Select(g =>
-                    {
-                        var first = g.First();
+                // Map ra DTO cuối + string.Join ở memory (không làm trong SQL)
+                var items = poPage.Select(x => new GetSamplePurchaseOrder
+                {
+                    PurchaseOrderId = x.PO.PurchaseOrderId,
+                    ExternalId = x.PO.ExternalId,
+                    MerchediseListExternalId = string.Join(", ", x.MerchandiseExternalIds.Distinct()),
+                    Status = x.PO.Status,
+                    OrderType = x.PO.OrderType,
+                    SupplierName = x.PO.Supplier?.SupplierName,
+                    SupplierExternalId = x.PO.Supplier?.ExternalId,
+                    TotalAmount = x.PO.PurchaseOrderDetails.Sum(d => d.TotalPriceAgreed),
+                    Comment = x.PO.Comment,
+                    RequestDeliveryDate = x.PO.RequestDeliveryDate,
+                    RealDeliveryDate = x.PO.RealDeliveryDate,
+                    CreateDate = x.PO.CreateDate,
+                    Details = x.Details
+                })
+                .ToList();
 
-                        return new GetSamplePurchaseOrder
-                        {
-                            PurchaseOrderId = first.PO.PurchaseOrderId,
-                            ExternalId = first.PO.ExternalId,
-                            MerchediseListExternalId = string.Join(", ",
-                                g.SelectMany(x => x.MerchandiseExternalIds).Distinct()
-                            ),
-                            Status = first.PO.Status,
-                            OrderType = first.PO.OrderType,
-                            SupplierName = first.PO.Supplier?.SupplierName,
-                            SupplierExternalId = first.PO.Supplier?.ExternalId,
-                            TotalAmount = first.PO.PurchaseOrderDetails.Sum(d => d.TotalPriceAgreed),
-                            Comment = first.PO.Comment,
-                            RequestDeliveryDate = first.PO.RequestDeliveryDate,
-                            RealDeliveryDate = first.PO.RealDeliveryDate,
-                            CreateDate = first.PO.CreateDate,
-                            Details = first.Details
-                        };
-                    })
-                    .ToList();
+                var paged = new PagedResult<GetSamplePurchaseOrder>(items, totalCount, query.PageNumber, query.PageSize);
 
-                return new PagedResult<GetSamplePurchaseOrder>(headers, totalCount, query.PageNumber, query.PageSize);
+                // BỌC TRONG OperationResult
+                return OperationResult<PagedResult<GetSamplePurchaseOrder>>.Ok(paged);
             }
             catch (Exception ex)
             {
-                throw new Exception("Lỗi khi lấy danh sách đơn mua hàng.", ex);
+                return OperationResult<PagedResult<GetSamplePurchaseOrder>>.Fail(
+                    $"Lỗi khi lấy danh sách đơn mua hàng. {ex.Message}");
             }
         }
+
 
         /// <summary>
         /// Lấy đơn mua hàng theo ID
@@ -178,7 +172,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="Exception"></exception>
-        public async Task<GetPurchaseOrder> GetPurchaseOrderByIdAsync(Guid purchaseOrderId, CancellationToken ct = default)
+        public async Task<OperationResult<GetPurchaseOrder>> GetPurchaseOrderByIdAsync(Guid purchaseOrderId, CancellationToken ct = default)
         {
 
             try
@@ -240,11 +234,11 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                     PurchaseOrderSnapshot = result.PO.PurchaseOrderSnapshot // nếu DTO cố tình chứa entity
                 };
 
-                return dto;
+                return OperationResult<GetPurchaseOrder>.Ok(dto);
             }
             catch (Exception ex)
             {
-                throw new Exception("Lỗi khi lấy đơn mua hàng.", ex);
+                return OperationResult<GetPurchaseOrder>.Fail("Lỗi khi lấy đơn mua hàng.");
             }
         }
 
@@ -255,7 +249,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
         /// <param name="ct"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public Task<PagedResult<GetPOPurchaseOrder>> GetSelectableLinesAsync(DeliveryOrderQuery query, CancellationToken ct = default)
+        public Task<OperationResult<PagedResult<GetPOPurchaseOrder>>> GetSelectableLinesAsync(DeliveryOrderQuery query, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
@@ -314,7 +308,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                 var po = new PurchaseOrder
                 {
                     PurchaseOrderId = Guid.CreateVersion7(),
-                    ExternalId = await _idService.NextAsync(companyId, "DDH", now, ct: ct),
+                    ExternalId = await _idService.NextAsync("DDH", ct: ct),
                     SupplierId = req.SupplierId,
                     OrderType = req.OrderType,
 

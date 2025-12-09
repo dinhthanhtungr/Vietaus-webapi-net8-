@@ -12,14 +12,20 @@ using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.SampleRequest;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.CreateSampleRequest;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRequestFeature;
+using VietausWebAPI.Core.Application.Features.Notifications.DTOs;
+using VietausWebAPI.Core.Application.Features.Notifications.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
 using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Domain.Enums.Notifications;
+using VietausWebAPI.Core.Domain.Enums.Products;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.WebAPI.Helpers.Securities.Roles;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using VietausWebAPI.Core.Application.Features.Shared.ServiceContracts;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFeature
 {
@@ -28,12 +34,20 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUser _currentUser;
+        private readonly INotificationService _notificationService;
+        private readonly IVisibilityHelper _visibilityHelper;
 
-        public SampleRequestService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUser currentUser)
+        public SampleRequestService(IUnitOfWork unitOfWork
+                                  , IMapper mapper
+                                  , ICurrentUser currentUser
+                                  , INotificationService notificationService
+                                  , IVisibilityHelper visibilityHelper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _currentUser = currentUser;
+            _notificationService = notificationService;
+            _visibilityHelper = visibilityHelper;
         }
 
         // ======================================================================== Get ======================================================================== 
@@ -102,26 +116,32 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 if (query.PageNumber <= 0) query.PageNumber = 1;
                 if (query.PageSize <= 0) query.PageSize = 15;
 
-                // Base query
-                var result = _unitOfWork.SampleRequestRepository
-                    .Query()
-                    .Where(c => c.IsActive == true);   // 👈 đưa IsActive lên sớm luôn
+                // ---- 0) Xác định scope xem theo role ----
+                // ngay sau normalize pageSize
+                var viewer = await _visibilityHelper.BuildViewerScopeAsync(ct);
 
-                // 1) Keyword
+                // Base query
+                var result = _unitOfWork.SampleRequestRepository.Query()
+                    .Where(c => c.IsActive == true); // CompanyId nếu cần: && c.CompanyId == viewer.CompanyId
+
+                // ÁP QUYỀN (theo người tạo) — đúng rule bạn yêu cầu
+                result = _visibilityHelper.ApplySampleRequest(result, viewer);
+
+                // ---- 3) Keyword ----
                 if (!string.IsNullOrWhiteSpace(query.Keyword))
                 {
                     var keyword = query.Keyword.Trim();
 
                     result = result.Where(x =>
-                        (x.ExternalId ?? "").Contains(keyword) ||
-                        (x.CreatedByNavigation.ExternalId ?? "").Contains(keyword) ||
-                        (x.Product.ColourCode ?? "").Contains(keyword) ||
-                        (x.Customer.ExternalId ?? "").Contains(keyword) ||
-                        (x.Customer.CustomerName ?? "").Contains(keyword)
+                        (x.ExternalId ?? "").Contains(keyword)
+                        || ((x.CreatedByNavigation != null ? x.CreatedByNavigation.ExternalId : "") ?? "").Contains(keyword)
+                        || ((x.Product != null ? x.Product.ColourCode : "") ?? "").Contains(keyword)
+                        || ((x.Customer != null ? x.Customer.ExternalId : "") ?? "").Contains(keyword)
+                        || ((x.Customer != null ? x.Customer.CustomerName : "") ?? "").Contains(keyword)
                     );
                 }
 
-                // 2) Filter theo Status (multi-select)
+                // ---- 4) Status (multi) ----
                 if (query.Statuses is { Count: > 0 })
                 {
                     var statuses = query.Statuses
@@ -136,38 +156,31 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     }
                 }
 
-                // 3) Filter theo ngày (CreatedDate)
+                // ---- 5) Date range (CreatedDate) ----
                 if (query.From.HasValue)
                 {
-                    var from = query.From.Value.Date; // bắt đầu từ 00:00
+                    var from = query.From.Value.Date;
                     result = result.Where(x => x.CreatedDate >= from);
                 }
-
                 if (query.To.HasValue)
                 {
-                    // Inclusive tới cuối ngày: < (To + 1 ngày)
                     var toExclusive = query.To.Value.Date.AddDays(1);
                     result = result.Where(x => x.CreatedDate < toExclusive);
                 }
 
-                // 4) Tổng số record sau filter
-                int totalCount = await result.CountAsync(ct);
+                // ---- 6) Count sau mọi filter ----
+                var totalCount = await result.CountAsync(ct);
 
-                // 5) Paging + sort + Project
+                // ---- 7) Sort + Paging + Project ----
+                // Giữ style sort theo ExternalId của bạn; có thêm guard tránh lỗi null/short
                 var items = await result
-                    .OrderByDescending(c => c.ExternalId.Substring(3).PadLeft(10, '0'))
-                    .ThenByDescending(c => c.ExternalId.Substring(0, 3))
+                    .OrderByDescending(x => x.CreatedDate)
                     .Skip((query.PageNumber - 1) * query.PageSize)
                     .Take(query.PageSize)
                     .ProjectTo<SampleRequestSummaryDTO>(_mapper.ConfigurationProvider)
                     .ToListAsync(ct);
 
-                return new PagedResult<SampleRequestSummaryDTO>(
-                    items,
-                    totalCount,
-                    query.PageNumber,
-                    query.PageSize
-                );
+                return new PagedResult<SampleRequestSummaryDTO>(items, totalCount, query.PageNumber, query.PageSize);
             }
             catch (Exception ex)
             {
@@ -220,18 +233,26 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 {
                     // case 2: tạo mới product
                     var product = _mapper.Map<Product>(req.Product);
-                    // nếu Product cũng có CompanyId thì gán luôn cho cùng tenant
-                    if (product.CompanyId == Guid.Empty)
-                        product.CompanyId = companyId;
+
+                    product.ProductId = Guid.CreateVersion7();
+
+                    product.CompanyId = companyId;
+
+                    // (nếu entity Product có các field hệ thống thì set luôn)
+                    //product.CreatedBy = userId;
+                    //product.UpdatedBy = userId;
+                    //product.CreatedDate = now;
+                    //product.UpdatedDate = now;
+                    product.IsActive = true;
 
                     await _unitOfWork.ProductRepository.AddAsync(product, ct);
-                    await _unitOfWork.SaveChangesAsync();   // để DB sinh PK
                     productId = product.ProductId;
                 }
 
                 // ====== 2. Map sang entity SampleRequest ======
                 var sample = _mapper.Map<SampleRequest>(req.Sample);
 
+                sample.SampleRequestId = Guid.CreateVersion7();
                 // ép các field hệ thống (override luôn data client gửi)
                 sample.CompanyId = companyId;
                 sample.CreatedBy = userId;
@@ -239,9 +260,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 sample.CreatedDate = now;
                 sample.UpdatedDate = now;
                 sample.IsActive = true;
-                // status để client gửi cũng được, nhưng nếu muốn backend quyết thì:
+
+
                 if (string.IsNullOrWhiteSpace(sample.Status))
-                    sample.Status = "New";
+                    sample.Status = SampleRequestStatus.New.ToString();
 
                 // ====== 3. Tạo bucket đính kèm ======
                 var bucket = new AttachmentCollection
@@ -257,18 +279,39 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     prefix => _unitOfWork.SampleRequestRepository.GetLatestExternalIdStartsWithAsync(prefix)
                 );
 
+                var customerName = await _unitOfWork.CustomerRepository.Query()
+                    .Where(x => x.CustomerId == sample.CustomerId)
+                    .Select(x => x.CustomerName)
+                    .FirstOrDefaultAsync(ct);
+
                 // gán product
                 sample.ProductId = productId;
 
+
                 // ====== 5. Thêm sample ======
-                // nếu bạn đang dùng “hybrid” id (DB cũng sinh được), đoạn này có thể KHÔNG set SampleRequestId
-                // còn nếu bạn muốn chủ động Guid v7 ở backend:
-                // sample.SampleRequestId = Guid.CreateVersion7();
 
                 await _unitOfWork.SampleRequestRepository.AddAsync(sample, ct);
-                var affected = await _unitOfWork.SaveChangesAsync();
 
+                var affected = await _unitOfWork.SaveChangesAsync();
                 await tx.CommitAsync(ct);
+
+                // ====== 6. Gửi notification ======
+                await _notificationService.PublishAsync(new PublishNotificationRequest
+                {
+                    Topic = TopicNotifications.ProductSampleCreated,
+                    Severity = NotificationSeverity.Info,
+                    Title = $"Yêu cầu phối mẫu mới: {sample.ExternalId}",
+                    Message = $"Khách hàng {customerName}",
+                    Link = $"/labs/product-orders/{sample.SampleRequestId}",
+                    PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        ProductOrderId = sample.ProductId,
+                        CustomerId = sample.CustomerId,
+                        CreatedBy = sample.CreatedBy,
+                        CreatedDate = sample.CreatedDate
+                    }),
+                    TargetRoles = new() { RoleSets.Lab_Group }
+                }, ct);
 
                 // mình nghĩ trả về SampleRequestId hợp lý hơn kết dính bucket
                 return affected > 0
@@ -467,6 +510,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 return OperationResult.Fail($"Lỗi khi cập nhật: {ex.Message}");
             }
         }
+
 
     }
 }

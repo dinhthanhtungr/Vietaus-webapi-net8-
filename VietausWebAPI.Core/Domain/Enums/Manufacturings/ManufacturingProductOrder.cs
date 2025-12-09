@@ -8,41 +8,39 @@ namespace VietausWebAPI.Core.Domain.Enums.Manufacturings
 {
     public enum ManufacturingProductOrder
     {
-        Unknown = 0,
+        Unknown,
+        New,
+        FormulaRequested,
+        FormulaSuccess,
+        Scheduling,
+        Scheduled,
 
-        // ---- Khởi tạo & kiểm duyệt
-        New = 1,                 // Mới tạo
-        QCChecked = 2,           // Lab đã xác nhận công thức
+        Waiting,
+        Unassign,
+        Getback,
 
-        // ---- Thay đổi
-        FormulaChangeRequested = 3, // Yêu cầu đổi công thức
-        PLPUChecked = 4,         // Kế hoạch đã xác nhận công thức
 
-        // ---- Lập lịch & chuẩn bị SX
-        InProgress = 5,           // Đã lên lịch (Không ghi log)
+        QCinprogress,
+        QCPassed,
+        QCFail,
 
-        Stocked = 18, // Đã nhập kho nguyên vật liệu nghĩa là đã sản xuất xong rồi
-        //Mixing = 5,              // Trộn 
+        BTPNew,
+        Weighting,
+        Weighted,
+        Mixing,
+        Mixed,
 
-        //Processing = 6,          // Đang chạy 
-        //Produced = 7,            // Máy chạy xong / chốt sản lượng 
+        Started,
+        Canceled,
+        Running,
+        Finished,
 
-        // ---- Tạm dừng / Ngoại lệ
-        //QCFail = 8,              // Dừng bởi QC
-        Cancelled = 19,           // Hủy LỆNH PHẢI CẬP NHẬT Ở HAI BẢN MfgProductOrder VÀ MfGSchechale
-        //Error = 10,              // Lỗi
+        Change,
+        Unassignfrommd,
+        Reported,
+        Done,
 
-        // ---- Kết thúc
-        //Completed = 11,          // Hoàn tất (đạt QC + quyết toán + đóng lệnh)
-
-        QCFail = 22,
-
-    // ====== Bước con (mới thêm, KHÔNG đè số cũ) ======
-    //WaitingMaterials = 13,   // Chờ NVL
-    //QueuedToMachine = 14,    // Đưa lên máy / xếp hàng chờ chạy
-    //Weighing = 15,           // Cân
-    //Regrind = 16,            // Tái sinh
-    //WarehouseReceived = 17   // Đã nhập kho (sau Produced, trước Completed)
+        Stocked
     }
 
 }

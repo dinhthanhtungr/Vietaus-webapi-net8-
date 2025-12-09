@@ -20,8 +20,9 @@ using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.DeliverySchema;
 using VietausWebAPI.Core.Domain.Entities.WarehouseSchema;
 using VietausWebAPI.Core.Domain.Enums.WareHouses;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using static QuestPDF.Helpers.Colors;
+using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 
 namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
 {
@@ -31,13 +32,19 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
         private readonly IMapper _mapper;
         private readonly IExternalIdService _idService; 
         private readonly ICurrentUser _currentUser;
+        private readonly IWarehouseReservationService _warehouseReservationService;
 
-        public DeliveryOrderService(IUnitOfWork unitOfWork, IMapper mapper, IExternalIdService idService, ICurrentUser currentUser)
+        public DeliveryOrderService(IUnitOfWork unitOfWork
+            , IMapper mapper
+            , IExternalIdService idService
+            , ICurrentUser currentUser
+            , IWarehouseReservationService warehouseReservationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _idService = idService;
             _currentUser = currentUser;
+            _warehouseReservationService = warehouseReservationService;
         }
 
         // ======================================================================== Get ======================================================================== 
@@ -954,7 +961,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
             var userId = _currentUser.EmployeeId;
             var now = DateTime.Now;
 
-            var externalId = await _idService.NextAsync(companyId, "PGH", now, ct: ct);
+            var externalId = await _idService.NextAsync("PGH", ct: ct);
 
             // 1. Validate cơ bản
             if (request == null)
@@ -1068,43 +1075,44 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                     .ToList();
             }
 
-            // 7. Tạo WarehouseRequest (phiếu yêu cầu xuất kho) cho DO này
-            //    Dùng codeFromRequest = ExternalId của DeliveryOrder
-            var warehouseRequestCode = await _idService.NextAsync(companyId, "XK", now, ct: ct);
+            //// 7. Tạo WarehouseRequest (phiếu yêu cầu xuất kho) cho DO này
+            ////    Dùng codeFromRequest = ExternalId của DeliveryOrder
+            //var warehouseRequestCode = await _idService.NextAsync(companyId, "PXK", now, ct: ct);
 
-            var warehouseRequest = new WarehouseRequest
-            {
-                // RequestId: để DB tự sinh (IDENTITY) nếu bạn cấu hình như vậy
-                RequestCode = warehouseRequestCode,
-                ReqStatus = WarehouseRequestStatus.Pending,
-                RequestName = $"Xuất kho cho phiếu giao hàng {externalId}",
-                IsActive = true,
+            //var warehouseRequest = new WarehouseRequest
+            //{
+            //    // RequestId: để DB tự sinh (IDENTITY) nếu bạn cấu hình như vậy
+            //    RequestCode = warehouseRequestCode,
+            //    ReqStatus = WarehouseRequestStatus.Pending,
+            //    RequestName = $"Xuất kho cho phiếu giao hàng {externalId}",
+            //    IsActive = true,
 
-                ReqType = WareHouseRequestType.ExportForSales, // ĐỔI cho đúng enum của bạn
-                codeFromRequest = externalId,                 // link về DO qua ExternalId
+            //    ReqType = WareHouseRequestType.ExportForSales, // ĐỔI cho đúng enum của bạn
+            //    codeFromRequest = externalId,                 // link về DO qua ExternalId
 
-                CompanyId = companyId,
-                CreatedBy = userId,
-                CreatedDate = now
-            };
+            //    CompanyId = companyId,
+            //    CreatedBy = userId,
+            //    CreatedDate = now
+            //};
 
-            // 7.1 Map WarehouseRequestDetails từ DeliveryOrder.Details
-            warehouseRequest.WarehouseRequestDetails = deliveryOrder.Details
-                .Where(d => d.IsActive)
-                .Select(d => new WarehouseRequestDetail
-                {
-                    ProductCode = d.ProductExternalIdSnapShot,
-                    ProductName = d.ProductNameSnapShot,
-                    WeightKg = d.Quantity,
-                    BagNumber = d.NumOfBags,
-                    IsActive = true
-                })
-                .ToList();
+            //// 7.1 Map WarehouseRequestDetails từ DeliveryOrder.Details
+            //warehouseRequest.WarehouseRequestDetails = deliveryOrder.Details
+            //    .Where(d => d.IsActive)
+            //    .Select(d => new WarehouseRequestDetail
+            //    {
+            //        ProductCode = d.ProductExternalIdSnapShot,
+            //        ProductName = d.ProductNameSnapShot,
+            //        WeightKg = d.Quantity,
+            //        BagNumber = d.NumOfBags,
+            //        IsActive = true
+            //    })
+            //    .ToList();
 
+            await _warehouseReservationService.EnsureWarehouseRequestForDOAsync(deliveryOrder, now, userId, companyId, ct);
 
             // 8. Lưu vào DB trong cùng UnitOfWork
             await _unitOfWork.DeliveryOrderRepository.AddAsync(deliveryOrder, ct);
-            await _unitOfWork.WarehouseRequestRepository.AddAsync(warehouseRequest, ct);
+            //await _unitOfWork.WarehouseRequestRepository.AddAsync(warehouseRequest, ct);
 
             await _unitOfWork.SaveChangesAsync();
 

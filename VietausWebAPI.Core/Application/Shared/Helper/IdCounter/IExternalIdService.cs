@@ -8,6 +8,6 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.IdCounter
 {
     public interface IExternalIdService
     {
-        Task<string> NextAsync(Guid companyId, string prefix, DateTime now, CancellationToken ct = default);
+        Task<string> NextAsync(string prefix, CancellationToken ct = default);
     }
 }

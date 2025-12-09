@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.Notifications;
 
-namespace VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext.Configurations.Notifications
+namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurations.Notifications
 {
     public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
     {
@@ -19,7 +19,7 @@ namespace VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext.Configurat
             entity.HasKey(x => x.Id);
 
             entity.Property(x => x.Id).HasColumnName("id");
-            entity.Property(x => x.Topic).HasMaxLength(64).IsRequired().HasColumnName("topic");
+            entity.Property(x => x.Topic).HasConversion<int>().IsRequired().HasColumnName("topic");
             entity.Property(x => x.Severity).HasConversion<int>().IsRequired().HasColumnName("severity");
             entity.Property(x => x.Title).HasMaxLength(256).IsRequired().HasColumnName("title");
             entity.Property(x => x.Message).HasMaxLength(2000).IsRequired().HasColumnName("message");
@@ -34,6 +34,12 @@ namespace VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext.Configurat
                   .HasForeignKey(x => x.CompanyId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("fk_notifications_company");
+
+            entity.HasOne(x => x.CreatedByEmployeeNavigation)
+                  .WithMany(x => x.CreatedByEmployeeNavigations)
+                  .HasForeignKey(x => x.CreatedBy)
+                  .OnDelete(DeleteBehavior.Restrict)
+                  .HasConstraintName("fk_notifications_created_by_employee");
 
             entity.HasIndex(x => new { x.CompanyId, x.Topic, x.CreatedDate })
                   .HasDatabaseName("ix_notifications_company_topic_created");

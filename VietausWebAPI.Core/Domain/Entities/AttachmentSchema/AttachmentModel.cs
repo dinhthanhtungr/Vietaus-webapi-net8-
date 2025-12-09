@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
 using VietausWebAPI.Core.Domain.Enums.Attachment;
 
 namespace VietausWebAPI.Core.Domain.Entities.AttachmentSchema

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
 
 namespace VietausWebAPI.Core.Domain.Entities;
 

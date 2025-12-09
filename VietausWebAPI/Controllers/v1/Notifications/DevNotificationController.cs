@@ -35,7 +35,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Notifications
 
                 var id = await _noti.PublishAsync(new PublishNotificationRequest
                 {
-                    Topic = "Mfg.PriceExceeded",
+                    Topic = TopicNotifications.PriceOverSellCreated,
                     Severity = NotificationSeverity.Warning,
                     Title = $"Cảnh báo giá: {dto.FormulaExternalId}",
                     Message = $"Tổng chi phí {dto.TotalCost:N0} > Giá bán {dto.TargetPrice:N0}",
@@ -54,7 +54,37 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Notifications
                 return result is null ? NotFound() : Ok(result);
             }
 
-            public sealed class PriceExceededDto
+            [HttpGet("feed")]
+            public async Task<ActionResult<IReadOnlyList<NotificationDto>>> Feed(
+                [FromQuery] int take = 20,
+                [FromQuery] DateTime? afterCreated = null,
+                [FromQuery] Guid? afterId = null,
+                CancellationToken ct = default)
+            {
+                var result = await _noti.GetFeedAsync(take, afterId, afterCreated, ct);
+                return Ok(result);
+            }
+
+            [HttpGet("unread-count")]
+            public async Task<ActionResult<int>> UnreadCount(CancellationToken ct)
+                 => Ok(await _noti.GetUnreadCountAsync(ct));
+
+            [HttpPost("{id:guid}/read")]
+            public async Task<IActionResult> MarkRead([FromRoute] Guid id, CancellationToken ct)
+            {
+                await _noti.MarkReadAsync(id, ct);
+                return NoContent();
+            }
+
+            [HttpPost("mark-all-read")]
+            public async Task<IActionResult> MarkAllRead(CancellationToken ct)
+            {
+                await _noti.MarkAllReadAsync(ct);
+                return NoContent();
+            }
+
+
+        public sealed class PriceExceededDto
             {
                 public Guid CompanyId { get; set; }
                 public Guid FormulaId { get; set; }

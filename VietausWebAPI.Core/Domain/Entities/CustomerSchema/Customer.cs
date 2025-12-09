@@ -1,14 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using VietausWebAPI.Core.Domain.Entities.CompanySchema;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
 using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
+using VietausWebAPI.Core.Domain.Enums.CustomerEnum;
 
 namespace VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 
 public partial class Customer
 {
     public Guid CustomerId { get; set; }
+    public bool IsLead { get; set; }
+    public LeadStatus LeadStatus { get; set; }
 
     public string ExternalId { get; set; } = string.Empty;
 
@@ -42,27 +47,18 @@ public partial class Customer
 
     public string? FaxNumber { get; set; }
 
-    //public string? Product { get; set; }
-
     public bool? IsActive { get; set; }
 
     public virtual ICollection<Address> Addresses { get; set; } = new List<Address>();
-
-    public virtual Company? Company { get; set; }
-
+    public virtual ICollection<CustomerNote> CustomerNotes { get; set; } = new List<CustomerNote>();
+    public virtual ICollection<CustomerClaim> CustomerClaims { get; set; } = new List<CustomerClaim>();
     public virtual ICollection<Contact> Contacts { get; set; } = new List<Contact>();
-
-    public virtual Employee? CreatedByNavigation { get; set; }
-
     public virtual ICollection<CustomerAssignment> CustomerAssignments { get; set; } = new List<CustomerAssignment>();
-
     public virtual ICollection<DetailCustomerTransfer> DetailCustomerTransfers { get; set; } = new List<DetailCustomerTransfer>();
-
     public virtual ICollection<MerchandiseOrder> MerchandiseOrders { get; set; } = new List<MerchandiseOrder>();
-
     public virtual ICollection<MfgProductionOrder> MfgProductionOrders { get; set; } = new List<MfgProductionOrder>();
-
     public virtual ICollection<SampleRequest> SampleRequests { get; set; } = new List<SampleRequest>();
-
+    public virtual Company? Company { get; set; }
+    public virtual Employee? CreatedByNavigation { get; set; }
     public virtual Employee? UpdatedByNavigation { get; set; }
 }

@@ -13,10 +13,10 @@ namespace VietausWebAPI.Core.Domain.Entities.WarehouseSchema
         public int RequestId { get; set; }      // liên kết header qua RequestCode
         public string ProductCode { get; set; } = string.Empty;
         public string ProductName { get; set; } = string.Empty;
-        public string LotNumber { get; set; } = string.Empty;
+        public string? LotNumber { get; set; } = string.Empty;
         public decimal WeightKg { get; set; } = 0;
         public int BagNumber { get; set; } = 0;
-        public string StockStatus { get; set; } = string.Empty;
+        public string? StockStatus { get; set; } = string.Empty;
 
         public bool IsActive { get; set; } = true;
         // Navigation properties

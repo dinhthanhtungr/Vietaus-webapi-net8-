@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.Notifications;
 
-namespace VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext
+namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
 {
     public partial class ApplicationDbContext
     {

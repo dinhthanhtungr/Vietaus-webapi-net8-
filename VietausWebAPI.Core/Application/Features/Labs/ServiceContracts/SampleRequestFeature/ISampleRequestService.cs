@@ -28,9 +28,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRe
         /// <param name="query"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<PagedResult<SampleRequestSummaryDTO>> GetAllAsync(
-         SampleRequestQuery query,
-         CancellationToken ct = default);
+        Task<PagedResult<SampleRequestSummaryDTO>> GetAllAsync(SampleRequestQuery query, CancellationToken ct = default);
 
         /// <summary>
         /// Lấy thông tin chi tiết của một yêu cầu mẫu theo ID.

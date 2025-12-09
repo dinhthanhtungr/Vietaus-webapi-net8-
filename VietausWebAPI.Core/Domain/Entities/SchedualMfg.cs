@@ -7,7 +7,8 @@ namespace VietausWebAPI.Core.Domain.Entities;
 
 public partial class SchedualMfg
 {
-    public Guid Id { get; set; }
+    public int Idpk { get; set; }
+
     public Guid? ProductId { get; set; }
     public Guid? MfgProductionOrderId { get; set; }       
 
@@ -31,7 +32,6 @@ public partial class SchedualMfg
     public int? Area { get; set; }
     public string? BTPStatus { get; set; }
     public int? StepOfProduct { get; set; }
-    public int? Idpk { get; set; }
 
     public virtual MfgProductionOrder? MfgProductionOrder { get; set; }
     public virtual Product? Product { get; set; }

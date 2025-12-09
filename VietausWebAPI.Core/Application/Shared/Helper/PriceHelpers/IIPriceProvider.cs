@@ -32,8 +32,8 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.PriceHelpers
         /// </summary>
         Task<decimal?> GetTargetPriceByMpoAsync(
             Guid mfgProductionOrderId,
-            Guid productId,
-            Guid companyId,
+            //Guid productId,
+            //Guid companyId,
             CancellationToken ct = default);
     }
 }

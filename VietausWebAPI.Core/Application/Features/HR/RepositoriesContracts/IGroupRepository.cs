@@ -7,7 +7,7 @@ using VietausWebAPI.Core.Application.Features.HR.DTOs.Groups;
 using VietausWebAPI.Core.Application.Features.HR.Querys.Groups;
 using VietausWebAPI.Core.Application.Shared.Helper.Repository;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
-using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.CompanySchema;
 
 namespace VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts
 {

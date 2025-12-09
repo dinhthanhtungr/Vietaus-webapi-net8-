@@ -51,7 +51,7 @@
 //using VietausWebAPI.Core.Application.Shared.Helper.PriceHelpers;
 
 ////using VietausWebAPI.Core.Application.Shared.Helper.ImageStorage;
-//using VietausWebAPI.Core.Repositories_Contracts;
+//using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 //using VietausWebAPI.Infrastructure.DataUnitOfWork;
 //using VietausWebAPI.Infrastructure.Helpers.IdCounter;
 //using VietausWebAPI.Infrastructure.Repositories.Attachments;

@@ -8,7 +8,7 @@ using VietausWebAPI.Core.Application.Features.CompanyFeatures.RepositoriesContra
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 using VietausWebAPI.Infrastructure.Helpers.Repositories;
-using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
+using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Materials
 {

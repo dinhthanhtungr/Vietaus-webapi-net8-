@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
+using VietausWebAPI.Core.Domain.Entities.CompanySchema;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
 using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
@@ -52,8 +54,6 @@ public partial class Material
 
     public virtual Employee? CreatedByNavigation { get; set; }
     public virtual Employee? UpdatedByNavigation { get; set; }
-
-    public virtual ICollection<AttachmentCollection> AttachmentCollections { get; set; } = new List<AttachmentCollection>();
     public virtual ICollection<FormulaMaterial> FormulaMaterials { get; set; } = new List<FormulaMaterial>();
 
     public virtual ICollection<ManufacturingFormulaMaterial> ManufacturingFormulaMaterials { get; set; } = new List<ManufacturingFormulaMaterial>();

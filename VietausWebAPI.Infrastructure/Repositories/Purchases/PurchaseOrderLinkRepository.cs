@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
 using VietausWebAPI.Infrastructure.Helpers.Repositories;
-using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
+using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Purchases
 {

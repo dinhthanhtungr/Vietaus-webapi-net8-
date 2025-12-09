@@ -14,7 +14,7 @@ using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.AuditSchema;
 using VietausWebAPI.Core.Domain.Enums.Logs;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static QuestPDF.Helpers.Colors;
 
@@ -549,7 +549,6 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
             // 5) Lấy log của các MFG trong trang hiện tại
             // ----------------------------------------------------
             var logsQ = _unitOfWork.EventLogRepository.Query()
-                .AsNoTracking()
                 .Where(e => e.IsActive && pageMfgIds.Contains(e.SourceId));
 
             if (!string.IsNullOrWhiteSpace(query.Status))
@@ -576,7 +575,6 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
             var empMap = creatorIds.Count == 0
                 ? new Dictionary<Guid, (string FullName, string CompanyName)>()
                 : await _unitOfWork.EmployeesRepository.Query()
-                    .AsNoTracking()
                     .Where(emp => creatorIds.Contains(emp.EmployeeId))
                     .Select(emp => new
                     {
@@ -624,7 +622,7 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                     RequestDate = hasDetail ? md.DeliveryRequestDate : default, // model mới: non-nullable
 
                     Details = detailsByMfg.TryGetValue(m.MfgProductionOrderId, out var ds)
-                        ? ds.OrderByDescending(d => d.CreatedDate).ToList()
+                        ? ds.OrderBy(d => d.CreatedDate).ToList()
                         : new List<GetMerchadiseTimelineDetail>()
                 };
             }).ToList();

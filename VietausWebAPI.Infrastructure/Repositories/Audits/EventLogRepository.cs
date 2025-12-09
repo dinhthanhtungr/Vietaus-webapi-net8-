@@ -1,5 +1,5 @@
 ﻿
-using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
+using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.RepositoriesContracts;
 using VietausWebAPI.Core.Domain.Entities.AuditSchema;
 using Microsoft.EntityFrameworkCore;

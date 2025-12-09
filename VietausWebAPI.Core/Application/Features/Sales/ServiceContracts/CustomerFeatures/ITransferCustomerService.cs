@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.TransferCustomerDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.Querys;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
@@ -11,6 +12,8 @@ namespace VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.Custome
 {
     public interface ITransferCustomerService
     {
+        Task<OperationResult> CreateAssignLeadRequestAsync(AssignLeadRequest req, CancellationToken ct);
+
         /// <summary>
         /// Tạo mới một lần chuyển khách hàng từ nhân viên này sang nhân viên khác
         /// </summary>
@@ -36,6 +39,6 @@ namespace VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.Custome
         /// <param name="ct"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        Task<TransferCustomerDTO> CreateTransferAsync(TransferCustomersRequest req, CancellationToken ct);
+        Task<OperationResult<TransferCustomerDTO>> CreateTransferAsync(TransferCustomersRequest req, CancellationToken ct);
     }
 }

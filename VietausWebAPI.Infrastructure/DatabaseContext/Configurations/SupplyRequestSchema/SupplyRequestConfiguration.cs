@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.SupplyRequestSchema;
 
-namespace VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext.Configurations.SupplyRequestSchema
+namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurations.SupplyRequestSchema
 {
     public class SupplyRequestConfiguration : IEntityTypeConfiguration<SupplyRequest>
     {

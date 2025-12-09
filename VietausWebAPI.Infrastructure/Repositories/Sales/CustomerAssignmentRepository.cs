@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
 using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
-using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
+using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Sales
 {

@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 
 namespace VietausWebAPI.WebAPI.Hubs
 {
@@ -16,15 +16,15 @@ namespace VietausWebAPI.WebAPI.Hubs
         }
         public override async Task OnConnectedAsync()
         {
-            
-            //var companyClaim = Context.User?.FindFirst("company_id")?.Value;
-            //var userClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            //                ?? Context.User?.FindFirst("employee_id")?.Value;
+            // LẤY ĐÚNG KHÓA TRONG JWT
+            var companyClaim = Context.User?.FindFirst("companyId")?.Value;   // <= đổi company_id -> companyId
+            var userClaim = Context.User?.FindFirst("employeeId")?.Value   // <= ưu tiên employeeId
+                            ?? Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value; // fallback: "sub"
 
-            var userClaim = _CurrentId.EmployeeId.ToString();
-            var companyClaim = _CurrentId.CompanyId.ToString();
-
-            var companyKey = companyClaim is null ? null : Guid.Parse(companyClaim).ToString("N");
+            // CHUẨN HOÁ CompanyId về "N" để khớp Processor
+            var companyKey = Guid.TryParse(companyClaim, out var cmp)
+                ? cmp.ToString("N")
+                : null;
 
             if (companyKey != null)
                 await Groups.AddToGroupAsync(Context.ConnectionId, $"company:{companyKey}");
@@ -32,20 +32,19 @@ namespace VietausWebAPI.WebAPI.Hubs
             if (Guid.TryParse(userClaim, out var userId))
                 await Groups.AddToGroupAsync(Context.ConnectionId, $"user:{userId}");
 
-            var roles = Context.User?.Claims
+            // Roles: ClaimTypes.Role đã map đúng với "http://schemas.../role"
+            var roles = Context.User!.Claims
                 .Where(c => c.Type == ClaimTypes.Role)
-                .Select(c => c.Value.Trim().ToUpperInvariant())
-                .Distinct()
-                .ToList() ?? new();
+                .Select(c => c.Value.Trim().ToUpperInvariant())  // chuẩn hoá UPPER
+                .Distinct();
 
             foreach (var r in roles)
-            {
                 if (companyKey != null)
                     await Groups.AddToGroupAsync(Context.ConnectionId, $"role:{companyKey}:{r}");
-            }
 
             await base.OnConnectedAsync();
         }
+
 
         // Giữ lại các API thủ công nếu cần
         public Task JoinCompany(string companyId)

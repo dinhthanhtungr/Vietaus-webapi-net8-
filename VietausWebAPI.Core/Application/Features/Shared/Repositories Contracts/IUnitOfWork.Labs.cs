@@ -8,7 +8,7 @@ using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.Formula
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 
-namespace VietausWebAPI.Core.Repositories_Contracts
+namespace VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts
 {
     public partial interface IUnitOfWork
     {

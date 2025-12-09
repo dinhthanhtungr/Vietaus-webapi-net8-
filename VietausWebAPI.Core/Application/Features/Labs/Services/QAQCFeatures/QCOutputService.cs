@@ -8,7 +8,7 @@
 //using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.QAQCFeatures;
 //using VietausWebAPI.Core.Application.Features.Manufacturing.Queries.MfgProductionOrdersPlanRepository;
 //using VietausWebAPI.Core.Application.Shared.Models.PageModels;
-//using VietausWebAPI.Core.Repositories_Contracts;
+//using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 //using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 //namespace VietausWebAPI.Core.Application.Features.Labs.Services.QAQCFeatures

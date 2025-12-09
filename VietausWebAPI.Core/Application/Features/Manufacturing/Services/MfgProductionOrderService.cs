@@ -32,9 +32,10 @@ using VietausWebAPI.Core.Domain.Enums.Formulas;
 using VietausWebAPI.Core.Domain.Enums.Logs;
 using VietausWebAPI.Core.Domain.Enums.Manufacturings;
 using VietausWebAPI.Core.Domain.Enums.Merchadises;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static QuestPDF.Helpers.Colors;
+using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 
 namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 {
@@ -45,14 +46,21 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
         private readonly IMapper _mapper;
         private readonly IExternalIdService _externalId;
         private readonly ITimelineService _timeLineService;
+        private readonly IWarehouseReservationService _warehouseReservationService;
 
-        public MfgProductionOrderService(IUnitOfWork unitOfWork, IMapper mapper, IExternalIdService externalId, ICurrentUser currentUser, ITimelineService timeLineService)
+        public MfgProductionOrderService(IUnitOfWork unitOfWork
+            , IMapper mapper
+            , IExternalIdService externalId
+            , ICurrentUser currentUser
+            , ITimelineService timeLineService
+            , IWarehouseReservationService warehouseReservationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _externalId = externalId;
             _currentUser = currentUser;
             _timeLineService = timeLineService;
+            _warehouseReservationService = warehouseReservationService;
         }
 
         // ======================================================================== Get ======================================================================== 
@@ -113,7 +121,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 {
                     result = result.Where(p => p.CreatedDate <= query.To.Value);
                 }
-
+                result = result.OrderByDescending(p => p.CreatedDate);
                 var vm = await result
                     .Select(o => new GetSummaryMfgProductionOrder
                     {
@@ -195,6 +203,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 {
                     q = q.Where(f => f.ManufacturingFormulaId == query.MfgFormulaId.Value);
                 }
+
+                if (query.MfgProductionOrderId is Guid moId && moId != Guid.Empty)
+                {
+                    q = q.Where(f => f.ProductionSelectVersions
+                        .Any(s => s.MfgProductionOrderId == moId));
+                }
+
 
                 if (!string.IsNullOrWhiteSpace(query.Keyword))
                 {
@@ -282,8 +297,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     };
 
                 // 4) Order + map sang DTO
-                var items =
-                    itemsQuery
+                var items = itemsQuery
                         .OrderByDescending(z => z.isSelectedNow)
                         .ThenByDescending(z => z.isStandard)
                         .ThenBy(z => z.f.CreatedDate)
@@ -499,7 +513,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             throw new ApplicationException("An error occurred while fetching manufacturing formulas.");
         }
 
-
         // ======================================================================== Update ========================================================================
 
         /// <summary>
@@ -522,6 +535,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
                 var existingMfgOrderPO = await _unitOfWork.MfgOrderPORepository.Query(track: true)
                     .Where(p => p.MfgProductionOrderId == req.MfgProductionOrderId && p.IsActive == true)
+                    .Include(p => p.ProductionOrder)
+                    .Include(p => p.Detail)
                     .FirstOrDefaultAsync(ct);
 
                 if (existingMfgOrderPO == null)
@@ -548,10 +563,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
                 var statusChanged = PatchHelper.SetIfRef(req.Status, () => existing.Status, v => existing.Status = v);
 
-                // 1) Kiểm tra xem Status có đổi sang PLPUChecked không
-                var statusChangedToPLPUChecked =
-                    statusChanged && existing.Status == ManufacturingProductOrder.PLPUChecked.ToString();
-
+                // 1) Kiểm tra xem Status có đổi sang Scheduling không
+                var statusChangedToScheduling =
+                    statusChanged && existing.Status == ManufacturingProductOrder.Scheduling.ToString();
                 if (statusChanged)
                 {
                     await _timeLineService.AddEventLogAsync(new EventLogModels
@@ -565,7 +579,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     }, ct);
                 }
 
-                if (statusChangedToPLPUChecked)
+                if (statusChangedToScheduling)
                 {
                     // Tránh tạo trùng nếu đã có schedule cho lệnh này
                     var scheduleExists = await _unitOfWork.SchedualMfgRepository
@@ -597,68 +611,55 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         {
                             MfgProductionOrderId = existing.MfgProductionOrderId,
                             ProductId = existing.ProductId,
-
-                            //ExternalId = existing.ExternalId,
-                            ColorCode = existing.ProductExternalIdSnapshot,
-                            ColorName = existing.ProductNameSnapshot,
-
-                            Quantity = existing.TotalQuantity
-                                         ?? existing.TotalQuantityRequest,
-
                             requirement = existing.Requirement,
                             Note = existing.LabNote ?? existing.PlpuNote,
-
-                            // ===== 3) Map dữ liệu từ Product sang =====
-                            ProductExpiryType = productInfo?.ExpiryType,
-                            ProductRohsStandard = productInfo?.RohsStandard,
-                            ReachStandard = productInfo?.ReachStandard,
-                            ProductRecycleRate = productInfo?.RecycleRate,
-                            ProductWeight = productInfo?.Weight,
-                            ProductMaxTemp = productInfo?.MaxTemp,
-                            ProductAddRate = productInfo?.UsageRate,
-
                             ExpectedCompletionDate = existing.ExpectedDate,
                             PlanDate = existing.ExpectedDate,
                             CreatedDate = now,
 
-                            Status = ManufacturingProductOrder.PLPUChecked.ToString(),
+                            Status = ManufacturingProductOrder.Scheduling.ToString(),
                             Qcstatus = null,
                             Area = null,
                             BTPStatus = null,
-                            StepOfProduct = null,
-                            Idpk = null
+                            StepOfProduct = null
                         };
                         await _unitOfWork.SchedualMfgRepository.AddAsync(schedual, ct);
+                        await _warehouseReservationService.EnsureWarehouseIssueRequestAsync(existing, now, userId, companyId, ct);
+                    
                     }
                 }
 
-                // 2. Đồng bộ status sang MerchandiseOrder (nếu business yêu cầu)
+                // 2. Đồng bộ status sang MerchandiseOrder 
                 var detail = existingMfgOrderPO.Detail;
-                if (detail != null)
+                if (statusChanged && detail != null)
                 {
                     var relatedOrder = await _unitOfWork.MerchandiseOrderRepository
                         .Query(track: true)
-                        .FirstOrDefaultAsync(
-                            o => o.MerchandiseOrderId == detail.MerchandiseOrderId,
-                            ct
-                        );
+                        .FirstOrDefaultAsync(o => o.MerchandiseOrderId == detail.MerchandiseOrderId, ct);
 
-                    if (relatedOrder != null
-                        && relatedOrder.Status == MerchadiseStatus.Approved.ToString())
+                    if (relatedOrder != null)
                     {
-                        relatedOrder.Status = MerchadiseStatus.Processing.ToString();
-                        relatedOrder.UpdatedDate = now;
-                        relatedOrder.UpdatedBy = userId;
+                        // Parse enum an toàn, mặc định về trạng thái hiện tại nếu parse thất bại
+                        if (!Enum.TryParse<MerchadiseStatus>(relatedOrder.Status, ignoreCase: true, out var roStatus))
+                            roStatus = MerchadiseStatus.New; // tuỳ bạn, hoặc return/skip
 
-                        await _timeLineService.AddEventLogAsync(new EventLogModels
+                        // Chỉ đổi sang Processing nếu hiện tại là Approved hoặc New
+                        if (roStatus == MerchadiseStatus.Approved || roStatus == MerchadiseStatus.New)
                         {
-                            employeeId = userId,
-                            eventType = EventType.MerchadiseStatus,
-                            sourceCode = relatedOrder.ExternalId ?? string.Empty,
-                            sourceId = relatedOrder.MerchandiseOrderId,
-                            status = relatedOrder.Status,
-                            note = $"Cập nhật bởi hệ thống vào {now} bởi {_currentUser.personName}"
-                        }, ct);
+                            relatedOrder.Status = MerchadiseStatus.Processing.ToString();
+                            relatedOrder.UpdatedDate = now;
+                            relatedOrder.UpdatedBy = userId;
+
+                            await _timeLineService.AddEventLogAsync(new EventLogModels
+                            {
+                                employeeId = userId,
+                                eventType = EventType.MerchadiseStatus,
+                                sourceCode = relatedOrder.ExternalId ?? string.Empty,
+                                sourceId = relatedOrder.MerchandiseOrderId,
+                                status = relatedOrder.Status,
+                                note = $"Cập nhật bởi hệ thống vào {now} bởi {_currentUser.personName}"
+                            }, ct);
+                        }
                     }
                 }
 
@@ -683,146 +684,158 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
         /// <returns></returns>
         public async Task<MfgContext> BuildMfgContextAsync(OrderSlim mo, CancellationToken ct = default)
         {
-            var details = mo.Details;
-            var productIds = details.Select(d => d.ProductId).Distinct().ToList();
-            var vuIds = details.Select(d => d.FormulaId).Distinct().ToList();
-            var now = DateTime.Now;
-            // Products
-            var products = await _unitOfWork.ProductRepository.Query()
-                .Where(p => productIds.Contains(p.ProductId))
-                .Select(p => new { p.ProductId, p.ColourCode, p.Name, p.CategoryId })
-                .ToDictionaryAsync(
-                    x => x.ProductId,
-                    x => new ProductRow(x.ProductId, x.ColourCode, x.Name, x.CategoryId),
-                    ct);
+            try
+            {
+                var details = mo.Details;
+                var productIds = details.Select(d => d.ProductId).Distinct().ToList();
+                var vuIds = details.Select(d => d.FormulaId).Distinct().ToList();
+                var now = DateTime.Now;
 
-            // 1) Lọc các PSF đang hiệu lực tại 'now'
-            var validPSF = _unitOfWork.ProductStandardFormulaRepository.Query()
-                .Where(psf => productIds.Contains(psf.ProductId)
-                           && psf.ValidFrom <= now
-                           && (psf.ValidTo == null || psf.ValidTo >= now));
 
-            // 2) Lấy ValidFrom mới nhất theo ProductId
-            var latestPerProduct = validPSF
-                .GroupBy(psf => psf.ProductId)
-                .Select(g => new
-                {
-                    ProductId = g.Key,
-                    MaxValidFrom = g.Max(x => x.ValidFrom)
-                });
+                // Products
+                var products = await _unitOfWork.ProductRepository.Query()
+                    .Where(p => productIds.Contains(p.ProductId))
+                    .Select(p => new { p.ProductId, p.ColourCode, p.Name, p.CategoryId })
+                    .ToDictionaryAsync(
+                        x => x.ProductId,
+                        x => new ProductRow(x.ProductId, x.ColourCode, x.Name, x.CategoryId),
+                        ct);
 
-            // 3) Join lại để lấy đúng hàng mới nhất
-            var latestPsfRows =
-                from psf in validPSF
-                join lp in latestPerProduct
-                  on new { psf.ProductId, psf.ValidFrom }
-                  equals new { lp.ProductId, ValidFrom = lp.MaxValidFrom }
-                select new
-                {
-                    psf.ProductId,
-                    psf.ManufacturingFormulaId
-                };
+                // 1) Lọc các PSF đang hiệu lực tại 'now'
+                var validPSF = _unitOfWork.ProductStandardFormulaRepository.Query()
+                    .Where(psf => productIds.Contains(psf.ProductId)
+                               && psf.ValidFrom <= now
+                               && (psf.ValidTo == null || psf.ValidTo >= now));
 
-            // 4) Join sang ManufacturingFormula để lấy thông tin VA
-            var standardVaByProduct = await
-                (from x in latestPsfRows
-                 join mf in _unitOfWork.ManufacturingFormulaRepository.Query()
-                   on x.ManufacturingFormulaId equals mf.ManufacturingFormulaId
-                 select new
-                 {
-                     x.ProductId,
-                     VaId = mf.ManufacturingFormulaId,
-                     VaCode = mf.ExternalId,
-                     SourceVuId = mf.SourceVUFormulaId,
-                     SourceVuCode = mf.SourceVUExternalIdSnapshot
-                 })
-                .ToDictionaryAsync(
-                    x => x.ProductId,
-                    x => (x.VaId, x.VaCode, x.SourceVuId, x.SourceVuCode),
-                    ct);
-
-            // VU đã từng có VA chưa
-            var vuHasAnyVa = await _unitOfWork.ManufacturingFormulaRepository.Query()
-                .Where(mf => mf.IsActive && mf.SourceVUFormulaId != null && vuIds.Contains(mf.SourceVUFormulaId.Value))
-                .GroupBy(mf => mf.SourceVUFormulaId!.Value)
-                .Select(g => new { VU = g.Key, Cnt = g.Count() })
-                .ToDictionaryAsync(x => x.VU, x => x.Cnt > 0, ct);
-
-            // Vật tư theo VU
-            var fmItemsByVu = await _unitOfWork.FormulaMaterialRepository.Query()
-                .Where(x => vuIds.Contains(x.FormulaId))
-                .Select(x => new
-                {
-                    x.FormulaId,
-                    Row = new FmItemRow
+                // 2) Lấy ValidFrom mới nhất theo ProductId
+                var latestPerProduct = validPSF
+                    .GroupBy(psf => psf.ProductId)
+                    .Select(g => new
                     {
-                        MaterialId = x.MaterialId,
-                        CategoryId = x.CategoryId,
-                        Quantity = x.Quantity,
-                        Unit = x.Unit,
-                        UnitPrice = x.UnitPrice,
-                        MaterialNameSnapshot = x.MaterialNameSnapshot,
-                        MaterialExternalIdSnapshot = x.MaterialExternalIdSnapshot
-                    }
-                })
-                .GroupBy(x => x.FormulaId)
-                .ToDictionaryAsync(g => g.Key, g => g.Select(z => z.Row).ToList(), ct);
+                        ProductId = g.Key,
+                        MaxValidFrom = g.Max(x => x.ValidFrom)
+                    });
 
-            // Vật tư theo VA chuẩn (nếu có)
-            var standardVaIds = standardVaByProduct.Values.Select(v => v.VaId).Distinct().ToList();
-            var fmItemsByVa = standardVaIds.Count == 0
-                ? new Dictionary<Guid, List<FmItemRow>>()
-                : await _unitOfWork.ManufacturingFormulaMaterialRepository.Query()
-                    .Where(m => standardVaIds.Contains(m.ManufacturingFormulaId))
-                    .Select(m => new
+                // 3) Join lại để lấy đúng hàng mới nhất
+                var latestPsfRows =
+                    from psf in validPSF
+                    join lp in latestPerProduct
+                      on new { psf.ProductId, psf.ValidFrom }
+                      equals new { lp.ProductId, ValidFrom = lp.MaxValidFrom }
+                    select new
                     {
-                        m.ManufacturingFormulaId,
+                        psf.ProductId,
+                        psf.ManufacturingFormulaId
+                    };
+
+                // 4) Join sang ManufacturingFormula để lấy thông tin VA
+                var standardVaByProduct = await
+                    (from x in latestPsfRows
+                     join mf in _unitOfWork.ManufacturingFormulaRepository.Query()
+                       on x.ManufacturingFormulaId equals mf.ManufacturingFormulaId
+                     select new
+                     {
+                         x.ProductId,
+                         VaId = mf.ManufacturingFormulaId,
+                         VaCode = mf.ExternalId,
+                         SourceVuId = mf.SourceVUFormulaId,
+                         SourceVuCode = mf.SourceVUExternalIdSnapshot
+                     })
+                    .ToDictionaryAsync(
+                        x => x.ProductId,
+                        x => (x.VaId, x.VaCode, x.SourceVuId, x.SourceVuCode),
+                        ct);
+
+                // VU đã từng có VA chưa
+                var vuHasAnyVa = await _unitOfWork.ManufacturingFormulaRepository.Query()
+                    .Where(mf => mf.IsActive && mf.SourceVUFormulaId != null && vuIds.Contains(mf.SourceVUFormulaId.Value))
+                    .GroupBy(mf => mf.SourceVUFormulaId!.Value)
+                    .Select(g => new { VU = g.Key, Cnt = g.Count() })
+                    .ToDictionaryAsync(x => x.VU, x => x.Cnt > 0, ct);
+
+                // Vật tư theo VU
+                var fmItemsByVu = await _unitOfWork.FormulaMaterialRepository.Query()
+                    .Where(x => vuIds.Contains(x.FormulaId))
+                    .Select(x => new
+                    {
+                        x.FormulaId,
                         Row = new FmItemRow
                         {
-                            MaterialId = m.MaterialId,
-                            CategoryId = m.CategoryId,
-                            Quantity = m.Quantity,
-                            Unit = m.Unit,
-                            UnitPrice = m.UnitPrice,
-                            MaterialNameSnapshot = m.MaterialNameSnapshot,
-                            MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot
+                            MaterialId = x.MaterialId,
+                            CategoryId = x.CategoryId,
+                            Quantity = x.Quantity,
+                            Unit = x.Unit,
+                            UnitPrice = x.UnitPrice,
+                            MaterialNameSnapshot = x.MaterialNameSnapshot,
+                            MaterialExternalIdSnapshot = x.MaterialExternalIdSnapshot
                         }
                     })
-                    .GroupBy(m => m.ManufacturingFormulaId)
+                    .GroupBy(x => x.FormulaId)
                     .ToDictionaryAsync(g => g.Key, g => g.Select(z => z.Row).ToList(), ct);
 
+                // Vật tư theo VA chuẩn (nếu có)
+                var standardVaIds = standardVaByProduct.Values.Select(v => v.VaId).Distinct().ToList();
+                var fmItemsByVa = standardVaIds.Count == 0
+                    ? new Dictionary<Guid, List<FmItemRow>>()
+                    : await _unitOfWork.ManufacturingFormulaMaterialRepository.Query()
+                        .Where(m => standardVaIds.Contains(m.ManufacturingFormulaId))
+                        .Select(m => new
+                        {
+                            m.ManufacturingFormulaId,
+                            Row = new FmItemRow
+                            {
+                                MaterialId = m.MaterialId,
+                                CategoryId = m.CategoryId,
+                                Quantity = m.Quantity,
+                                Unit = m.Unit,
+                                UnitPrice = m.UnitPrice,
+                                MaterialNameSnapshot = m.MaterialNameSnapshot,
+                                MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot
+                            }
+                        })
+                        .GroupBy(m => m.ManufacturingFormulaId)
+                        .ToDictionaryAsync(g => g.Key, g => g.Select(z => z.Row).ToList(), ct);
 
-            // Price map: lấy bản ghi giá mới nhất cho mỗi MaterialId (đúng như cách bạn đang làm)
-            var allMatIds = new HashSet<Guid>();
-            foreach (var list in fmItemsByVu.Values) foreach (var it in list) allMatIds.Add(it.MaterialId);
-            foreach (var list in fmItemsByVa.Values) foreach (var it in list) allMatIds.Add(it.MaterialId);
 
-            var msRaw = await _unitOfWork.MaterialsSupplierRepository.Query()
-                .Where(ms => allMatIds.Contains(ms.MaterialId))
-                .ToListAsync(ct);
+                // Price map: lấy bản ghi giá mới nhất cho mỗi MaterialId (đúng như cách bạn đang làm)
+                var allMatIds = new HashSet<Guid>();
+                foreach (var list in fmItemsByVu.Values) foreach (var it in list) allMatIds.Add(it.MaterialId);
+                foreach (var list in fmItemsByVa.Values) foreach (var it in list) allMatIds.Add(it.MaterialId);
 
-            var lastPerMaterial = msRaw
+                var msRaw = await _unitOfWork.MaterialsSupplierRepository.Query()
+                    .Where(ms => allMatIds.Contains(ms.MaterialId))
+                    .ToListAsync(ct);
+
+                var lastPerMaterial = msRaw
+                    .GroupBy(ms => ms.MaterialId)
+                    .Select(g => new { MaterialId = g.Key, MaxStamp = g.Max(x => x.UpdatedDate ?? x.CreateDate) })
+                    .ToList();
+
+                var bestByMaterial = msRaw
                 .GroupBy(ms => ms.MaterialId)
-                .Select(g => new { MaterialId = g.Key, MaxStamp = g.Max(x => x.UpdatedDate ?? x.CreateDate) })
+                .Select(g => g
+                    .OrderByDescending(ms => ms.IsPreferred)                          // 1) ưu tiên preferred
+                    .ThenByDescending(ms => ms.UpdatedDate ?? ms.CreateDate)
+                    .First())
                 .ToList();
 
-            var priceMap = (
-                from ms in msRaw
-                join last in lastPerMaterial
-                  on new { ms.MaterialId, Stamp = (ms.UpdatedDate ?? ms.CreateDate) }
-                  equals new { last.MaterialId, Stamp = last.MaxStamp }
-                select new { ms.MaterialId, ms.CurrentPrice }
-            ).ToDictionary(x => x.MaterialId, x => x.CurrentPrice ?? 0m);
+                var priceMap = bestByMaterial.ToDictionary(ms => ms.MaterialId, ms => ms.CurrentPrice ?? 0m);
 
-            return new MfgContext
+
+                return new MfgContext
+                {
+                    Products = products,
+                    StandardVaByProduct = standardVaByProduct,
+                    FmItemsByVu = fmItemsByVu,
+                    FmItemsByVa = fmItemsByVa,
+                    PriceMap = priceMap,
+                    VuHasAnyVa = vuHasAnyVa
+                };
+            }
+            catch (Exception ex)
             {
-                Products = products,
-                StandardVaByProduct = standardVaByProduct,
-                FmItemsByVu = fmItemsByVu,
-                FmItemsByVa = fmItemsByVa,
-                PriceMap = priceMap,
-                VuHasAnyVa = vuHasAnyVa
-            };
+                throw; // GIỮ nguyên stack!
+            }
 
         }
 
@@ -837,17 +850,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
         /// <param name="now"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        //public async Task<(MfgProductionOrder order,
-        //                   ManufacturingFormula mfgFormula,
-        //                   List<ManufacturingFormulaMaterial> materials,
-        //                   ProductStandardFormula select,
-        //                   MfgOrderPO link)>
-        //             CreateOneMfgBundleAsync(
-        //         OrderSlim mo,
-        //         OrderDetailSlim detail,
-        //         MfgContext ctx,
-        //         Guid actorId, DateTime now, CancellationToken ct)
-        //{
         public async Task<(MfgProductionOrder order,
                            MfgOrderPO link)>
                      CreateOneMfgBundleAsync(
@@ -874,7 +876,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
             // === Tạo MFG order ===
             var mfgId = Guid.CreateVersion7();
-            var mfgExternalId = await _externalId.NextAsync(mo.CompanyId, "MFG", now, ct: ct);
+            var mfgExternalId = await _externalId.NextAsync("MFG", ct: ct);
 
             var order = new MfgProductionOrder
             {

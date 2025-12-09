@@ -8,7 +8,7 @@ using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.MerchandiseOrderFeatures;
 
-namespace VietausWebAPI.Core.Repositories_Contracts
+namespace VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts
 {
     public partial interface IUnitOfWork
     {

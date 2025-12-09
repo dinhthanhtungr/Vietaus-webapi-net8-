@@ -1,4 +1,4 @@
-﻿using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
+﻿using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
 using VietausWebAPI.Core.Identity;
 using VietausWebAPI.Core.Application.Features.Shared.Service;
 using Microsoft.AspNetCore.Authorization;
@@ -190,9 +190,11 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
                 .Where(e => e.EmployeeId == user.EmployeeId)
                 .Select(e => new
                 {
-                    DepartmentId = e.Part != null && e.Part.PartId != Guid.Empty ? e.Part.PartId : Guid.Empty,
-                    EmployeeExternalId = e.ExternalId ?? string.Empty,
                     EmployeeId = e.EmployeeId,
+                    EmployeeExternalId = e.ExternalId ?? string.Empty,
+
+                    DepartmentId = e.Part != null && e.Part.PartId != Guid.Empty ? e.Part.PartId : Guid.Empty,
+                    DepartmentExternalId = e.Part != null && !string.IsNullOrEmpty(e.Part.ExternalId) ? e.Part.ExternalId : string.Empty,
                     DepartmentName = e.Part != null && !string.IsNullOrEmpty(e.Part.PartName) ? e.Part.PartName : string.Empty,
                     CompanyId = e.CompanyId
                 })
@@ -203,16 +205,25 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
             {
                 return Unauthorized(new { Message = "Invalid roles or user info" });
             }
-            //var roles = await GetActiveRolesForUser(user, _context);
+
             // Generate JWT token
+            var model = new JwtModels
+            {
+                User = user,
+
+                PartId = info.DepartmentId,
+                PartExternalId = info.DepartmentExternalId,
+                PartName = info.DepartmentName,
+
+                EmployeeExternalId = info.EmployeeExternalId,
+                EmployeeId = info.EmployeeId,
+
+                CompanyId = info.CompanyId.GetValueOrDefault(),
+                Roles = roles
+            };
+
             AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(
-                user,
-                info.DepartmentId,
-                info.DepartmentName,
-                info.EmployeeExternalId,
-                info.EmployeeId,
-                info.CompanyId.GetValueOrDefault(),
-                roles // Now List<string> (not List<string?>)
+                model
             );
             // Store refresh token for future authentication
             user.RefreshToken = authenticationResponse.RefreshToken;
@@ -354,9 +365,11 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
                 .Where(e => e.EmployeeId == user.EmployeeId)
                 .Select(e => new
                 {
-                    DepartmentId = e.Part != null && e.Part.PartId != Guid.Empty ? e.Part.PartId : Guid.Empty,
-                    EmployeeExternalId = e.ExternalId ?? string.Empty,
                     EmployeeId = e.EmployeeId,
+                    EmployeeExternalId = e.ExternalId ?? string.Empty,
+
+                    DepartmentId = e.Part != null && e.Part.PartId != Guid.Empty ? e.Part.PartId : Guid.Empty,
+                    DepartmentExternalId = e.Part != null && !string.IsNullOrEmpty(e.Part.ExternalId) ? e.Part.ExternalId : string.Empty,
                     DepartmentName = e.Part != null && !string.IsNullOrEmpty(e.Part.PartName) ? e.Part.PartName : string.Empty,
                     CompanyId = e.CompanyId
                 })
@@ -367,16 +380,25 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
             {
                 return Unauthorized(new { Message = "Invalid roles or user info" });
             }
-            //var roles = await GetActiveRolesForUser(user, _context);
+
             // Generate JWT token
+            var model = new JwtModels
+            {
+                User = user,
+
+                PartId = info.DepartmentId,
+                PartExternalId = info.DepartmentExternalId,
+                PartName = info.DepartmentName,
+
+                EmployeeExternalId = info.EmployeeExternalId,
+                EmployeeId = info.EmployeeId,
+
+                CompanyId = info.CompanyId.GetValueOrDefault(),
+                Roles = roles
+            };
+
             AuthenticationResponse authenticationResponse = _jwtService.CreateJwtJoken(
-                user,
-                info.DepartmentId,
-                info.DepartmentName,
-                info.EmployeeExternalId,
-                info.EmployeeId,
-                info.CompanyId.GetValueOrDefault(),
-                roles // Now List<string> (not List<string?>)
+                model
             );
 
             // Update Refresh Token buy not change expirationDatetime 

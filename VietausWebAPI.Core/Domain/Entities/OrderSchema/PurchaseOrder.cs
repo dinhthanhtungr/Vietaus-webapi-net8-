@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using VietausWebAPI.Core.Domain.Entities.CompanySchema;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
 using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 
 namespace VietausWebAPI.Core.Domain.Entities.OrderSchema;

@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Entities.CompanySchema;
 using VietausWebAPI.Core.Domain.Entities.DeliverySchema;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
 using VietausWebAPI.Core.Domain.Enums.WareHouses;
 
 namespace VietausWebAPI.Core.Domain.Entities.WarehouseSchema

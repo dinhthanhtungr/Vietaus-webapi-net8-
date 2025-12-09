@@ -9,13 +9,14 @@ using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.FormulaFeature;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.FormulaFeatures;
+using VietausWebAPI.Core.Application.Features.Notifications.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
 using VietausWebAPI.Core.Domain.Enums.Products;
-using VietausWebAPI.Core.Repositories_Contracts;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
 {
@@ -24,12 +25,14 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ICurrentUser _currentUser;
+        private readonly INotificationService _notificationService;
 
-        public FormulaService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUser currentUser)
+        public FormulaService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUser currentUser, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _currentUser = currentUser;
+            _notificationService = notificationService;
         }
 
         // ======================================================================== Get ======================================================================== 
@@ -191,8 +194,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
         /// <exception cref="ArgumentException"></exception>
         public async Task<OperationResult> CreateAsync(PostFormula req, CancellationToken ct = default)
         {
-            if (req.ProductId == Guid.Empty) throw new ArgumentException("ProductId cannot be empty", nameof(req.ProductId));
-            if (req.CreatedBy == Guid.Empty) throw new ArgumentException("CreatedBy  cannot be empty", nameof(req.CreatedBy));
+            var now = DateTime.Now;
+            var userId = _currentUser.EmployeeId;
+            var companyId = _currentUser.CompanyId;
+
             if (req.materialFormulas is null || !req.materialFormulas.Any())
                 throw new ArgumentException("Công thức phải có ít nhất 1 vật tư.", nameof(req.materialFormulas));
 
@@ -242,6 +247,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                 );
 
                 formula.ProductId = req.ProductId;
+                formula.CompanyId = companyId;
+                formula.CreatedBy = userId;
+
+
                 await _unitOfWork.FormulaRepository.AddAsync(formula, ct);
                 affected = await _unitOfWork.SaveChangesAsync();
                 await tx.CommitAsync(ct);
@@ -310,6 +319,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                         sampleRequestExist.ResponseDeliveryDate = now;
                         sampleRequestExist.Status = SampleRequestStatus.SampleSent.ToString();
                         sampleRequestExist.SendBy = userId;
+
+
                     }
                 }
 

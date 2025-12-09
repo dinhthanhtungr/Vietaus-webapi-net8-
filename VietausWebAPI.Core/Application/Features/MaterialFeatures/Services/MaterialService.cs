@@ -19,7 +19,7 @@ using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using static System.Collections.Specialized.BitVector32;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -134,7 +134,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                                 .Select(ms => ms.CurrentPrice)
                                 .FirstOrDefault()
                     })
-                            .ToListAsync(ct);
+                    .ToListAsync(ct);
 
                 return new PagedResult<GetMaterialSummary>(items, total, query.PageNumber, query.PageSize);
             }

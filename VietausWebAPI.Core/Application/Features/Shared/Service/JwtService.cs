@@ -25,7 +25,7 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service
         /// </summary>
         /// <param name = "user" > ApplicationUser oject</param>
         /// <returns>AuthenticationResponse that includes token</returns>
-        AuthenticationResponse CreateJwtJoken(ApplicationUser user, Guid partId, string partName, string EmployeeExternalId, Guid EmployeeId, Guid CompanyId, IList<string> roles = null)
+        AuthenticationResponse CreateJwtJoken(JwtModels models)
         {
             // Create a DateTime ojcet representing the token 
             // expiration time by adding the number of minutes specified
@@ -37,22 +37,25 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service
             // such as their ID, name, email,etc.
             var claims = new List<Claim>
             {
-                    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                    new Claim(JwtRegisteredClaimNames.Sub, models.User.Id.ToString()),
                     new Claim(JwtRegisteredClaimNames.Jti,Guid.CreateVersion7().ToString()), // JWT unique ID
                     new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.Now.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
+                    new(ClaimTypes.Name, models.User.UserName ?? string.Empty),
 
-                    new(ClaimTypes.Name, user.UserName ?? string.Empty),
-                    new("employeeName", user.personName ?? string.Empty),
-                    new("partId", partId.ToString()), // Part ID of the user
-                    new("employeeExternalId", EmployeeExternalId ?? string.Empty), // Employee ID of the user
-                    new("employeeId", EmployeeId.ToString()),
-                    new("partName", partName), // Part name of the user
-                    new("companyId", CompanyId.ToString()), // Company ID of the user
+                    new("employeeId", models.EmployeeId.ToString()),
+                    new("employeeExternalId", models.EmployeeExternalId ?? string.Empty), // Employee ID of the user
+                    new("employeeName", models.User.personName ?? string.Empty),
+
+                    new("partExternalId", models.PartExternalId ?? string.Empty), // Part External ID of the user
+                    new("partId", models.PartId.ToString()), // Part ID of the user
+                    new("partName", models.PartName), // Part name of the user
+
+                    new("companyId", models.CompanyId.ToString()), // Company ID of the user
                 };
 
-            if (roles != null && roles.Any())
+            if (models.Roles != null && models.Roles.Any())
             {
-                claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+                claims.AddRange(models.Roles.Select(role => new Claim(ClaimTypes.Role, role)));
             }
 
             // Create a SymmetricSecurityKey object using the key 
@@ -87,8 +90,8 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service
             return new AuthenticationResponse()
             {
                 Token = token,
-                Email = user.Email,
-                PersonName = user.personName,
+                Email = models.User.Email,
+                PersonName = models.User.personName,
                 Expiration = expiration,
                 RefreshToken = GenerateRefreshToken(),
                 RefreshTokenExpirationDateTime = DateTime.Now.AddMinutes
@@ -159,9 +162,9 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service
             return Convert.ToBase64String(bytes);
         }
 
-        AuthenticationResponse IJwtService.CreateJwtJoken(ApplicationUser user, Guid partId, string partName, string EmployeeExternalId, Guid EmployeeId, Guid CompanyId, IList<string> roles)
+        AuthenticationResponse IJwtService.CreateJwtJoken(JwtModels models)
         {
-            return CreateJwtJoken(user, partId, partName, EmployeeExternalId, EmployeeId, CompanyId, roles);
+            return CreateJwtJoken(models);
         }
     }
 }

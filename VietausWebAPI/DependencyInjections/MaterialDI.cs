@@ -14,6 +14,7 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
             services.AddScoped<IMaterialRepository, MaterialsRepository>();
             services.AddScoped<IMaterialService, MaterialService>();
             services.AddScoped<ICategoryRepository, CategoryRepository>();
+            services.AddScoped<IUnitRepository, UnitRepository>();
             services.AddScoped<IMaterialsSupplierRepository, MaterialsSupplierRepository>();
             services.AddScoped<IPriceHistorieRepository, PriceHistorieRepository>();
             services.AddScoped<ICategoryService, CategoryService>();

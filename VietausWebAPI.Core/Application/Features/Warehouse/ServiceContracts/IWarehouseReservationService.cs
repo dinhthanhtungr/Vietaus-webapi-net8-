@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseWriteServices;
 using VietausWebAPI.Core.Application.Features.Warehouse.Queries;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
+using VietausWebAPI.Core.Domain.Entities.DeliverySchema;
+using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 
 namespace VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts
 {
@@ -20,6 +22,40 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts
         Task<OperationResult> ReserveAvailabilityAsync(CreateVaSnapshotAndReservations query, CancellationToken ct);
 
 
+        // ======================================================================== Helper ========================================================================
+
+        /// <summary>
+        /// Helper tạo phiếu xuất kho CHO NVL theo yêu cầu của đơn VA / PO sản xuất.
+        /// </summary>
+        /// <param name="existing"></param>
+        /// <param name="now"></param>
+        /// <param name="userId"></param>
+        /// <param name="companyId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task EnsureWarehouseIssueRequestAsync(
+                    MfgProductionOrder existing,
+                    DateTime now,
+                    Guid userId,
+                    Guid companyId,
+                    CancellationToken ct);
+
+
+        /// <summary>
+        /// Helper tạo phiếu xuất kho CHO Sản phẩm theo yêu cầu của đơn giao hàng.
+        /// </summary>
+        /// <param name="deliveryOrder"></param>
+        /// <param name="now"></param>
+        /// <param name="userId"></param>
+        /// <param name="companyId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task EnsureWarehouseRequestForDOAsync(
+                    DeliveryOrder deliveryOrder,
+                    DateTime now,
+                    Guid userId,
+                    Guid companyId,
+                    CancellationToken ct);
 
         /// <summary>
         /// Chèn 1 dòng TempType=Reserve, ReserveStatus=Open.

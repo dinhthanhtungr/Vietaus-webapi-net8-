@@ -7,7 +7,7 @@ namespace VietausWebAPI.Core.Application.Features.Shared.ServiceContracts
 {
     public interface IJwtService
     {
-        AuthenticationResponse CreateJwtJoken(ApplicationUser user, Guid partId, string partName, string EmployeeExternalId, Guid EmployeeId, Guid CompanyId, IList<string> roles = null);
+        AuthenticationResponse CreateJwtJoken(JwtModels model);
         ClaimsPrincipal? GetPrincipalFromJwtToken(string? token);
 
     }

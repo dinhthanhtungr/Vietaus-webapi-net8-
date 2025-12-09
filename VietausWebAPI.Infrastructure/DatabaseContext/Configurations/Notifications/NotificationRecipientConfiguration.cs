@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.Notifications;
 
-namespace VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext.Configurations.Notifications
+namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurations.Notifications
 {
     public class NotificationRecipientConfiguration : IEntityTypeConfiguration<NotificationRecipient>
     {

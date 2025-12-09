@@ -1,12 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
+using Microsoft.EntityFrameworkCore;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
-using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
+using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing
 {

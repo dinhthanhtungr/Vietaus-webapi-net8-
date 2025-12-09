@@ -1,19 +1,24 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Notifications.DTOs;
+using VietausWebAPI.Core.Application.Features.Notifications.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.Querys;
 using VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.MerchandiseOrderFeatures;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.EventLogDtos;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper;
@@ -22,12 +27,16 @@ using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Application.Shared.Models.SaleAndMfgs;
 using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
+using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
+using VietausWebAPI.Core.Domain.Entities.Notifications;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
+using VietausWebAPI.Core.Domain.Enums.CustomerEnum;
 using VietausWebAPI.Core.Domain.Enums.Logs;
 using VietausWebAPI.Core.Domain.Enums.Manufacturings;
 using VietausWebAPI.Core.Domain.Enums.Merchadises;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Domain.Enums.Notifications;
+using VietausWebAPI.WebAPI.Helpers.Securities.Roles;
 using static QuestPDF.Helpers.Colors;
 
 namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrderFeatures
@@ -40,13 +49,15 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrde
         private readonly ITimelineService _TimelineService;
         private readonly ICurrentUser _CurrentUser;
         private readonly IMapper _mapper;
+        private readonly INotificationService _notificationService;
 
         public MerchandiseOrderService(IUnitOfWork unitOfWork
                                     , IExternalIdService idService
                                     , ITimelineService timelineService
                                     , IMapper mapper
                                     , IMfgProductionOrderService mfgProductionOrderService
-                                    , ICurrentUser currentUser)
+                                    , ICurrentUser currentUser
+            , INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _externalId = idService;
@@ -54,187 +65,11 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrde
             _mapper = mapper;
             _IMfgProductionOrderService = mfgProductionOrderService;
             _CurrentUser = currentUser;
+            _notificationService = notificationService;
         }
 
-        /// <summary>
-        /// Tạo đơn hàng mới kèm theo chi tiết và tự động tạo lệnh sản xuất nếu đơn hàng được duyệt 
-        /// </summary>
-        /// <param name="req"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        public async Task<OperationResult<Guid>> CreateAsync(PostMerchandiseOrder req, CancellationToken ct = default)
-        {
-            if (req.CreatedBy == Guid.Empty) throw new ArgumentNullException(nameof(req.CreatedBy), "CreatedBy cannot be empty.");
 
-            int affected = 0;
-            await using var tx = await _unitOfWork.BeginTransactionAsync();
-
-            try
-            {
-                var now = DateTime.Now;
-
-                var merchandiseOrder = _mapper.Map<MerchandiseOrder>(req);
-
-                merchandiseOrder.CreatedBy = _CurrentUser.EmployeeId;
-                merchandiseOrder.CreateDate = now;
-                merchandiseOrder.UpdatedBy = _CurrentUser.EmployeeId;
-                merchandiseOrder.UpdatedDate = now;
-
-                merchandiseOrder.MerchandiseOrderDetails = (merchandiseOrder.MerchandiseOrderDetails ?? new List<MerchandiseOrderDetail>())
-                    .Where(d => d != null
-                            && d.FormulaId != Guid.Empty
-                            && d.ProductId != Guid.Empty
-                            && d.ExpectedQuantity > 0) // Lọc bỏ các chi tiết có Quantity <= 0
-                    .ToList();
-
-
-                if (merchandiseOrder.MerchandiseOrderId == Guid.Empty)
-                    merchandiseOrder.MerchandiseOrderId = Guid.CreateVersion7();
-
-                foreach (var detail in merchandiseOrder.MerchandiseOrderDetails)
-                {
-                    if (detail.MerchandiseOrderDetailId == Guid.Empty)
-                        detail.MerchandiseOrderDetailId = Guid.CreateVersion7();         // nếu PK là Guid tự sinh
-
-                    detail.MerchandiseOrderId = merchandiseOrder.MerchandiseOrderId;     // ✅ gán FK rõ ràng
-                    detail.MerchandiseOrder = merchandiseOrder;                        // ✅ (khuyến nghị) gán navigation
-                    detail.TotalPriceAgreed = Math.Round(detail.UnitPriceAgreed * detail.ExpectedQuantity, 2, MidpointRounding.AwayFromZero);
-                }
-
-
-                merchandiseOrder.TotalPrice = Math.Round(merchandiseOrder.MerchandiseOrderDetails.Sum(d => d.TotalPriceAgreed), 2, MidpointRounding.AwayFromZero);
-
-                    
-                // 2) ExternalId DHG (ddMMyy-#####)
-                merchandiseOrder.ExternalId = await _externalId.NextAsync(req.CompanyId.GetValueOrDefault(), "DHG", now, ct: ct);
-
-                // === Tạo bucket đính kèm ngay lúc tạo đơn hàng ===
-                if (merchandiseOrder.AttachmentCollectionId == Guid.Empty)
-                {
-                    var bucket = new AttachmentCollection
-                    {
-                        AttachmentCollectionId = Guid.CreateVersion7()
-                    };
-
-                    // Cách 1: add bucket riêng (repo pattern)
-                    await _unitOfWork.AttachmentCollectionRepository.AddAsync(bucket, ct);
-                    merchandiseOrder.AttachmentCollectionId = bucket.AttachmentCollectionId;
-
-                    // (Hoặc Cách 2: set navigation nếu có theo dõi)
-                    // order.AttachmentCollection = bucket;
-                }
-
-
-                await _unitOfWork.MerchandiseOrderRepository.AddAsync(merchandiseOrder, ct);
-
-                if (merchandiseOrder.Status == MerchadiseStatus.Approved.ToString())
-                {
-                    var orderSlim = new OrderSlim
-                    {
-                        MerchandiseOrderId = merchandiseOrder.MerchandiseOrderId,
-                        ExternalId = merchandiseOrder.ExternalId ?? string.Empty,
-                        CompanyId = merchandiseOrder.CompanyId,
-                        CustomerId = merchandiseOrder.CustomerId,
-                        CustomerExternalIdSnapshot = merchandiseOrder.CustomerExternalIdSnapshot,
-                        CustomerNameSnapshot = merchandiseOrder.CustomerNameSnapshot,
-                        Details = (merchandiseOrder.MerchandiseOrderDetails ?? new List<MerchandiseOrderDetail>())
-                        .Select(d => new OrderDetailSlim
-                        {
-                            MerchandiseOrderDetailId = d.MerchandiseOrderDetailId,
-                            ProductId = d.ProductId,
-                            FormulaId = d.FormulaId,
-                            FormulaExternalIdSnapshot = d.FormulaExternalIdSnapshot,
-                            ExpectedQuantity = d.ExpectedQuantity,
-                            UnitPriceAgreed = d.UnitPriceAgreed,
-                            DeliveryRequestDate = d.DeliveryRequestDate,
-                            Comment = d.Comment,
-                            BagType = d.BagType
-                        })
-                        .ToList()
-                    };
-
-                    var ctx = await _IMfgProductionOrderService.BuildMfgContextAsync(orderSlim, ct);
-
-                    var addOrders = new List<MfgProductionOrder>();
-                    //var addFormulas = new List<ManufacturingFormula>();
-                    //var addMaterials = new List<ManufacturingFormulaMaterial>();
-                    //var addSelects = new List<ProductStandardFormula>();
-                    var addLinks = new List<MfgOrderPO>();
-
-                    foreach (var detail in orderSlim.Details    )
-                    {
-                        //var (order, mfgFormula, materials) =
-                        //    await _IMfgProductionOrderService.CreateOneMfgBundleAsync(merchandiseOrder, detail, ctx, req.CreatedBy, now, ct);
-
-                        // Tạo đầy đủ: Order + VA + Materials + SelectVersion + Link Order<->Detail
-                        //var (order, mfgFormula, materials, select, link) =
-                        //    await _IMfgProductionOrderService.CreateOneMfgBundleAsync(
-                        //        orderSlim, detail, ctx, req.CreatedBy, DateTime.Now, ct);
-                        var (order, link) =
-                            await _IMfgProductionOrderService.CreateOneMfgBundleAsync(
-                                orderSlim, detail, ctx, req.CreatedBy, DateTime.Now, ct);
-
-                        //addOrders.Add(order);
-                        //addFormulas.Add(mfgFormula);
-                        //if (materials.Count > 0) addMaterials.AddRange(materials);
-                        //addSelects.Add(select);
-                        //addLinks.Add(link);
-
-                        addOrders.Add(order);
-                        addLinks.Add(link);
-
-                        // Log MFG (tuỳ bạn Add trước rồi log sau)
-                        await _TimelineService.AddEventLogAsync(new EventLogModels
-                        {
-                            employeeId = req.CreatedBy,
-                            eventType = EventType.ManufacturingProductOrder,
-                            sourceCode = order.ExternalId,
-                            sourceId = order.MfgProductionOrderId,
-                            status = order.Status,
-                            note = $"Created Manufacturing Order {order.ExternalId}"
-                        }, ct);
-                    }
-
-                    // 4) AddRange đúng thứ tự (FK không phụ thuộc vì đã gán Id ngay trong code)
-                    await _unitOfWork.MfgProductionOrderRepository.AddRangeAsync(addOrders, ct);
-                    //await _unitOfWork.ManufacturingFormulaRepository.AddRangeAsync(addFormulas, ct);
-                    //if (addMaterials.Count > 0)
-                    //    await _unitOfWork.ManufacturingFormulaMaterialRepository.AddRangeAsync(addMaterials, ct);
-
-                    // ⚠️ Đảm bảo bạn có các repo dưới; nếu tên khác, đổi cho khớp
-                    //await _unitOfWork.ProductStandardFormulaRepository.AddRangeAsync(addSelects, ct);
-                    await _unitOfWork.MfgOrderPORepository.AddRangeAsync(addLinks, ct);
-                }
-
-                await _TimelineService.AddEventLogAsync(new EventLogModels
-                {
-                    employeeId = req.CreatedBy,
-                    eventType = EventType.MerchadiseStatus,
-                    sourceCode = merchandiseOrder.ExternalId ?? string.Empty,
-                    sourceId = merchandiseOrder.MerchandiseOrderId,
-                    status = merchandiseOrder.Status,
-                    note = $"Created Purchase Order {merchandiseOrder.ExternalId}"
-                }, ct);
-
-                
-
-                affected = await _unitOfWork.SaveChangesAsync();
-                await tx.CommitAsync(ct);
-
-                return affected > 0
-                    ? OperationResult<Guid>.Ok(merchandiseOrder.AttachmentCollectionId, "Tạo đơn hàng thành công")
-                    : OperationResult<Guid>.Fail("Thất bại.");
-            }
-
-            catch (Exception ex)
-            {
-                await tx.RollbackAsync(ct);
-                return OperationResult<Guid>.Fail($"Lỗi khi tạo đơn hàng: {ex.Message}");
-
-            }
-        }
-
+        // ======================================================================== Get ========================================================================
         /// <summary>
         /// Lấy danh sách đơn hàng với phân trang và lọc
         /// </summary>
@@ -335,10 +170,11 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrde
         {
             return await _unitOfWork.MerchandiseOrderRepository.Query()
                 .Where(o => o.CustomerId == customerId && (o.IsActive) == true)
-                .SelectMany(o => o.MerchandiseOrderDetails, (o, d) => new { o, d }) 
+                .SelectMany(o => o.MerchandiseOrderDetails, (o, d) => new { o, d })
                 .Where(x => x.d.ProductId == productId && x.d.IsActive == true && (x.d.Status == null || x.d.Status != MerchadiseStatus.Cancelled.ToString())) // <-- FIXED: closing parenthesis here
                 .OrderByDescending(x => x.o.CreateDate)
-                .Select(x => new GetOldProductInformation {
+                .Select(x => new GetOldProductInformation
+                {
                     BagType = x.d.BagType,
                     PackageWeight = x.d.PackageWeight,
                     ExpectedQuantity = (int)x.d.ExpectedQuantity,
@@ -349,6 +185,282 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrde
                 })
                 .FirstOrDefaultAsync(ct);
         }
+
+        // ======================================================================== Post ========================================================================
+
+        /// <summary>
+        /// Tạo đơn hàng mới kèm theo chi tiết và tự động tạo lệnh sản xuất nếu đơn hàng được duyệt 
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public async Task<OperationResult<Guid>> CreateAsync(PostMerchandiseOrder req, CancellationToken ct = default)
+        {
+
+            int affected = 0;
+            await using var tx = await _unitOfWork.BeginTransactionAsync();
+
+            var userId = _CurrentUser.EmployeeId;
+            var companyId = _CurrentUser.CompanyId;
+
+            try
+            {
+                var now = DateTime.Now;
+                var merchandiseOrder = _mapper.Map<MerchandiseOrder>(req);
+
+
+                // 2) Build danh sách MPO + link
+                var addOrders = new List<MfgProductionOrder>();
+                var addLinks = new List<MfgOrderPO>();
+                var outboxBuildBatch = new List<OutboxMessage>();
+
+                merchandiseOrder.CreatedBy = userId;
+                merchandiseOrder.CreateDate = now;
+                merchandiseOrder.UpdatedBy = userId;
+                merchandiseOrder.UpdatedDate = now;
+                merchandiseOrder.CompanyId = companyId;
+
+                merchandiseOrder.MerchandiseOrderDetails = (merchandiseOrder.MerchandiseOrderDetails ?? new List<MerchandiseOrderDetail>())
+                    .Where(d => d != null
+                            && d.FormulaId != Guid.Empty
+                            && d.ProductId != Guid.Empty
+                            && d.ExpectedQuantity > 0) // Lọc bỏ các chi tiết có Quantity <= 0
+                    .ToList();
+
+
+                if (merchandiseOrder.MerchandiseOrderId == Guid.Empty)
+                    merchandiseOrder.MerchandiseOrderId = Guid.CreateVersion7();
+
+                foreach (var detail in merchandiseOrder.MerchandiseOrderDetails)
+                {
+                    if (detail.MerchandiseOrderDetailId == Guid.Empty)
+                        detail.MerchandiseOrderDetailId = Guid.CreateVersion7();         // nếu PK là Guid tự sinh
+
+                    detail.MerchandiseOrderId = merchandiseOrder.MerchandiseOrderId;     // ✅ gán FK rõ ràng
+                    detail.MerchandiseOrder = merchandiseOrder;                        // ✅ (khuyến nghị) gán navigation
+                    detail.TotalPriceAgreed = Math.Round(detail.UnitPriceAgreed * detail.ExpectedQuantity, 2, MidpointRounding.AwayFromZero);
+                }
+
+
+                merchandiseOrder.TotalPrice = Math.Round(merchandiseOrder.MerchandiseOrderDetails.Sum(d => d.TotalPriceAgreed), 2, MidpointRounding.AwayFromZero);
+
+                    
+                // 2) ExternalId DHG (ddMMyy-#####)
+                merchandiseOrder.ExternalId = await _externalId.NextAsync("DHG", ct: ct);
+
+                // === Tạo bucket đính kèm ngay lúc tạo đơn hàng ===
+                if (merchandiseOrder.AttachmentCollectionId == Guid.Empty)
+                {
+                    var bucket = new AttachmentCollection
+                    {
+                        AttachmentCollectionId = Guid.CreateVersion7()
+                    };
+
+                    // Cách 1: add bucket riêng (repo pattern)
+                    await _unitOfWork.AttachmentCollectionRepository.AddAsync(bucket, ct);
+                    merchandiseOrder.AttachmentCollectionId = bucket.AttachmentCollectionId;
+
+                    // (Hoặc Cách 2: set navigation nếu có theo dõi)
+                    // order.AttachmentCollection = bucket;
+                }
+
+                var customer = await _unitOfWork.CustomerRepository.Query(true)
+                    .Where(c => c.CustomerId == merchandiseOrder.CustomerId
+                                && c.CompanyId == merchandiseOrder.CompanyId)
+                    .FirstOrDefaultAsync(ct);
+
+                if (customer != null && customer.IsLead)
+                {
+                    var groupId = await _unitOfWork.MemberInGroupRepository.Query()
+                        .Where(m => m.Profile == merchandiseOrder.CreatedBy && m.IsActive == true)
+                        .Select(m => (Guid?)m.GroupId)
+                        .FirstOrDefaultAsync(ct) ?? Guid.Empty;
+
+                    // 1) Set khách không còn là Lead
+                    customer.IsLead = false;
+
+
+                    // 3) Lấy toàn bộ claim hiện tại
+                    var allClaims = await _unitOfWork.CustomerClaimRepository.Query(true)
+                        .Where(cl => cl.CustomerId == merchandiseOrder.CustomerId
+                                  && cl.CompanyId == merchandiseOrder.CompanyId
+                                  && cl.Type == ClaimType.Work
+                                  && cl.IsActive)
+                        .ToListAsync(ct);
+
+
+                    // 5) Tắt (soft delete) toàn bộ claim của sale khác
+                    foreach (var cl in allClaims.Where(cl => cl.EmployeeId != merchandiseOrder.CreatedBy))
+                    {
+                        cl.IsActive = false;
+                        cl.ExpiresAt = now;
+                    }
+
+                    _unitOfWork.CustomerClaimRepository.UpdateRange(allClaims);
+
+                    // 6) Tạo log chuyển Lead → Customer
+                    var logId = Guid.CreateVersion7();
+                    var log = new CustomerTransferLog
+                    {
+                        Id = logId,
+                        FromEmployeeId = merchandiseOrder.CreatedBy,
+                        ToEmployeeId = merchandiseOrder.CreatedBy,
+                        FromGroupId = groupId,
+                        ToGroupId = groupId,
+                        TransferType = TransferType.Saled,
+                        Note = $"Khách hàng chuyển từ Lead sang Customer khi tạo đơn {merchandiseOrder.ExternalId}",
+                        CreatedDate = now,
+                        CreatedBy = merchandiseOrder.CreatedBy,
+                        CompanyId = merchandiseOrder.CompanyId,
+                        DetailCustomerTransfers = new List<DetailCustomerTransfer>
+                        {
+                            new DetailCustomerTransfer { CustomerId = merchandiseOrder.CustomerId }
+                        }
+                    };
+
+                    await _unitOfWork.CustomerTransferLogRepository.AddAsync(log, ct);
+                }
+
+                await _unitOfWork.MerchandiseOrderRepository.AddAsync(merchandiseOrder, ct);
+
+                if (merchandiseOrder.Status == MerchadiseStatus.Approved.ToString())
+                {
+                    var orderSlim = new OrderSlim
+                    {
+                        MerchandiseOrderId = merchandiseOrder.MerchandiseOrderId,
+                        ExternalId = merchandiseOrder.ExternalId ?? string.Empty,
+                        CompanyId = merchandiseOrder.CompanyId,
+                        CustomerId = merchandiseOrder.CustomerId,
+                        CustomerExternalIdSnapshot = merchandiseOrder.CustomerExternalIdSnapshot,
+                        CustomerNameSnapshot = merchandiseOrder.CustomerNameSnapshot,
+                        Details = (merchandiseOrder.MerchandiseOrderDetails ?? new List<MerchandiseOrderDetail>())
+                        .Select(d => new OrderDetailSlim
+                        {
+                            MerchandiseOrderDetailId = d.MerchandiseOrderDetailId,
+                            ProductId = d.ProductId,
+                            FormulaId = d.FormulaId,
+                            FormulaExternalIdSnapshot = d.FormulaExternalIdSnapshot,
+                            ExpectedQuantity = d.ExpectedQuantity,
+                            UnitPriceAgreed = d.UnitPriceAgreed,
+                            DeliveryRequestDate = d.DeliveryRequestDate,
+                            Comment = d.Comment,
+                            BagType = d.BagType
+                        })
+                        .ToList()
+                    };
+
+                    var ctx = await _IMfgProductionOrderService.BuildMfgContextAsync(orderSlim, ct);
+
+                    foreach (var detail in orderSlim.Details)
+                    {
+                        // Tạo đầy đủ MPO/Link từ service (tuần tự)
+                        var (order, link) = await _IMfgProductionOrderService
+                            .CreateOneMfgBundleAsync(orderSlim, detail, ctx, userId, now, ct);
+
+                        addOrders.Add(order);
+                        addLinks.Add(link);
+
+                        // Log sự kiện: chỉ Add vào DbSet (nếu log vào DB) — đừng SaveChanges
+                        await _TimelineService.AddEventLogAsync(new EventLogModels
+                        {
+                            employeeId = userId,
+                            eventType = EventType.ManufacturingProductOrder,
+                            sourceCode = order.ExternalId,
+                            sourceId = order.MfgProductionOrderId,
+                            status = order.Status,
+                            note = $"Created Manufacturing Order {order.ExternalId}"
+                        }, ct);
+
+                        // Gom NOTIFY để bắn SAU COMMIT
+                        //postCommitNotifies.Add(new PublishNotificationRequest
+                        //{
+                        //    Topic = TopicNotifications.ManufacturingOrderCreated,
+                        //    Severity = NotificationSeverity.Info,
+                        //    Title = $"Lệnh sản xuất: {order.ExternalId}",
+                        //    Message = $"Khách hàng {order.CustomerExternalIdSnapshot}",
+                        //    Link = $"/plpu/mfgproductionorders/{order.MfgProductionOrderId}",
+                        //    PayloadJson = JsonSerializer.Serialize(new
+                        //    {
+                        //        ProductOrderId = order.MfgProductionOrderId,
+                        //        CustomerId = order.CustomerId,
+                        //        CreatedBy = order.CreatedBy,
+                        //        CreatedDate = order.CreatedDate
+                        //    }),
+                        //    TargetRoles = new() { RoleSets.PLPU_Group }
+                        //});
+
+
+                        var reqNotify = new PublishNotificationRequest
+                        {
+                            CompanyId = companyId,
+                            CreatedBy = userId,
+                            CreatedByNameSnapshot = _CurrentUser.personName,
+                            Topic = TopicNotifications.ManufacturingOrderCreated,
+                            Severity = NotificationSeverity.Info,
+                            Title = $"Lệnh sản xuất: {order.ExternalId}",
+                            Message = $"Khách hàng {order.CustomerExternalIdSnapshot}",
+                            Link = $"/plpu/mfgproductionorders/{order.MfgProductionOrderId}",
+                            PayloadJson = JsonSerializer.Serialize(new
+                            {
+                                ProductOrderId = order.MfgProductionOrderId,
+                                CustomerId = order.CustomerId,
+                                CreatedBy = order.CreatedBy,
+                                CreatedDate = order.CreatedDate
+                            }),
+                            TargetRoles = new() { RoleSets.PLPU_Group }
+                        };
+
+                        var ob = new OutboxMessage
+                        {
+                            Type = "Notification.Build",
+                            PayloadJson = JsonSerializer.Serialize(reqNotify),
+                            CreatedAt = DateTime.Now
+                        };
+
+                        outboxBuildBatch.Add(ob);    
+                    }
+
+
+                    // 4) AddRange đúng thứ tự (FK không phụ thuộc vì đã gán Id ngay trong code)
+                    await _unitOfWork.MfgProductionOrderRepository.AddRangeAsync(addOrders, ct);
+                    await _unitOfWork.MfgOrderPORepository.AddRangeAsync(addLinks, ct);
+                }
+
+                await _TimelineService.AddEventLogAsync(new EventLogModels
+                {
+                    employeeId = userId,
+                    eventType = EventType.MerchadiseStatus,
+                    sourceCode = merchandiseOrder.ExternalId ?? string.Empty,
+                    sourceId = merchandiseOrder.MerchandiseOrderId,
+                    status = merchandiseOrder.Status,
+                    note = $"Created Purchase Order {merchandiseOrder.ExternalId}"
+                }, ct);
+
+
+                if (outboxBuildBatch.Count > 0)
+                {
+                    await _unitOfWork.OutboxMessages.AddRangeAsync(outboxBuildBatch, ct);
+                }
+
+                affected = await _unitOfWork.SaveChangesAsync();
+                await tx.CommitAsync(ct);
+
+
+                return affected > 0
+                    ? OperationResult<Guid>.Ok(merchandiseOrder.AttachmentCollectionId, "Tạo đơn hàng thành công")
+                    : OperationResult<Guid>.Fail("Thất bại.");
+            }
+
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync(ct);
+                return OperationResult<Guid>.Fail($"Lỗi khi tạo đơn hàng: {ex.Message}");
+
+            }
+        }
+
+        // ======================================================================== Patch ========================================================================
 
         /// <summary>
         /// Xóa mềm đơn hàng
@@ -461,104 +573,145 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrde
         /// <returns></returns>
         public async Task<OperationResult> UpdateApproveStatus(PatchMerchandiseOrderInformation query, CancellationToken ct = default)
         {
+            await using var tx = await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var now = DateTime.Now;
+                var userId = _CurrentUser.EmployeeId;
 
-            throw new ApplicationException("An error occurred while fetching manufacturing formulas.");
-            //await using var tx = await _unitOfWork.BeginTransactionAsync();
+                // 1) Lấy đơn + details (tracking để cập nhật)
+                var mo = await _unitOfWork.MerchandiseOrderRepository.Query(track: true)
+                    .Include(o => o.MerchandiseOrderDetails)
+                    .FirstOrDefaultAsync(o => o.MerchandiseOrderId == query.MerchandiseOrderId && o.IsActive == true, ct);
 
-            //try
-            //{
-            //    var now = DateTime.Now;
+                if (mo == null)
+                    return OperationResult.Fail("Không tìm thấy đơn hàng.");
 
-            //    // 1) Lấy đơn + details (tracking để cập nhật)
-            //    var mo = await _unitOfWork.MerchandiseOrderRepository.Query(track: true)
-            //        .Include(o => o.MerchandiseOrderDetails)
-            //        .FirstOrDefaultAsync(o => o.MerchandiseOrderId == query.MerchandiseOrderId && o.IsActive == true);
+                // 2) Kiểm tra đã có MFG (dựa theo link MfgOrderPO trên các MerchandiseOrderDetail)
+                var detailIds = mo.MerchandiseOrderDetails
+                    .Where(d => d.IsActive == true)
+                    .Select(d => d.MerchandiseOrderDetailId)
+                    .ToList();
 
-            //    if (mo == null) return OperationResult.Fail("Không tìm thấy đơn hàng.");
+                var hasMfg = detailIds.Count == 0
+                    ? false
+                    : await _unitOfWork.MfgOrderPORepository.Query(track: false)
+                        .AnyAsync(x => x.IsActive == true && detailIds.Contains(x.MerchandiseOrderDetailId), ct);
 
-            //    // 2) Nếu đã Approved và đã có MFG thì coi như xong
-            //    var alreadyApproved = mo.Status == MerchadiseStatus.Approved.ToString();
-            //    var hasMfg = await _unitOfWork.MfgProductionOrderRepository.Query(false)
-            //        .AnyAsync(m => m.IsActive == true && m.MerchandiseOrderId == query.MerchandiseOrderId);
+                // 3) Cập nhật trạng thái duyệt đơn
+                mo.Status = MerchadiseStatus.Approved.ToString();
+                mo.UpdatedBy = query.UpdatedBy;
+                mo.UpdatedDate = now;
 
-            //    // 3) Cập nhật trạng thái duyệt
-            //    mo.Status = MerchadiseStatus.Approved.ToString();
-            //    mo.UpdatedBy = query.UpdatedBy;
-            //    mo.UpdatedDate = now;           // nếu có trường ApprovedBy/ApprovedDate thì set ở đây
+                // 4) Nếu chưa có MFG, tạo mới MFG + Link ngay từ context
+                var createdOrders = new List<MfgProductionOrder>();
+                var createdLinks = new List<MfgOrderPO>();
+                var postCommitNotifies = new List<PublishNotificationRequest>();
 
-            //    // 4) Nếu chưa có MFG, tạo ngay bằng context
-            //    if (!hasMfg)
-            //    {
-            //        var ctx = await _IMfgProductionOrderService.BuildMfgContextAsync(mo);
+                if (!hasMfg && detailIds.Count > 0)
+                {
+                    // Build OrderSlim từ MerchandiseOrder (mo)
+                    var orderSlim = new OrderSlim
+                    {
+                        MerchandiseOrderId = mo.MerchandiseOrderId,
+                        ExternalId = mo.ExternalId ?? string.Empty,
+                        CompanyId = mo.CompanyId,
+                        CustomerId = mo.CustomerId,
+                        CustomerExternalIdSnapshot = mo.CustomerExternalIdSnapshot,
+                        CustomerNameSnapshot = mo.CustomerNameSnapshot,
+                        Details = mo.MerchandiseOrderDetails
+                            .Where(d => d.IsActive == true)
+                            .Select(d => new OrderDetailSlim
+                            {
+                                MerchandiseOrderDetailId = d.MerchandiseOrderDetailId,
+                                ProductId = d.ProductId,
+                                FormulaId = d.FormulaId,
+                                FormulaExternalIdSnapshot = d.FormulaExternalIdSnapshot,
+                                ExpectedQuantity = d.ExpectedQuantity,
+                                UnitPriceAgreed = d.UnitPriceAgreed,
+                                DeliveryRequestDate = d.DeliveryRequestDate,
+                                Comment = d.Comment,
+                                BagType = d.BagType
+                            })
+                            .ToList()
+                    };
 
-            //        var orders = new List<MfgProductionOrder>();
-            //        var formulas = new List<ManufacturingFormula>();
-            //        var materials = new List<ManufacturingFormulaMaterial>();
 
-            //        foreach (var d in mo.MerchandiseOrderDetails.Where(x => x.IsActive && (x.Status ?? "") != "Cancelled"))
-            //        {
-            //            var (order, formula, mats) =
-            //                await _IMfgProductionOrderService.CreateOneMfgBundleAsync(mo, d, ctx, query.UpdatedBy, now, ct);
+                    // Build context 1 lần cho toàn đơn
+                    var ctx = await _IMfgProductionOrderService.BuildMfgContextAsync(orderSlim, ct);
 
-            //            orders.Add(order);
-            //            formulas.Add(formula);
-            //            materials.AddRange(mats);
+                    foreach (var detail in orderSlim.Details)
+                    {
+                        // Tạo đầy đủ MPO/Link từ service (tuần tự)
+                        var (order, link) = await _IMfgProductionOrderService
+                            .CreateOneMfgBundleAsync(orderSlim, detail, ctx, userId, now, ct);
 
-            //            // Log cho từng MFG
-            //            await _TimelineService.AddEventLogAsync(new EventLogModels
-            //            {
-            //                employeeId = query.UpdatedBy,
-            //                eventType = EventType.ManufacturingProductOrder,
-            //                sourceCode = order.ExternalId,
-            //                sourceId = order.MfgProductionOrderId,
-            //                status = order.Status, // New
-            //                note = $"Created Manufacturing Order {order.ExternalId}"
-            //            });
+                        createdOrders.Add(order);
+                        createdLinks.Add(link);
 
-            //            if (formula.IsStandard)
-            //            {
-            //                //await _unitOfWork.ManufacturingFormulaLogRepository.AddAsync(new ManufacturingFormulaLog
-            //                //{
-            //                //    ManufacturingFormulaId = formula.ManufacturingFormulaId,
-            //                //    Action = ManufacturingFormulaLogAction.SetStandard,
-            //                //    Comment = "Tự động đặt công thức này là chuẩn vì là công thức đầu tiên của VU.",
-            //                //    PerformedDate = now,
-            //                //    PerformedBy = query.UpdatedBy,
-            //                //    PerformedByNameSnapshot = "Created by system"
-            //                //});
-            //            }
-            //        }
+                        // Log sự kiện: chỉ Add vào DbSet (nếu log vào DB) — đừng SaveChanges
+                        await _TimelineService.AddEventLogAsync(new EventLogModels
+                        {
+                            employeeId = userId,
+                            eventType = EventType.ManufacturingProductOrder,
+                            sourceCode = order.ExternalId,
+                            sourceId = order.MfgProductionOrderId,
+                            status = order.Status,
+                            note = $"Created Manufacturing Order {order.ExternalId}"
+                        }, ct);
 
-            //        await _unitOfWork.MfgProductionOrderRepository.AddRangeAsync(orders);
-            //        await _unitOfWork.ManufacturingFormulaRepository.AddRangeAsync(formulas);
-            //        if (materials.Count > 0)
-            //            await _unitOfWork.ManufacturingFormulaMaterialRepository.AddRangeAsync(materials);
-            //    }
+                        // Gom NOTIFY để bắn SAU COMMIT
+                        postCommitNotifies.Add(new PublishNotificationRequest
+                        {
+                            Topic = TopicNotifications.ManufacturingOrderCreated,
+                            Severity = NotificationSeverity.Info,
+                            Title = $"Lệnh sản xuất: {order.ExternalId}",
+                            Message = $"Khách hàng {order.CustomerExternalIdSnapshot}",
+                            Link = $"/plpu/mfgproductionorders/{order.MfgProductionOrderId}",
+                            PayloadJson = JsonSerializer.Serialize(new
+                            {
+                                ProductOrderId = order.MfgProductionOrderId,
+                                CustomerId = order.CustomerId,
+                                CreatedBy = order.CreatedBy,
+                                CreatedDate = order.CreatedDate
+                            }),
+                            TargetRoles = new() { RoleSets.PLPU_Group }
+                        });
+                    }
 
-            //    // 5) Timeline cho Merchandise: chỉ log Approved trong flow duyệt
-            //    await _TimelineService.AddEventLogAsync(new EventLogModels
-            //    {
-            //        employeeId = query.UpdatedBy,
-            //        eventType = EventType.MerchadiseStatus,
-            //        sourceCode = mo.ExternalId,
-            //        sourceId = mo.MerchandiseOrderId,
-            //        status = MerchadiseStatus.Approved.ToString(),
-            //        note = $"Approved Merchandise Order {mo.ExternalId}"
-            //    });
+                    // AddRange vào DbSet (chưa SaveChanges)
+                    if (createdOrders.Count > 0) await _unitOfWork.MfgProductionOrderRepository.AddRangeAsync(createdOrders, ct);
+                    if (createdLinks.Count > 0) await _unitOfWork.MfgOrderPORepository.AddRangeAsync(createdLinks, ct);
+                }
 
-            //    await _unitOfWork.SaveChangesAsync();
-            //    await tx.CommitAsync();
+                // 5) Timeline cho Merchandise: log Approved
+                await _TimelineService.AddEventLogAsync(new EventLogModels
+                {
+                    employeeId = query.UpdatedBy,
+                    eventType = EventType.MerchadiseStatus,
+                    sourceCode = mo.ExternalId,
+                    sourceId = mo.MerchandiseOrderId,
+                    status = MerchadiseStatus.Approved.ToString(),
+                    note = $"Approved Merchandise Order {mo.ExternalId}"
+                }, ct);
 
-            //    return OperationResult.Ok(hasMfg
-            //        ? "Đơn đã duyệt (MFG đã tồn tại)."
-            //        : "Đã duyệt & tạo lệnh sản xuất.");
-            //}
+                await _unitOfWork.SaveChangesAsync();
+                await tx.CommitAsync(ct);
 
-            //catch (Exception ex)
-            //{
-            //    await _unitOfWork.RollbackTransactionAsync();
-            //    return OperationResult.Fail(ex.Message);    
-            //}
+                var msg = (!hasMfg && createdOrders.Count > 0)
+                    ? "Đã duyệt & tạo lệnh sản xuất."
+                    : hasMfg
+                        ? "Đơn đã duyệt (MFG đã tồn tại)."
+                        : "Đơn đã duyệt (không có chi tiết hợp lệ để tạo MFG).";
+
+                return OperationResult.Ok(msg);
+            }
+
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync(ct);
+                return OperationResult.Fail($"Lỗi khi duyệt đơn hàng: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -617,8 +770,4 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrde
             }
         }
     }
-
-
-
-
 }

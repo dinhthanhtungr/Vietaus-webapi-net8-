@@ -31,7 +31,6 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
             }
             try
             {
-                request.CreatedBy = _CurrentUser.EmployeeId;
                 var result = await _merchandiseOrderService.CreateAsync(request);
 
                 if (!result.Success)

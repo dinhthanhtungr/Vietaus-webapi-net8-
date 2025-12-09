@@ -13,10 +13,12 @@ using VietausWebAPI.Core.Application.Features.HR.Querys.Groups;
 using VietausWebAPI.Core.Application.Features.HR.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
-using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.CompanySchema;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
 using VietausWebAPI.Core.Identity;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 
 namespace VietausWebAPI.Core.Application.Features.HR.Services
 {
@@ -24,6 +26,7 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ICurrentUser _currentUser;
         private readonly IMapper _mapper;
 
         /// <summary>
@@ -31,11 +34,12 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
         /// </summary>
         /// <param name="unitOfWork"></param>
         /// <param name="mapper"></param>
-        public EmployeesService(IUnitOfWork unitOfWork, IMapper mapper, UserManager<ApplicationUser> userManager)
+        public EmployeesService(IUnitOfWork unitOfWork, IMapper mapper, UserManager<ApplicationUser> userManager, ICurrentUser currentUser)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _userManager = userManager;
+            _currentUser = currentUser;
         }
 
 
@@ -123,8 +127,7 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
             var pageIndex = query.PageNumber > 0 ? query.PageNumber : 1;
             var pageSize = query.PageSize > 0 ? query.PageSize : 10;
             var keyword = query.keyword?.Trim();
-            var q = _unitOfWork.GroupRepository.Query()
-                .AsQueryable();
+            var q = _unitOfWork.GroupRepository.Query();
 
             var totalCount = await q.CountAsync();   
             // 3) Filter theo keyword (không phân biệt hoa/thường)

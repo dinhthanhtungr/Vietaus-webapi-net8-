@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Entities.CompanySchema;
 using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
 using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
 using VietausWebAPI.Core.Domain.Enums.Manufacturings;
 

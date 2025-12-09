@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 
-namespace VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext.Configurations.MaterialSchema
+namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurations.MaterialSchema
 {
     public class SupplierAddressConfiguration : IEntityTypeConfiguration<SupplierAddress>
     {
@@ -19,18 +19,19 @@ namespace VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext.Configurat
             entity.HasIndex(e => e.SupplierId, "IX_SupplierAddresses_SupplierId");
 
             entity.Property(e => e.AddressId).HasDefaultValueSql("gen_random_uuid()");
-            entity.Property(e => e.AddressLine).HasMaxLength(250);
-            entity.Property(e => e.City).HasMaxLength(100);
-            entity.Property(e => e.Country).HasMaxLength(100);
-            entity.Property(e => e.District).HasMaxLength(100);
+            entity.Property(e => e.AddressLine).HasColumnType("citext");
+            entity.Property(e => e.City).HasColumnType("citext");
+            entity.Property(e => e.Country).HasColumnType("citext");
+            entity.Property(e => e.District).HasColumnType("citext");
             entity.Property(e => e.IsPrimary).HasDefaultValue(false);
-            entity.Property(e => e.PostalCode).HasMaxLength(20);
-            entity.Property(e => e.Province).HasMaxLength(100);
+            entity.Property(e => e.PostalCode).HasColumnType("citext");
+            entity.Property(e => e.Province).HasColumnType("citext");
 
-            entity.HasOne(d => d.Supplier).WithMany(p => p.SupplierAddresses)
-                .HasForeignKey(d => d.SupplierId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_SupplierAddress_Supplier");
+            entity.HasOne(d => d.Supplier)
+                  .WithMany(p => p.SupplierAddresses)
+                  .HasForeignKey(d => d.SupplierId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .HasConstraintName("FK_SupplierAddress_Supplier");
         }
     }
 }

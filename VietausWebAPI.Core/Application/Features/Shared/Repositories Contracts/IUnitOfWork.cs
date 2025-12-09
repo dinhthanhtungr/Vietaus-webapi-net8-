@@ -9,7 +9,6 @@ using VietausWebAPI.Core.Application.Features.CompanyFeatures.RepositoriesContra
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.FormulaFeatures;
-//using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.QAQCFeature;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts;
@@ -19,7 +18,8 @@ using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.Custom
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.MerchandiseOrderFeatures;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContracts;
-namespace VietausWebAPI.Core.Repositories_Contracts
+
+namespace VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts
 {
     public partial interface IUnitOfWork : IDisposable
     {

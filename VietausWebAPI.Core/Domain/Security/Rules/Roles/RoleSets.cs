@@ -43,7 +43,7 @@
 
         /// <summary>Mở menu PLPU cho các role liên quan sản xuất/kho/mua hàng.</summary>
         public const string PLPU_Group =
-            $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.PLPUUser},{AppRoles.LabUser}";
+            $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.PLPUUser}";
 
         /// <summary>Lệnh sản xuất (Manufacturing) – PLPU + Sản xuất.</summary>
         public const string PLPU_Mfg =

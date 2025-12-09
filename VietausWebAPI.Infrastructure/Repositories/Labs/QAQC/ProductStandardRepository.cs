@@ -7,7 +7,7 @@
 //using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 //using VietausWebAPI.Core.Domain.Entities;
 //using VietausWebAPI.Infrastructure.Utilities;
-//using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
+//using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
 
 //namespace VietausWebAPI.Infrastructure.Repositories.Labs.QAQC
 //{

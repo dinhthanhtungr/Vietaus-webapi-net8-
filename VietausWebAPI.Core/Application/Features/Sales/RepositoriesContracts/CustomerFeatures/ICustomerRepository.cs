@@ -30,7 +30,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.Cu
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        Task<GetCustomer?> GetCustomerByIdAsync(Guid id);
+        Task<GetCustomer> GetCustomerByIdAsync(Guid id);
 
         /// <summary>
         /// Xoa khách hàng theo ID
@@ -39,9 +39,11 @@ namespace VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.Cu
         /// <returns></returns>
         Task<bool> DeleteCustomerByIdAsync(Guid id);
 
-        Task<bool> UpdateCustomerAsync(PatchCustomer customer);
+        //Task<bool> UpdateCustomerAsync(PatchCustomer customer);
 
         IQueryable<Customer> Query(bool track = true);
+        IQueryable<Address> QueryAddress(bool track = true);
+        IQueryable<Contact> QueryContact(bool track = true);
 
         /// <summary>
         /// lấy sô cuối cùng của code

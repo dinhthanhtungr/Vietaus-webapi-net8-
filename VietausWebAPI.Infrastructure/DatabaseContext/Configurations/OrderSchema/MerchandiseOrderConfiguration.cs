@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
 
-namespace VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext.Configurations.OrderSchema
+namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurations.OrderSchema
 {
 
     public class MerchandiseOrderConfiguration : IEntityTypeConfiguration<MerchandiseOrder>

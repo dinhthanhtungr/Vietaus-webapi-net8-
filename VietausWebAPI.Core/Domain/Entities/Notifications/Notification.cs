@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Entities.CompanySchema;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
 using VietausWebAPI.Core.Domain.Enums.Notifications;
 
 namespace VietausWebAPI.Core.Domain.Entities.Notifications
@@ -13,7 +15,7 @@ namespace VietausWebAPI.Core.Domain.Entities.Notifications
         public Guid Id { get; set; } = Guid.CreateVersion7();
 
         // Phân loại/tái sử dụng
-        public string Topic { get; set; } = default!;               // ví dụ: "Mfg.PriceExceeded"
+        public TopicNotifications Topic { get; set; } = default!;               // ví dụ: "Mfg.PriceExceeded"
         public NotificationSeverity Severity { get; set; } = NotificationSeverity.Info;
 
         // Nội dung hiển thị
@@ -24,7 +26,11 @@ namespace VietausWebAPI.Core.Domain.Entities.Notifications
 
         public DateTime CreatedDate { get; set; } = DateTime.Now;
         public Guid CompanyId { get; set; }
+        public Guid CreatedBy { get; set; }
 
+        public string? CreatedByNameSnapshot { get; set; }                     // lưu tạm tên người tạo để hiển thị nhanh
+
+        public Employee? CreatedByEmployeeNavigation { get; set; }        
         public Company Company { get; set; } = default!;
         public ICollection<NotificationRecipient> Recipients { get; set; } = new List<NotificationRecipient>();
         public ICollection<NotificationUserState> UserStates { get; set; } = new List<NotificationUserState>();

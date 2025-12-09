@@ -1,14 +1,17 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using VietausWebAPI.Core.Application.Features.Notifications.DTOs;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.Core.Domain.Entities.Notifications;
+using VietausWebAPI.WebAPI.Backgrounds.Helpers;
 using VietausWebAPI.WebAPI.Hubs;
 
 namespace VietausWebAPI.WebAPI.Background
@@ -51,7 +54,7 @@ namespace VietausWebAPI.WebAPI.Background
                         {
                             switch (msg.Type)
                             {
-                                case "InAppPush":
+                                case "InAppPush": // I/O ra ngoài SignalR
                                     {
                                         var env = JsonSerializer.Deserialize<OutboxEnvelope>(msg.PayloadJson);
                                         if (env is null || env.NotificationId is null)
@@ -62,22 +65,14 @@ namespace VietausWebAPI.WebAPI.Background
                                         // Gửi theo Role
                                         if (env.TargetRoles?.Count > 0)
                                         {
-                                            foreach (var role in env.TargetRoles.Where(r => !string.IsNullOrWhiteSpace(r)))
+                                            var cKey = env.CompanyId.ToString("N");
+                                            foreach (var role in env.TargetRoles ?? Enumerable.Empty<string>())
                                             {
-                                                await hub.Clients.Group($"role:{env.CompanyId}:{role}")
-                                                    .SendAsync("notify", data, ct);
+                                                var rKey = role.Trim().ToUpperInvariant();
+                                                await hub.Clients.Group($"role:{cKey}:{rKey}")
+                                                    .SendAsync("notify", new { NotificationId = env.NotificationId!.Value }, ct);
                                             }
                                         }
-
-                                        //if (msg.Type == "InAppPush")
-                                        //{
-
-                                        //    await hub.Clients.All
-                                        //        .SendAsync("notify", new { NotificationId = env.NotificationId });
-
-
-                                        //}
-
                                         // Gửi theo User
                                         if (env.TargetUserIds?.Count > 0)
                                         {
@@ -111,6 +106,111 @@ namespace VietausWebAPI.WebAPI.Background
                                         msg.Attempts++;
                                         break;
                                     }
+
+                                case "Notification.Build":
+                                    {
+                                        var req = JsonSerializer.Deserialize<PublishNotificationRequest>(msg.PayloadJson)
+                                                  ?? throw new InvalidOperationException("Build payload null");
+
+                                        var companyId = req.CompanyId;
+
+                                        // Idempotency nhẹ
+                                        var exists = uow.Notifications.Query()
+                                            .Any(n => n.CompanyId == companyId
+                                                   && n.Topic == req.Topic
+                                                   && n.Title == req.Title
+                                                   && n.Link == req.Link
+                                                   && n.PayloadJson == req.PayloadJson);
+
+                                        if (!exists)
+                                        {
+                                            var now = DateTime.Now;
+                                            // 2) Persist notification + recipients + user states
+                                            var n = new Notification
+                                            {
+                                                Id = Guid.CreateVersion7(),
+                                                CompanyId = companyId,
+                                                Topic = req.Topic,
+                                                Severity = req.Severity,
+                                                Title = req.Title,
+                                                Message = req.Message,
+                                                Link = req.Link,
+                                                PayloadJson = req.PayloadJson,
+                                                CreatedDate = now,
+                                                CreatedBy = req.CreatedBy,                     // ✅ dùng giá trị thật
+                                                CreatedByNameSnapshot = req.CreatedByNameSnapshot
+                                            };
+
+                                            await uow.Notifications.AddAsync(n, ct);
+
+                                            if (req.TargetUserIds?.Any() == true)
+                                                foreach (var uid in req.TargetUserIds.Where(g => g != Guid.Empty).Distinct())
+                                                    await uow.NotificationRecipients.AddAsync(new NotificationRecipient
+                                                    {
+                                                        Id = Guid.CreateVersion7(),
+                                                        NotificationId = n.Id,
+                                                        TargetUserId = uid
+                                                    }, ct);
+
+                                            if (req.TargetRoles?.Any() == true)
+                                                foreach (var role in req.TargetRoles
+                                                            .SelectMany(r => (r ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                                            .Select(r => r.Trim().ToUpperInvariant()).Distinct())
+                                                    await uow.NotificationRecipients.AddAsync(new NotificationRecipient
+                                                    {
+                                                        Id = Guid.CreateVersion7(),
+                                                        NotificationId = n.Id,
+                                                        TargetRole = role
+                                                    }, ct);
+
+                                            if (req.TargetTeamIds?.Any() == true)
+                                                foreach (var tid in req.TargetTeamIds.Where(g => g != Guid.Empty).Distinct())
+                                                    await uow.NotificationRecipients.AddAsync(new NotificationRecipient
+                                                    {
+                                                        Id = Guid.CreateVersion7(),
+                                                        NotificationId = n.Id,
+                                                        TargetTeamId = tid
+                                                    }, ct);
+
+                                            var targets = await NotificationTargetResolver.ResolveEmployeeIdsAsync(uow, companyId, req, ct);
+                                            foreach (var eid in targets)
+                                                await uow.NotificationUserStates.AddAsync(new NotificationUserState
+                                                {
+                                                    NotificationId = n.Id,
+                                                    UserId = eid,
+                                                    IsRead = false
+                                                }, ct);
+
+                                            await uow.SaveChangesAsync();
+
+                                            // 3) PUSH NGAY TẠI ĐÂY (không cần InAppPush)
+                                            var data = new { NotificationId = n.Id };
+
+                                            if (req.TargetRoles?.Any() == true)
+                                            {
+                                                var cKey = companyId.ToString("N");
+                                                foreach (var role in req.TargetRoles)
+                                                {
+                                                    var rKey = role.Trim().ToUpperInvariant();
+                                                    await hub.Clients.Group($"role:{cKey}:{rKey}").SendAsync("notify", data, ct);
+                                                }
+                                            }
+                                            if (req.TargetUserIds?.Any() == true)
+                                                foreach (var uid in req.TargetUserIds.Where(g => g != Guid.Empty))
+                                                    await hub.Clients.Group($"user:{uid}").SendAsync("notify", data, ct);
+
+                                            if (req.TargetTeamIds?.Any() == true)
+                                                foreach (var tid in req.TargetTeamIds.Where(g => g != Guid.Empty))
+                                                    await hub.Clients.Group($"team:{tid}").SendAsync("notify", data, ct);
+                                        }
+
+                                        // 4) Hoàn tất outbox BUILD
+                                        msg.ProcessedAt = DateTime.Now;
+                                        msg.Error = null;
+                                        msg.Attempts++;
+                                        break;
+                                    }
+
 
                                 default:
                                     {
@@ -159,109 +259,3 @@ namespace VietausWebAPI.WebAPI.Background
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//using System;
-//using System.Text.Json;
-//using System.Threading;
-//using System.Threading.Tasks;
-//using Microsoft.AspNetCore.SignalR;
-//using Microsoft.Extensions.DependencyInjection;
-//using Microsoft.Extensions.Hosting;
-//using Microsoft.Extensions.Logging;
-//using VietausWebAPI.Core.Repositories_Contracts;
-//using VietausWebAPI.WebAPI.Hubs;
-
-//namespace VietausWebAPI.WebAPI.Background
-//{
-//    public sealed class OutboxProcessor : BackgroundService
-//    {
-//        private readonly IServiceProvider _sp;
-//        private readonly ILogger<OutboxProcessor> _logger;
-
-//        public OutboxProcessor(IServiceProvider sp, ILogger<OutboxProcessor> logger)
-//        {
-//            _sp = sp;
-//            _logger = logger;
-//        }
-
-//        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-//        {
-//            // vòng lặp đơn giản
-//            while (!stoppingToken.IsCancellationRequested)
-//            {
-//                try
-//                {
-//                    using var scope = _sp.CreateScope();
-//                    var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-//                    var hub = scope.ServiceProvider.GetRequiredService<IHubContext<NotificationHub>>();
-
-//                    // lấy 1 outbox chưa xử lý (ví dụ)
-//                    var msg = await uow.OutboxMessages
-//                        .Query(track: true)
-//                        .FirstOrDefaultAsyncSafe(m => m.ProcessedAt == null, stoppingToken);
-
-//                    if (msg == null)
-//                    {
-//                        await Task.Delay(800, stoppingToken);
-//                        continue;
-//                    }
-
-//                    if (msg.Type == "InAppPush")
-//                    {
-//                        var payload = JsonSerializer.Deserialize<InAppPayload>(msg.PayloadJson);
-//                        if (payload != null)
-//                        {
-//                            // tối giản: push event "notify" vào group company
-//                            //await hub.Clients.Group($"company:{payload.CompanyId}")
-//                            //    .SendAsync("notify", new { NotificationId = payload.NotificationId }, stoppingToken);
-
-//                            await hub.Clients.All
-//                                .SendAsync("notify", new { NotificationId = payload.NotificationId }, stoppingToken);
-
-//                        }
-//                    }
-
-//                    msg.ProcessedAt = DateTime.UtcNow;
-//                    msg.Attempts++;
-//                    await uow.SaveChangesAsync();
-//                }
-//                catch (Exception ex)
-//                {
-//                    _logger.LogError(ex, "OutboxProcessor loop error");
-//                    await Task.Delay(1500, stoppingToken);
-//                }
-//            }
-//        }
-
-//        private sealed class InAppPayload
-//        {
-//            public Guid NotificationId { get; set; }
-//            public Guid CompanyId { get; set; }
-//        }
-//    }
-
-//    static class EfSafeExt
-//    {
-//        public static async Task<T?> FirstOrDefaultAsyncSafe<T>(this IQueryable<T> q, System.Linq.Expressions.Expression<Func<T, bool>> pred, CancellationToken ct)
-//        {
-//            // tránh lôi các extension khác — bạn thay bằng EF Core FirstOrDefaultAsync nếu có using Microsoft.EntityFrameworkCore
-//            foreach (var item in q.Where(pred))
-//                return await Task.FromResult(item);
-//            return default;
-//        }
-//    }
-//}

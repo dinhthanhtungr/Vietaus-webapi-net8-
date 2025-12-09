@@ -8,7 +8,7 @@ using VietausWebAPI.Core.Application.Features.Warehouse.Queries;
 using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Domain.Enums;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 
 namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 {

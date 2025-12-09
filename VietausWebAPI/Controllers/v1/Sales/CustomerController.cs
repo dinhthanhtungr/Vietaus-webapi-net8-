@@ -64,6 +64,34 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
             return Ok(result);
         }
 
+        [HttpGet("lead-owner/{customerId}")]
+        public async Task<IActionResult> GetCustomerLeadOwner(Guid customerId, CancellationToken ct)
+        {
+            var result = await _customerService.GetCustomerLeadOwner(customerId, ct);
+
+            if (!result.Success)
+                return BadRequest(result); // hoặc NotFound, tùy bạn
+
+            return Ok(result);
+        }
+
+
+        [HttpGet("GetCustomerByIdForSalesAsync")]
+        [Authorize(Roles = RoleSets.Sales)]
+        public async Task<IActionResult> GetCustomerByIdForSalesAsync(Guid id, CancellationToken ct = default)
+        {
+            if (id == Guid.Empty)
+            {
+                return BadRequest("Invalid customer ID.");
+            }
+            var result = await _customerService.GetCustomerByIdForSalesAsync(id, ct);
+            if (!result.Success)
+            {
+                return NotFound(result.Message);
+            }
+            return Ok(result);
+        }
+
         [HttpPatch("DeleteCustomerByIdAsync")]
         [Authorize(Roles = RoleSets.Deleters)]
         public async Task<IActionResult> DeleteCustomerByIdAsync(Guid id)

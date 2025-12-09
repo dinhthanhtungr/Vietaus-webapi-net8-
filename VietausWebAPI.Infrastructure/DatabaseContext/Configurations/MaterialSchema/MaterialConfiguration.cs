@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 
-namespace VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext.Configurations.MaterialSchema
+namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurations.MaterialSchema
 {
     public class MaterialConfiguration : IEntityTypeConfiguration<Material>
     {
@@ -23,13 +23,13 @@ namespace VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext.Configurat
             // entity.HasIndex(e => e.UnitId, "IX_Materials_UnitId"); // nếu dùng sau này
 
             entity.Property(e => e.MaterialId).HasDefaultValueSql("gen_random_uuid()");
-            entity.Property(e => e.Barcode).HasMaxLength(16);
-            entity.Property(e => e.Comment).HasMaxLength(500);
-            entity.Property(e => e.CustomCode).HasMaxLength(50);
-            entity.Property(e => e.ExternalId).HasMaxLength(50);
+            entity.Property(e => e.Barcode).HasColumnType("citext");
+            entity.Property(e => e.Comment).HasColumnType("citext");
+            entity.Property(e => e.CustomCode).HasColumnType("citext");
+            entity.Property(e => e.ExternalId).HasColumnType("citext");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.Name).HasMaxLength(200);
-            entity.Property(e => e.Package).HasMaxLength(100);
+            entity.Property(e => e.Name).HasColumnType("citext");
+            entity.Property(e => e.Package).HasColumnType("citext");
 
             entity.HasOne(d => d.Category).WithMany(p => p.Materials)
                 .HasForeignKey(d => d.CategoryId)

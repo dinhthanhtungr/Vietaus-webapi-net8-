@@ -13,7 +13,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.DevandqaSc
     {
         public void Configure(EntityTypeBuilder<QcPassHistory> entity)
         {
-            entity.ToTable("qc_pass_history", "devandga");
+            entity.ToTable("qc_pass_history", "devandqa");
 
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id)

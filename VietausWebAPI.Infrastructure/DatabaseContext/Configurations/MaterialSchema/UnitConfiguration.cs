@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities;
 
-namespace VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext.Configurations.MaterialSchema
+namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurations.MaterialSchema
 {
     public class UnitConfiguration : IEntityTypeConfiguration<Unit>
     {

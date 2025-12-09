@@ -8,7 +8,7 @@ using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Domain.Entities.EnergyScheme;
 using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 
-namespace VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext
+namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
 {
     public partial class ApplicationDbContext
     {

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -11,12 +12,16 @@ using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs.ResultDtos;
 using VietausWebAPI.Core.Application.Features.Sales.Querys;
 using VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.CustomerFeatures;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.ServiceContracts;
+using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
+using VietausWebAPI.Core.Domain.Enums.CustomerEnum;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static QuestPDF.Helpers.Colors;
 
@@ -27,20 +32,400 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ICurrentUser _CurrentUser;
+        private readonly IVisibilityHelper _visibilityHelper;
 
-        public CustomerService (IUnitOfWork unitOfWork, IMapper mapper, ICurrentUser currentUser)
+        public CustomerService (IUnitOfWork unitOfWork
+            , IMapper mapper
+            , ICurrentUser currentUser
+            , IVisibilityHelper visibilityHelper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _CurrentUser = currentUser;
+            _visibilityHelper = visibilityHelper;
         }
 
-        private static string NormalizeTaxCode(string? tax)
+
+        // ======================================================================== Get ========================================================================
+
+        /// <summary>
+        /// Xem danh sách tất cả khách hàng có phân trang
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task<OperationResult<PagedResult<GetReviewCustomer>>> GetAllAsync(CustomerQuery? query)
         {
-            if (string.IsNullOrWhiteSpace(tax)) return string.Empty;
-            // chuẩn hoá để so sánh/uniqueness: bỏ khoảng trắng, gạch, viết hoa
-            return new string(tax.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
+            var pagedResult = await _unitOfWork.CustomerRepository.GetAllAsync(query);
+            try
+            {
+                var pagedResultMapped = _mapper.Map<PagedResult<GetReviewCustomer>>(pagedResult);
+                return OperationResult<PagedResult<GetReviewCustomer>>.Ok(pagedResultMapped);
+            }
+            catch (Exception ex)
+            {
+                return OperationResult<PagedResult<GetReviewCustomer>>.Fail($"Lỗi khi lấy danh sách nhân viên: {ex.Message}");
+            }
         }
+
+        /// <summary>
+        /// Lấy danh sách khách hàng được phân công cho nhân viên cụ thể và yêu cầu đặt biệt của khách hàng ở đơn hàng gần nhất
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<OperationResult<PagedResult<GetReviewCustomer>>> GetCustomerByEmployeeAssignment(
+            CustomerQuery? query, CancellationToken ct = default)
+        {
+            try
+            {
+                // ----- Input & context -----
+                query ??= new CustomerQuery();
+                if (query.PageNumber <= 0) query.PageNumber = 1;
+                if (query.PageSize <= 0) query.PageSize = 15;
+
+                // Lấy scope từ helper (đã biết EmployeeId/Group/Role/NowUtc)
+                var viewer = await _visibilityHelper.BuildViewerScopeAsync(ct);
+                var now = viewer.Now; // nên thống nhất UTC
+                var empId = Guid.Empty;
+
+                // ----- Base (tenant, active) -----
+                var baseQuery = _unitOfWork.CustomerRepository.Query()
+                    .Where(c => c.IsActive == true && c.CompanyId == viewer.CompanyId);
+
+                // ----- Search & date filters (áp dụng TRƯỚC khi shape) -----
+                if (!string.IsNullOrWhiteSpace(query.keyword))
+                {
+                    var kw = query.keyword.Trim();
+                    baseQuery = baseQuery.Where(c => c.CustomerName.Contains(kw) || c.ExternalId.Contains(kw));
+                    // Nếu dùng PostgreSQL, có thể đổi sang EF.Functions.ILike(...)
+                }
+
+                if (query.From.HasValue)
+                    baseQuery = baseQuery.Where(c => c.CreatedDate >= query.From.Value);
+
+                if (query.To.HasValue)
+                {
+                    var toEnd = query.To.Value.Date.AddDays(1).AddTicks(-1);
+                    baseQuery = baseQuery.Where(c => c.CreatedDate <= toEnd);
+                }
+
+                // ----- Visibility filter qua helper -----
+                // Quy tắc:
+                // - Admin/President/Developer/CustomerViewAll/Lab: thấy tất cả
+                // - Sales thường: KH mình quản + claim Work (còn hạn)
+                // - Leader: KH do group quản + claim Work của group (còn hạn)
+                baseQuery = _visibilityHelper.ApplyCustomer(baseQuery, viewer);
+
+                // ----- Shape + phân loại + thông tin "quản lý trong phạm vi" để sort -----
+                var shapedQuery = baseQuery
+                    .Select(c => new
+                    {
+                        Entity = c,
+
+                        // ĐÃ BÁN = có assignment active (không cần claim)
+                        IsSaled = c.CustomerAssignments.Any(a => a.IsActive) && !c.IsLead,
+
+                        // LEAD-ONLY = lead và chưa có assignment active
+                        IsLeadOnly = c.IsLead && !c.CustomerAssignments.Any(a => a.IsActive),
+
+                        // “độ mới” trong sắp xếp
+                        LatestClaimExpiresAt = c.CustomerClaims
+                            .Where(cl => cl.IsActive && cl.Type == ClaimType.Work && cl.ExpiresAt > now)
+                            .Select(cl => (DateTime?)cl.ExpiresAt)
+                            .OrderByDescending(d => d)
+                            .FirstOrDefault(),
+
+                        ManagedByCurrentScope =
+                            c.CustomerAssignments.Any(a =>
+                                a.IsActive && (a.EmployeeId == viewer.EmployeeId
+                                               || (viewer.IsLeader && a.GroupId == viewer.GroupId))
+                            )
+                            ||
+                            c.CustomerClaims.Any(cl =>
+                                cl.IsActive && cl.Type == ClaimType.Work && cl.ExpiresAt > now
+                                && (cl.EmployeeId == viewer.EmployeeId
+                                    || (viewer.IsLeader && cl.GroupId == viewer.GroupId))
+                            ),
+
+                        // Thông tin quản lý trong PHẠM VI nhìn hiện tại (để sort & hiển thị)
+                        ManagerEmpIdScope = !viewer.IsLeader
+                            ? c.CustomerAssignments
+                                .Where(a => a.IsActive)
+                                .OrderByDescending(a => a.CreatedDate)
+                                .Select(a => (Guid?)a.EmployeeId).FirstOrDefault()
+                            : c.CustomerAssignments
+                                .Where(a => a.IsActive && a.GroupId == viewer.GroupId)
+                                .OrderByDescending(a => a.CreatedDate)
+                                .Select(a => (Guid?)a.EmployeeId).FirstOrDefault(),
+
+                        ManagerEmpNameScope = !viewer.IsLeader
+                            ? c.CustomerAssignments
+                                .Where(a => a.IsActive)
+                                .OrderByDescending(a => a.CreatedDate)
+                                .Select(a => a.Employee.FullName).FirstOrDefault()
+                            : c.CustomerAssignments
+                                .Where(a => a.IsActive && a.GroupId == viewer.GroupId)
+                                .OrderByDescending(a => a.CreatedDate)
+                                .Select(a => a.Employee.FullName).FirstOrDefault(),
+
+                        GroupIdScope = !viewer.IsLeader
+                            ? c.CustomerAssignments
+                                .Where(a => a.IsActive)
+                                .OrderByDescending(a => a.CreatedDate)
+                                .Select(a => (Guid?)a.GroupId).FirstOrDefault()
+                            : c.CustomerAssignments
+                                .Where(a => a.IsActive && a.GroupId == viewer.GroupId)
+                                .OrderByDescending(a => a.CreatedDate)
+                                .Select(a => (Guid?)a.GroupId).FirstOrDefault(),
+                    })
+                    .Select(x => new
+                    {
+                        x.Entity,
+                        x.IsSaled,
+                        IsLead = x.IsLeadOnly,
+                        x.LatestClaimExpiresAt,
+                        x.ManagerEmpIdScope,
+                        x.ManagerEmpNameScope,
+                        x.GroupIdScope,
+                        x.ManagedByCurrentScope,
+                        // Bucket: Saled (0) -> Lead (1) -> Others (2)
+                        SortBucket = x.IsSaled ? 0 : (x.IsLeadOnly ? 1 : 2)
+                    });
+
+                // ----- Lọc theo nhân viên (dropdown) -----
+                if (query.EmployeeId.HasValue)
+                {
+                    empId = query.EmployeeId.Value;
+                    shapedQuery = shapedQuery.Where(x =>
+                        x.Entity.CustomerAssignments.Any(a => a.IsActive && a.EmployeeId == empId)
+                    );
+                }
+
+                // ----- Lọc theo loại KH (dropdown) -----
+                if (query.type == CustomerType.Saled)
+                    shapedQuery = shapedQuery.Where(x => x.IsSaled && !x.Entity.IsLead);
+                else if (query.type == CustomerType.Lead)
+                    shapedQuery = shapedQuery.Where(x => x.IsLead);
+                // All -> không filter thêm
+
+                // ----- Count & Page dùng CÙNG query -----
+                var totalItems = await shapedQuery.CountAsync(ct);
+
+                var pageCustomers = await shapedQuery
+                    .OrderBy(x => x.SortBucket)                                   // Saled -> Lead -> Others
+                    .ThenBy(x => x.GroupIdScope == null ? 1 : 0)                   // null group last
+                    .ThenBy(x => x.GroupIdScope)                                   // theo GroupId trong scope
+                    .ThenBy(x => x.ManagerEmpNameScope)                            // theo tên người quản lý
+                    .ThenByDescending(x => x.LatestClaimExpiresAt ?? x.Entity.CreatedDate)
+                    .ThenByDescending(x => x.Entity.CustomerId)                    // tiebreaker ổn định
+                    .Skip((query.PageNumber - 1) * query.PageSize)
+                    .Take(query.PageSize)
+                    .Select(x => new {
+                        x.Entity.CustomerId,
+                        x.Entity.ExternalId,
+                        CustomerName = x.Entity.CustomerName,
+                        x.Entity.RegistrationNumber,
+                        x.Entity.CustomerGroup,
+                        AssigneeEmpId_Ind = x.ManagerEmpIdScope,
+                        AssigneeEmpName_Ind = x.ManagerEmpNameScope,
+
+                        // Vẫn lấy 1 người claim “mới nhất” để fallback nếu cần
+                        ClaimEmpId_Ind = x.Entity.CustomerClaims
+                            .Where(cl => cl.IsActive && cl.Type == ClaimType.Work && cl.ExpiresAt > now)
+                            .OrderByDescending(cl => cl.ExpiresAt)
+                            .Select(cl => (Guid?)cl.EmployeeId).FirstOrDefault(),
+                        ClaimEmpName_Ind = x.Entity.CustomerClaims
+                            .Where(cl => cl.IsActive && cl.Type == ClaimType.Work && cl.ExpiresAt > now)
+                            .OrderByDescending(cl => cl.ExpiresAt)
+                            .Select(cl => cl.Employee.FullName).FirstOrDefault(),
+
+                        // >>> NEW: Lấy TẤT CẢ tên từ claim còn hiệu lực (dịch được sang SQL nhờ ToArray)
+                        ClaimEmpNames_All = x.Entity.CustomerClaims
+                            .Where(cl => cl.IsActive && cl.Type == ClaimType.Work && cl.ExpiresAt > now)
+                            .OrderByDescending(cl => cl.ExpiresAt)
+                            .Select(cl => cl.Employee.FullName)
+                            .Distinct()
+                            .ToArray(),
+
+                        PhoneFromContact = x.Entity.Contacts
+                            .OrderByDescending(co => co.IsPrimary)
+                            .Select(co => co.Phone).FirstOrDefault(),
+                        AddressFromAddress = x.Entity.Addresses
+                            .OrderByDescending(a => a.IsPrimary)
+                            .Select(a => a.AddressLine).FirstOrDefault(),
+                        ReceiverFromContact = x.Entity.Contacts
+                            .OrderByDescending(co => co.IsPrimary)
+                            .Select(co => (co.FirstName + " " + co.LastName).Trim()).FirstOrDefault(),
+                        CustomerSpecialRequirement = x.Entity.MerchandiseOrders
+                            .OrderByDescending(o => o.CreateDate)
+                            .Select(o => o.Note).FirstOrDefault(),
+                        PaymentType = x.Entity.MerchandiseOrders
+                            .OrderByDescending(o => o.CreateDate)
+                            .Select(o => o.PaymentType).FirstOrDefault(),
+                        DeliveryType = x.Entity.MerchandiseOrders
+                            .OrderByDescending(o => o.CreateDate)
+                            .Select(o => o.ShippingMethod).FirstOrDefault(),
+
+                        IsLeadOnly = x.IsLead,
+                        ManagedByCurrentScope = x.ManagedByCurrentScope
+                    })
+
+                    .ToListAsync(ct);
+
+                // ----- Map DTO -----
+                var result = pageCustomers.Select(x => new GetReviewCustomer
+                {
+                    CustomerId = x.CustomerId,
+                    ExternalId = x.ExternalId,
+                    Name = x.CustomerName,
+                    RegNo = x.RegistrationNumber,
+                    Group = x.CustomerGroup,
+
+                    // EmployeeId ưu tiên theo phạm vi như cũ
+                    EmployeeId = x.AssigneeEmpId_Ind ?? x.ClaimEmpId_Ind,
+
+                    // >>> NEW: Nếu lead-only → join tất cả tên claim; ngược lại dùng assignee như cũ (1 người)
+                    EmployeeName = x.IsLeadOnly
+                        ? string.Join(", ", x.ClaimEmpNames_All ?? Array.Empty<string>())
+                        : (x.AssigneeEmpName_Ind ?? x.ClaimEmpName_Ind),
+
+                    Phone = x.PhoneFromContact,
+                    Address = x.AddressFromAddress,
+                    DeliveryName = x.ReceiverFromContact,
+                    CustomerSpectialRequirement = x.CustomerSpecialRequirement ?? string.Empty,
+                    paymentType = x.PaymentType ?? string.Empty,
+                    delivieryType = x.DeliveryType ?? string.Empty,
+                    IsLead = x.IsLeadOnly,
+                    IsManagedByCurrent = x.ManagedByCurrentScope,
+                    CanOpenDetail = !x.IsLeadOnly || (x.IsLeadOnly && x.ManagedByCurrentScope)
+                }).ToList();
+
+                return OperationResult<PagedResult<GetReviewCustomer>>.Ok(
+                    new PagedResult<GetReviewCustomer>(result, totalItems, query.PageNumber, query.PageSize)
+                );
+            }
+            catch (Exception ex)
+            {
+                return OperationResult<PagedResult<GetReviewCustomer>>.Fail($"Lỗi khi lấy danh sách khách hàng: {ex.Message}");
+            }
+        }
+
+
+        /// <summary>
+        /// Lấy thông tin chi tiết khách hàng theo Id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public Task<GetCustomer> GetCustomerByIdAsync(Guid id, CancellationToken ct = default)
+        {
+            return _unitOfWork.CustomerRepository.GetCustomerByIdAsync(id);
+        }
+
+        /// <summary>
+        /// Lây thông tin khách hàng theo ID cho phòng Sales
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<OperationResult<GetCustomer>> GetCustomerByIdForSalesAsync(Guid id, CancellationToken ct = default)
+        {
+            var now = DateTime.Now;
+            var userId = _CurrentUser.EmployeeId;
+            var companyId = _CurrentUser.CompanyId;
+
+            // 1) Leader scope (nếu có)
+            var leaderGroupId = await _unitOfWork.MemberInGroupRepository.Query()
+                .Where(g => g.Profile == userId && g.IsAdmin == true && g.IsActive == true)
+                .Select(g => (Guid?)g.GroupId)
+                .FirstOrDefaultAsync(ct);
+
+            var isLeader = leaderGroupId.HasValue && leaderGroupId.Value != Guid.Empty;
+            var scopeGroupId = leaderGroupId ?? Guid.Empty;
+
+            // 2) Kiểm tra tồn tại + công ty + lấy cờ IsLead
+            var exist = await _unitOfWork.CustomerRepository.Query()
+                .Where(c => c.CustomerId == id && c.CompanyId == companyId)
+                .Select(c => new { c.CustomerId, c.IsLead })
+                .FirstOrDefaultAsync(ct);
+
+
+            if (exist is null)
+                return OperationResult<GetCustomer>.Fail("Không tìm thấy khách hàng.");
+
+            // 3) Tính quyền
+            // 3.1 Assignment (nhân viên / nhóm)
+            var managedByEmployee = await _unitOfWork.CustomerAssignmentRepository.Query()
+                .AnyAsync(a => a.IsActive && a.CustomerId == id && a.EmployeeId == userId, ct);
+
+            var managedByGroup = isLeader && await _unitOfWork.CustomerAssignmentRepository.Query()
+                .AnyAsync(a => a.IsActive && a.CustomerId == id && a.GroupId == scopeGroupId, ct);
+
+            // 3.2 Claim Work còn hạn (cho non-lead)
+            var hasActiveClaim = await _unitOfWork.CustomerClaimRepository.Query()
+                .AnyAsync(cl => cl.IsActive
+                             && cl.Type == ClaimType.Work
+                             && cl.ExpiresAt > now
+                             && cl.CustomerId == id
+                             && (cl.EmployeeId == userId || (isLeader && cl.GroupId == scopeGroupId)), ct);
+
+            bool canOpenDetail =
+                exist.IsLead
+                    ? (managedByEmployee || managedByGroup || hasActiveClaim)
+                    : (managedByEmployee || managedByGroup || hasActiveClaim);
+
+
+            if (!canOpenDetail)
+                return OperationResult<GetCustomer>.Fail("Bạn không có quyền xem khách hàng này.");
+
+            // 4) Có quyền → lấy chi tiết bằng Repository (giữ nguyên code cũ)
+            var dto = await _unitOfWork.CustomerRepository.GetCustomerByIdAsync(id);
+
+            if (dto is null)
+                return OperationResult<GetCustomer>.Fail("Không tải được chi tiết khách hàng.");
+
+
+            dto.Notes = isLeader
+                ? await GetNotesForLeaderAsync(id, scopeGroupId, companyId, userId, ct)
+                : await GetNotesForSaleAsync(id, userId, companyId, ct);
+
+            return OperationResult<GetCustomer>.Ok(dto);
+        }
+
+        /// <summary>
+        /// Lấy 
+        /// </summary>
+        /// <param name="CustomerId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<OperationResult<IReadOnlyList<GetCustomerLeadOwner>>> GetCustomerLeadOwner(Guid CustomerId, CancellationToken ct = default)
+        {
+            var now = DateTime.Now;
+            var companyId = _CurrentUser.CompanyId;
+
+            var list = await _unitOfWork.CustomerClaimRepository.Query()
+                .Where(cl => cl.CustomerId == CustomerId
+                          && cl.IsActive
+                          && cl.Type == ClaimType.Work
+                          && cl.ExpiresAt > now
+                          && cl.CompanyId == companyId)
+                .Select(cl => new GetCustomerLeadOwner
+                {
+                    EmployeeId = cl.EmployeeId,
+                    EmployeeName = cl.Employee.FullName,
+                    EmployeeCode = cl.Employee.ExternalId,
+                    GroupId = cl.GroupId,
+                    GroupName = cl.Group.Name,
+                    ExpiresAt = cl.ExpiresAt,
+                    DaysLeft = (cl.ExpiresAt - now).Days
+                })
+                .OrderBy(cl => cl.ExpiresAt)
+                .ToListAsync(ct);
+
+            return OperationResult<IReadOnlyList<GetCustomerLeadOwner>>.Ok(list);
+        }
+
+        // ======================================================================== Post ========================================================================
 
         /// <summary>
         /// Thêm một khách hàng mới
@@ -48,180 +433,203 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
         /// <param name="customer"></param>
         /// <returns></returns>
         public async Task<OperationResult<AddCustomerResultDto>> AddNewCustomer(PostCustomer customer)
-        {
-
-            customer.CompanyId = _CurrentUser.CompanyId;
-            customer.CreatedBy = _CurrentUser.EmployeeId;
-            var now = DateTime.Now;
-
-            // 0) ExternalId (chưa cần transaction)
-            if (string.IsNullOrWhiteSpace(customer.ExternalId))
             {
-                customer.ExternalId = await ExternalIdGenerator.GenerateCode(
-                    "KH",
-                    prefix => _unitOfWork.CustomerRepository.GetLatestExternalIdStartsWithAsync(prefix)
-                );
-            }
+                // 0) Context & thời gian UTC
+                var now = DateTime.Now;
+                var companyId = _CurrentUser.CompanyId;
+                var userId = _CurrentUser.EmployeeId;
 
-            // 1) Validate input tối thiểu
-            if (customer.CustomerAssignment is null)
-                return OperationResult<AddCustomerResultDto>.Fail("CustomerAssignment không được null.");
+                // 1) ExternalId
+                if (string.IsNullOrWhiteSpace(customer.ExternalId))
+                {
+                    customer.ExternalId = await ExternalIdGenerator.GenerateCode(
+                        "KH",
+                        prefix => _unitOfWork.CustomerRepository.GetLatestExternalIdStartsWithAsync(prefix)
+                    );
+                }
 
-            // 2) Check MST (dùng Replace/Upper để EF translate được)
-            var taxNorm = NormalizeTaxCode(customer.TaxNumber); // bỏ ký tự không chữ số/chữ, Upper
-            if (!string.IsNullOrEmpty(taxNorm))
-            {
-                var existedInfo = await _unitOfWork.CustomerRepository.Query()
-                    .Where(c =>
-                        ((c.TaxNumber ?? "")
-                            .Replace("-", "")
-                            .Replace(".", "")
-                            .Replace(" ", "")
-                            .ToUpper()) == taxNorm
-                        && c.CompanyId == customer.CompanyId)
-                    .Select(c => new
+                // 2) Validate tối thiểu: kiểm tra MST trùng (giữ code của bạn)
+                var taxNorm = NormalizeTaxCode(customer.TaxNumber);
+                if (!string.IsNullOrEmpty(taxNorm))
+                {
+                    var existedInfo = await _unitOfWork.CustomerRepository.Query()
+                        .Where(c =>
+                            ((c.TaxNumber ?? "")
+                                .Replace("-", "")
+                                .Replace(".", "")
+                                .Replace(" ", "")
+                                .ToUpper()) == taxNorm
+                            && c.CompanyId == companyId)
+                        .Select(c => new
+                        {
+                            c.ExternalId,
+                            c.CustomerId,
+                            c.CustomerName,
+                            c.TaxNumber,
+                            Assignment = c.CustomerAssignments
+                                .Where(a => a.IsActive)
+                                .OrderByDescending(a => a.CreatedDate)
+                                .Select(a => new
+                                {
+                                    a.EmployeeId,
+                                    EmployeeName = a.Employee.FullName,
+                                    a.GroupId,
+                                    GroupName = a.Group.Name
+                                })
+                                .FirstOrDefault()
+                        })
+                        .FirstOrDefaultAsync();
+
+                    if (existedInfo != null)
                     {
-                        c.ExternalId,
-                        c.CustomerId,
-                        c.CustomerName,
-                        c.TaxNumber,
-                        Assignment = c.CustomerAssignments
-                            .Where(a => a.IsActive)
-                            .OrderByDescending(a => a.CreatedDate)
-                            .Select(a => new
-                            {
-                                a.EmployeeId,
-                                EmployeeName = a.Employee.FullName,
-                                a.GroupId,
-                                GroupName = a.Group.Name
-                            })
-                            .FirstOrDefault()
-                    })
+                        var dto = new AddCustomerResultDto(
+                            existedInfo.CustomerId,
+                            existedInfo.ExternalId,
+                            existedInfo.CustomerName,
+                            existedInfo.TaxNumber ?? string.Empty,
+                            existedInfo.Assignment?.EmployeeId ?? Guid.Empty,
+                            existedInfo.Assignment?.EmployeeName ?? string.Empty,
+                            existedInfo.Assignment?.GroupId ?? Guid.Empty,
+                            existedInfo.Assignment?.GroupName ?? string.Empty
+                        );
+
+                        return OperationResult<AddCustomerResultDto>.Fail(dto,
+                            $"Mã số thuế {customer.TaxNumber} đã tồn tại cho khách hàng \"{dto.Name}\" " +
+                            $"và hiện đang do {(dto.EmployeeName ?? "chưa gán")} quản lý" +
+                            $"{(dto.GroupName is null ? "" : $" ({dto.GroupName})")}."
+                        );
+                    }
+                }
+
+                // 3) Lấy group hiện tại của người tạo (để auto-claim / assign)
+                var groupId = await _unitOfWork.MemberInGroupRepository.Query()
+                    .Where(m => m.Profile == userId && m.IsActive == true)
+                    .Select(m => (Guid?)m.GroupId)
                     .FirstOrDefaultAsync();
 
-                if (existedInfo != null)
+                if (groupId is null)
+                    return OperationResult<AddCustomerResultDto>.Fail("Nhân viên sale chưa thuộc nhóm nào (Group).");
+
+                // 4) Transaction – bắt đầu ghi
+                await _unitOfWork.BeginTransactionAsync();
+                try
                 {
-                    var dto = new AddCustomerResultDto(
-                        existedInfo.CustomerId,
-                        existedInfo.ExternalId,
-                        existedInfo.CustomerName,
-                        existedInfo.TaxNumber ?? string.Empty,
-                        existedInfo.Assignment?.EmployeeId ?? Guid.Empty,
-                        existedInfo.Assignment?.EmployeeName ?? string.Empty,
-                        existedInfo.Assignment?.GroupId ?? Guid.Empty,
-                        existedInfo.Assignment?.GroupName ?? string.Empty
-                    );
-
-                    return OperationResult<AddCustomerResultDto>.Fail(dto,
-                           $"Mã số thuế {customer.TaxNumber} đã tồn tại cho khách hàng \"{dto.Name}\" " +
-                           $"và hiện đang do {(dto.EmployeeName ?? "chưa gán")} quản lý" +
-                           $"{(dto.GroupName is null ? "" : $" ({dto.GroupName})")}."
-                       );
-                }
-            }
-
-            // 3) Tìm Group theo SALE (khuyến nghị dùng EmployeeId của assignment)
-            var saleId = customer.CustomerAssignment.EmployeeId;
-            var groupId = await _unitOfWork.MemberInGroupRepository.Query()
-                .Where(m => m.Profile == saleId && m.IsActive == true)
-                .Select(m => (Guid?)m.GroupId)
-                .FirstOrDefaultAsync();
-
-            if (groupId is null)
-                return OperationResult<AddCustomerResultDto>.Fail("Nhân viên sale chưa thuộc nhóm nào (Group).");
-
-            // Gán thông tin assignment
-            customer.CustomerAssignment.GroupId = groupId.Value;
-            customer.CustomerAssignment.IsActive = true;
-            customer.CustomerAssignment.CreatedDate = now;
-            customer.CustomerAssignment.UpdatedDate = now;
-
-            customer.CustomerAssignment.CompanyId = _CurrentUser.CompanyId;
-            customer.CustomerAssignment.CreatedBy = _CurrentUser.EmployeeId;
-            customer.CustomerAssignment.UpdatedBy = _CurrentUser.EmployeeId;
-
-            customer.CustomerAssignment.EmployeeId = _CurrentUser.EmployeeId;
-
-            // 4) Transaction chỉ bắt đầu khi chuẩn bị ghi
-            await _unitOfWork.BeginTransactionAsync();
-            try
-            {
-                //var customerEntity = _mapper.Map<Customer>(customer);
-
-                var customerEntity = new Customer
-                {
-                    CustomerName = customer.CustomerName,
-                    ExternalId = customer.ExternalId,
-                    TaxNumber = customer.TaxNumber,
-                    RegistrationNumber = customer.RegistrationNumber,
-                    CustomerGroup = customer.CustomerGroup,
-                    IsActive = true,
-                    CreatedBy = _CurrentUser.EmployeeId,
-                    CreatedDate = now,
-                    UpdatedBy = _CurrentUser.EmployeeId,
-                    UpdatedDate = now,
-                    Addresses = customer.Addresses.Select(a => new Address
+                    // 4.1) Tạo Customer (lead-first by default)
+                    var customerEntity = new Customer
                     {
-                        AddressLine = a.AddressLine,
-                        City = a.City,
-                        District = a.District,
-                        PostalCode = a.PostalCode,
-                        Country = a.Country,
-                        IsPrimary = a.IsPrimary,
+                        CustomerId = Guid.CreateVersion7(),
+                        CustomerName = customer.CustomerName,
+                        ExternalId = customer.ExternalId,
+                        TaxNumber = customer.TaxNumber,
+                        RegistrationNumber = customer.RegistrationNumber,
+                        CustomerGroup = customer.CustomerGroup,
+                        CompanyId = companyId,
                         IsActive = true,
-                    }).ToList(),
-                    Contacts = customer.Contacts.Select(c => new Contact
-                    {
-                        FirstName = c.FirstName,
-                        LastName = c.LastName,
-                        Email = c.Email,
-                        Phone = c.Phone,
-                        IsPrimary = c.IsPrimary,
-                        IsActive = true,
-                    }).ToList(),
-                    CustomerAssignments = new List<CustomerAssignment>
-                    {
-                        new CustomerAssignment
+
+                        CreatedBy = userId,
+                        CreatedDate = now,
+                        UpdatedBy = userId,
+                        UpdatedDate = now,
+
+                        // Lead-first mặc định
+                        //IsLead = !customer.AssignNow || (customer.AssignNow && !customer.ConvertNow),
+                        //LeadStatus = !customer.AssignNow
+                        //    ? LeadStatus.Open                // default lead
+                        //    : (customer.ConvertNow ? LeadStatus.Converted : LeadStatus.Qualified),
+
+                        IsLead = true,
+                        LeadStatus = LeadStatus.Claimed,
+
+                        Addresses = customer.Addresses.Select(a => new Address
                         {
-                            EmployeeId = customer.CustomerAssignment.EmployeeId,
-                            GroupId = customer.CustomerAssignment.GroupId.HasValue ? customer.CustomerAssignment.GroupId.Value : Guid.Empty, // <-- FIXED
-                            IsActive = customer.CustomerAssignment.IsActive,
-                            CompanyId = customer.CustomerAssignment.CompanyId ?? Guid.Empty,
-                            CreatedBy = customer.CreatedBy ?? Guid.Empty,
-                            CreatedDate = customer.CustomerAssignment.CreatedDate ?? now,
-                            UpdatedBy = customer.CreatedBy ?? Guid.Empty,
-                            UpdatedDate = customer.CustomerAssignment.UpdatedDate ?? now
-                        }
+                            AddressLine = a.AddressLine,
+                            City = a.City,
+                            District = a.District,
+                            PostalCode = a.PostalCode,
+                            Country = a.Country,
+                            IsPrimary = a.IsPrimary,
+                            IsActive = true,
+                        }).ToList(),
+
+                        Contacts = customer.Contacts.Select(c => new Contact
+                        {
+                            FirstName = c.FirstName,
+                            LastName = c.LastName,
+                            Email = c.Email,
+                            Phone = c.Phone,
+                            IsPrimary = c.IsPrimary,
+                            IsActive = true,
+                        }).ToList(),
+                    };
+
+                    // 4.2) Nếu assign ngay → thêm assignment active
+                    //if (customer.AssignNow)
+                    //{
+                    //    customerEntity.CustomerAssignments = new List<CustomerAssignment>
+                    //    {
+                    //        new CustomerAssignment
+                    //        {
+                    //            EmployeeId = userId,   // hoặc customer.CustomerAssignment.EmployeeId nếu cho phép chọn
+                    //            GroupId = groupId.Value,
+                    //            IsActive = true,
+
+                    //            CompanyId = companyId,
+                    //            CreatedBy  = userId,
+                    //            CreatedDate= now,
+                    //            UpdatedBy  = userId,
+                    //            UpdatedDate= now
+                    //        }
+                    //    };
+                    //}
+
+                    await _unitOfWork.CustomerRepository.AddNewCustomer(customerEntity);
+                    if (!string.IsNullOrWhiteSpace(customer.Notes))
+                    {
+                        var authorGroupId = groupId.Value; // group của người tạo (đã lấy trước đó)
+                        await AddCustomerNoteAsync(customerEntity.CustomerId, customer.Notes.Trim());
                     }
-                };
-
-                customerEntity.CreatedBy = _CurrentUser.EmployeeId;
-                customerEntity.CreatedDate = DateTime.Now;
-                customerEntity.CompanyId = _CurrentUser.CompanyId;
-                customerEntity.UpdatedBy = _CurrentUser.EmployeeId;
-                customerEntity.UpdatedDate = DateTime.Now;
 
 
-                await _unitOfWork.CustomerRepository.AddNewCustomer(customerEntity);
+                    await _unitOfWork.SaveChangesAsync(); // => có CustomerId
 
-                var affected = await _unitOfWork.SaveChangesAsync();
+                    // 4.3) Nếu KHÔNG assign ngay → auto-claim TTL cho người tạo
+                    if (!customer.AssignNow)
+                    {
+                        // Chặn tranh chấp: DB có unique partial 1 claim Work active / Customer
+                        var claim = new CustomerClaim
+                        {
+                            Id = Guid.CreateVersion7(),
+                            CustomerId = customerEntity.CustomerId,
+                            EmployeeId = userId,
+                            GroupId = groupId.Value,
+                            Type = ClaimType.Work,
+                            ExpiresAt = now.AddHours(Math.Max(1, customer.ClaimTtlHours)),
+                            IsActive = true,
+                            CompanyId = companyId
+                        };
+                        await _unitOfWork.CustomerClaimRepository.AddAsync(claim);
+                        await _unitOfWork.SaveChangesAsync();
 
-                if (affected <= 0)
+                        // Đồng bộ trạng thái “Claimed” cho funnel (tùy policy bạn giữ)
+                        customerEntity.LeadStatus = LeadStatus.Claimed;
+                        await _unitOfWork.SaveChangesAsync();
+                    }
+
+                    await _unitOfWork.CommitTransactionAsync();
+
+                    return OperationResult<AddCustomerResultDto>.Ok(
+                        customer.AssignNow ? "Tạo khách hàng & giao quản lý thành công."
+                                  : $"Tạo khách hàng tìm năng thành công và đã cho {customer.ClaimTtlHours} giờ."
+                    );
+                }
+                catch (Exception ex)
                 {
                     await _unitOfWork.RollbackTransactionAsync();
-                    return OperationResult<AddCustomerResultDto>.Fail("Thất bại.");
+                    return OperationResult<AddCustomerResultDto>.Fail($"Lỗi khi tạo khách hàng: {ex.Message}");
                 }
-
-                await _unitOfWork.CommitTransactionAsync();
-
-                return OperationResult<AddCustomerResultDto>.Ok("Tạo khách hàng thành công");
             }
-            catch (Exception ex)
-            {
-                await _unitOfWork.RollbackTransactionAsync();
-                return OperationResult<AddCustomerResultDto>.Fail($"Lỗi khi tạo khách hàng: {ex.Message}");
-            }
-        }
+
+        // ======================================================================== Patch ========================================================================
 
         /// <summary>
         /// Xóa mềm dữ liệu khách hàng này
@@ -249,209 +657,429 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
         }
 
         /// <summary>
-        /// Xem danh sách tất cả khách hàng có phân trang
-        /// </summary>
-        /// <param name="query"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public async Task<PagedResult<GetReviewCustomer>> GetAllAsync(CustomerQuery? query)
-        {
-            var pagedResult = await _unitOfWork.CustomerRepository.GetAllAsync(query);
-            try
-            {
-                var pagedResultMapped = _mapper.Map<PagedResult<GetReviewCustomer>>(pagedResult);
-                return pagedResultMapped;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Lỗi khi lấy danh sách nhân viên: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// Lấy danh sách khách hàng được phân công cho nhân viên cụ thể và yêu cầu đặt biệt của khách hàng ở đơn hàng gần nhất
-        /// </summary>
-        /// <param name="isAdmin"></param>
-        /// <param name="employeeId"></param>
-        /// <param name="customerId"></param>
-        /// <param name="keyword"></param>
-        /// <param name="pageNumber"></param>
-        /// <param name="pageSize"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception> 
-        public async Task<PagedResult<GetReviewCustomer>> GetCustomerByEmployeeAssignment(CustomerQuery? query, CancellationToken ct = default)
-        {
-            try
-            {
-                // Đặt giá trị mặc định cho PageNumber và PageSize
-                if (query.PageNumber <= 0) query.PageNumber = 1;
-                if (query.PageSize <= 0) query.PageSize = 15;
-
-                // Lấy groupId của leader (nếu có)
-                var groupId = await _unitOfWork.MemberInGroupRepository.Query()
-                    .Where(g => g.Profile == _CurrentUser.EmployeeId && g.IsAdmin == true && g.IsActive == true)
-                    .Select(g => g.GroupId)
-                    .FirstOrDefaultAsync(ct);
-
-                // Bắt đầu xây dựng query cho CustomerAssignment
-                var customerQuery = _unitOfWork.CustomerAssignmentRepository.Query()
-                    .Where(ca => ca.IsActive)
-                    .Select(ca => new
-                    {
-                        ca.CustomerId,
-                        ca.Customer.CustomerName,
-                        ca.Customer.RegistrationNumber,
-                        ca.Customer.ExternalId,
-                        ca.Customer.CustomerGroup,
-                        ca.Customer.CreatedDate,
-                        ca.EmployeeId,
-                        ca.Employee.FullName,
-                        ca.Customer.MerchandiseOrders,
-                        ca.Customer.Contacts,
-                        ca.Customer.Addresses,
-                        ca.GroupId
-                    });
-
-                // Lọc theo groupId hoặc EmployeeId
-                if (groupId != Guid.Empty)
-                {
-                    customerQuery = customerQuery.Where(c => c.GroupId == groupId);
-                }
-                else
-                {
-                    customerQuery = customerQuery.Where(c => c.EmployeeId == _CurrentUser.EmployeeId);
-                }
-
-                // Các lọc bổ sung từ query
-                if (query.CompanyId.HasValue)
-                {
-                    customerQuery = customerQuery.Where(c => c.CustomerGroup != null && c.CustomerGroup.Contains(query.CompanyId.Value.ToString()));
-                    // OR, if CustomerGroup is not related to CompanyId, you may need to join with the Customer entity to filter by CompanyId.
-                    // Example:
-                    // customerQuery = customerQuery.Where(c => c.Customer.CompanyId == query.CompanyId.Value);
-                }
-
-                if (query.EmployeeId.HasValue)
-                {
-                    customerQuery = customerQuery.Where(c => c.EmployeeId == query.EmployeeId.Value);
-                }
-
-                if (!string.IsNullOrWhiteSpace(query.keyword))
-                {
-                    customerQuery = customerQuery.Where(c =>
-                        c.CustomerName.Contains(query.keyword) ||
-                        c.ExternalId.Contains(query.keyword)
-                    );
-                }
-
-                if (query.From.HasValue)
-                {
-                    customerQuery = customerQuery.Where(c => c.CreatedDate >= query.From.Value);
-                }
-
-                if (query.To.HasValue)
-                {
-                    customerQuery = customerQuery.Where(c => c.CreatedDate <= query.To.Value);
-                }
-
-                // Tính tổng số bản ghi
-                var totalItems = await customerQuery.CountAsync(ct);
-
-                // Truy vấn dữ liệu và phân trang
-                var customers = await customerQuery
-                    .OrderByDescending(c => c.CreatedDate)
-                    .Skip((query.PageNumber - 1) * query.PageSize)
-                    .Take(query.PageSize)
-                    .Select(ts => new GetReviewCustomer
-                    {
-                        CustomerId = ts.CustomerId,
-                        ExternalId = ts.ExternalId,
-                        Name = ts.CustomerName,
-                        RegNo = ts.RegistrationNumber,
-                        Phone = ts.MerchandiseOrders
-                            .OrderByDescending(o => o.CreateDate)
-                            .Select(o => o.PhoneSnapshot)
-                            .FirstOrDefault() ?? ts.Contacts
-                            .Where(a => a.IsPrimary == true)
-                            .Select(a => a.Phone)
-                            .FirstOrDefault(),
-                        Group = ts.CustomerGroup,
-                        Address = ts.MerchandiseOrders
-                            .OrderByDescending(o => o.CreateDate)
-                            .Select(o => o.DeliveryAddress)
-                            .FirstOrDefault() ?? ts.Addresses
-                            .Where(a => a.IsPrimary == true)
-                            .Select(a => a.AddressLine)
-                            .FirstOrDefault(),
-                        DeliveryName = ts.MerchandiseOrders
-                            .OrderByDescending(o => o.CreateDate)
-                            .Select(o => o.Receiver)
-                            .FirstOrDefault() ?? ts.Contacts
-                            .OrderByDescending(co => co.IsPrimary)
-                            .Select(contact => $"{contact.FirstName} {contact.LastName}".Trim())
-                            .FirstOrDefault(),
-                        EmployeeId = ts.EmployeeId,
-                        EmployeeName = ts.FullName,
-                        CustomerSpectialRequirement = ts.MerchandiseOrders
-                            .OrderByDescending(o => o.CreateDate)
-                            .Select(o => o.Note)
-                            .FirstOrDefault() ?? string.Empty,
-                        paymentType = ts.MerchandiseOrders
-                            .Select(o => o.PaymentType)
-                            .FirstOrDefault() ?? string.Empty,
-                        delivieryType = ts.MerchandiseOrders
-                            .Select(o => o.ShippingMethod)
-                            .FirstOrDefault() ?? string.Empty
-                    })
-                    .ToListAsync(ct);
-
-                // Trả về kết quả phân trang
-                return new PagedResult<GetReviewCustomer>(customers, totalItems, query.PageNumber, query.PageSize);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Lỗi khi lấy danh sách khách hàng: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// Lấy thông tin chi tiết khách hàng theo Id
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public Task<GetCustomer?> GetCustomerByIdAsync(Guid id)
-        {
-            return _unitOfWork.CustomerRepository.GetCustomerByIdAsync(id);
-        }
-
-        /// <summary>
         /// Cập nhật thông tin khách hàng
         /// </summary>
         /// <param name="customer"></param>
         /// <returns></returns>
-        public async Task<OperationResult> UpdateCustomerAsync(PatchCustomer customer)
+        public async Task<OperationResult> UpdateCustomerAsync(PatchCustomer req, CancellationToken ct = default)
         {
             await _unitOfWork.BeginTransactionAsync();
+
             try
             {
-                var result = await _unitOfWork.CustomerRepository.UpdateCustomerAsync(customer);
-                var affected = await _unitOfWork.SaveChangesAsync();
+                var now = DateTime.Now;
+                var userId = _CurrentUser.EmployeeId;
+                var companyId = _CurrentUser.CompanyId;
 
+                // 1) Load customer + child collections
+                var existing = await _unitOfWork.CustomerRepository.Query(track: true)
+                    .Include(c => c.Addresses)
+                    .Include(c => c.Contacts)
+                    .FirstOrDefaultAsync(c => c.CustomerId == req.CustomerId && c.CompanyId == companyId, ct);
+
+                if (existing == null)
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
+                    return OperationResult.Fail($"Không tìm thấy khách hàng với ID {req.CustomerId}");
+                }
+
+                // 2) Patch basic fields (field-level)
+                existing.UpdatedDate = now;
+                existing.UpdatedBy = userId;
+
+                PatchHelper.SetIfRef(req.CustomerName, () => existing.CustomerName, v => existing.CustomerName = v);
+                PatchHelper.SetIfRef(req.Phone, () => existing.Phone, v => existing.Phone = v);
+                PatchHelper.SetIfRef(req.Website, () => existing.Website, v => existing.Website = v);
+                PatchHelper.SetIfRef(req.CustomerGroup, () => existing.CustomerGroup, v => existing.CustomerGroup = v);
+                PatchHelper.SetIfRef(req.ApplicationName, () => existing.ApplicationName, v => existing.ApplicationName = v);
+                PatchHelper.SetIfRef(req.RegistrationNumber, () => existing.RegistrationNumber, v => existing.RegistrationNumber = v);
+                PatchHelper.SetIfRef(req.TaxNumber, () => existing.TaxNumber, v => existing.TaxNumber = v);
+                PatchHelper.SetIfNullable(req.IssueDate, () => existing.IssueDate, v => existing.IssueDate = v);
+                PatchHelper.SetIfRef(req.IssuedPlace, () => existing.IssuedPlace, v => existing.IssuedPlace = v);
+                PatchHelper.SetIfRef(req.FaxNumber, () => existing.FaxNumber, v => existing.FaxNumber = v);
+                // IsActive là bool?, dùng SetIfNullable
+                PatchHelper.SetIfNullable(req.IsActive, () => existing.IsActive, v => existing.IsActive = v);
+
+                // (Nếu có dùng Lead): patch các trường Lead
+                PatchHelper.SetIf(req.IsLead, () => existing.IsLead, v => existing.IsLead = v);
+                if (req.LeadStatus.HasValue)
+                {
+                    existing.LeadStatus = req.LeadStatus.Value;
+                }
+
+                // 3) Upsert Addresses
+                if (req.Addresses != null)
+                {
+                    UpsertAddressesAsync(existing, req.Addresses, ct);
+                }
+
+                // 4) Upsert Contacts
+                if (req.Contacts != null)
+                {
+                    UpsertContactsAsync(existing, req.Contacts, ct);
+                }
+
+                if (req.PatchCustomerNote != null && !string.IsNullOrWhiteSpace(req.PatchCustomerNote.Content))
+                {
+                    var noteRes = await UpsertCustomerNoteInline(existing.CustomerId, req.PatchCustomerNote);
+                    if (!noteRes.Success)
+                    {
+                        await _unitOfWork.RollbackTransactionAsync();
+                        return OperationResult.Fail(noteRes.Message);
+                    }
+                }
+
+                // 5) Persist
+                await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
-                return affected > 0
-                    ? OperationResult.Ok("Cập nhật khách hàng thành công")
-                    : OperationResult.Fail("Cập nhật khách hàng không thành công.");
-            }
 
+                return OperationResult.Ok("Cập nhật khách hàng thành công");
+            }
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync();
                 return OperationResult.Fail($"Lỗi khi cập nhật khách hàng: {ex.Message}");
             }
-
         }
 
-        
+
+        // ======================================================================== Helper ========================================================================
+        private static string NormalizeTaxCode(string? tax)
+        {
+            if (string.IsNullOrWhiteSpace(tax)) return string.Empty;
+            // chuẩn hoá để so sánh/uniqueness: bỏ khoảng trắng, gạch, viết hoa
+            return new string(tax.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
+        }
+
+        private void UpsertAddressesAsync(Customer existing, IEnumerable<GetAddress> incoming, CancellationToken ct)
+        {
+            // Giữ đúng style bạn dùng để đảm bảo tracking
+            var ctx = _unitOfWork.CustomerRepository.Query(true)
+                .Include(c => c.Addresses);
+
+            if (incoming == null) return;
+
+            var now = DateTime.Now;
+            var userId = _CurrentUser.EmployeeId;
+
+            var existingList = existing.Addresses?.ToList() ?? new List<Address>();
+            var incomingIds = incoming.Select(a => a.AddressId).ToHashSet();
+
+            // 1) SOFT DELETE: có trong DB nhưng KHÔNG có trong payload
+            foreach (var addr in existingList)
+            {
+                if (addr.AddressId != Guid.Empty && !incomingIds.Contains(addr.AddressId))
+                {
+                    addr.IsActive = false;
+                }
+            }
+
+            // 2) THÊM MỚI / CẬP NHẬT / REVIVE
+            foreach (var inc in incoming)
+            {
+                if (inc.AddressId == Guid.Empty)
+                {
+                    // THÊM MỚI
+                    var add = new Address
+                    {
+                        AddressId = Guid.CreateVersion7(),
+                        CustomerId = existing.CustomerId,
+                        IsActive = true,
+                    };
+
+                    PatchHelper.SetIfRef(inc.AddressLine, () => add.AddressLine, v => add.AddressLine = v);
+                    PatchHelper.SetIfRef(inc.City, () => add.City, v => add.City = v);
+                    PatchHelper.SetIfRef(inc.District, () => add.District, v => add.District = v);
+                    PatchHelper.SetIfRef(inc.Province, () => add.Province, v => add.Province = v);
+                    PatchHelper.SetIfRef(inc.Country, () => add.Country, v => add.Country = v);
+                    PatchHelper.SetIfRef(inc.PostalCode, () => add.PostalCode, v => add.PostalCode = v);
+                    PatchHelper.SetIfNullable(inc.IsPrimary, () => add.IsPrimary, v => add.IsPrimary = v);
+
+                    // Ensure Addresses collection is not null before adding
+                    if (existing.Addresses == null)
+                    {
+                        existing.Addresses = new List<Address>();
+                    }
+                    existing.Addresses.Add(add);
+                }
+                else
+                {
+                    var target = existingList.FirstOrDefault(a => a.AddressId == inc.AddressId);
+
+                    if (target == null)
+                    {
+                        // Có ID hợp lệ nhưng không thuộc customer này (hoặc chưa track) → bỏ qua hoặc log cảnh báo theo policy
+                        // Hoặc an toàn hơn: tạo mới theo ID gửi lên (nếu bạn cho phép “re-attach”)
+                        continue;
+                    }
+
+                    // CẬP NHẬT (CHO PHÉP SỬA) + REVIVE nếu trước đó bị soft delete
+                    target.IsActive = true;          
+
+                    PatchHelper.SetIfRef(inc.AddressLine, () => target.AddressLine, v => target.AddressLine = v);
+                    PatchHelper.SetIfRef(inc.City, () => target.City, v => target.City = v);
+                    PatchHelper.SetIfRef(inc.District, () => target.District, v => target.District = v);
+                    PatchHelper.SetIfRef(inc.Province, () => target.Province, v => target.Province = v);
+                    PatchHelper.SetIfRef(inc.Country, () => target.Country, v => target.Country = v);
+                    PatchHelper.SetIfRef(inc.PostalCode, () => target.PostalCode, v => target.PostalCode = v);
+                    PatchHelper.SetIfNullable(inc.IsPrimary, () => target.IsPrimary, v => target.IsPrimary = v);
+                }
+            }
+
+            // 3) Đảm bảo chỉ 1 địa chỉ Primary đang ACTIVE
+            var activePrimaries = existing.Addresses?.Where(a => a.IsActive == true && a.IsPrimary == true).ToList() ?? new List<Address>();
+            if (activePrimaries.Count > 1)
+            {
+                foreach (var a in activePrimaries.Skip(1))
+                    a.IsPrimary = false;
+            }
+        }
+      
+        private void UpsertContactsAsync(Customer existing, IEnumerable<GetContact> incoming, CancellationToken ct)
+        {
+            // giữ đúng style để đảm bảo tracking của repo nếu cần
+            var _ = _unitOfWork.CustomerRepository.Query(true)
+                .Include(c => c.Contacts);
+
+            if (incoming == null) return;
+
+            var now = DateTime.Now;
+            var userId = _CurrentUser.EmployeeId;
+
+            // tránh null ref
+            var contacts = existing.Contacts ??= new List<Contact>();
+            var existingList = contacts.ToList();
+            var incomingIds = incoming.Select(c => c.ContactId).ToHashSet();
+
+            // 1) SOFT DELETE: có trong DB nhưng KHÔNG có trong payload
+            foreach (var c in existingList)
+            {
+                if (c.ContactId != Guid.Empty && !incomingIds.Contains(c.ContactId))
+                {
+                    // xoá mềm—không xoá cứng
+                    c.IsActive = false;      
+                }
+            }
+
+            // 2) THÊM MỚI / CẬP NHẬT (CHO SỬA) / REVIVE
+            foreach (var inc in incoming)
+            {
+                if (inc.ContactId == Guid.Empty)
+                {
+                    // THÊM MỚI
+                    var contact = new Contact
+                    {
+                        ContactId = Guid.CreateVersion7(),
+                        CustomerId = existing.CustomerId,
+                        IsActive = true,         // active ngay
+                    };
+
+                    PatchHelper.SetIfRef(inc.FirstName, () => contact.FirstName, v => contact.FirstName = v);
+                    PatchHelper.SetIfRef(inc.LastName, () => contact.LastName, v => contact.LastName = v);
+                    PatchHelper.SetIfRef(inc.Email, () => contact.Email, v => contact.Email = v);
+                    PatchHelper.SetIfRef(inc.Phone, () => contact.Phone, v => contact.Phone = v);
+                    PatchHelper.SetIfRef(inc.Gender, () => contact.Gender, v => contact.Gender = v); // string?
+                    PatchHelper.SetIfNullable(inc.IsPrimary, () => contact.IsPrimary, v => contact.IsPrimary = v);
+
+                    contacts.Add(contact);
+                }
+                else
+                {
+                    var target = existingList.FirstOrDefault(c => c.ContactId == inc.ContactId);
+                    if (target == null)
+                    {
+                        // ID lạ (không thuộc customer này) → bỏ qua hoặc log theo policy
+                        continue;
+                    }
+
+                    // REVIVE nếu từng soft-delete + CHO SỬA
+                    target.IsActive = true;
+
+                    PatchHelper.SetIfRef(inc.FirstName, () => target.FirstName, v => target.FirstName = v);
+                    PatchHelper.SetIfRef(inc.LastName, () => target.LastName, v => target.LastName = v);
+                    PatchHelper.SetIfRef(inc.Email, () => target.Email, v => target.Email = v);
+                    PatchHelper.SetIfRef(inc.Phone, () => target.Phone, v => target.Phone = v);
+                    PatchHelper.SetIfRef(inc.Gender, () => target.Gender, v => target.Gender = v); // string?
+                    PatchHelper.SetIfNullable(inc.IsPrimary, () => target.IsPrimary, v => target.IsPrimary = v);
+                }
+            }
+
+            // 3) Đảm bảo chỉ 1 contact Primary đang ACTIVE
+            var activePrimaries = contacts.Where(c => c.IsActive == true && c.IsPrimary == true).ToList();
+            if (activePrimaries.Count > 1)
+            {
+                foreach (var c in activePrimaries.Skip(1))
+                    c.IsPrimary = false;
+            }
+        }
+
+        /// <summary>
+        /// Thêm Note cho Customer.
+        /// - AuthorGroupId lấy từ CustomerAssignment hiện tại của người viết.
+        /// - Visibility mặc định GROUP; yêu cầu: chỉ cùng Group mới xem được.
+        /// </summary>
+        public async Task<OperationResult<Guid>> AddCustomerNoteAsync(Guid customerId, string content, CancellationToken ct = default)
+        {
+            try
+            {
+                var companyId = _CurrentUser.CompanyId;
+                var employeeId = _CurrentUser.EmployeeId;
+
+                var GroupId = await _unitOfWork.MemberInGroupRepository.Query()
+                    .Where(g => g.Profile == employeeId && g.IsActive == true)
+                    .Select(g => (Guid)g.GroupId)
+                    .FirstOrDefaultAsync(ct);
+
+                if (GroupId == Guid.Empty)
+                    return OperationResult<Guid>.Fail("Không xác định được Group hiện tại của người viết cho khách hàng này.");
+
+                var note = new CustomerNote
+                {
+                    Id = Guid.CreateVersion7(),
+                    CustomerId = customerId,
+                    AuthorEmployeeId = employeeId,
+                    AuthorGroupId = GroupId,
+                    Content = content,
+                    Visibility = NoteVisibility.Group, // đảm bảo mặc định private
+                    IsApprovedShare = false,
+                    CreatedAt = DateTime.Now,
+                    CompanyId = companyId
+                };
+
+                await _unitOfWork.CustomerNoteRepository.AddAsync(note, ct);
+
+                return OperationResult<Guid>.Ok(note.Id, "Đã thêm ghi chú.");
+            }
+            catch (Exception ex)
+            {
+                return OperationResult<Guid>.Fail($"Không thể thêm ghi chú: {ex.Message}");
+            }
+        }
+
+        private async Task<OperationResult<Guid>> UpsertCustomerNoteInline(Guid customerId, PatchCustomerNote reqNote, CancellationToken ct = default)
+        {
+            if (reqNote == null || string.IsNullOrWhiteSpace(reqNote.Content))
+                return OperationResult<Guid>.Ok(Guid.Empty, "Bỏ qua note trống.");
+
+            var companyId = _CurrentUser.CompanyId;
+            var employeeId = _CurrentUser.EmployeeId;
+
+            // ===== CASE 1: UPDATE theo NoteId =====
+            if (reqNote.NoteId.HasValue && reqNote.NoteId.Value != Guid.Empty)
+            {
+                var note = await _unitOfWork.CustomerNoteRepository.Query(track: true)
+                    .FirstOrDefaultAsync(n =>
+                            n.Id == reqNote.NoteId.Value
+                         && n.CustomerId == customerId
+                         && n.CompanyId == companyId, ct);
+
+                if (note == null)
+                    return OperationResult<Guid>.Fail("Không tìm thấy ghi chú để sửa.");
+
+                if (note.AuthorEmployeeId != employeeId)
+                    return OperationResult<Guid>.Fail("Bạn chỉ có thể sửa ghi chú của chính mình.");
+
+                // Không đổi group/visibility khi sửa
+                note.Content = reqNote.Content.Trim();
+                note.IsApprovedShare = false; // nếu có workflow duyệt
+
+                return OperationResult<Guid>.Ok(note.Id, "Đã cập nhật ghi chú.");
+            }
+
+            // ===== CASE 2: KHÔNG có NoteId → SỬA NOTE CŨ CỦA CHÍNH TÁC GIẢ (thay vì tạo mới) =====
+            // (Bản 'today-only'): chỉ gộp vào note cùng ngày của chính tác giả để tránh "đè" note cũ quan trọng
+            var today = DateTime.Today;
+            var lastOwnNoteToday = await _unitOfWork.CustomerNoteRepository.Query(track: true)
+                .Where(n => n.CustomerId == customerId
+                         && n.CompanyId == companyId
+                         && n.AuthorEmployeeId == employeeId
+                         && n.CreatedAt >= today)                 // cùng ngày
+                .OrderByDescending(n => n.CreatedAt)
+                .FirstOrDefaultAsync(ct);
+
+            if (lastOwnNoteToday != null)
+            {
+                // Chỉ cập nhật nội dung; KHÔNG đổi group/visibility
+                lastOwnNoteToday.Content = reqNote.Content.Trim();
+                lastOwnNoteToday.IsApprovedShare = false;
+
+                return OperationResult<Guid>.Ok(lastOwnNoteToday.Id, "Đã cập nhật ghi chú trong ngày.");
+            }
+
+            // Không có note của chính tác giả trong ngày → fallback: tạo mới
+            var addRes = await AddCustomerNoteAsync(customerId, reqNote.Content.Trim(), ct);
+            return addRes;
+        }
+
+        /// <summary>
+        /// Hàm lấy notes khi là SALE
+        /// </summary>
+        /// <param name="customerId"></param>
+        /// <param name="employeeId"></param>
+        /// <param name="companyId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        private async Task<List<GetCustomerNoteItem>> GetNotesForSaleAsync(Guid customerId, Guid employeeId, Guid companyId, CancellationToken ct)
+        {
+            var effectiveGroupIds = _unitOfWork.MemberInGroupRepository.Query()
+                .Where(g => g.Profile == employeeId && g.IsActive == true)
+                .Select(g => g.GroupId);
+
+            var leaderIds = _unitOfWork.MemberInGroupRepository.Query()
+                .Where(m => m.IsActive == true && m.IsAdmin == true && effectiveGroupIds.Contains(m.GroupId))
+                .Select(m => m.Profile)
+                .Distinct();
+
+            return await _unitOfWork.CustomerNoteRepository.Query(false).AsNoTracking()
+                .Where(n => n.CustomerId == customerId
+                         && n.CompanyId == companyId
+                         && n.Visibility == NoteVisibility.Group
+                         && (n.AuthorEmployeeId == employeeId || leaderIds.Contains(n.AuthorEmployeeId)))
+                .OrderByDescending(n => n.AuthorEmployeeId == employeeId) // của tôi trước
+                .ThenByDescending(n => n.CreatedAt)
+                .Select(n => new GetCustomerNoteItem
+                {
+                    Id = n.Id,
+                    Content = n.Content,
+                    CreatedAt = n.CreatedAt,
+                    AuthorEmployeeId = n.AuthorEmployeeId,
+                    AuthorName = n.AuthorEmployee.FullName,   // EF JOIN Employees
+                    AuthorGroupId = n.AuthorGroupId,
+                    AuthorGroupName = n.AuthorGroup.Name      // EF JOIN Groups
+                })
+                .ToListAsync(ct);
+        }
+
+        /// <summary>
+        /// Hàm lấy notes khi là LEADER
+        /// </summary>
+        /// <param name="customerId"></param>
+        /// <param name="leaderGroupId"></param>
+        /// <param name="companyId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        private async Task<List<GetCustomerNoteItem>> GetNotesForLeaderAsync(Guid customerId, Guid leaderGroupId, Guid companyId, Guid currentUserId, CancellationToken ct)
+        {
+            return await _unitOfWork.CustomerNoteRepository.Query(false).AsNoTracking()
+                .Where(n => n.CustomerId == customerId
+                         && n.CompanyId == companyId
+                         && n.Visibility == NoteVisibility.Group
+                         && n.AuthorGroupId == leaderGroupId)
+                .OrderByDescending(n => n.AuthorEmployeeId == currentUserId) // leader viết trước
+                .ThenByDescending(n => n.CreatedAt)
+                .Select(n => new GetCustomerNoteItem
+                {
+                    Id = n.Id,
+                    Content = n.Content,
+                    CreatedAt = n.CreatedAt,
+                    AuthorEmployeeId = n.AuthorEmployeeId,
+                    AuthorName = n.AuthorEmployee.FullName,
+                    AuthorGroupId = n.AuthorGroupId,
+                    AuthorGroupName = n.AuthorGroup.Name
+                })
+                .ToListAsync(ct);
+        }
+
     }
 }
+

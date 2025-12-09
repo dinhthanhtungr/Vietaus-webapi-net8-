@@ -11,8 +11,6 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
         {
             services.AddScoped<IEmployeesRepository, EmployeesRepository>();
             services.AddScoped<IEmployeesService, EmployeesService>();
-            services.AddScoped<IApplicationUserRepository, ApplicationUserRepository>();
-            services.AddScoped<IAspNetUserRoleRepository, AspNetUserRoleRepository>();
             services.AddScoped<IGroupRepository, GroupRepository>();
             services.AddScoped<IMemberInGroupRepository, MemberInGroupRepository>();
             return services;

@@ -6,12 +6,14 @@ using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.MerchandiseOrderFeatures;
 
-namespace VietausWebAPI.Core.Repositories_Contracts
+namespace VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts
 {
     public partial interface IUnitOfWork
     {
         ICustomerRepository CustomerRepository { get; }
         ITransferCustomerRepository TransferCustomerRepository { get; }
+        ICustomerNoteRepository CustomerNoteRepository { get; }
+        ICustomerClaimRepository CustomerClaimRepository { get; }   
         ICustomerAssignmentRepository CustomerAssignmentRepository { get; }
         ICustomerTransferLogRepository CustomerTransferLogRepository { get; }
         IMerchandiseOrderRepository MerchandiseOrderRepository { get; }

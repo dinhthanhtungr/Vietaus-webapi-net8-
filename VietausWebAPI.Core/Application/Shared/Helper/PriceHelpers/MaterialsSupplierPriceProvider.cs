@@ -4,16 +4,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 using VietausWebAPI.Core.Domain.Enums.Formulas;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 
 namespace VietausWebAPI.Core.Application.Shared.Helper.PriceHelpers
 {
     public sealed class MaterialsSupplierPriceProvider : IPriceProvider
     {
         private readonly IUnitOfWork _uow;
-        public MaterialsSupplierPriceProvider(IUnitOfWork uow) => _uow = uow;
+        private readonly ICurrentUser _currentUser; 
+        public MaterialsSupplierPriceProvider(IUnitOfWork uow, ICurrentUser currentUser)
+        {
+            _uow = uow;
+            _currentUser = currentUser;
+        }   
 
         public async Task<decimal> CalculatePriceAsync(Guid formulaId, FormulaSource source, CancellationToken ct = default)
         => source switch
@@ -218,19 +224,21 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.PriceHelpers
 
         public async Task<decimal?> GetTargetPriceByMpoAsync(
          Guid mfgProductionOrderId,
-         Guid productId,
-         Guid companyId,
+         //Guid productId,
+         //Guid companyId,
          CancellationToken ct = default)
         {
+            var commpanyId = _currentUser.CompanyId;
+
             // từ MPO -> MfgOrderPO -> MerchandiseOrderDetail -> MerchandiseOrder
             var price = await _uow.MfgOrderPORepository.Query()
                 .Where(x => x.MfgProductionOrderId == mfgProductionOrderId && x.IsActive)
                 .Select(x => x.Detail)
                 .Where(d =>
-                    d.ProductId == productId &&
+                    //d.ProductId == productId &&
                     d.IsActive &&
                     d.MerchandiseOrder.IsActive &&
-                    d.MerchandiseOrder.CompanyId == companyId
+                    d.MerchandiseOrder.CompanyId == commpanyId
                 )
                 .OrderByDescending(d => d.MerchandiseOrder.CreateDate)
                 .Select(d => (decimal?)d.UnitPriceAgreed) // GIÁ BÁN CHỐT

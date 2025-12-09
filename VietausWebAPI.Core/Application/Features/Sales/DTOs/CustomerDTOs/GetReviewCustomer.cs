@@ -24,5 +24,10 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs
         public string? CustomerSpectialRequirement { get; set; }
         public string? paymentType { get; set; }
         public string? delivieryType { get; set; }
+
+
+        public bool IsLead { get; set; }                  // có phải Lead-only không
+        public bool IsManagedByCurrent { get; set; }      // lead này có thuộc mình (hoặc group mình – nếu là leader) không
+        public bool CanOpenDetail { get; set; }           // UI dùng cờ này để cho phép mở chi tiết
     }
 }

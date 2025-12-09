@@ -13,7 +13,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.DevandqaSc
     {
         public void Configure(EntityTypeBuilder<ProductTest> entity)
         {
-            entity.ToTable("ProductTest", "devandga");
+            entity.ToTable("ProductTest", "devandqa");
 
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id)

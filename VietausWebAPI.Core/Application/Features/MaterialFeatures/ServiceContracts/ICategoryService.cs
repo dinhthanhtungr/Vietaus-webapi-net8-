@@ -15,5 +15,6 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContra
     public interface ICategoryService
     {
         Task<OperationResult<PagedResult<GetCategory>>> GetCategoriesAsync(CategoryQuery query, CancellationToken ct);
+        Task<OperationResult<PagedResult<GetUnit>>> GetUnitsAsync(UnitQuery query, CancellationToken ct);
     }
 }

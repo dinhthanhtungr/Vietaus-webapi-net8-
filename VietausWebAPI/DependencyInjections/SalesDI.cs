@@ -17,6 +17,8 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
             services.AddScoped<ITransferCustomerRepository, TransferCustomerRepository>();
             services.AddScoped<ICustomerAssignmentRepository, CustomerAssignmentRepository>();
             services.AddScoped<ICustomerTransferLogRepository, CustomerTransferLogRepository>();
+            services.AddScoped<ICustomerClaimRepository, CustomerClaimRepository>();
+            services.AddScoped<ICustomerNoteRepository, CustomerNoteRepository>();
             services.AddScoped<IMerchandiseOrderRepository, MerchandiseOrderRepository>();
             // Services
             services.AddScoped<ICustomerService, CustomerService>();

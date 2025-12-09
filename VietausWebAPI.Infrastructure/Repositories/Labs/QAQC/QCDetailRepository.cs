@@ -5,7 +5,7 @@
 //using System.Threading.Tasks;
 //using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.QAQCFeature;
 //using VietausWebAPI.Core.Domain.Entities;
-//using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
+//using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
 
 //namespace VietausWebAPI.Infrastructure.Repositories.Labs.QAQCFeature
 //{

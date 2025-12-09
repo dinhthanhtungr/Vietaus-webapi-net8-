@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Entities.CompanySchema;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
+using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
 
 namespace VietausWebAPI.Core.Domain.Entities.DevandqaSchema
 {
@@ -10,10 +13,10 @@ namespace VietausWebAPI.Core.Domain.Entities.DevandqaSchema
     {
         public Guid Id { get; set; }
         public Guid ProductId { get; set; }
-        //public string? ExternalId { get; set; }
+
+
         public string? ProductExternalId { get; set; }
         public string? Status { get; set; }
-
         public string? DeltaE { get; set; }
         public string? PelletSize { get; set; }
         public string? Moisture { get; set; }
@@ -29,17 +32,18 @@ namespace VietausWebAPI.Core.Domain.Entities.DevandqaSchema
         public string? BlackDots { get; set; }
         public string? MigrationTest { get; set; }
 
-        //public string? Package { get; set; }
-        public int Weight { get; set; } // Quy cách đóng gói
-        //public string? CustomerExternalId { get; set; }
-        //public string? ColourCode { get; set; }
+
+        public int Weight { get; set; } 
         public string? Shape { get; set; }
 
         public Guid CompanyId { get; set; }
         public Guid CreatedBy { get; set; }
         public DateTime CreatedDate { get; set; }
 
+        public bool IsActive { get; set; } = true;
+
         public virtual Company? Company { get; set; }
+        public virtual Product? Product { get; set; }
         public virtual Employee? CreatedByNavigation { get; set; }
     }
 

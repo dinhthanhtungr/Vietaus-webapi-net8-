@@ -10,7 +10,7 @@
 //using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.QAQCFeatures;
 //using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 //using VietausWebAPI.Core.Domain.Entities;
-//using VietausWebAPI.Core.Repositories_Contracts;
+//using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 
 //namespace VietausWebAPI.Core.Application.Features.Labs.Services.QAQCFeatures
 //{

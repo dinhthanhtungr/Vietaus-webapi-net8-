@@ -11,7 +11,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures
         public Guid FormulaId { get; set; }
         public Guid SampleRequestId { get; set; }
         public string? Status { get; set; }
-        public Guid? UpdatedBy { get; set; }
         public Guid? CheckBy { get; set; }          // UNIQUEIDENTIFIER
         public Guid? SentBy { get; set; }          // UNIQUEIDENTIFIER
         public string? CheckNameSnapshot { get; set; }  // NVARCHAR

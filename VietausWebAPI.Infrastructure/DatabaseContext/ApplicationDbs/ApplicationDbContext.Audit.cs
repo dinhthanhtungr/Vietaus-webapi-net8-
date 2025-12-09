@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.AuditSchema;
 using VietausWebAPI.Core.Domain.Entities.DevandqaSchema;
 
-namespace VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext
+namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
 {
     public partial class ApplicationDbContext
     {

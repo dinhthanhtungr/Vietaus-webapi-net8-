@@ -11,21 +11,21 @@ namespace VietausWebAPI.Core.Application.Features.Notifications.DTOs
     {
         public Guid Id { get; set; } = Guid.CreateVersion7();
 
-        // Phân loại/tái sử dụng
-        public string Topic { get; set; } = default!;               // ví dụ: "Mfg.PriceExceeded"
+        public TopicNotifications Topic { get; set; } = default!;            
         public NotificationSeverity Severity { get; set; } = NotificationSeverity.Info;
 
-        // Nội dung hiển thị
         public string Title { get; set; } = default!;
         public string Message { get; set; } = default!;
-        public string? Link { get; set; }                            // deep-link
-        public string? PayloadJson { get; set; }                     // metadata linh hoạt (JSON)
+        public string? Link { get; set; }                            
+        public string? PayloadJson { get; set; }                  
 
         public DateTime CreatedDate { get; set; } = DateTime.Now;
         public Guid CompanyId { get; set; }
 
-        // trạng thái theo user hiện tại
         public bool IsRead { get; set; }
         public DateTime? ReadDate { get; set; }
+
+        public Guid? CreatedBy { get; set; }
+        public string? CreatedByNameSnapshot { get; set; }
     }
 }

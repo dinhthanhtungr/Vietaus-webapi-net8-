@@ -7,7 +7,7 @@ using VietausWebAPI.Core.Application.Features.CompanyFeatures.DTOs;
 using VietausWebAPI.Core.Application.Features.CompanyFeatures.Queries;
 using VietausWebAPI.Core.Application.Features.CompanyFeatures.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 
 namespace VietausWebAPI.Core.Application.Features.CompanyFeatures.Services
 {

@@ -33,7 +33,6 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTO
         public string? Status { get; set; }
         public string? Currency { get; set; }
 
-        public Guid? CompanyId { get; set; }
         public bool? IsPaid { get; set; }
 
         public DateTime? PaymentDate { get; set; }
@@ -44,8 +43,6 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTO
         public string? Note { get; set; }
         public string? ShippingMethod { get; set; }
         public string? PONo { get; set; }
-
-        public Guid CreatedBy { get; set; }
 
         public List<PostMerchandiseOrderDetail> merchandiseOrderDetails { get; set; } = new List<PostMerchandiseOrderDetail>();
     }

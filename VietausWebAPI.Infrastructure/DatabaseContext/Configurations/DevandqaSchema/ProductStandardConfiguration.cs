@@ -13,7 +13,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.DevandqaSc
     {
         public void Configure(EntityTypeBuilder<ProductStandard> entity)
         {
-            entity.ToTable("ProductStandard", "devandga");
+            entity.ToTable("ProductStandard", "devandqa");
 
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id)
@@ -44,6 +44,11 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.DevandqaSc
             entity.Property(x => x.ProductId).HasColumnName("productid");
             entity.Property(x => x.Weight).HasColumnName("weight");
             entity.Property(x => x.Shape).HasColumnName("shape").HasColumnType("citext");
+
+            entity.HasOne(d => d.Product).WithMany(d => d.ProductStandards)
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ProductStandard_Product");
 
             entity.HasOne(d => d.Company).WithMany()
                 .HasForeignKey(d => d.CompanyId)

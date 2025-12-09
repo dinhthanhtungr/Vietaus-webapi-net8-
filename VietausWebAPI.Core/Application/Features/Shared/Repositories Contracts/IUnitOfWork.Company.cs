@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.CompanyFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 
-namespace VietausWebAPI.Core.Repositories_Contracts
+namespace VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts
 {
     public partial interface IUnitOfWork
     {

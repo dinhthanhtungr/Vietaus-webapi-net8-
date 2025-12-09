@@ -12,6 +12,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IMaterialRepository MaterialRepository { get; }
         public ISupplierRepository SupplierRepository { get; }
         public ICategoryRepository CategoryRepository { get; }
+        public IUnitRepository UnitRepository { get; }
         public IMaterialsSupplierRepository MaterialsSupplierRepository { get; }
         public IPriceHistorieRepository PriceHistorieRepository { get; }
     }

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using VietausWebAPI.Core.Domain.Entities.CompanySchema;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
 using VietausWebAPI.Core.Domain.Enums;
 
@@ -36,7 +38,7 @@ public partial class Supplier
 
     public Guid? UpdatedBy { get; set; }
     public Guid? CompanyId { get; set; }
-    public bool? IsActive { get; set; }
+    public bool? IsActive { get; set; } = true;
     public SupplierPriority Priority { get; set; } = SupplierPriority.Medium;
 
     public virtual Company? Company { get; set; }

@@ -13,18 +13,21 @@ using VietausWebAPI.Core.Application.Features.Sales.DTOs.TransferCustomerDTOs;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 
 namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
 {
     public class SupplierService : ISupplierService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ICurrentUser _currentUser;
         private readonly IMapper _mapper;
 
-        public SupplierService(IUnitOfWork unitOfWork, IMapper mapper)
+        public SupplierService(IUnitOfWork unitOfWork, ICurrentUser currentUser, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
+            _currentUser = currentUser;
             _mapper = mapper;
         }
 
@@ -40,13 +43,11 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                         prefix => _unitOfWork.SupplierRepository.GetLatestExternalIdStartsWithAsync(prefix)
                     );
                 }
-
-                if (supplier.CompanyId == null)
-                {
-                    throw new ArgumentNullException(nameof(supplier.CompanyId), "CompanyId cannot be null.");
-                }
-
                 var supplierEntity = _mapper.Map<Supplier>(supplier);
+
+                supplierEntity.CreatedBy = _currentUser.EmployeeId;
+                supplierEntity.CreatedDate = DateTime.Now;
+                supplierEntity.CompanyId = _currentUser.CompanyId;  
 
                 await _unitOfWork.SupplierRepository.AddNewSuplier(supplierEntity);
 
@@ -86,64 +87,172 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
             }
         }
 
-        public async Task<PagedResult<GetSupplierSummary>> GetAllAsync(SupplierQuery query, CancellationToken ct = default)
+        public async Task<OperationResult<PagedResult<GetSupplierSummary>>> GetAllAsync(
+            SupplierQuery query, CancellationToken ct = default)
         {
             try
             {
+                query ??= new SupplierQuery();
                 if (query.PageNumber <= 0) query.PageNumber = 1;
                 if (query.PageSize <= 0) query.PageSize = 15;
 
-                // Base Query
-                IQueryable<Supplier> result = _unitOfWork.SupplierRepository.Query();
+                var skip = (query.PageNumber - 1) * query.PageSize;
 
-                // Filter
+                // Base query + AsNoTracking để nhẹ
+                var baseQ = _unitOfWork.SupplierRepository.Query()
+                    .AsNoTracking()
+                    .Where(s => s.IsActive == true);
+
+                // ---- Filters ----
+                // Nếu query.SupplierId là filter theo SupplierId:
                 if (query.SupplierId.HasValue)
-                    result = result.Where(x => x.CompanyId == query.SupplierId.Value);
+                    baseQ = baseQ.Where(s => s.SupplierId == query.SupplierId.Value);
 
                 if (query.From.HasValue)
-                    result = result.Where(x => x.CreatedDate >= query.From.Value);
+                    baseQ = baseQ.Where(s => s.CreatedDate >= query.From.Value);
 
                 if (query.To.HasValue)
-                    result = result.Where(x => x.CreatedDate <= query.To.Value);
+                    baseQ = baseQ.Where(s => s.CreatedDate <= query.To.Value);
 
                 if (!string.IsNullOrWhiteSpace(query.Keyword))
                 {
-                    // Tìm theo tên/mã NV hoặc tên/mã khách trong batch
-                    result = result.Where(x =>
-                        EF.Functions.ILike(x.ExternalId, $"%{query.Keyword}%") ||
-                        EF.Functions.ILike(x.SupplierName, $"%{query.Keyword}%")    
-
+                    var kw = query.Keyword.Trim();
+                    // ILike dành cho PostgreSQL (Npgsql)
+                    baseQ = baseQ.Where(s =>
+                        EF.Functions.ILike(s.ExternalId ?? string.Empty, $"%{kw}%") ||
+                        EF.Functions.ILike(s.SupplierName ?? string.Empty, $"%{kw}%") ||
+                        EF.Functions.ILike(s.RegistrationNumber ?? string.Empty, $"%{kw}%")
                     );
                 }
 
-                result = result.OrderByDescending(x => x.CreatedDate);
+                // Count TRÊN CÙNG TẬP baseQ (đã lọc IsActive + các filter)
+                var total = await baseQ.CountAsync(ct);
 
+                // Page: OrderBy -> Skip/Take -> Select -> ToListAsync
+                var items = await baseQ
+                    .OrderByDescending(s => s.CreatedDate)   // hoặc coalesce: .OrderByDescending(s => s.CreatedDate ?? DateTime.MinValue)
+                    .Skip(skip)
+                    .Take(query.PageSize)
+                    .Select(s => new GetSupplierSummary
+                    {
+                        SupplierId = s.SupplierId,
+                        ExternalId = s.ExternalId,
+                        SupplierName = s.SupplierName,
+                        RegistrationNumber = s.RegistrationNumber,
 
-                int total = await result.CountAsync(ct);
+                        // Ưu tiên số phone từ contact primary, fallback Supplier.Phone
+                        Phone = s.SupplierContacts
+                                    .Where(c => c.IsPrimary == true)
+                                    .Select(c => c.Phone)
+                                    .FirstOrDefault()
+                                ?? s.Phone,
 
-                var items = await result
-                    .Where(c => c.IsActive == true)
-                    .ProjectTo<GetSupplierSummary>(_mapper.ConfigurationProvider)
+                        // Lấy tên contact primary (nếu có)
+                        FirstName = s.SupplierContacts
+                                    .Where(c => c.IsPrimary == true)
+                                    .Select(c => c.FirstName)
+                                    .FirstOrDefault(),
+
+                        LastName = s.SupplierContacts
+                                    .Where(c => c.IsPrimary == true)
+                                    .Select(c => c.LastName)
+                                    .FirstOrDefault()
+                    })
                     .ToListAsync(ct);
-                
-                return new PagedResult<GetSupplierSummary>(items, total, query.PageNumber, query.PageSize);
-            }
 
-            catch(Exception ex)
+                var paged = new PagedResult<GetSupplierSummary>(items, total, query.PageNumber, query.PageSize);
+                return OperationResult<PagedResult<GetSupplierSummary>>.Ok(paged);
+            }
+            catch (Exception ex)
             {
-                throw new Exception($"Lỗi khi lấy danh sách nhà cung cấp: {ex.Message}");
+                return OperationResult<PagedResult<GetSupplierSummary>>.Fail(
+                    $"Lỗi khi lấy danh sách nhà cung cấp: {ex.Message}");
             }
-
         }
 
-        public async Task<GetSupplier?> GetSupplierByIdAsync(Guid id, CancellationToken ct = default)
+
+        public async Task<OperationResult<GetSupplier>> GetSupplierByIdAsync(Guid id, CancellationToken ct = default)
         {
-            return await _unitOfWork.SupplierRepository.Query()
-                .Where(s => s.SupplierId == id)
-                .ProjectTo<GetSupplier>(_mapper.ConfigurationProvider)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(ct);
+            try
+            {
+                var dto = await _unitOfWork.SupplierRepository.Query()
+                    .AsNoTracking()
+                    .Where(s => s.SupplierId == id)
+                    .Select(s => new GetSupplier
+                    {
+                        SupplierId = s.SupplierId,
+                        ExternalId = s.ExternalId,
+                        SupplierName = s.SupplierName,
+                        RegistrationNumber = s.RegistrationNumber,
+                        IssueDate = s.IssueDate,
+                        IssuedPlace = s.IssuedPlace,
+                        FaxNumber = s.FaxNumber,
+
+                        // Nếu bạn muốn show “product” nhà cung cấp cung ứng,
+                        // có thể ghép từ bảng liên kết MaterialsSuppliers (nếu có Material.Name):
+                        // Product = string.Join(", ",
+                        //     s.MaterialsSuppliers
+                        //      .Where(ms => ms.Material != null && ms.Material.Name != null)
+                        //      .Select(ms => ms.Material.Name!)
+                        //      .Distinct()),
+
+                        TaxNumber = s.TaxNumber,
+
+                        // Ưu tiên số phone từ contact primary, fallback Supplier.Phone
+                        Phone = s.SupplierContacts
+                                    .Where(c => c.IsPrimary == true && c.Phone != null)
+                                    .Select(c => c.Phone!)
+                                    .FirstOrDefault() ?? s.Phone,
+
+                        Website = s.Website,
+                        UpdatedDate = s.UpdatedDate,
+                        UpdatedBy = s.UpdatedBy,
+                        CompanyName = s.Company != null ? s.Company.Name : null,
+                        IsActive = s.IsActive,
+
+                        SupplierAddresses = s.SupplierAddresses
+                            .Select(a => new GetSupplierAddress
+                            {
+                                AddressId = a.AddressId,
+                                AddressLine = a.AddressLine,
+                                City = a.City,
+                                District = a.District,
+                                Province = a.Province,
+                                Country = a.Country,
+                                PostalCode = a.PostalCode,
+                                IsPrimary = a.IsPrimary
+                            })
+                            // đưa primary lên đầu cho dễ hiển thị
+                            .OrderByDescending(a => a.IsPrimary ?? false)
+                            .ToList(),
+
+                        SupplierContacts = s.SupplierContacts
+                            .Select(c => new GetSupplierContact
+                            {
+                                ContactId = c.ContactId,
+                                FirstName = c.FirstName,
+                                LastName = c.LastName,
+                                Gender = c.Gender,
+                                Phone = c.Phone,
+                                Email = c.Email,
+                                IsPrimary = c.IsPrimary
+                            })
+                            .OrderByDescending(c => c.IsPrimary ?? false)
+                            .ToList()
+                    })
+                    .FirstOrDefaultAsync(ct);
+
+                if (dto == null)
+                    return OperationResult<GetSupplier>.Fail("Supplier không tồn tại.");
+
+                return OperationResult<GetSupplier>.Ok(dto);
+            }
+            catch (Exception ex)
+            {
+                return OperationResult<GetSupplier>.Fail($"Lỗi khi lấy Supplier: {ex.Message}");
+            }
         }
+
 
         public async Task<OperationResult> UpdateCustomerAsync(PatchSupplier supplier)
         {

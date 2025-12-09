@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VietausWebAPI.Core.Repositories_Contracts
+namespace VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts
 {
     public interface IUserConnectionService
     {

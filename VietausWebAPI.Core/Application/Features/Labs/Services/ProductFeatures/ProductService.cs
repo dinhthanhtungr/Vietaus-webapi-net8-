@@ -13,19 +13,22 @@ using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.ProductFeatu
 using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.Services.ProductFeatures
 {
     public class ProductService : IProductService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ICurrentUser _currentUser;
         private readonly IMapper _mapper;
 
-        public ProductService(IUnitOfWork unitOfWork, IMapper mapper)
+        public ProductService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUser currentUser)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _currentUser = currentUser;
         }
 
         /// <summary>
@@ -39,46 +42,61 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.ProductFeatures
         {
             try
             {
+
+
                 if (query.PageNumber <= 0) query.PageNumber = 1;
                 if (query.PageSize <= 0) query.PageSize = 10;
 
-                var result = _unitOfWork.ProductRepository.Query();
+                var q = _unitOfWork.ProductRepository.Query();
+                var samplerRequest = _unitOfWork.SampleRequestRepository.Query();
 
+                // 1) Ẩn product không có tên HOẶC không có colour code
+                q = q.Where(x =>
+                    !string.IsNullOrWhiteSpace(x.Name)
+                 && !string.IsNullOrWhiteSpace(x.ColourCode));
+
+                // 2) Keyword
                 if (!string.IsNullOrWhiteSpace(query.Keyword))
                 {
                     var keyword = query.Keyword.Trim();
-                    // Tìm theo tên/mã NV hoặc tên/mã khách trong batch
-                    result = result.Where(x =>
-                        (x.Name ?? "").Contains(keyword) ||
-                        (x.ColourCode ?? "").Contains(keyword) 
-                    );
+                    q = q.Where(x =>
+                        (x.Name ?? string.Empty).Contains(keyword) ||
+                        (x.ColourCode ?? string.Empty).Contains(keyword));
                 }
 
-                if (query.CompanyId.HasValue && query.CompanyId.Value != Guid.Empty)
+                // 3) Filter khác
+                if (query.CompanyId is Guid companyId && companyId != Guid.Empty)
+                    q = q.Where(p => p.CompanyId == companyId);
+
+                if (query.ProductId is Guid productId && productId != Guid.Empty)
+                    q = q.Where(p => p.ProductId == productId);
+
+                if (query.CustomerId is Guid CustomerId && CustomerId != Guid.Empty)
                 {
-                    result = result.Where(p => p.CompanyId == query.CompanyId.Value);
+                    q = q.Where(p => samplerRequest
+                        .Any(sr => sr.ProductId == p.ProductId 
+                                && sr.CustomerId == CustomerId));
                 }
 
-                if (query.ProductId.HasValue && query.ProductId.Value != Guid.Empty)
-                {
-                    result = result.Where(p => p.ProductId == query.ProductId.Value);
-                }
+                // 4) Đếm sau khi đã filter
+                var totalCount = await q.CountAsync(ct);
 
-                int totalCount = await result.CountAsync(ct);
-
-                var items = await result
-                    .OrderByDescending(c => c.CreatedDate) // "F1" -> "F0000000001"
+                // 5) Sắp xếp + Phân trang + Project
+                var items = await q
+                    .OrderByDescending(c => c.CreatedDate)
+                    .Skip((query.PageNumber - 1) * query.PageSize)
+                    .Take(query.PageSize)
                     .ProjectTo<GetProduct>(_mapper.ConfigurationProvider)
                     .ToListAsync(ct);
 
                 return new PagedResult<GetProduct>(items, totalCount, query.PageNumber, query.PageSize);
             }
-
             catch (Exception ex)
             {
                 throw new Exception($"Lỗi khi lấy danh sách: {ex.Message}", ex);
             }
         }
+
 
         /// <summary>
         /// Tạo mới sản phẩm

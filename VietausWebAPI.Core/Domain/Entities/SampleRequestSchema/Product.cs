@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using VietausWebAPI.Core.Domain.Entities.CompanySchema;
 using VietausWebAPI.Core.Domain.Entities.DeliverySchema;
+using VietausWebAPI.Core.Domain.Entities.DevandqaSchema;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
@@ -98,6 +101,7 @@ public partial class Product
     public virtual ICollection<MfgProductionOrder> MfgProductionOrders { get; set; } = new List<MfgProductionOrder>();
     public virtual ICollection<SchedualMfg> SchedualMfgs { get; set; } = new List<SchedualMfg>();
     public virtual ICollection<ProductStandardFormula> ProductStandardFormulas { get; set; } = new List<ProductStandardFormula>();
+    public virtual ICollection<ProductStandard> ProductStandards { get; set; } = new List<ProductStandard>();
     public virtual ICollection<SampleRequest> SampleRequests { get; set; } = new List<SampleRequest>();
     public virtual Employee? UpdatedByNavigation { get; set; }
 }

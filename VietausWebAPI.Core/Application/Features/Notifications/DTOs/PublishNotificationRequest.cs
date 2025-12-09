@@ -9,7 +9,11 @@ namespace VietausWebAPI.Core.Application.Features.Notifications.DTOs
 {
     public sealed class PublishNotificationRequest
     {
-        public string Topic { get; set; } = default!;
+        public Guid CompanyId { get; set; }
+        public Guid CreatedBy { get; set; }          
+        public string? CreatedByNameSnapshot { get; set; } 
+
+        public TopicNotifications Topic { get; set; } = default!;
         public NotificationSeverity Severity { get; set; } = NotificationSeverity.Info;
         public string Title { get; set; } = default!;
         public string Message { get; set; } = default!;

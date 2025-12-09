@@ -9,7 +9,7 @@ using VietausWebAPI.Core.Application.Features.PurchaseFeatures.DTOs.PdfPrinter;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.Helpers;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.ServiceContracts;
 using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 
 namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
 {

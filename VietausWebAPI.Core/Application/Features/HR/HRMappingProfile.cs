@@ -6,7 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.HR.DTOs.Employees;
 using VietausWebAPI.Core.Application.Features.HR.DTOs.Groups;
-using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.CompanySchema;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
 using VietausWebAPI.Core.Identity;
 
 namespace VietausWebAPI.Core.Application.Features.HR

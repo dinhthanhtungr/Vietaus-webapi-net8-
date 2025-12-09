@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
+using VietausWebAPI.Core.Domain.Enums.CustomerEnum;
 
 namespace VietausWebAPI.Core.Application.Features.Sales.Querys
 {
@@ -11,6 +12,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Querys
     {
         public Guid? CompanyId { get; set; }
         public string? Keyword { get; set; }
+        public TransferType? TransferType { get; set; }
         public DateTime? From { get; set; }
         public DateTime? To { get; set; }
     }

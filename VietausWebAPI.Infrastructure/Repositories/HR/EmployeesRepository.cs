@@ -9,11 +9,11 @@ using VietausWebAPI.Core.Application.Features.HR.Querys.Employees;
 using VietausWebAPI.Core.Application.Features.HR.Querys.Groups;
 using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
-using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Identity;
 using VietausWebAPI.Infrastructure.Utilities;
-using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
+using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
 
 namespace VietausWebAPI.Infrastructure.Repositories.HR
 {

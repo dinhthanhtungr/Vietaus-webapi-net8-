@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.EnergyScheme;
 
-namespace VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext.Configurations.EnergySchema
+namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurations.EnergySchema
 {
     public class EnergyTouCalendarConfiguration : IEntityTypeConfiguration<EnergyTouCalendar>
     {

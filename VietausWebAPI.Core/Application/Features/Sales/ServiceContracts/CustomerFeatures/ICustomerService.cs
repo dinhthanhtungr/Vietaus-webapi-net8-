@@ -13,32 +13,14 @@ namespace VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.Custome
 {
     public interface ICustomerService
     {
+
+        // ======================================================================== Get ========================================================================
         /// <summary>
         /// Lấy danh sách phân trang
         /// </summary>
         /// <param name="query"></param>
         /// <returns></returns>
-        Task<PagedResult<GetReviewCustomer>> GetAllAsync(CustomerQuery? query);
-        /// <summary>
-        /// Thêm khách hàng mới
-        /// </summary>
-        /// <param name="customer"></param>
-        /// <returns></returns>
-        Task<OperationResult<AddCustomerResultDto>>AddNewCustomer(PostCustomer customer);
-
-        /// <summary>
-        /// Lấy thông tin khách hàng theo ID
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        Task<GetCustomer?> GetCustomerByIdAsync(Guid id);
-
-        /// <summary>
-        /// Xóa mềm khách hàng theo ID
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        Task<OperationResult> DeleteCustomerByIdAsync(Guid id);
+        Task<OperationResult<PagedResult<GetReviewCustomer>>> GetAllAsync(CustomerQuery? query);
 
         /// <summary>
         /// Lấy danh sách khách hàng được phân công cho nhân viên cụ thể và yêu cầu đặt biệt của khách hàng ở đơn hàng gần nhất
@@ -52,13 +34,44 @@ namespace VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.Custome
         /// <param name="ct"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception> 
-        Task<PagedResult<GetReviewCustomer>> GetCustomerByEmployeeAssignment(CustomerQuery query, CancellationToken ct = default);
+        Task<OperationResult<PagedResult<GetReviewCustomer>>> GetCustomerByEmployeeAssignment(CustomerQuery query, CancellationToken ct = default);
+
+        /// <summary>
+        /// Lấy thông tin khách hàng theo ID cho các phòng ban khác nhau
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        Task<GetCustomer> GetCustomerByIdAsync(Guid id, CancellationToken ct = default);
+
+        /// <summary>
+        /// Lấy thông tin khách hàng theo ID cho phòng Sales
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        Task<OperationResult<GetCustomer>> GetCustomerByIdForSalesAsync(Guid id, CancellationToken ct = default);
+
+        Task<OperationResult<IReadOnlyList<GetCustomerLeadOwner>>> GetCustomerLeadOwner(Guid CustomerId, CancellationToken ct = default);
+        // ======================================================================== Post ========================================================================
+        /// <summary>
+        /// Thêm khách hàng mới
+        /// </summary>
+        /// <param name="customer"></param>
+        /// <returns></returns>
+        Task<OperationResult<AddCustomerResultDto>> AddNewCustomer(PostCustomer customer);
+
+        // ======================================================================== Patch ========================================================================
+        /// <summary>
+        /// Xóa mềm khách hàng theo ID
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        Task<OperationResult> DeleteCustomerByIdAsync(Guid id);
 
         /// <summary>
         /// Thay đổi thông tin khách hàng
         /// </summary>
         /// <param name="customer"></param>
         /// <returns></returns>
-        Task<OperationResult> UpdateCustomerAsync(PatchCustomer customer);
+        Task<OperationResult> UpdateCustomerAsync(PatchCustomer req, CancellationToken ct = default);
     }
 }

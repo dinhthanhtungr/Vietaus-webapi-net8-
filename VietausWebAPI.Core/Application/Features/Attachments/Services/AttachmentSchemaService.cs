@@ -11,7 +11,7 @@ using VietausWebAPI.Core.Application.Shared.Helper.FileStorage;
 using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
 using VietausWebAPI.Core.Domain.Enums.Attachment;
 using VietausWebAPI.Core.Domain.Security.Rules.Attachment;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 
 namespace VietausWebAPI.Core.Application.Features.Attachments.Services
 {

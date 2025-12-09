@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
+using VietausWebAPI.Core.Domain.Entities.CompanySchema;
 using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 using VietausWebAPI.Core.Domain.Entities.DeliverySchema;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 
 namespace VietausWebAPI.Core.Domain.Entities.OrderSchema;

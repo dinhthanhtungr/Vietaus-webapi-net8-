@@ -32,16 +32,10 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs
 
         public string? Website { get; set; }
 
-        //public DateTime? CreatedDate { get; set; }
-
-        //public Guid? CreatedBy { get; set; }
-
-        public DateTime? UpdatedDate { get; set; }
-
-        public Guid? UpdatedBy { get; set; }
-
         public string? CompanyName { get; set; }
         public bool? IsActive { get; set; } = true;
+
+        public List<GetCustomerNoteItem> Notes { get; set; } = new();
         public List<GetAddress> Addresses { get; set; } = new List<GetAddress>();
 
         public List<GetContact> Contacts { get; set; } = new List<GetContact>();

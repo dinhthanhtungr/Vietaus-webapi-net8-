@@ -8,5 +8,8 @@ using VietausWebAPI.Core.Domain.Entities.Notifications;
 
 namespace VietausWebAPI.Core.Application.Features.Notifications.RepositoriesContracts
 {
-    public interface IOutboxMessageRepository : IRepository<OutboxMessage> { }
+    public interface IOutboxMessageRepository : IRepository<OutboxMessage> 
+    {
+        Task AddRangeAsync(IEnumerable<OutboxMessage> messages, CancellationToken ct = default);
+    }
 }

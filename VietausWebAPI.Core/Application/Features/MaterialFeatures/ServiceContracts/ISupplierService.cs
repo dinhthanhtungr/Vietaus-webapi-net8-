@@ -14,9 +14,9 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContra
     public interface ISupplierService
     {
         Task<OperationResult> AddNewSuplier(PostSupplier supplier, CancellationToken ct = default);
-        Task<PagedResult<GetSupplierSummary>> GetAllAsync(SupplierQuery query, CancellationToken ct = default);
+        Task<OperationResult<PagedResult<GetSupplierSummary>>> GetAllAsync(SupplierQuery query, CancellationToken ct = default);
 
-        Task<GetSupplier?> GetSupplierByIdAsync(Guid id, CancellationToken ct = default);
+        Task<OperationResult<GetSupplier>> GetSupplierByIdAsync(Guid id, CancellationToken ct = default);
         Task<OperationResult> UpdateCustomerAsync(PatchSupplier supplier);
 
         Task<OperationResult> DeleteSupplierByIdAsync(Guid id);

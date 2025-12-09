@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
+using VietausWebAPI.Core.Domain.Entities.CompanySchema;
 using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
+using VietausWebAPI.Core.Domain.Entities.HrSchema;
 
 namespace VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
 
@@ -58,14 +60,14 @@ public partial class SampleRequest
     public DateTime? SendDate { get; set; }
 
 
-    public DateTime UpdatedDate { get; set; }
+    public DateTime? UpdatedDate { get; set; }
 
-    public Guid UpdatedBy { get; set; }
+    public Guid? UpdatedBy { get; set; }
 
     public Guid CompanyId { get; set; }
     public bool IsActive { get; set; }
 
-    public virtual AttachmentCollection? AttachmentCollection { get; set; } = null!;
+    public virtual AttachmentCollection AttachmentCollection { get; set; } = null!;
     //public virtual Branch Branch { get; set; } = null!;
 
     public virtual Company? Company { get; set; }

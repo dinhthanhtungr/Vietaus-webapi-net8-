@@ -10,7 +10,7 @@ using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.Custom
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 using VietausWebAPI.Infrastructure.Utilities;
-using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
+using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Sales
 {
@@ -77,7 +77,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
 
         }
 
-        public async Task<GetCustomer?> GetCustomerByIdAsync(Guid id)
+        public async Task<GetCustomer> GetCustomerByIdAsync(Guid id)
         {
             return await _context.Customers
                    .AsNoTracking()
@@ -94,8 +94,8 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
                        TaxNumber = c.TaxNumber,
                        Phone = c.Phone,
                        Website = c.Website,
-                       UpdatedDate = c.UpdatedDate,
-                       UpdatedBy = c.UpdatedBy,
+                       //UpdatedDate = c.UpdatedDate,
+                       //UpdatedBy = c.UpdatedBy,
                        IssueDate = c.IssueDate,
                        IssuedPlace = c.IssuedPlace,
                        FaxNumber = c.FaxNumber,
@@ -156,175 +156,187 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
             return track ? db : db.AsNoTracking();
         }
 
-        public async Task<bool> UpdateCustomerAsync(PatchCustomer customer)
+        public IQueryable<Address> QueryAddress(bool track = false)
         {
-            var existingCustomer = await _context.Customers
-                .Include(c => c.Addresses)
-                .Include(c => c.Contacts)
-                .FirstOrDefaultAsync(c => c.CustomerId == customer.CustomerId);
-
-            if (existingCustomer == null)
-            {
-                return false; // Không tìm thấy khách hàng
-            }
-
-            // --- STEP 1: Cập nhật thông tin cơ bản ---
-            existingCustomer.CustomerName = customer.CustomerName;
-            existingCustomer.Phone = customer.Phone;
-            existingCustomer.Website = customer.Website;
-            existingCustomer.UpdatedDate = DateTime.Now;
-            existingCustomer.UpdatedBy = customer.UpdatedBy;
-            existingCustomer.CustomerGroup = customer.CustomerGroup;
-            existingCustomer.ApplicationName = customer.ApplicationName;
-            existingCustomer.RegistrationNumber = customer.RegistrationNumber;
-            existingCustomer.IssueDate = customer.IssueDate;
-            existingCustomer.IssuedPlace = customer.IssuedPlace;
-            existingCustomer.FaxNumber = customer.FaxNumber;
-            existingCustomer.TaxNumber = customer.TaxNumber;
-            //existingCustomer.CompanyId = customer.CompanyId;
-            existingCustomer.IsActive = customer.IsActive;
-
-            // --- STEP 2: Cập nhật địa chỉ ---
-            var incomingAddresses = customer.Addresses;
-            var existingAddresses = existingCustomer.Addresses.ToList();
-
-            // XOÁ các địa chỉ không còn trong incomingAddresse
-            var incomingAddressIds = incomingAddresses.Select(a => a.AddressId).ToHashSet();
-
-            foreach (var existingAddress in existingAddresses)
-            {
-                if (!incomingAddressIds.Contains(existingAddress.AddressId))
-                {
-                    _context.Addresses.Remove(existingAddress);
-                }
-            }
-
-
-            // CẬP NHẬT hoặc THÊM mới địa chỉ
-            foreach (var incomingAddress in incomingAddresses)
-            {
-                // Nếu là Address mới chưa có ID → thêm luôn
-                if (incomingAddress.AddressId == Guid.Empty)
-                {
-                    var newAddress = new Address
-                    {
-                        AddressId = Guid.CreateVersion7(),
-                        CustomerId = existingCustomer.CustomerId,
-                        AddressLine = incomingAddress.AddressLine,
-                        City = incomingAddress.City,
-                        District = incomingAddress.District,
-                        Province = incomingAddress.Province,
-                        Country = incomingAddress.Country,
-                        PostalCode = incomingAddress.PostalCode,
-                        IsPrimary = incomingAddress.IsPrimary
-                    };
-                    _context.Addresses.Add(newAddress);
-                }
-                else
-                {
-                    var existingAddress = existingAddresses
-                        .FirstOrDefault(a => a.AddressId == incomingAddress.AddressId);
-
-                    if (existingAddress != null)
-                    {
-                        // Cập nhật
-                        existingAddress.AddressLine = incomingAddress.AddressLine;
-                        existingAddress.City = incomingAddress.City;
-                        existingAddress.District = incomingAddress.District;
-                        existingAddress.Province = incomingAddress.Province;
-                        existingAddress.Country = incomingAddress.Country;
-                        existingAddress.PostalCode = incomingAddress.PostalCode;
-                        existingAddress.IsPrimary = incomingAddress.IsPrimary;
-                    }
-                    else
-                    {
-                        // Dù có ID nhưng không thấy trong DB → thêm mới
-                        var newAddress = new Address
-                        {
-                            AddressId = incomingAddress.AddressId,
-                            AddressLine = incomingAddress.AddressLine,
-                            City = incomingAddress.City,
-                            District = incomingAddress.District,
-                            Province = incomingAddress.Province,
-                            Country = incomingAddress.Country,
-                            PostalCode = incomingAddress.PostalCode,
-                            IsPrimary = incomingAddress.IsPrimary
-                        };
-                        _context.Addresses.Add(newAddress);
-                    }
-                }
-            }
-
-
-            // --- STEP 3: Cập nhật liên hệ ---
-            var incomingContacts = customer.Contacts;
-            var existingContacts = existingCustomer.Contacts.ToList();
-
-            // XOÁ các địa chỉ không còn trong incomingAddresses
-            var incomingContectIds = incomingContacts.Select(a => a.ContactId).ToHashSet();
-
-            foreach (var existingContact in existingContacts)
-            {
-                if (!incomingContectIds.Contains(existingContact.ContactId))
-                {
-                    _context.Contacts.Remove(existingContact);
-                }
-            }
-
-
-            // CẬP NHẬT hoặc THÊM mới địa chỉ
-            foreach (var incomingContact in incomingContacts)
-            {
-                if (incomingContact.ContactId == Guid.Empty)
-                {
-                    var newContact = new Contact
-                    {
-                        ContactId = Guid.CreateVersion7(),
-                        CustomerId = existingCustomer.CustomerId,
-                        FirstName = incomingContact.FirstName,
-                        LastName = incomingContact.LastName,
-                        Email = incomingContact.Email,
-                        Phone = incomingContact.Phone,
-                        IsPrimary = incomingContact.IsPrimary,
-                        Gender = incomingContact.Gender
-                    };
-                    _context.Contacts.Add(newContact);
-                }
-                else
-                {
-                    var existingContact = existingContacts
-                        .FirstOrDefault(c => c.ContactId == incomingContact.ContactId);
-
-                    if (existingContact != null)
-                    {
-                        existingContact.FirstName = incomingContact.FirstName;
-                        existingContact.LastName = incomingContact.LastName;
-                        existingContact.Email = incomingContact.Email;
-                        existingContact.Phone = incomingContact.Phone;
-                        existingContact.IsPrimary = incomingContact.IsPrimary;
-                        existingContact.Gender = incomingContact.Gender;
-                    }
-                    else
-                    {
-                        var newContact = new Contact
-                        {
-                            ContactId = incomingContact.ContactId,
-                            FirstName = incomingContact.FirstName,
-                            LastName = incomingContact.LastName,
-                            Email = incomingContact.Email,
-                            Phone = incomingContact.Phone,
-                            IsPrimary = incomingContact.IsPrimary,
-                            Gender = incomingContact.Gender
-                        };
-                        _context.Contacts.Add(newContact);
-                    }
-                }
-            }
-
-
-            //await _context.SaveChangesAsync();
-
-            return true;
+            var db = _context.Addresses.AsQueryable();
+            return track ? db : db.AsNoTracking();
         }
+
+        public IQueryable<Contact> QueryContact(bool track = false)
+        {
+            var db = _context.Contacts.AsQueryable();
+            return track ? db : db.AsNoTracking();
+        }
+
+        //public async Task<bool> UpdateCustomerAsync(PatchCustomer customer)
+        //{
+        //    var existingCustomer = await _context.Customers
+        //        .Include(c => c.Addresses)
+        //        .Include(c => c.Contacts)
+        //        .FirstOrDefaultAsync(c => c.CustomerId == customer.CustomerId);
+
+        //    if (existingCustomer == null)
+        //    {
+        //        return false; // Không tìm thấy khách hàng
+        //    }
+
+        //    // --- STEP 1: Cập nhật thông tin cơ bản ---
+        //    existingCustomer.CustomerName = customer.CustomerName;
+        //    existingCustomer.Phone = customer.Phone;
+        //    existingCustomer.Website = customer.Website;
+        //    existingCustomer.UpdatedDate = DateTime.Now;
+        //    existingCustomer.UpdatedBy = customer.UpdatedBy;
+        //    existingCustomer.CustomerGroup = customer.CustomerGroup;
+        //    existingCustomer.ApplicationName = customer.ApplicationName;
+        //    existingCustomer.RegistrationNumber = customer.RegistrationNumber;
+        //    existingCustomer.IssueDate = customer.IssueDate;
+        //    existingCustomer.IssuedPlace = customer.IssuedPlace;
+        //    existingCustomer.FaxNumber = customer.FaxNumber;
+        //    existingCustomer.TaxNumber = customer.TaxNumber;
+        //    //existingCustomer.CompanyId = customer.CompanyId;
+        //    existingCustomer.IsActive = customer.IsActive;
+
+        //    // --- STEP 2: Cập nhật địa chỉ ---
+        //    var incomingAddresses = customer.Addresses;
+        //    var existingAddresses = existingCustomer.Addresses.ToList();
+
+        //    // XOÁ các địa chỉ không còn trong incomingAddresse
+        //    var incomingAddressIds = incomingAddresses.Select(a => a.AddressId).ToHashSet();
+
+        //    foreach (var existingAddress in existingAddresses)
+        //    {
+        //        if (!incomingAddressIds.Contains(existingAddress.AddressId))
+        //        {
+        //            _context.Addresses.Remove(existingAddress);
+        //        }
+        //    }
+
+
+        //    // CẬP NHẬT hoặc THÊM mới địa chỉ
+        //    foreach (var incomingAddress in incomingAddresses)
+        //    {
+        //        // Nếu là Address mới chưa có ID → thêm luôn
+        //        if (incomingAddress.AddressId == Guid.Empty)
+        //        {
+        //            var newAddress = new Address
+        //            {
+        //                AddressId = Guid.CreateVersion7(),
+        //                CustomerId = existingCustomer.CustomerId,
+        //                AddressLine = incomingAddress.AddressLine,
+        //                City = incomingAddress.City,
+        //                District = incomingAddress.District,
+        //                Province = incomingAddress.Province,
+        //                Country = incomingAddress.Country,
+        //                PostalCode = incomingAddress.PostalCode,
+        //                IsPrimary = incomingAddress.IsPrimary
+        //            };
+        //            _context.Addresses.Add(newAddress);
+        //        }
+        //        else
+        //        {
+        //            var existingAddress = existingAddresses
+        //                .FirstOrDefault(a => a.AddressId == incomingAddress.AddressId);
+
+        //            if (existingAddress != null)
+        //            {
+        //                // Cập nhật
+        //                existingAddress.AddressLine = incomingAddress.AddressLine;
+        //                existingAddress.City = incomingAddress.City;
+        //                existingAddress.District = incomingAddress.District;
+        //                existingAddress.Province = incomingAddress.Province;
+        //                existingAddress.Country = incomingAddress.Country;
+        //                existingAddress.PostalCode = incomingAddress.PostalCode;
+        //                existingAddress.IsPrimary = incomingAddress.IsPrimary;
+        //            }
+        //            else
+        //            {
+        //                // Dù có ID nhưng không thấy trong DB → thêm mới
+        //                var newAddress = new Address
+        //                {
+        //                    AddressId = incomingAddress.AddressId,
+        //                    AddressLine = incomingAddress.AddressLine,
+        //                    City = incomingAddress.City,
+        //                    District = incomingAddress.District,
+        //                    Province = incomingAddress.Province,
+        //                    Country = incomingAddress.Country,
+        //                    PostalCode = incomingAddress.PostalCode,
+        //                    IsPrimary = incomingAddress.IsPrimary
+        //                };
+        //                _context.Addresses.Add(newAddress);
+        //            }
+        //        }
+        //    }
+
+
+        //    // --- STEP 3: Cập nhật liên hệ ---
+        //    var incomingContacts = customer.Contacts;
+        //    var existingContacts = existingCustomer.Contacts.ToList();
+
+        //    // XOÁ các địa chỉ không còn trong incomingAddresses
+        //    var incomingContectIds = incomingContacts.Select(a => a.ContactId).ToHashSet();
+
+        //    foreach (var existingContact in existingContacts)
+        //    {
+        //        if (!incomingContectIds.Contains(existingContact.ContactId))
+        //        {
+        //            _context.Contacts.Remove(existingContact);
+        //        }
+        //    }
+
+
+        //    // CẬP NHẬT hoặc THÊM mới địa chỉ
+        //    foreach (var incomingContact in incomingContacts)
+        //    {
+        //        if (incomingContact.ContactId == Guid.Empty)
+        //        {
+        //            var newContact = new Contact
+        //            {
+        //                ContactId = Guid.CreateVersion7(),
+        //                CustomerId = existingCustomer.CustomerId,
+        //                FirstName = incomingContact.FirstName,
+        //                LastName = incomingContact.LastName,
+        //                Email = incomingContact.Email,
+        //                Phone = incomingContact.Phone,
+        //                IsPrimary = incomingContact.IsPrimary,
+        //                Gender = incomingContact.Gender
+        //            };
+        //            _context.Contacts.Add(newContact);
+        //        }
+        //        else
+        //        {
+        //            var existingContact = existingContacts
+        //                .FirstOrDefault(c => c.ContactId == incomingContact.ContactId);
+
+        //            if (existingContact != null)
+        //            {
+        //                existingContact.FirstName = incomingContact.FirstName;
+        //                existingContact.LastName = incomingContact.LastName;
+        //                existingContact.Email = incomingContact.Email;
+        //                existingContact.Phone = incomingContact.Phone;
+        //                existingContact.IsPrimary = incomingContact.IsPrimary;
+        //                existingContact.Gender = incomingContact.Gender;
+        //            }
+        //            else
+        //            {
+        //                var newContact = new Contact
+        //                {
+        //                    ContactId = incomingContact.ContactId,
+        //                    FirstName = incomingContact.FirstName,
+        //                    LastName = incomingContact.LastName,
+        //                    Email = incomingContact.Email,
+        //                    Phone = incomingContact.Phone,
+        //                    IsPrimary = incomingContact.IsPrimary,
+        //                    Gender = incomingContact.Gender
+        //                };
+        //                _context.Contacts.Add(newContact);
+        //            }
+        //        }
+        //    }
+
+
+        //    //await _context.SaveChangesAsync();
+
+        //    return true;
+        //}
     }
 }

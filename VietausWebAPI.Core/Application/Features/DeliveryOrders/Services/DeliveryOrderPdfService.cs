@@ -9,7 +9,7 @@ using VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.ServiceContracts;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Domain.Enums.Merchadises;
-using VietausWebAPI.Core.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 
 namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
 {

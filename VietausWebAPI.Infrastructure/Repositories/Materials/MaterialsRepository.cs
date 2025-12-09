@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
-using VietausWebAPI.Infrastructure.ApplicationDbs.DatabaseContext;
+using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Materials
 {
