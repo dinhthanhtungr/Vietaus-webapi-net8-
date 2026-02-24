@@ -3,15 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
+using VietausWebAPI.Core.Domain.Enums.WareHouses;
 
 namespace VietausWebAPI.Core.Application.Features.Warehouse.Queries
 {
-    public class WarehouseReadServiceQuery
+    public class WarehouseReadServiceQuery : PaginationQuery
     {
-        public Guid companyId { get; set; }
-        public string KeyWord { get; set; } = string.Empty; 
-        public string code { get; set; } = string.Empty;
-        public string lotkey { get; set; } = string.Empty;
+        public string? KeyWord { get; set; } = string.Empty;
+        public StockType? StockTypes { get; set; }
 
+        public decimal? AvailableMax { get; set; }   // ví dụ 0 để lấy <=0
+        public bool OnlyAvailableLeZero { get; set; } = false; // shortcut
     }
 }

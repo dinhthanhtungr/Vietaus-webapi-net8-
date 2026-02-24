@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductFeatures
 {
@@ -41,7 +42,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductFeatures
         public double? Weight { get; set; }
         public string? Unit { get; set; }
         public bool? IsRecycle { get; set; }
-        public Guid CompanyId { get; set; }                 // bắt buộc
-        public Guid? CreatedBy { get; set; }
+
+        public List<GetSampleFormula>? SampleFormula { get; set; }
     }
 }

@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using PuppeteerSharp;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.Querys.Supplier;
-using VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContracts.SupplierFeatures;
+
+//using VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.TransferCustomerDTOs;
 
@@ -86,7 +88,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Materials
             {
                 return BadRequest("Invalid customer data.");
             }
-            await _supplierService.UpdateCustomerAsync(supplier);
+            await _supplierService.UpdateSupplierAsync(supplier);
 
             return Ok();
 

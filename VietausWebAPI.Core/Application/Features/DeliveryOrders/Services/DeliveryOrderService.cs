@@ -12,17 +12,20 @@ using VietausWebAPI.Core.Application.Features.DeliveryOrders.Queries;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTOs;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadServices;
+using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.DeliverySchema;
 using VietausWebAPI.Core.Domain.Entities.WarehouseSchema;
+using VietausWebAPI.Core.Domain.Enums.Category;
+using VietausWebAPI.Core.Domain.Enums.Deliveries;
+using VietausWebAPI.Core.Domain.Enums.Merchadises;
 using VietausWebAPI.Core.Domain.Enums.WareHouses;
-using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using static QuestPDF.Helpers.Colors;
-using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 
 namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
 {
@@ -961,7 +964,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
             var userId = _currentUser.EmployeeId;
             var now = DateTime.Now;
 
-            var externalId = await _idService.NextAsync("PGH", ct: ct);
+            var externalId = await _idService.NextAsync(DocumentPrefix.PGH.ToString(), ct: ct);
 
             // 1. Validate cơ bản
             if (request == null)
@@ -982,7 +985,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
             {
                 Id = Guid.CreateVersion7(), // hoặc GuidV7 nếu bạn đang dùng
                 ExternalId = externalId,
-                Status = string.IsNullOrWhiteSpace(request.Status) ? "Pending" : request.Status,
+                Status = string.IsNullOrWhiteSpace(request.Status) ? DeliveryOrderStatus.Pending.ToString() : request.Status,
 
                 CustomerId = request.CustomerId,
                 CustomerExternalIdSnapShot = request.CustomerExternalIdSnapShot,
@@ -1137,6 +1140,8 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
             try
             {
                 var now = DateTime.Now;
+                var userId = _currentUser.EmployeeId;
+                var companyId = _currentUser.CompanyId;
 
                 var existingDO = await _unitOfWork.DeliveryOrderRepository
                     .Query(track: true)
@@ -1147,7 +1152,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                     return OperationResult.Fail("Đơn giao hàng không tồn tại.");
 
                 existingDO.UpdatedDate = now;
-                existingDO.UpdatedBy = req.UpdateBy;
+                existingDO.UpdatedBy = userId;
 
                 PatchHelper.SetIfRef(req.Note, () => existingDO.Note, v => existingDO.Note = v);
                 PatchHelper.SetIfRef(req.Status, () => existingDO.Status, v => existingDO.Status = v ?? string.Empty);
@@ -1226,84 +1231,219 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
         /// <param name="id"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
+        //public async Task<OperationResult> SoftDeleteAsync(Guid id, CancellationToken ct = default)
+        //{
+        //    await using var tx = await _unitOfWork.BeginTransactionAsync();
+
+        //    try
+        //    {
+        //        var existingDO = await _unitOfWork.DeliveryOrderRepository
+        //            .Query(track: true)
+        //            .Include(x => x.Details)
+        //            .Include(x => x.DeliveryOrderPOs)
+        //            .Include(x => x.Deliverers)
+        //            .Where(p => p.Id == id && p.IsActive == true)
+        //            .FirstOrDefaultAsync(ct);
+
+        //        if (existingDO == null)
+        //            return OperationResult.Fail("Đơn giao hàng không tồn tại.");
+
+
+        //        // 2) Guard nghiệp vụ: đã xuất kho thật?
+        //        //var hasPostedIssue = await _unitOfWork.WarehouseRequestRepository.Query(track: false)
+        //        //    .AnyAsync(wr => wr.codeFromRequest == existingDO.ExternalId && wr.ReqStatus == WarehouseRequestStatus.Approved, ct);
+
+        //        //var hasPostedIssue = existingDO.DeliveryOrderPOs
+        //        //    .Any(dop => dop.WarehouseRequest != null && dop.WarehouseRequest.ReqStatus == WarehouseRequestStatus.Approved);
+
+        //        //if (hasPostedIssue)
+        //        //    return OperationResult.Fail("Không thể xoá đơn giao hàng đã được xuất kho.");
+
+        //        //// 3) lấy tất cả các WR liên quan để xoá mềm
+        //        //var wrIds = existingDO.DeliveryOrderPOs
+        //        //    .Where(p => p.WarehouseRequestId.HasValue)
+        //        //    .Select(p => p.WarehouseRequestId!.Value)
+        //        //    .Distinct()
+        //        //    .ToList();
+
+        //        var wrExternalId = existingDO.DeliveryOrderPOs
+        //            .Where(p => !string.IsNullOrEmpty(p.DeliveryOrder.ExternalId))
+        //            .Select(p => p.DeliveryOrder.ExternalId)
+        //            .Distinct()
+        //            .ToList();
+
+        //        // Release tất cả các TempStock liên quan
+        //        //if(wrIds.Count > 0)
+        //        //{
+        //        //    await ReleaseTempStockByWRIdsAsync(wrExternalId, ct);
+
+        //        //    // Soft delete các WR + WRD liên quan
+        //        //    var wrs = await _unitOfWork.WarehouseRequestRepository.Query(track: true)
+        //        //        .Where(wr => wrIds.Contains(wr.RequestId))
+        //        //        .Include(wr => wr.WarehouseRequestDetails)
+        //        //        .ToListAsync(ct);
+
+        //        //    foreach (var wr in wrs)
+        //        //    {
+        //        //        wr.IsActive = false;
+        //        //        wr.ReqStatus = WarehouseRequestStatus.Cancelled;
+        //        //        wr.UpdatedDate = DateTime.Now;
+        //        //        wr.UpdatedBy = existingDO.UpdatedBy;
+        //        //    }
+
+        //        //    var wrDetail = await _unitOfWork.WarehouseRequestDetailRepository.Query(track: true)
+        //        //        .Where(wrd => wrIds.Contains(wrd.RequestId))
+        //        //        .ToListAsync(ct);
+
+        //        //    foreach (var wd in wrDetail)
+        //        //    {
+        //        //        wd.IsActive = false;
+        //        //    }
+        //        //}
+
+        //        existingDO.IsActive = false;
+        //        existingDO.UpdatedDate = DateTime.Now;
+        //        existingDO.Status = "Cancelled";
+        //        existingDO.UpdatedBy = existingDO.UpdatedBy;
+
+        //        foreach (var dd in existingDO.Details.Where(x => x.IsActive))
+        //        {
+        //            dd.IsActive = false;
+        //        }
+
+        //        await _unitOfWork.SaveChangesAsync();
+        //        await tx.CommitAsync(ct);
+        //        return OperationResult.Ok();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await tx.RollbackAsync(ct);
+        //        return OperationResult.Fail($"Lỗi khi xoá đơn giao hàng: {ex.InnerException?.Message}");
+        //    }
+        //}
+
+
+
         public async Task<OperationResult> SoftDeleteAsync(Guid id, CancellationToken ct = default)
         {
             await using var tx = await _unitOfWork.BeginTransactionAsync();
-
+            var userId = _currentUser.EmployeeId;
+            var companyId = _currentUser.CompanyId;
+            var now = DateTime.Now;
             try
             {
-                var existingDO = await _unitOfWork.DeliveryOrderRepository
-                    .Query(track: true)
-                    .Include(x => x.Details)
-                    .Include(x => x.DeliveryOrderPOs)
-                    .Include(x => x.Deliverers)
-                    .Where(p => p.Id == id && p.IsActive == true)
+                var existingDO = await _unitOfWork.DeliveryOrderRepository.Query(track: true)
+                    .Where(p => p.Id == id && p.IsActive)
+                    .Include(x => x.Details)                 // cần entity để set IsActive=false
+                    .Include(x => x.DeliveryOrderPOs)        // cần PO Id + WarehouseRequestId
+                    .AsSplitQuery()                          // giảm bùng nổ join
                     .FirstOrDefaultAsync(ct);
 
                 if (existingDO == null)
                     return OperationResult.Fail("Đơn giao hàng không tồn tại.");
 
+                // 2) Gộp số lượng rollback theo MODetailId (chỉ từ DO.Details đang active)
+                var minusByMoDetailId = existingDO.Details
+                    .Where(d => d.IsActive && d.MerchandiseOrderDetailId.HasValue)
+                    .GroupBy(d => d.MerchandiseOrderDetailId!.Value)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => x.Quantity));
 
-                // 2) Guard nghiệp vụ: đã xuất kho thật?
-                //var hasPostedIssue = await _unitOfWork.WarehouseRequestRepository.Query(track: false)
-                //    .AnyAsync(wr => wr.codeFromRequest == existingDO.ExternalId && wr.ReqStatus == WarehouseRequestStatus.Approved, ct);
 
-                //var hasPostedIssue = existingDO.DeliveryOrderPOs
-                //    .Any(dop => dop.WarehouseRequest != null && dop.WarehouseRequest.ReqStatus == WarehouseRequestStatus.Approved);
-
-                //if (hasPostedIssue)
-                //    return OperationResult.Fail("Không thể xoá đơn giao hàng đã được xuất kho.");
-
-                //// 3) lấy tất cả các WR liên quan để xoá mềm
-                //var wrIds = existingDO.DeliveryOrderPOs
-                //    .Where(p => p.WarehouseRequestId.HasValue)
-                //    .Select(p => p.WarehouseRequestId!.Value)
-                //    .Distinct()
-                //    .ToList();
-
-                var wrExternalId = existingDO.DeliveryOrderPOs
-                    .Where(p => !string.IsNullOrEmpty(p.DeliveryOrder.ExternalId))
-                    .Select(p => p.DeliveryOrder.ExternalId)
+                var affectedPoIds = existingDO.DeliveryOrderPOs
+                    .Select(p => p.MerchandiseOrderId)
                     .Distinct()
                     .ToList();
 
-                // Release tất cả các TempStock liên quan
-                //if(wrIds.Count > 0)
-                //{
-                //    await ReleaseTempStockByWRIdsAsync(wrExternalId, ct);
+                // 3) Lấy đúng các MerchandiseOrderDetail cần cập nhật (track: true), KHÔNG Include gì thêm
+                var moDetailIds = minusByMoDetailId.Keys.ToList();
 
-                //    // Soft delete các WR + WRD liên quan
-                //    var wrs = await _unitOfWork.WarehouseRequestRepository.Query(track: true)
-                //        .Where(wr => wrIds.Contains(wr.RequestId))
-                //        .Include(wr => wr.WarehouseRequestDetails)
-                //        .ToListAsync(ct);
+                var moDetails = await _unitOfWork.MerchandiseOrderRepository.QueryDetail(track: true)
+                    .Where(d => moDetailIds.Contains(d.MerchandiseOrderDetailId))
+                    .ToListAsync(ct);
 
-                //    foreach (var wr in wrs)
-                //    {
-                //        wr.IsActive = false;
-                //        wr.ReqStatus = WarehouseRequestStatus.Cancelled;
-                //        wr.UpdatedDate = DateTime.Now;
-                //        wr.UpdatedBy = existingDO.UpdatedBy;
-                //    }
+                // rollback RealQuantity + Status từng dòng
+                foreach (var d in moDetails)
+                {
+                    var minus = minusByMoDetailId.GetValueOrDefault(d.MerchandiseOrderDetailId, 0m);
+                    if (minus <= 0) continue;
 
-                //    var wrDetail = await _unitOfWork.WarehouseRequestDetailRepository.Query(track: true)
-                //        .Where(wrd => wrIds.Contains(wrd.RequestId))
-                //        .ToListAsync(ct);
+                    var after = Math.Max(0m, (d.RealQuantity ?? 0m) - minus);
+                    d.RealQuantity = after;
 
-                //    foreach (var wd in wrDetail)
-                //    {
-                //        wd.IsActive = false;
-                //    }
-                //}
+                    var expected = d.ExpectedQuantity;
+                    d.Status = (after >= expected && expected > 0)
+                        ? MerchadiseStatus.Completed.ToString()
+                        : (after > 0 ? MerchadiseStatus.Delivering.ToString()
+                                     : MerchadiseStatus.Approved.ToString()); // hoặc New tuỳ bạn
+                }
 
+                // 4) Cập nhật lại header PO trạng thái bằng 1 truy vấn nhẹ + tính toán
+                //   -> chỉ cần các trường Expected/Real của detail, không cần Include vào existingDO
+                var poHeaders = await _unitOfWork.MerchandiseOrderRepository.Query(track: true)
+                    .Where(po => affectedPoIds.Contains(po.MerchandiseOrderId))
+                    .Select(po => new
+                    {
+                        Entity = po,
+                        Details = po.MerchandiseOrderDetails
+                                   .Where(dd => dd.IsActive)
+                                   .Select(dd => new { dd.ExpectedQuantity, dd.RealQuantity })
+                                   .ToList()
+                    })
+                    .ToListAsync(ct);
+
+                foreach (var h in poHeaders)
+                {
+                    var ds = h.Details;
+                    bool allCompleted = ds.Count > 0 &&
+                                        ds.All(d => (d.RealQuantity ?? 0m) >= (d.ExpectedQuantity) && (d.ExpectedQuantity) > 0m);
+                    bool anyHasQty = ds.Any(d => (d.RealQuantity ?? 0m) > 0m);
+
+                    h.Entity.Status = allCompleted ? MerchadiseStatus.Delivered.ToString()
+                                    : anyHasQty ? MerchadiseStatus.Delivering.ToString()
+                                                  : MerchadiseStatus.Approved.ToString();
+                    h.Entity.UpdatedBy = userId;
+                    h.Entity.UpdatedDate = now;
+                }
+
+                // 5) Soft delete DO + Details (đang có entity → set trực tiếp)
                 existingDO.IsActive = false;
-                existingDO.UpdatedDate = DateTime.Now;
                 existingDO.Status = "Cancelled";
-                existingDO.UpdatedBy = existingDO.UpdatedBy;
+                existingDO.UpdatedBy = userId;
+                existingDO.UpdatedDate = now;
 
                 foreach (var dd in existingDO.Details.Where(x => x.IsActive))
-                {
                     dd.IsActive = false;
+
+                var wrIds = new List<int>();
+                if (!string.IsNullOrWhiteSpace(existingDO.ExternalId))
+                {
+                    wrIds = await _unitOfWork.WarehouseRequestRepository.Query(track: false)
+                        .Where(wr => wr.IsActive
+                                  && wr.codeFromRequest == existingDO.ExternalId)
+                        .Select(wr => wr.RequestId)
+                        .Distinct()
+                        .ToListAsync(ct);
+                }
+
+                if (wrIds.Count > 0)
+                {
+                    // Parent
+                    await _unitOfWork.WarehouseRequestRepository.Query(track: false)
+                        .Where(wr => wrIds.Contains(wr.RequestId) && wr.IsActive)
+                        .ExecuteUpdateAsync(s => s
+                            .SetProperty(x => x.IsActive, _ => false)
+                            .SetProperty(x => x.ReqStatus, _ => WarehouseRequestStatus.Cancelled)
+                            .SetProperty(x => x.UpdatedBy, _ => userId)
+                            .SetProperty(x => x.UpdatedDate, _ => now), ct);
+
+                    // Details
+                    await _unitOfWork.WarehouseRequestDetailRepository.Query(track: false)
+                        .Where(wrd => wrIds.Contains(wrd.RequestId) && wrd.IsActive)
+                        .ExecuteUpdateAsync(s => s
+                            .SetProperty(x => x.IsActive, _ => false));
+
+                    // (Optional) Release temp stock nếu bạn có
+                    // await ReleaseTempStockByWRIdsAsync(wrIds, ct);
                 }
 
                 await _unitOfWork.SaveChangesAsync();
@@ -1316,6 +1456,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                 return OperationResult.Fail($"Lỗi khi xoá đơn giao hàng: {ex.InnerException?.Message}");
             }
         }
+
 
 
         // ======================================================================== Helper ======================================================================== 

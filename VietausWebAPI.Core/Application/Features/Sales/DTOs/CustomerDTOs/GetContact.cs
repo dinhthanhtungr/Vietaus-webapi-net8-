@@ -19,5 +19,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs
 
         public string? Email { get; set; }
         public bool? IsPrimary { get; set; } = false;
+        public bool IsActive { get; set; }
+
     }
 }

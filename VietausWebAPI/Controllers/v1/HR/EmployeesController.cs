@@ -4,6 +4,7 @@ using VietausWebAPI.Core.Application.Features.HR.DTOs.Employees;
 using VietausWebAPI.Core.Application.Features.HR.DTOs.Groups;
 using VietausWebAPI.Core.Application.Features.HR.Querys.Employees;
 using VietausWebAPI.Core.Application.Features.HR.Querys.Groups;
+using VietausWebAPI.Core.Application.Features.HR.Querys.Parts;
 using VietausWebAPI.Core.Application.Features.HR.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 
@@ -181,6 +182,25 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.HR
         {
             var result = await _employeesService.GetRoleDTOsAsync(ct);
             return Ok(result);
+        }
+
+        [HttpGet("parts")]
+        public async Task<IActionResult> GetParts([FromQuery] PartQuery query, CancellationToken ct = default)
+        {
+            try
+            {
+                var result = await _employeesService.GetSummaryParts(query);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
     }
 }

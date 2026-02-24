@@ -25,11 +25,12 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.DevandqaFeatures
         }
 
         [HttpGet("GetById")]
-        public async Task<IActionResult> GetProductStandardById([FromQuery] ProductStandardQuery id)
+        public async Task<IActionResult> GetProductStandardById([FromQuery] Guid id)
         {
             var result = await _productStandardService.GetByIdAsync(id, CancellationToken.None);
             return Ok(result);
         }
+
 
         [HttpPost("Post")]
         public async Task<IActionResult> PostProductStandard([FromBody] PostProductStandard productStandard)

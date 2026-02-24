@@ -32,6 +32,10 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
             entity.Property(e => e.RealQuantity).HasPrecision(18, 2);
             entity.Property(e => e.RequestQuantity).HasPrecision(18, 2);
 
+            entity.Property(x => x.IsActive)
+                  .HasDefaultValue(true)
+                  .HasColumnName("isActive");
+
             entity.Property(e => e.MaterialExternalIDSnapshot).HasColumnType("citext");
             entity.Property(e => e.MaterialNameSnapshot).HasColumnType("citext");
 

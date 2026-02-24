@@ -30,7 +30,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
 
             entity.HasOne(d => d.Material).WithMany(p => p.MaterialsSuppliers)
                 .HasForeignKey(d => d.MaterialId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_MaterialsSuppliers_Material");
 
             entity.HasOne(d => d.Supplier).WithMany(p => p.MaterialsSuppliers)

@@ -12,5 +12,6 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts
         IEmployeesRepository EmployeesRepository { get; }
         IGroupRepository GroupRepository { get; }
         IMemberInGroupRepository MemberInGroupRepository { get; }
+        IPartRepository PartRepository { get; }
     }
 }

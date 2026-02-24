@@ -22,27 +22,34 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
 
         public byte[] Render(PdfPrinterDeliveryOrder d)
         {
-
-            // Null-safe
-            _deliveryOrders = d.Details.ToList() ?? new List<PdfPrinterDeliveryOrderDetail>();          // Dòng hiển thị (từ WR)
-            _DeliveryOrderDetails = d.DeliveryOrderDetails.ToList() ?? new List<GetDeliveryOrderDetail>();    // Dùng để tính tổng
-
-
-            var doc = Document.Create(c =>
+            try
             {
-                c.Page(page =>
+                _deliveryOrders = d.Details.ToList() ?? new List<PdfPrinterDeliveryOrderDetail>();          // Dòng hiển thị (từ WR)
+                _DeliveryOrderDetails = d.DeliveryOrderDetails.ToList() ?? new List<GetDeliveryOrderDetail>();    // Dùng để tính tổng
+
+
+                var doc = Document.Create(c =>
                 {
-                    page.Size(PageSizes.A4);
-                    page.Margin(30);
-                    page.DefaultTextStyle(t => t.FontFamily("Open Sans").FontSize(9));
+                    c.Page(page =>
+                    {
+                        page.Size(PageSizes.A4);
+                        page.Margin(30);
+                        page.DefaultTextStyle(t => t.FontFamily("Open Sans").FontSize(9));
 
-                    page.Header().Component(new HeaderComponent());
-                    page.Content().Element(x => BuildContent(x, d));
-                    page.Footer().Component(new FooterComponent());
+                        page.Header().Component(new HeaderComponent());
+                        page.Content().Element(x => BuildContent(x, d));
+                        page.Footer().Component(new FooterComponent());
+                    });
                 });
-            });
 
-            return doc.GeneratePdf();
+                return doc.GeneratePdf();
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+                // Null-safe
+
         }
 
         private void BuildContent(IContainer c, PdfPrinterDeliveryOrder d)
@@ -309,3 +316,4 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
         }
     }
 }
+    

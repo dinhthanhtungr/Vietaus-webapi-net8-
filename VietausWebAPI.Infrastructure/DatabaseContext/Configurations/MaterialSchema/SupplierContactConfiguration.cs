@@ -24,6 +24,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
             entity.Property(e => e.Gender).HasColumnType("citext");
             entity.Property(e => e.LastName).HasColumnType("citext");
             entity.Property(e => e.Phone).HasColumnType("citext");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
 
             entity.HasOne(d => d.Supplier)
                   .WithMany(p => p.SupplierContacts)

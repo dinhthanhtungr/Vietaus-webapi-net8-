@@ -6,8 +6,10 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.HR.DTOs.Employees;
 using VietausWebAPI.Core.Application.Features.HR.DTOs.Groups;
+using VietausWebAPI.Core.Application.Features.HR.DTOs.Parts;
 using VietausWebAPI.Core.Application.Features.HR.Querys.Employees;
 using VietausWebAPI.Core.Application.Features.HR.Querys.Groups;
+using VietausWebAPI.Core.Application.Features.HR.Querys.Parts;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Identity;
@@ -103,5 +105,7 @@ namespace VietausWebAPI.Core.Application.Features.HR.ServiceContracts
         Task<PagedResult<EmployeeGroupDTO>> GetEmployeesWithGroupsAsync(GetEmployeesWithGroupsQuery query, CancellationToken ct = default);
 
         Task<List<RoleDTOs>> GetRoleDTOsAsync(CancellationToken ct = default);
+
+        Task<OperationResult<PagedResult<GetParts>>> GetSummaryParts(PartQuery query, CancellationToken ct = default);
     }
 }

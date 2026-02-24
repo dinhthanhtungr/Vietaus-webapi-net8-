@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
+using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
+using VietausWebAPI.Core.Domain.Enums.Formulas;
 
 namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
 {
@@ -12,9 +14,11 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         public Guid ManufacturingFormulaVersionItemId { get; set; }
         public Guid ManufacturingFormulaVersionId { get; set; }
 
-        public Guid MaterialId { get; set; }              // để tính MRP/đối chiếu
+        public Guid? MaterialId { get; set; }              // để tính MRP/đối chiếu
         public Guid CategoryId { get; set; }
+        public Guid? ProductId { get; set; }               // để lọc công thức theo sản phẩm
 
+        public ItemType itemType { get; set; }
         public decimal Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }
@@ -24,6 +28,7 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         public string MaterialExternalIdSnapshot { get; set; } = default!;
         public string Unit { get; set; } = default!;
 
+        public virtual Product Product { get; set; } = null!;
         public ManufacturingFormulaVersion Version { get; set; } = null!;
         public virtual Material Material { get; set; } = null!;
         public virtual Category Category { get; set; } = null!;

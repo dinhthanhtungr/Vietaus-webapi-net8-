@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.HrSchema;
+using VietausWebAPI.Core.Domain.Entities.OrderSchema;
 
 namespace VietausWebAPI.Core.Domain.Entities.SupplyRequestSchema
 {
@@ -18,6 +19,7 @@ namespace VietausWebAPI.Core.Domain.Entities.SupplyRequestSchema
         public bool IsActive { get; set; } = true;
 
         public virtual ICollection<SupplyRequestDetail> Details { get; set; } = new List<SupplyRequestDetail>();
+        public virtual ICollection<PurchaseOrderLink> PurchaseOrderLinks { get; set; } = new List<PurchaseOrderLink>();
         public virtual Employee? CreatedByNavigation { get; set; }
     }
 }

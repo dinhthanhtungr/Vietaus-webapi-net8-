@@ -42,18 +42,15 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.ProductFeatures
         {
             try
             {
-
-
                 if (query.PageNumber <= 0) query.PageNumber = 1;
                 if (query.PageSize <= 0) query.PageSize = 10;
 
                 var q = _unitOfWork.ProductRepository.Query();
-                var samplerRequest = _unitOfWork.SampleRequestRepository.Query();
+                var sampleRequestQ = _unitOfWork.SampleRequestRepository.Query();
 
                 // 1) Ẩn product không có tên HOẶC không có colour code
-                q = q.Where(x =>
-                    !string.IsNullOrWhiteSpace(x.Name)
-                 && !string.IsNullOrWhiteSpace(x.ColourCode));
+                q = q.Where(x => !string.IsNullOrWhiteSpace(x.Name)
+                              && !string.IsNullOrWhiteSpace(x.ColourCode));
 
                 // 2) Keyword
                 if (!string.IsNullOrWhiteSpace(query.Keyword))
@@ -71,22 +68,70 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.ProductFeatures
                 if (query.ProductId is Guid productId && productId != Guid.Empty)
                     q = q.Where(p => p.ProductId == productId);
 
-                if (query.CustomerId is Guid CustomerId && CustomerId != Guid.Empty)
+                if (query.CustomerId is Guid customerId && customerId != Guid.Empty)
                 {
-                    q = q.Where(p => samplerRequest
-                        .Any(sr => sr.ProductId == p.ProductId 
-                                && sr.CustomerId == CustomerId));
+                    q = q.Where(p => sampleRequestQ
+                        .Any(sr => sr.ProductId == p.ProductId && sr.CustomerId == customerId));
                 }
 
-                // 4) Đếm sau khi đã filter
+                // 4) Count sau khi đã filter
                 var totalCount = await q.CountAsync(ct);
 
-                // 5) Sắp xếp + Phân trang + Project
+                // 5) Select thủ công
                 var items = await q
-                    .OrderByDescending(c => c.CreatedDate)
+                    .OrderByDescending(p => p.CreatedDate)
                     .Skip((query.PageNumber - 1) * query.PageSize)
                     .Take(query.PageSize)
-                    .ProjectTo<GetProduct>(_mapper.ConfigurationProvider)
+                    .Select(p => new GetProduct
+                    {
+                        ProductId = p.ProductId,
+                        ColourCode = p.ColourCode,
+                        Name = p.Name,
+                        ColourName = p.ColourName,
+                        Additive = p.Additive,
+                        UsageRate = p.UsageRate,
+                        DeltaE = p.DeltaE,
+                        Requirement = p.Requirement,
+                        ExpiryType = p.ExpiryType,
+                        StorageCondition = p.StorageCondition,
+                        LabComment = p.LabComment,
+                        Procedure = p.Procedure,
+                        RecycleRate = p.RecycleRate,
+                        TaicalRate = p.TaicalRate,
+                        Application = p.Application,
+                        ProductUsage = p.ProductUsage,
+                        PolymerMatchedIn = p.PolymerMatchedIn,
+                        Code = p.Code,
+                        EndUser = p.EndUser,
+                        FoodSafety = p.FoodSafety,
+                        RohsStandard = p.RohsStandard,
+                        ReachStandard = p.ReachStandard,
+                        MaxTemp = p.MaxTemp,
+                        WeatherResistance = p.WeatherResistance,
+                        LightCondition = p.LightCondition,
+                        VisualTest = p.VisualTest,
+                        ReturnSample = p.ReturnSample,
+                        OtherComment = p.OtherComment,
+                        CategoryId = p.CategoryId,
+                        Weight = p.Weight,
+                        Unit = p.Unit,
+                        IsRecycle = p.IsRecycle,
+
+                        // Map formulas -> List<GetSampleFormula>
+                        // (Nếu muốn nhẹ hơn: chỉ lấy Top N hoặc chỉ lấy formula "current/latest" — xem phần dưới)
+                        SampleFormula = p.Formulas
+                            .OrderByDescending(f => f.CreatedDate) // hoặc UpdatedDate tuỳ nghiệp vụ
+                            .Select(f => new GetSampleFormula
+                            {
+                                // TODO: map đúng field của GetSampleFormula của bạn
+                                // Ví dụ (đổi lại theo DTO thật):
+                                FormulaId = f.FormulaId,
+                                ExternalId = f.ExternalId,
+                                Name = f.Name,
+                                Status = f.Status
+                            })
+                            .ToList()
+                    })
                     .ToListAsync(ct);
 
                 return new PagedResult<GetProduct>(items, totalCount, query.PageNumber, query.PageSize);
@@ -96,6 +141,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.ProductFeatures
                 throw new Exception($"Lỗi khi lấy danh sách: {ex.Message}", ex);
             }
         }
+
 
 
         /// <summary>

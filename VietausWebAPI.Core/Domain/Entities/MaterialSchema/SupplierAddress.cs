@@ -23,5 +23,7 @@ public partial class SupplierAddress
 
     public string? PostalCode { get; set; }
 
+    public bool? IsActive { get; set; } = true;
+
     public virtual Supplier Supplier { get; set; } = null!;
 }

@@ -60,6 +60,7 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
 
         public virtual Customer? Customer { get; set; }
         public virtual Product Product { get; set; } = null!;
+        public virtual Formula Formula { get; set; } = null!;
         public virtual Company? Company { get; set; }
         public virtual Employee? CreatedByNavigation { get; set; }
         public virtual Employee? UpdatedByNavigation { get; set; }

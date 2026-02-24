@@ -51,6 +51,7 @@ public partial class SampleRequest
     public string Status { get; set; } = "New";
 
     public string Package { get; set; } = string.Empty;
+    public int BagWeight { get; set; }
 
     public DateTime CreatedDate { get; set; }
 

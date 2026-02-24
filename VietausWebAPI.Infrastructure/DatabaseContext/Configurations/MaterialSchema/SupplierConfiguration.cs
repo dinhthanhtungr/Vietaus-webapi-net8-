@@ -20,13 +20,14 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
             entity.HasIndex(e => e.CreatedBy, "IX_Suppliers_CreatedBy");
 
             entity.Property(e => e.SupplierId).HasDefaultValueSql("gen_random_uuid()");
-            entity.Property(e => e.ExternalId).HasMaxLength(50);
+            entity.Property(e => e.ExternalId).HasColumnType("citext");
             entity.Property(e => e.IssuedPlace).HasColumnType("citext");
-            entity.Property(e => e.SupplierName).HasMaxLength(200);
-            entity.Property(e => e.Note).HasMaxLength(500);
+            entity.Property(e => e.SupplierName).HasColumnType("citext");
+            entity.Property(e => e.Note).HasColumnType("citext");
             entity.Property(e => e.Phone).HasMaxLength(20);
-            entity.Property(e => e.RegistrationNumber).HasMaxLength(50);
-            entity.Property(e => e.Website).HasMaxLength(200);
+            entity.Property(e => e.RegistrationNumber).HasColumnType("citext");
+            entity.Property(e => e.RegistrationAddress).HasColumnType("citext");
+            entity.Property(e => e.Website).HasColumnType("citext");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
 
             entity.HasOne(d => d.Company).WithMany(p => p.Suppliers)

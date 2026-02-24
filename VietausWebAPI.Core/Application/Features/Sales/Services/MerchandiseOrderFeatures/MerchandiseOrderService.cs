@@ -31,6 +31,7 @@ using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 using VietausWebAPI.Core.Domain.Entities.Notifications;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
+using VietausWebAPI.Core.Domain.Enums.Category;
 using VietausWebAPI.Core.Domain.Enums.CustomerEnum;
 using VietausWebAPI.Core.Domain.Enums.Logs;
 using VietausWebAPI.Core.Domain.Enums.Manufacturings;
@@ -52,11 +53,11 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrde
         private readonly INotificationService _notificationService;
 
         public MerchandiseOrderService(IUnitOfWork unitOfWork
-                                    , IExternalIdService idService
-                                    , ITimelineService timelineService
-                                    , IMapper mapper
-                                    , IMfgProductionOrderService mfgProductionOrderService
-                                    , ICurrentUser currentUser
+                                     , IExternalIdService idService
+                                     , ITimelineService timelineService
+                                     , IMapper mapper
+                                     , IMfgProductionOrderService mfgProductionOrderService
+                                     , ICurrentUser currentUser
             , INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
@@ -247,7 +248,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrde
 
                     
                 // 2) ExternalId DHG (ddMMyy-#####)
-                merchandiseOrder.ExternalId = await _externalId.NextAsync("DHG", ct: ct);
+                merchandiseOrder.ExternalId = await _externalId.NextAsync(DocumentPrefix.DHG.ToString(), ct: ct);
 
                 // === Tạo bucket đính kèm ngay lúc tạo đơn hàng ===
                 if (merchandiseOrder.AttachmentCollectionId == Guid.Empty)

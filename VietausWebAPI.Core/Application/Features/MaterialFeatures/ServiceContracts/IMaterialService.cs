@@ -11,6 +11,9 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContra
 {
     public interface IMaterialService
     {
+
+        // ======================================================================== Get ======================================================================== 
+
         /// <summary>
         /// Lấy danh sách vật tư, có phân trang, lọc, tìm kiếm
         /// </summary>
@@ -18,15 +21,15 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContra
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<PagedResult<GetMaterialSummary>> GetAllAsync(MaterialQuery query, CancellationToken ct = default);
-
+       
         /// <summary>
-        /// Thêm mới vật tư, kèm giá khởi tạo   
+        /// Lấy danh sách vật tư và sản phẩm, có phân trang, lọc, tìm kiếm
         /// </summary>
-        /// <param name="material"></param>
+        /// <param name="query"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<OperationResult> AddNewMaterialAsync(PostMaterial material, CancellationToken ct = default);
-
+        Task<PagedResult<GetMaterialSummary>> GetAllMPAsync(MaterialQuery query, CancellationToken ct = default);
+      
         /// <summary>
         /// Lấy danh sách nhà cung cấp cho vật tư, có phân trang, lọc, tìm kiếm 
         /// </summary>
@@ -51,6 +54,18 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContra
         /// <returns></returns>
         Task<OperationResult<PagedResult<GetPriceHistory>>> GetMaterialPriceHistoryByIdAsync(MaterialQuery query, CancellationToken ct = default);
 
+        // ======================================================================== Post ======================================================================== 
+
+        /// <summary>
+        /// Thêm mới vật tư, kèm giá khởi tạo   
+        /// </summary>
+        /// <param name="material"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<OperationResult> AddNewMaterialAsync(PostMaterial material, CancellationToken ct = default);
+
+        // ======================================================================== Update ======================================================================== 
+
         /// <summary>
         /// Cập nhật vật tư
         /// </summary>
@@ -66,6 +81,8 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContra
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<OperationResult> DeleteMaterialAsync(Guid Id, CancellationToken ct = default);
+
+        // ======================================================================== Helper ======================================================================== 
 
         Task ChangePriceHelper(Guid MaterialsSupplierId, Decimal newPrice, CancellationToken ct = default);
     }

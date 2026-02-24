@@ -95,6 +95,12 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.Manufactur
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK__Mpo__productId");
 
+            entity.HasOne(d => d.Formula).WithMany(p => p.ManufacturingProductionOrders)
+                  .HasForeignKey(d => d.FormulaId)
+                  .OnDelete(DeleteBehavior.Restrict)
+                  .HasConstraintName("FK__Mpo__formulaId");
+
+
             entity.HasOne(d => d.Customer).WithMany(p => p.MfgProductionOrders)
                   .HasForeignKey(d => d.CustomerId)
                   .OnDelete(DeleteBehavior.Restrict)

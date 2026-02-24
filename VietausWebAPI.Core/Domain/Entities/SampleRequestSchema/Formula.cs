@@ -47,12 +47,14 @@ public partial class Formula
 
     public virtual ICollection<FormulaMaterial> FormulaMaterials { get; set; } = new List<FormulaMaterial>();
     public virtual ICollection<ManufacturingFormula> ManufacturingFormulaSources { get; set; } = new List<ManufacturingFormula>();
+    public virtual ICollection<MfgProductionOrder> ManufacturingProductionOrders { get; set; } = new List<MfgProductionOrder>();
 
     public virtual Product Product { get; set; } = null!;
 
     public virtual ICollection<SampleRequest> SampleRequests { get; set; } = new List<SampleRequest>();
     //public virtual ICollection<FormulaStatusLog> StatusLogs { get; set; } = new List<FormulaStatusLog>();
     public virtual ICollection<MerchandiseOrderDetail> MerchandiseOrderDetails { get; set; } = new List<MerchandiseOrderDetail>();
+    public virtual ICollection<ManufacturingVUFormula> ManufacturingVUFormulas { get; set; } = new List<ManufacturingVUFormula>();
     public virtual Employee? UpdatedByNavigation { get; set; }
     public virtual Employee? CheckByNavigation { get; set; }
     public virtual Employee? SentByNavigation { get; set; }

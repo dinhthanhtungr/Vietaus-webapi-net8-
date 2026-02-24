@@ -9,8 +9,9 @@ using VietausWebAPI.Core.Application.Features.Sales.Querys;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
-using VietausWebAPI.Infrastructure.Utilities;
+using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
+using VietausWebAPI.Infrastructure.Utilities;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Sales
 {
@@ -20,6 +21,12 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
         public CustomerRepository(ApplicationDbContext context)
         {
             _context = context;
+        }
+
+        public IQueryable<Customer> Query(bool track = false)
+        {
+            var db = _context.Customers.AsQueryable();
+            return track ? db : db.AsNoTracking();
         }
 
         /// <summary>
@@ -77,68 +84,66 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
 
         }
 
-        public async Task<GetCustomer> GetCustomerByIdAsync(Guid id)
+        public async Task<GetCustomer?> GetCustomerByIdAsync(Guid id)
         {
             return await _context.Customers
-                   .AsNoTracking()
-                   .Where(c => c.CustomerId == id)
-                   .Select(c => new GetCustomer
-                   {
-                       CustomerId = c.CustomerId,
-                       ExternalId = c.ExternalId,
-                       CustomerName = c.CustomerName,
-                       //EmployeeName = c.Employee != null ? c.Employee.FullName : null,
-                       CustomerGroup = c.CustomerGroup,
-                       ApplicationName = c.ApplicationName,
-                       RegistrationNumber = c.RegistrationNumber,
-                       TaxNumber = c.TaxNumber,
-                       Phone = c.Phone,
-                       Website = c.Website,
-                       //UpdatedDate = c.UpdatedDate,
-                       //UpdatedBy = c.UpdatedBy,
-                       IssueDate = c.IssueDate,
-                       IssuedPlace = c.IssuedPlace,
-                       FaxNumber = c.FaxNumber,
-                       //Product = c.Product,
-                       //IsActive = c.IsActive,
-                       // CreatedDate = c.CreatedDate,
-                       // CreatedBy = c.CreatedBy,
-                       CompanyName = c.Company != null ? c.Company.Name : null,
-                        
+                .AsNoTracking()
+                .Where(c => c.CustomerId == id)
+                .Select(c => new GetCustomer
+                {
+                    CustomerId = c.CustomerId,
+                    ExternalId = c.ExternalId,
+                    CustomerName = c.CustomerName,
+                    CustomerGroup = c.CustomerGroup,
+                    ApplicationName = c.ApplicationName,
+                    RegistrationNumber = c.RegistrationNumber,
+                    RegistrationAddress = c.RegistrationAddress,
+                    TaxNumber = c.TaxNumber,
+                    Phone = c.Phone,
+                    Website = c.Website,
+                    IssueDate = c.IssueDate,
+                    IssuedPlace = c.IssuedPlace,
+                    FaxNumber = c.FaxNumber,
 
-                       // Giới hạn collection để nhẹ dữ liệu
-                       Addresses = c.Addresses
-                           .OrderByDescending(a => a.IsPrimary == true)
-                           .Select(a => new GetAddress
-                           {
-                               District = a.District,
-                               Province = a.Province,
-                               Country = a.Country,
-                               AddressId = a.AddressId,
-                               AddressLine = a.AddressLine,
-                               City = a.City,
-                               IsPrimary = a.IsPrimary,
-                               PostalCode = a.PostalCode
-                           })
-                           .ToList(),
+                    CompanyName = c.Company != null ? c.Company.Name : null,
 
-                       Contacts = c.Contacts
-                           .OrderByDescending(k => k.IsPrimary == true)
-                           .Take(5)
-                           .Select(k => new GetContact
-                           {
-                               IsPrimary = k.IsPrimary,
-                               ContactId = k.ContactId,
-                               FirstName = k.FirstName,
-                               Gender = k.Gender,
-                               LastName = k.LastName,
-                               Email = k.Email,
-                               Phone = k.Phone
-                           })
-                           .ToList()
-                   })
-                   .FirstOrDefaultAsync();
+                    Addresses = c.Addresses
+                        .Where(a => a.IsActive == true)
+                        .OrderByDescending(a => a.IsPrimary)
+                        .Select(a => new GetAddress
+                        {
+                            AddressId = a.AddressId,
+                            AddressLine = a.AddressLine,
+                            City = a.City,
+                            District = a.District,
+                            Province = a.Province,
+                            Country = a.Country,
+                            PostalCode = a.PostalCode,
+                            IsPrimary = a.IsPrimary,
+                            IsActive = a.IsActive,
+                        })
+                        .ToList(),
+
+                    Contacts = c.Contacts
+                        .Where(k => k.IsActive == true)
+                        .OrderByDescending(k => k.IsPrimary)
+                        .Take(5)
+                        .Select(k => new GetContact
+                        {
+                            ContactId = k.ContactId,
+                            FirstName = k.FirstName,
+                            LastName = k.LastName,
+                            Gender = k.Gender,
+                            Email = k.Email,
+                            Phone = k.Phone,
+                            IsPrimary = k.IsPrimary,
+                            IsActive = k.IsActive,
+                        })
+                        .ToList()
+                })
+                .FirstOrDefaultAsync();
         }
+
 
         public async Task<string?> GetLatestExternalIdStartsWithAsync(string prefix)
         {
@@ -148,12 +153,6 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
                 .ThenByDescending(e => e.ExternalId)           // cùng độ dài thì so chuỗi
                 .Select(e => e.ExternalId)
                 .FirstOrDefaultAsync();
-        }
-
-        public IQueryable<Customer> Query(bool track = false)
-        {
-            var db = _context.Customers.AsQueryable();
-            return track ? db : db.AsNoTracking();
         }
 
         public IQueryable<Address> QueryAddress(bool track = false)
@@ -338,5 +337,15 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
 
         //    return true;
         //}
+
+        public async Task AddAddressAsync(List<Address> addedAddresses, CancellationToken ct)
+        {
+            await _context.AddRangeAsync(addedAddresses, ct);
+        }
+
+        public async Task AddContactAsync(List<Contact> addedContacts, CancellationToken ct)
+        {
+            await _context.AddRangeAsync(addedContacts, ct);
+        }
     }
 }

@@ -19,8 +19,6 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs
         public string? Address { get; set; }
         public string? DeliveryName { get; set; }
 
-
-
         public string? CustomerSpectialRequirement { get; set; }
         public string? paymentType { get; set; }
         public string? delivieryType { get; set; }

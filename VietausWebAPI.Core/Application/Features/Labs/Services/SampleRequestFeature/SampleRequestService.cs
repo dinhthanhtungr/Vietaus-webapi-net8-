@@ -4,28 +4,33 @@ using Microsoft.EntityFrameworkCore;
 using QuestPDF.Helpers;
 using System;
 using System.Collections.Generic;
+using System.Formats.Asn1;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.SampleRequest;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.CreateSampleRequest;
+using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRequestFeature;
 using VietausWebAPI.Core.Application.Features.Notifications.DTOs;
 using VietausWebAPI.Core.Application.Features.Notifications.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
+using VietausWebAPI.Core.Application.Shared.Helper.PriceHelpers;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
 using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
+using VietausWebAPI.Core.Domain.Enums.Formulas;
 using VietausWebAPI.Core.Domain.Enums.Notifications;
 using VietausWebAPI.Core.Domain.Enums.Products;
-using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.WebAPI.Helpers.Securities.Roles;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
-using VietausWebAPI.Core.Application.Features.Shared.ServiceContracts;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFeature
 {
@@ -36,21 +41,24 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
         private readonly ICurrentUser _currentUser;
         private readonly INotificationService _notificationService;
         private readonly IVisibilityHelper _visibilityHelper;
+        private readonly IPriceProvider _priceProvider;
 
         public SampleRequestService(IUnitOfWork unitOfWork
                                   , IMapper mapper
                                   , ICurrentUser currentUser
                                   , INotificationService notificationService
-                                  , IVisibilityHelper visibilityHelper)
+                                  , IVisibilityHelper visibilityHelper
+            , IPriceProvider priceProvider)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _currentUser = currentUser;
             _notificationService = notificationService;
             _visibilityHelper = visibilityHelper;
+            _priceProvider = priceProvider;
         }
 
-        // ======================================================================== Get ======================================================================== 
+        // ========================================================================= Get ========================================================================= 
         /// <summary>
         /// Trả về mẫu theo ID kèm sản phẩm và công thức (nếu có)
         /// </summary>
@@ -63,39 +71,173 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             try
             {
                 var dto = await _unitOfWork.SampleRequestRepository.Query()
-                    .AsNoTracking()
                     .Where(c => c.SampleRequestId == id && c.IsActive == true)
-                    .ProjectTo<GetSampleWithProductRequest>(_mapper.ConfigurationProvider)
-                    .SingleOrDefaultAsync(ct);
-
-                if (dto is null) throw new KeyNotFoundException($"SampleRequest {id} not found");
-
-                if (dto.Sample?.Formula?.FormulaId != null)
-                {
-                    dto.Sample.Formula = await _unitOfWork.FormulaRepository.Query()
-                        .Where(f => f.FormulaId == dto.Sample.Formula.FormulaId)
-                        .ProjectTo<GetSampleFormula>(_mapper.ConfigurationProvider)
-                        .SingleOrDefaultAsync(ct);
-                }
-
-                else
-                {
-                    var productId = dto.Product?.ProductId;
-
-                    if (productId != null)
+                    .Select(x => new
                     {
-                        dto.Sample.Formula = await _unitOfWork.FormulaRepository.Query()
-                            .Where(f => f.ProductId == productId)
-                            // Nếu bạn CHƯA có ApprovedAt/CreatedAt/VersionNo, tạm xài ExternalId (đã pad cố định)
-                            .OrderByDescending(f => f.ExternalId)
-                            .ProjectTo<GetSampleFormula>(_mapper.ConfigurationProvider)
-                            .FirstOrDefaultAsync(ct);
+                        // Sample
+                        x.SampleRequestId,
+                        x.ExternalId,
+                        x.CustomerId,
+                        CustomerName = x.Customer.CustomerName,
+                        CustomerCode = x.Customer.ExternalId,
+                        ManagerName = x.ManagerByNavigation.FullName, // đổi sang đúng property tên thật bên Employee nếu khác
+                        x.ProductId,
+                        x.AttachmentCollectionId,
+                        x.RealDeliveryDate,
+                        x.ExpectedDeliveryDate,
+                        x.RequestDeliveryDate,
+                        x.RequestTestSampleDate,
+                        x.ResponseDeliveryDate,
+                        x.RealPriceQuoteDate,
+                        x.ExpectedPriceQuoteDate,
+                        x.RequestType,
+                        x.ExpectedQuantity,
+                        x.ExpectedPrice,
+                        x.SampleQuantity,
+                        x.OtherComment,
+                        x.InfoType,
+                        x.FormulaId,
+                        x.SaleComment,
+                        x.AdditionalComment,
+                        x.CustomerProductCode,
+                        x.BranchId,
+                        x.Status,
+                        x.Package,
 
-                    }
+                        // Product
+                        Product = new
+                        {
+                            x.Product.ProductId,
+                            x.Product.ColourCode,
+                            x.Product.Name,
+                            x.Product.ColourName,
+                            x.Product.Additive,
+                            x.Product.UsageRate,
+                            x.Product.DeltaE,
+                            x.Product.Requirement,
+                            x.Product.ExpiryType,
+                            x.Product.StorageCondition,
+                            x.Product.LabComment,
+                            x.Product.Procedure,
+                            x.Product.RecycleRate,
+                            x.Product.TaicalRate,
+                            x.Product.Application,
+                            x.Product.ProductUsage,
+                            x.Product.PolymerMatchedIn,
+                            x.Product.Code,
+                            x.Product.EndUser,
+                            x.Product.FoodSafety,
+                            x.Product.RohsStandard,
+                            x.Product.ReachStandard,
+                            x.Product.MaxTemp,
+                            x.Product.WeatherResistance,
+                            x.Product.LightCondition,
+                            x.Product.VisualTest,
+                            x.Product.ReturnSample,
+                            x.Product.OtherComment,
+                            x.Product.CategoryId,
+                            x.Product.Weight,
+                            x.Product.Unit,
+                            x.Product.IsRecycle
+                        }
+                    })
+                    .FirstOrDefaultAsync(ct);
+                // Map sang DTO trả về
+                var sample = new GetSampleRequest
+                {
+                    SampleRequestId = dto.SampleRequestId,
+                    CustomerId = dto.CustomerId,
+                    ExternalId = dto.ExternalId,
+                    CustomerName = dto.CustomerName,
+                    CustomerCode = dto.CustomerCode,
+                    ManagerName = dto.ManagerName,
+                    ProductId = dto.ProductId,
+                    AttachmentCollectionId = dto.AttachmentCollectionId, // có thể null
+                    RealDeliveryDate = dto.RealDeliveryDate,
+                    ExpectedDeliveryDate = dto.ExpectedDeliveryDate,
+                    RequestDeliveryDate = dto.RequestDeliveryDate,
+                    RequestTestSampleDate = dto.RequestTestSampleDate,
+                    ResponseDeliveryDate = dto.ResponseDeliveryDate,
+                    RealPriceQuoteDate = dto.RealPriceQuoteDate,
+                    ExpectedPriceQuoteDate = dto.ExpectedPriceQuoteDate,
+                    RequestType = dto.RequestType ?? string.Empty,
+                    ExpectedQuantity = dto.ExpectedQuantity,
+                    ExpectedPrice = dto.ExpectedPrice,
+                    SampleQuantity = dto.SampleQuantity,
+                    OtherComment = dto.OtherComment,
+                    InfoType = dto.InfoType,
+                    //FormulaId = dto.FormulaId,
+                    // FormulaPrice sẽ set ở dưới nếu có FormulaId
+                    Formula = dto.FormulaId.HasValue
+                        ? new GetSampleFormula 
+                            { 
+                                FormulaId = dto.FormulaId.Value,
+                                IsSelect = true
+
+                        }
+                        : null,
+                    SaleComment = dto.SaleComment,
+                    AdditionalComment = dto.AdditionalComment ?? string.Empty,
+                    CustomerProductCode = dto.CustomerProductCode ?? string.Empty,
+                    BranchId = dto.BranchId,
+                    Status = string.IsNullOrWhiteSpace(dto.Status) ? "New" : dto.Status,
+                    Package = dto.Package ?? string.Empty
+                };
+
+                var product = new GetProduct
+                {
+                    ProductId = dto.Product.ProductId,
+                    ColourCode = dto.Product.ColourCode,
+                    Name = dto.Product.Name ?? string.Empty,    // bắt buộc
+                    ColourName = dto.Product.ColourName,
+                    Additive = dto.Product.Additive,
+                    UsageRate = dto.Product.UsageRate,
+                    DeltaE = dto.Product.DeltaE,
+                    Requirement = dto.Product.Requirement,
+                    ExpiryType = dto.Product.ExpiryType,
+                    StorageCondition = dto.Product.StorageCondition,
+                    LabComment = dto.Product.LabComment,
+                    Procedure = dto.Product.Procedure,
+                    RecycleRate = dto.Product.RecycleRate,
+                    TaicalRate = dto.Product.TaicalRate,
+                    Application = dto.Product.Application,
+                    ProductUsage = dto.Product.ProductUsage,
+                    PolymerMatchedIn = dto.Product.PolymerMatchedIn,
+                    Code = dto.Product.Code,
+                    EndUser = dto.Product.EndUser,
+                    FoodSafety = dto.Product.FoodSafety,
+                    RohsStandard = dto.Product.RohsStandard,
+                    ReachStandard = dto.Product.ReachStandard,
+                    MaxTemp = dto.Product.MaxTemp,
+                    WeatherResistance = dto.Product.WeatherResistance,
+                    LightCondition = dto.Product.LightCondition,
+                    VisualTest = dto.Product.VisualTest,
+                    ReturnSample = dto.Product.ReturnSample,
+                    OtherComment = dto.Product.OtherComment,
+                    CategoryId = dto.Product.CategoryId,
+                    Weight = dto.Product.Weight,
+                    Unit = dto.Product.Unit,
+                    IsRecycle = dto.Product.IsRecycle
+                };
+
+                // Tính FormulaPrice nếu có FormulaId (tái sử dụng CalcFromVU)
+                if (sample.Formula != null && sample.Formula.FormulaId != Guid.Empty)
+                { 
+                    // Lưu ý: CalcFromVU trả về decimal (đã round 2). Có thể mất ~vài ms do query BOM + giá
+                    var price = await _priceProvider.CalculatePriceAsync(sample.Formula.FormulaId, FormulaSource.FromVU, ct);
+                    sample.Formula.TotalPrice = price;
                 }
-                return dto;
-            }
+                //else
+                //{
+                //    sample.FormulaPrice = null;
+                //}
 
+                return new GetSampleWithProductRequest
+                {
+                    Product = product,
+                    Sample = sample
+                };
+            }
             catch (Exception ex)
             {
                 throw new Exception($"Lỗi khi lấy thông tin mẫu: {ex.Message}", ex);
@@ -135,6 +277,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     result = result.Where(x =>
                         (x.ExternalId ?? "").Contains(keyword)
                         || ((x.CreatedByNavigation != null ? x.CreatedByNavigation.ExternalId : "") ?? "").Contains(keyword)
+                        || ((x.CreatedByNavigation != null ? x.CreatedByNavigation.FullName : "") ?? "").Contains(keyword)
                         || ((x.Product != null ? x.Product.ColourCode : "") ?? "").Contains(keyword)
                         || ((x.Customer != null ? x.Customer.ExternalId : "") ?? "").Contains(keyword)
                         || ((x.Customer != null ? x.Customer.CustomerName : "") ?? "").Contains(keyword)
@@ -188,7 +331,149 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             }
         }
 
-        // ======================================================================== Post ======================================================================== 
+        /// <summary>
+        /// Lấy danh sách yêu cầu mẫu kèm sản phẩm cho VU Manufacturing, chỉ nên dùng chop lệnh sản xuất VU vì catagories này nó lấy từ công thức
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<OperationResult<PagedResult<GetProductSampleRequestDTO>>> GetSampleRequestForVUManufacturing(ProductQuery query, CancellationToken ct = default)
+        {
+            try
+            {
+                if (query.PageNumber <= 0) query.PageNumber = 1;
+                if (query.PageSize <= 0) query.PageSize = 15;
+
+                var sampleRequestQ = _unitOfWork.SampleRequestRepository.Query();
+
+                // 1) Ẩn product không có tên HOẶC không có colour code
+                sampleRequestQ = sampleRequestQ.Where(x => !string.IsNullOrWhiteSpace(x.Product.Name)
+                                                            && !string.IsNullOrWhiteSpace(x.Product.ColourCode));
+
+                // 2) Keyword
+                if (!string.IsNullOrWhiteSpace(query.Keyword))
+                {
+                    var keyword = query.Keyword.Trim();
+                    sampleRequestQ = sampleRequestQ.Where(x =>
+                        (x.Product.Name ?? string.Empty).Contains(keyword) ||
+                        (x.Product.ColourCode ?? string.Empty).Contains(keyword));
+                }
+
+                // 3) Filter khác
+                if (query.CompanyId is Guid companyId && companyId != Guid.Empty)
+                    sampleRequestQ = sampleRequestQ.Where(p => p.CompanyId == companyId);
+
+                if (query.ProductId is Guid productId && productId != Guid.Empty)
+                    sampleRequestQ = sampleRequestQ.Where(p => p.ProductId == productId);
+                if (query.FormulaId is Guid formulaId && formulaId != Guid.Empty)
+                {
+                    sampleRequestQ = sampleRequestQ.Where(sr =>
+                        sr.Product.Formulas.Any(f => f.FormulaId == formulaId && f.IsActive));
+                }
+
+                Guid? customerIdFilter = null;
+                if (query.CustomerId is Guid customerId && customerId != Guid.Empty)
+                {
+                    customerIdFilter = customerId;
+                    // chỉ lấy product nào có SR của customer đó
+                    sampleRequestQ = sampleRequestQ.Where(p => sampleRequestQ
+                        .Any(sr => sr.SampleRequestId == p.SampleRequestId && sr.CustomerId == customerId));
+                }
+
+                // Tổng số record (để paging)
+                var totalCount = await sampleRequestQ.CountAsync(ct);
+
+                // ==== BƯỚC 1: Lấy danh sách ProductId theo trang (nhẹ nhất) ====
+                var pageIds = await sampleRequestQ
+                    .OrderByDescending(p => p.CreatedDate)
+                    .Skip((query.PageNumber - 1) * query.PageSize)
+                    .Take(query.PageSize)
+                    .Select(p => p.SampleRequestId)
+                    .ToListAsync(ct);
+
+                if (pageIds.Count == 0)
+                {
+                    return OperationResult<PagedResult<GetProductSampleRequestDTO>>.Ok(
+                        new PagedResult<GetProductSampleRequestDTO>(
+                            new List<GetProductSampleRequestDTO>(), // items
+                            totalCount,                            // totalCount
+                            query.PageNumber,                      // page
+                            query.PageSize                         // pageSize
+                        )
+                    );
+                }
+
+
+                // ==== BƯỚC 2: Lấy chi tiết các SampleRequest + Product + Formula (nặng hơn) ====
+                var items = await sampleRequestQ
+                    .Where(sr => pageIds.Contains(sr.SampleRequestId))
+                    .OrderByDescending(sr => sr.CreatedDate) // giữ đúng thứ tự trang
+                    .Select(sr => new GetProductSampleRequestDTO
+                    {
+                        ProductId = sr.Product.ProductId,
+                        ColourCode = sr.Product.ColourCode,
+                        Name = sr.Product.Name ?? string.Empty,
+                        ColourName = sr.Product.ColourName,
+                        UsageRate = sr.Product.UsageRate,
+
+                        ExternalId = sr.ExternalId,
+                        CustomerName = sr.Customer.CustomerName,
+                        CustomerCode = sr.Customer.ExternalId,
+                        SaleComment = sr.SaleComment,
+                        AdditionalComment = sr.AdditionalComment ?? string.Empty,
+
+                        // 1 Product -> nhiều Formula
+                        SampleFormulas = sr.Product.Formulas
+                            .Where(f => f.IsActive)
+                            .OrderByDescending(f => f.CreatedDate)
+                            .Select(f => new GetFormula
+                            {
+                                FormulaId = f.FormulaId,
+                                ExternalId = f.ExternalId,
+                                Name = f.Name,
+                                Status = f.Status,
+
+                                materialFormulas = f.FormulaMaterials
+                                    .Where(mf => mf.IsActive)
+                                    .Select(mf => new GetMaterialFormula
+                                    {
+                                        itemType = mf.itemType,
+                                        ItemId = mf.itemType == ItemType.Material
+                                            ? mf.MaterialId ?? Guid.Empty
+                                            : mf.ProductId ?? Guid.Empty,
+
+                                        CategoryId = mf.CategoryId,
+                                        Quantity = mf.Quantity,
+                                        UnitPrice = mf.UnitPrice,
+                                        TotalPrice = mf.TotalPrice,
+
+                                        MaterialNameSnapshot = mf.MaterialNameSnapshot,
+                                        MaterialExternalIdSnapshot = mf.MaterialExternalIdSnapshot,
+                                        Unit = mf.Unit
+                                    })
+                                    .ToList()
+                            })
+                            .ToList()
+                    })
+                    .ToListAsync(ct);
+
+
+                var paged = new PagedResult<GetProductSampleRequestDTO>(
+                    items,
+                    totalCount,
+                    query.PageNumber,
+                    query.PageSize
+                );
+
+                return OperationResult<PagedResult<GetProductSampleRequestDTO>>.Ok(paged);
+            }
+            catch (Exception ex)
+            {
+                return OperationResult<PagedResult<GetProductSampleRequestDTO>>.Fail(ex.Message);
+            }
+        }
+
+        // ======================================================================== Post ========================================================================= 
 
         /// <summary>
         /// Tạo mới yêu cầu mẫu kèm sản phẩm 
@@ -208,7 +493,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 throw new ArgumentException("CompanyId cannot be empty");
 
             // nếu client quên gửi sample thì báo luôn
-            if (req.Sample is null)
+                if (req.Sample is null)
                 throw new ArgumentException("Sample payload is required", nameof(req.Sample));
 
             await using var tx = await _unitOfWork.BeginTransactionAsync();
@@ -233,16 +518,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 {
                     // case 2: tạo mới product
                     var product = _mapper.Map<Product>(req.Product);
-
                     product.ProductId = Guid.CreateVersion7();
-
                     product.CompanyId = companyId;
-
-                    // (nếu entity Product có các field hệ thống thì set luôn)
-                    //product.CreatedBy = userId;
-                    //product.UpdatedBy = userId;
-                    //product.CreatedDate = now;
-                    //product.UpdatedDate = now;
                     product.IsActive = true;
 
                     await _unitOfWork.ProductRepository.AddAsync(product, ct);
@@ -392,7 +669,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 }
 
                 // 3) Patch SampleRequest (chỉ những field cho phép)
-                PatchHelper.SetIf(req.CustomerId, () => existing.CustomerId, v => existing.CustomerId = v);
+                PatchHelper.SetIfGuid(req.CustomerId, () => existing.CustomerId, v => existing.CustomerId = v);
 
                 PatchHelper.SetIf(req.RealDeliveryDate, () => existing.RealDeliveryDate.GetValueOrDefault(), v => existing.RealDeliveryDate = v);
                 PatchHelper.SetIf(req.RequestTestSampleDate, () => existing.RequestTestSampleDate.GetValueOrDefault(), v => existing.RequestTestSampleDate = v);
@@ -461,16 +738,17 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     PatchHelper.SetIfNullable(req.Product.Weight, () => product.Weight, v => product.Weight = v);
 
                     // Flags / chuẩn kiểm
-                    PatchHelper.SetIf(req.Product.FoodSafety, () => product.FoodSafety, v => product.FoodSafety = v);
-                    PatchHelper.SetIf(req.Product.RohsStandard, () => product.RohsStandard, v => product.RohsStandard = v);
+                    PatchHelper.SetIfNullable(req.Product.FoodSafety, () => product.FoodSafety, v => product.FoodSafety = v);
+                    PatchHelper.SetIfNullable(req.Product.RohsStandard, () => product.RohsStandard, v => product.RohsStandard = v);
                     PatchHelper.SetIfRef(req.Product.WeatherResistance, () => product.WeatherResistance, v => product.WeatherResistance = v);
                     PatchHelper.SetIfRef(req.Product.LightCondition, () => product.LightCondition, v => product.LightCondition = v);
                     PatchHelper.SetIfRef(req.Product.VisualTest, () => product.VisualTest, v => product.VisualTest = v);
-                    PatchHelper.SetIf(req.Product.ReturnSample, () => product.ReturnSample, v => product.ReturnSample = v);
+                    PatchHelper.SetIfNullable(req.Product.ReturnSample, () => product.ReturnSample, v => product.ReturnSample = v);
 
                     // Phân loại
                     PatchHelper.SetIf(req.Product.CategoryId, () => product.CategoryId, v => product.CategoryId = v);
-
+                    PatchHelper.SetIf(req.Product.IsRecycle, () => product.IsRecycle, v => product.IsRecycle = v);
+                    PatchHelper.SetIfNullable(req.Product.ReachStandard, () => product.ReachStandard, v => product.ReachStandard = v);
 
                     if (!string.IsNullOrWhiteSpace(req.Product?.Name) && !req.CreatedBy.HasValue)
                     {

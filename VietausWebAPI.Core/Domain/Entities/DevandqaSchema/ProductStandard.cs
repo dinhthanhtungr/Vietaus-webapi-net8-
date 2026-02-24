@@ -14,6 +14,7 @@ namespace VietausWebAPI.Core.Domain.Entities.DevandqaSchema
         public Guid Id { get; set; }
         public Guid ProductId { get; set; }
 
+        public string? externalId { get; set; }
 
         public string? ProductExternalId { get; set; }
         public string? Status { get; set; }
@@ -33,7 +34,9 @@ namespace VietausWebAPI.Core.Domain.Entities.DevandqaSchema
         public string? MigrationTest { get; set; }
 
 
-        public int Weight { get; set; } 
+        public int Weight { get; set; }
+        public string? packed { get; set; }
+
         public string? Shape { get; set; }
 
         public Guid CompanyId { get; set; }

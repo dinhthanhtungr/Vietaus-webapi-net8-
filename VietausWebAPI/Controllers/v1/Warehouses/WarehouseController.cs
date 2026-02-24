@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadServices;
+using VietausWebAPI.Core.Application.Features.Warehouse.Queries;
 using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1.Warehouses
@@ -28,6 +29,16 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Warehouses
             Guid formulaId, CancellationToken ct)
             => Ok(await _warehouseReadService.GetVaAvailabilityAsync(formulaId, ct));
 
+        [HttpGet]
+        public async Task<ActionResult<List<GetStockAvaiable>>> GetWarehouseSnapshotsByMfgId(
+            [FromQuery] WarehouseReadServiceQuery query,
+            CancellationToken ct)
+        {
+            var result = await _warehouseReadService.GetStockAvailableAsync(query);
+            if (!result.Success) return BadRequest(result);
+            return Ok(result);
+        }
+
         [HttpPost("snapshot-reserve")]
         public async Task<ActionResult> CreateVaSnapshotAndReservations(
             [FromBody] Core.Application.Features.Warehouse.DTOs.WarehouseWriteServices.CreateVaSnapshotAndReservations req,
@@ -38,5 +49,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Warehouses
             if (!result.Success) return Ok(result);
             return Ok(result);
         }
+
+
     }
 }

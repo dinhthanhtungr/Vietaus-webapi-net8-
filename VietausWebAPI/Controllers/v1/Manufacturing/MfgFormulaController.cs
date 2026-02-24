@@ -118,6 +118,25 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Manufacturing
             }
         }
 
+        [HttpGet("all/compare-formulas")]
+        public async Task<IActionResult> GetCompareFormulas([FromQuery] MfgFormulaQuery query)
+        {
+            try
+            {
+                var result = await _mfgFormulaService.GetCompareFormulaAsync(query);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
         [HttpGet("all/version")]
         public async Task<IActionResult> GetAllMfgFormulasVersion([FromQuery] MfgProductionOrderQuery query)
         {

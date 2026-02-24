@@ -9,10 +9,12 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
     {
         public static IServiceCollection AddHRModule(this IServiceCollection services)
         {
-            services.AddScoped<IEmployeesRepository, EmployeesRepository>();
             services.AddScoped<IEmployeesService, EmployeesService>();
+
+            services.AddScoped<IEmployeesRepository, EmployeesRepository>();
             services.AddScoped<IGroupRepository, GroupRepository>();
             services.AddScoped<IMemberInGroupRepository, MemberInGroupRepository>();
+            services.AddScoped<IPartRepository, PartRepository>();
             return services;
         }
     }

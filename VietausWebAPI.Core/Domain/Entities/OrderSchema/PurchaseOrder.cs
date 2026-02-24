@@ -43,11 +43,6 @@ public partial class PurchaseOrder
 
     public virtual ICollection<PurchaseOrderDetail> PurchaseOrderDetails { get; set; } = new List<PurchaseOrderDetail>();
     public virtual ICollection<PurchaseOrderLink> PurchaseOrderLinks { get; set; } = new List<PurchaseOrderLink>();
-
-    //public virtual ICollection<PurchaseOrderStatusHistory> PurchaseOrderStatusHistories { get; set; } = new List<PurchaseOrderStatusHistory>();
-
-    //public virtual ICollection<PurchaseOrdersSchedule> PurchaseOrdersSchedules { get; set; } = new List<PurchaseOrdersSchedule>();
-
     public virtual Supplier? Supplier { get; set; }
 
     public virtual Employee? UpdatedByNavigation { get; set; }

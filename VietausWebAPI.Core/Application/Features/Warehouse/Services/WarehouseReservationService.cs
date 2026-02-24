@@ -16,6 +16,7 @@ using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.DeliverySchema;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 using VietausWebAPI.Core.Domain.Entities.WarehouseSchema;
+using VietausWebAPI.Core.Domain.Enums.Category;
 using VietausWebAPI.Core.Domain.Enums.Logs;
 using VietausWebAPI.Core.Domain.Enums.WareHouses;
 using static QuestPDF.Helpers.Colors;
@@ -158,7 +159,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             var wrQuery = _unitOfWork.WarehouseRequestRepository.Query(track: false);
 
             // Nếu CHƯA có cột nguồn, kiểm bằng RequestCode (pattern duy nhất theo ExternalId)
-            var requestCode = await _externalIdService.NextAsync("PXK", ct: ct);
+            var requestCode = await _externalIdService.NextAsync(DocumentPrefix.PRQ.ToString(), ct: ct);
             var existedWR = await wrQuery.FirstOrDefaultAsync(
                 x => x.RequestCode == requestCode && x.IsActive, ct);
 
@@ -210,6 +211,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 RequestName = $"Xuất NVL cho LSX {existing.ExternalId}",
                 IsActive = true,
                 ReqType = WareHouseRequestType.ExportForProduction,
+                codeFromRequest = existing.ExternalId ?? "", // nếu bạn vẫn muốn lưu
 
                 CompanyId = companyId,
                 CreatedDate = now,
@@ -233,7 +235,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                     ProductName = m.MaterialNameSnapshot ?? "",         // tên NVL
 
                     LotNumber = null,          // để kho pick lot sau
-                    WeightKg = m.Quantity * batches, // KHỐI LƯỢNG YÊU CẦU
+                    WeightKg = m.Quantity * (existing.TotalQuantity ?? 0), // KHỐI LƯỢNG YÊU CẦU
                     StockStatus = StockType.RawMaterial.ToString(),   // tuỳ enum string của bạn
                     IsActive = true
                 });
@@ -250,13 +252,9 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             Guid companyId,
             CancellationToken ct)
         {
-            // Idempotent: đã có XK cho PGH này chưa?
-            var existed = _unitOfWork.WarehouseRequestRepository.Query(track: false);
-
-            if (existed != null) return;
-
+        
             // (Nếu chưa có cột SourceType/SourceId, dùng codeFromRequest và đặt UNIQUE)
-            var requestCode = await _externalIdService.NextAsync("PXK", ct: ct);
+            var requestCode = await _externalIdService.NextAsync(DocumentPrefix.PRQ.ToString(), ct: ct);
 
             // Gộp theo mã sản phẩm để kho dễ xử lý
             var detailGroups = deliveryOrder.Details

@@ -8,41 +8,63 @@ namespace VietausWebAPI.Core.Application.Shared.Helper
 {
     public static class PatchHelper
     {
-        // cho kiểu tham chiếu (string, object…)
+        // Reference type: null = bỏ qua (KHÔNG patch)
         public static bool SetIfRef<T>(T? incoming, Func<T?> current, Action<T?> apply)
             where T : class
         {
-            var cur = current();
-            var changed =
-                incoming != null && // chỉ apply khi có giá trị mới
-                !EqualityComparer<T?>.Default.Equals(incoming, cur);
+            if (incoming is null) return false;
 
+            var cur = current();
+            var changed = !EqualityComparer<T?>.Default.Equals(incoming, cur);
             if (changed) apply(incoming);
             return changed;
         }
 
-        // cho kiểu value (int, decimal, bool...) với input nullable (int?, bool?…)
-        // HỖ TRỢ cả việc set về null nếu bạn dùng phiên bản Nullable bên dưới.
-        public static bool SetIf<T>(T? incoming, Func<T> current, Action<T> apply)
-            where T : struct, IEquatable<T>
+        // Value type (non-nullable entity): null = bỏ qua
+        public static bool SetIf<T>(
+            T? incoming,
+            Func<T> current,
+            Action<T> apply,
+            Func<T, bool>? isValid = null
+        ) where T : struct, IEquatable<T>
         {
             if (!incoming.HasValue) return false;
+            if (isValid != null && !isValid(incoming.Value)) return false;
+
             var cur = current();
             var changed = !incoming.Value.Equals(cur);
             if (changed) apply(incoming.Value);
             return changed;
         }
 
-        // Nếu bạn cần hỗ trợ so sánh và set được cả null (ví dụ CheckBy từ int? -> null)
-        public static bool SetIfNullable<T>(T? incoming, Func<T?> current, Action<T?> apply)
-            where T : struct, IEquatable<T>
+        public static bool SetIfGuid(Guid? incoming, Func<Guid> current, Action<Guid> apply, bool ignoreEmpty = true)
+            => SetIf(incoming, current, apply, g => !ignoreEmpty || g != Guid.Empty);
+
+        // Nullable value type entity: null = patch (set null)
+        public static bool SetIfNullable<T>(
+            T? incoming,
+            Func<T?> current,
+            Action<T?> apply
+        ) where T : struct
         {
             var cur = current();
             var changed = !Nullable.Equals(incoming, cur);
-            if (changed) apply(incoming);
+            if (changed) apply(incoming); // incoming có thể null => set null
             return changed;
         }
 
+        // Reference type: null = patch (set null)
+        public static bool SetIfRefNullable<T>(
+            T? incoming,
+            Func<T?> current,
+            Action<T?> apply
+        ) where T : class
+        {
+            var cur = current();
+            var changed = !EqualityComparer<T?>.Default.Equals(incoming, cur);
+            if (changed) apply(incoming); // incoming có thể null => set null
+            return changed;
+        }
 
     }
 }

@@ -52,10 +52,10 @@ public partial class Product
 
     public string? EndUser { get; set; }
 
-    public bool FoodSafety { get; set; } = false;
+    public bool? FoodSafety { get; set; }
 
-    public bool RohsStandard { get; set; } = false;
-    public bool ReachStandard { get; set; } = false;
+    public bool? RohsStandard { get; set; }
+    public bool? ReachStandard { get; set; }
 
     public double? MaxTemp { get; set; }
 
@@ -65,7 +65,7 @@ public partial class Product
 
     public string? VisualTest { get; set; }
 
-    public bool ReturnSample { get; set; } = false;
+    public bool? ReturnSample { get; set; }
     public bool IsRecycle { get; set; } = false;
 
     public string? OtherComment { get; set; }
@@ -76,7 +76,7 @@ public partial class Product
 
     public string? Unit { get; set; }
 
-    public DateTime CreatedDate { get; set; }
+    public DateTime? CreatedDate { get; set; }
 
     public Guid? CreatedBy { get; set; }
 
@@ -92,6 +92,10 @@ public partial class Product
     public virtual Company? Company { get; set; }
 
     public virtual Employee? CreatedByNavigation { get; set; }
+
+    public virtual ICollection<FormulaMaterial> FormulaMaterials { get; set; } = new List<FormulaMaterial>();
+    public virtual ICollection<ManufacturingFormulaMaterial> ManufacturingFormulaMaterials { get; set; } = new List<ManufacturingFormulaMaterial>();
+    public virtual ICollection<ManufacturingFormulaVersionItem> ManufacturingFormulaVersionItems { get; set; } = new List<ManufacturingFormulaVersionItem>();
 
     public virtual ICollection<DeliveryOrderDetail> DeliveryOrderDetails { get; set; } = new List<DeliveryOrderDetail>();
     public virtual ICollection<Formula> Formulas { get; set; } = new List<Formula>();

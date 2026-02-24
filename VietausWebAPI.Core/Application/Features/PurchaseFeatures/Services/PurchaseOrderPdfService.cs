@@ -8,8 +8,14 @@ using VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.DTOs.PdfPrinter;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.Helpers;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.ServiceContracts;
-using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
+using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
+using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.OrderSchema;
+using VietausWebAPI.Core.Domain.Entities.WarehouseSchema;
+using VietausWebAPI.Core.Domain.Enums.Category;
+using VietausWebAPI.Core.Domain.Enums.WareHouses;
 
 namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
 {
@@ -17,11 +23,15 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPurchaseOrderPdfRenderHelper _pdfRenderHelper;
+        private readonly ICurrentUser _currentUserService;
+        private readonly IExternalIdService _idService;
 
-        public PurchaseOrderPdfService(IUnitOfWork unitOfWork, IPurchaseOrderPdfRenderHelper pdfRenderHelper)
+        public PurchaseOrderPdfService(IUnitOfWork unitOfWork, IPurchaseOrderPdfRenderHelper pdfRenderHelper, ICurrentUser currentUserService, IExternalIdService idService)
         {
             _unitOfWork = unitOfWork;
             _pdfRenderHelper = pdfRenderHelper;
+            _currentUserService = currentUserService;   
+            _idService = idService;
         }
 
         public async Task<byte[]> GenerateAsync(Guid PurchaseOrderId, CancellationToken ct = default)
@@ -29,93 +39,80 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
             var now = DateTime.Now;
 
             using var tx = await _unitOfWork.BeginTransactionAsync();
-
             try
             {
+                // ✅ Tạo WarehouseRequest lần đầu (nếu chưa có)
+                await EnsureWarehouseRequestCreatedFirstTimeAsync(PurchaseOrderId, now, ct);
 
-
-
+                // --- phần build VM như bạn đang làm ---
                 var vm = await _unitOfWork.PurchaseOrderRepository.Query(track: false)
-                        .Where(x => x.PurchaseOrderId == PurchaseOrderId)
-                        .Select(x => new PdfPrinterPurchaseOrder
-                        {
-                            PurchaseOrderSnapshotId = x.PurchaseOrderSnapshotId ?? Guid.Empty,
-                            PurchaseOrderExternalIdSnapshot = x.ExternalId ?? string.Empty,
+                    .Where(x => x.PurchaseOrderId == PurchaseOrderId)
+                    .Select(x => new PdfPrinterPurchaseOrder
+                    {
+                        PurchaseOrderSnapshotId = x.PurchaseOrderSnapshotId ?? Guid.Empty,
+                        PurchaseOrderExternalIdSnapshot = x.ExternalId ?? string.Empty,
+                        EmployeeExternalIdSnapshot = x.PurchaseOrderSnapshot != null
+                            ? x.PurchaseOrderSnapshot.EmployeeExternalIdSnapshot
+                            : x.CreatedByNavigation!.ExternalId,
+                        EmployeeFullNameSnapshot = x.PurchaseOrderSnapshot != null
+                            ? x.PurchaseOrderSnapshot.EmployeeFullNameSnapshot
+                            : x.CreatedByNavigation!.FullName,
+                        PhoneNumberSnapshot = x.PurchaseOrderSnapshot != null
+                            ? x.PurchaseOrderSnapshot.PhoneNumberSnapshot
+                            : x.CreatedByNavigation!.PhoneNumber,
+                        EmailSnapshot = x.PurchaseOrderSnapshot != null
+                            ? x.PurchaseOrderSnapshot.EmailSnapshot
+                            : x.CreatedByNavigation!.Email,
 
-                            // Snapshot thông tin người tạo đơn
-                            EmployeeExternalIdSnapshot = x.PurchaseOrderSnapshot != null
-                                                             ? x.PurchaseOrderSnapshot.EmployeeExternalIdSnapshot
-                                                             : x.CreatedByNavigation!.ExternalId,
-                            EmployeeFullNameSnapshot = x.PurchaseOrderSnapshot != null
-                                                             ? x.PurchaseOrderSnapshot.EmployeeFullNameSnapshot
-                                                             : x.CreatedByNavigation!.FullName,
-                            PhoneNumberSnapshot = x.PurchaseOrderSnapshot != null
-                                                             ? x.PurchaseOrderSnapshot.PhoneNumberSnapshot
-                                                             : x.CreatedByNavigation!.PhoneNumber,
-                            EmailSnapshot = x.PurchaseOrderSnapshot != null
-                                                             ? x.PurchaseOrderSnapshot.EmailSnapshot
-                                                             : x.CreatedByNavigation!.Email,
+                        SupplierExternalIdSnapshot = x.PurchaseOrderSnapshot != null
+                            ? x.PurchaseOrderSnapshot.SupplierExternalIdSnapshot
+                            : x.Supplier!.ExternalId,
+                        SupplierNameSnapshot = x.PurchaseOrderSnapshot != null
+                            ? x.PurchaseOrderSnapshot.SupplierNameSnapshot
+                            : x.Supplier!.SupplierName,
+                        SupplierContactSnapshot = x.PurchaseOrderSnapshot != null
+                            ? x.PurchaseOrderSnapshot.SupplierContactSnapshot
+                            : x.Supplier!.SupplierContacts.Where(c => c.IsPrimary == true).Select(c => c.LastName).FirstOrDefault(),
+                        SupplierPhoneNumberSnapshot = x.PurchaseOrderSnapshot != null
+                            ? x.PurchaseOrderSnapshot.SupplierPhoneNumberSnapshot
+                            : x.Supplier!.Phone,
+                        SupplierAddressSnapshot = x.PurchaseOrderSnapshot != null
+                            ? x.PurchaseOrderSnapshot.SupplierAddressSnapshot
+                            : x.Supplier!.SupplierAddresses.Where(c => c.IsPrimary == true).Select(c => c.AddressLine).FirstOrDefault(),
 
-                            // Snapshot nhà cung cấp
-                            SupplierExternalIdSnapshot = x.PurchaseOrderSnapshot != null
-                                                             ? x.PurchaseOrderSnapshot.SupplierExternalIdSnapshot
-                                                             : x.Supplier!.ExternalId,
-                            SupplierNameSnapshot = x.PurchaseOrderSnapshot != null
-                                                             ? x.PurchaseOrderSnapshot.SupplierNameSnapshot
-                                                             : x.Supplier!.SupplierName,
-                            SupplierContactSnapshot = x.PurchaseOrderSnapshot != null
-                                                             ? x.PurchaseOrderSnapshot.SupplierContactSnapshot
-                                                             : x.Supplier!.SupplierContacts.Where(c => c.IsPrimary == true).Select(c => c.LastName).FirstOrDefault(),
-                            SupplierPhoneNumberSnapshot = x.PurchaseOrderSnapshot != null
-                                                             ? x.PurchaseOrderSnapshot.SupplierPhoneNumberSnapshot
-                                                             : x.Supplier!.Phone,
-                            SupplierAddressSnapshot = x.PurchaseOrderSnapshot != null
-                                                             ? x.PurchaseOrderSnapshot.SupplierAddressSnapshot
-                                                             : x.Supplier!.SupplierAddresses.Where(c => c.IsPrimary == true).Select(c => c.AddressLine).FirstOrDefault(),
+                        Note = x.Comment,
 
-                            Note = x.Comment,
+                        TotalPrice = x.PurchaseOrderSnapshot != null
+                            ? x.PurchaseOrderSnapshot.TotalPrice
+                            : x.PurchaseOrderDetails.Sum(d => d.TotalPriceAgreed) ?? 0,
 
-                            // Thông tin tổng quan đơn
-                            TotalPrice = x.PurchaseOrderSnapshot != null
-                                                             ? x.PurchaseOrderSnapshot.TotalPrice
-                                                             : x.PurchaseOrderDetails.Sum(d => d.TotalPriceAgreed) ?? 0,
-                            DeliveryAddress = x.PurchaseOrderSnapshot != null ? x.PurchaseOrderSnapshot.DeliveryAddress : null,
+                        DeliveryAddress = x.PurchaseOrderSnapshot != null ? x.PurchaseOrderSnapshot.DeliveryAddress : null,
+                        PaymentTypes = x.PurchaseOrderSnapshot != null ? x.PurchaseOrderSnapshot.PaymentTypes : null,
+                        Vat = x.PurchaseOrderSnapshot != null ? x.PurchaseOrderSnapshot.Vat : 0,
 
-                            PaymentTypes = x.PurchaseOrderSnapshot != null
-                                                             ? x.PurchaseOrderSnapshot.PaymentTypes
-                                                             : null,
-                            Vat = x.PurchaseOrderSnapshot != null
-                                                             ? x.PurchaseOrderSnapshot.Vat
-                                                             : 0,
+                        CreatedDate = x.CreateDate,
+                        RequestDeliveryDate = x.RequestDeliveryDate,
 
-                            CreatedDate = x.CreateDate,
-                            RequestDeliveryDate = x.RequestDeliveryDate,
-
-                            // Chi tiết
-                            Details = x.PurchaseOrderDetails
-                                .Where(d => d.PurchaseOrderId == x.PurchaseOrderId)
-                                .Select(d => new PdfPrinterPurchaseOrderDetail
-                                {
-                                    MaterialId = d.MaterialId,
-                                    MaterialExternalIDSnapshot = d.MaterialExternalIDSnapshot,
-                                    MaterialNameSnapshot = d.MaterialNameSnapshot,
-
-                                    Package = d.Package,
-
-                                    BaseCostSnapshot = d.BaseCostSnapshot,
-                                    BaseDateSnapshot = d.BaseDateSnapshot,
-
-                                    RequestQuantity = d.RequestQuantity,
-                                    UnitPriceAgreed = d.UnitPriceAgreed,
-
-                                    TotalUnitPriceAgreed = d.TotalPriceAgreed
-                                })
-                                .ToList()
-                        })
-                        .FirstOrDefaultAsync(ct);
+                        Details = x.PurchaseOrderDetails
+                            .Where(d => d.PurchaseOrderId == x.PurchaseOrderId)
+                            .Select(d => new PdfPrinterPurchaseOrderDetail
+                            {
+                                MaterialId = d.MaterialId,
+                                MaterialExternalIDSnapshot = d.MaterialExternalIDSnapshot,
+                                MaterialNameSnapshot = d.MaterialNameSnapshot,
+                                Package = d.Package,
+                                BaseCostSnapshot = d.BaseCostSnapshot,
+                                BaseDateSnapshot = d.BaseDateSnapshot,
+                                RequestQuantity = d.RequestQuantity,
+                                UnitPriceAgreed = d.UnitPriceAgreed,
+                                TotalUnitPriceAgreed = d.TotalPriceAgreed
+                            })
+                            .ToList()
+                    })
+                    .FirstOrDefaultAsync(ct);
 
                 if (vm == null)
-                    throw new Exception("Delivery Order not found.");
+                    throw new Exception("Purchase Order not found.");
 
                 await tx.CommitAsync();
                 return _pdfRenderHelper.Render(vm);
@@ -126,6 +123,79 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                 throw;
             }
         }
+
+        private async Task EnsureWarehouseRequestCreatedFirstTimeAsync(Guid purchaseOrderId, DateTime now, CancellationToken ct)
+        {
+            var user = _currentUserService.EmployeeId;
+
+            var po = await _unitOfWork.PurchaseOrderRepository
+                .Query(track: true)
+                .Include(x => x.PurchaseOrderDetails)
+                .FirstOrDefaultAsync(x => x.PurchaseOrderId == purchaseOrderId, ct);
+
+            if (po == null) throw new Exception("Purchase Order not found (for warehouse request).");
+            if (po.CompanyId == null) throw new Exception("Purchase Order missing CompanyId.");
+            if (po.CreatedBy == null) throw new Exception("Purchase Order missing CreatedBy.");
+
+            var existed = await _unitOfWork.WarehouseRequestRepository
+                .Query(track: false)
+                .AnyAsync(x => x.IsActive
+                            && x.ReqType == WareHouseRequestType.ImportFromSupplier
+                            && x.codeFromRequest == po.ExternalId, ct);
+
+            if (existed) return;
+
+            // 3) Tạo header
+            var req = new WarehouseRequest
+            {
+                // RequestId: identity (DB tự tăng) -> không set
+                RequestCode = await _idService.NextAsync(DocumentPrefix.PRQ.ToString()), // bạn có thể đổi rule
+                ReqStatus = WarehouseRequestStatus.Pending,
+                RequestName = $"Nhập kho NCC - PO {(po.ExternalId ?? po.PurchaseOrderId.ToString())}",
+                IsActive = true,
+
+                ReqType = WareHouseRequestType.ImportFromSupplier,
+                codeFromRequest = po.ExternalId ?? "Error no externalId",
+
+                CompanyId = po.CompanyId.Value,
+                CreatedBy = user,
+                CreatedDate = now,
+                UpdatedBy = user,
+                UpdatedDate = now,
+
+                WarehouseRequestDetails = po.PurchaseOrderDetails
+                    .Where(d => d.IsActive)
+                    .Select(d => new WarehouseRequestDetail
+                    {
+                        // DetailId identity -> không set
+                        ProductCode = d.MaterialExternalIDSnapshot ?? string.Empty,
+                        ProductName = d.MaterialNameSnapshot ?? string.Empty,
+
+                        // Tuỳ nghiệp vụ: bạn đang dùng WeightKg/BagNumber/StockStatus
+                        WeightKg = d.RequestQuantity ?? 0m,
+                        BagNumber = TryParseBagNumber(d.Package),
+                        StockStatus = "New",
+
+                        LotNumber = null,
+                        IsActive = true
+                    })
+                    .ToList()
+            };
+
+            // 4) Save
+            await _unitOfWork.WarehouseRequestRepository.AddAsync(req, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
+
+        private static int TryParseBagNumber(string? package)
+        {
+            // Nếu package lưu kiểu "10 bags" hoặc "10" thì parse được
+            if (string.IsNullOrWhiteSpace(package)) return 0;
+
+            // Lấy số đầu tiên trong chuỗi
+            var digits = new string(package.Where(char.IsDigit).ToArray());
+            return int.TryParse(digits, out var n) ? n : 0;
+        }
     }
+
 }
-    

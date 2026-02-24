@@ -13,9 +13,10 @@ namespace VietausWebAPI.Core.Domain.Enums.Merchadises
         Pending = 2,      // Đang chờ
         Processing = 3,   // Đang xử lý
         Delivering = 4,   // Đang giao hàng
-        Paused = 5,       // Tạm dừng
-        Cancelled = 6,    // Hủy
-        Completed = 7     // Hoàn thành
+        Delivered = 5,    // Đã giao hàng
+        Paused = 6,       // Tạm dừng
+        Cancelled = 7,    // Hủy
+        Completed = 8     // Hoàn thành
 
     }
 }

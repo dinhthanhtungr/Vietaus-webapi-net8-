@@ -19,6 +19,7 @@ public partial class SupplierContact
 
     public string? Email { get; set; }
     public bool? IsPrimary { get; set; }
+    public bool? IsActive { get; set; } = true;
 
     public virtual Supplier Supplier { get; set; } = null!;
 }

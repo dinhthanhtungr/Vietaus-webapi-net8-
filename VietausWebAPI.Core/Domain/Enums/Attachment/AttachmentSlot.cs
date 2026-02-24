@@ -16,6 +16,7 @@ namespace VietausWebAPI.Core.Domain.Enums.Attachment
         Specification,   // Spec/tiêu chuẩn kỹ thuật
         Other,           // Khác
         SampleRequest,   // Ảnh mẫu
+        QcReport,        // Báo cáo QC
     }
 
 }

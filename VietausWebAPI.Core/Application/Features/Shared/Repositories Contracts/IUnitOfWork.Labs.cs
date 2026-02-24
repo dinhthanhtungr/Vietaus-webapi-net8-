@@ -23,8 +23,10 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts
         IFormulaRepository FormulaRepository { get; }
         IFormulaMaterialRepository FormulaMaterialRepository { get; }
 
+
         // Product & Sample
         IProductRepository ProductRepository { get; }
         ISampleRequestRepository SampleRequestRepository { get; }
+        IManufacturingVUFormulaRepository ManufacturingVUFormulaRepository { get; } 
     }
 }

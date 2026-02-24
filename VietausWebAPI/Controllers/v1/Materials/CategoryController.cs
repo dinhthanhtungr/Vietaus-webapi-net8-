@@ -60,8 +60,8 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Materials
             }
         }
 
-        [HttpPost("ExternalIDGenerate")]
-        public async Task<IActionResult> ExternalIDGenerate([FromBody] string prefix, CancellationToken ct = default)
+        [HttpGet("ExternalIDGenerate")]
+        public async Task<IActionResult> ExternalIDGenerate([FromQuery] string prefix, CancellationToken ct = default)
         {
             try
             {
@@ -75,7 +75,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Materials
             catch (Exception ex)
             {
                 // Log the exception (not shown here for brevity)
-                return StatusCode(500, "An unexpected error occurred.");
+                return StatusCode(500, $"{ex.Message}");
             }
         }
     }

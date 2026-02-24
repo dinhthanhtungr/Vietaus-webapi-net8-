@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadServices;
 using VietausWebAPI.Core.Application.Features.Warehouse.Queries;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 
 namespace VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts
 {
@@ -39,7 +40,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts
         //Task<decimal> GetAvailableAsync(WarehouseReadServiceQuery query, CancellationToken cancellationToken);
 
 
-       
+       Task<OperationResult<PagedResult<GetStockAvaiable>>> GetStockAvailableAsync(WarehouseReadServiceQuery query);
 
 
         /// <summary>

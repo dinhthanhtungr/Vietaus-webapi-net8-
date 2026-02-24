@@ -41,6 +41,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Materials
                 return BadRequest(result.Message);
             }
         }
+      
         [HttpGet]
         public async Task<ActionResult<PagedResult<GetMaterialSummary>>> List(
             [FromQuery] MaterialQuery query,
@@ -50,6 +51,16 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Materials
             return Ok(result);
 
         }
+
+        [HttpGet("m-p")]
+        public async Task<ActionResult<PagedResult<GetMaterialSummary>>> ListMP(
+            [FromQuery] MaterialQuery query,
+            CancellationToken ct = default)
+        {
+            var result = await _materialService.GetAllMPAsync(query, ct);
+            return Ok(result);
+        }
+
         [HttpGet("{Id:guid}")]
         public async Task<ActionResult<GetMaterial>> GetMaterialById(Guid Id,
             CancellationToken ct = default)

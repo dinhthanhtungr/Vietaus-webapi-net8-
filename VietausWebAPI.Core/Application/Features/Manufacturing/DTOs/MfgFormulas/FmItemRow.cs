@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Enums.Formulas;
 
 namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas
 {
     public class FmItemRow
     {
-        public Guid MaterialId { get; init; }
+        public Guid ItemId { get; set; }
+        public ItemType itemType { get; set; }
         public Guid? CategoryId { get; init; }
         public decimal Quantity { get; init; }
         public string Unit { get; init; } = "";

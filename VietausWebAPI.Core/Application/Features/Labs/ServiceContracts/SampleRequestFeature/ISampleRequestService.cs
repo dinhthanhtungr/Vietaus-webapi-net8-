@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.SampleRequest;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.CreateSampleRequest;
+using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductFeatures;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.TransferCustomerDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.Querys;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
@@ -29,6 +31,14 @@ namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRe
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<PagedResult<SampleRequestSummaryDTO>> GetAllAsync(SampleRequestQuery query, CancellationToken ct = default);
+
+        /// <summary>
+        /// Lấy danh sách các yêu cầu mẫu cho sản xuất VU với phân trang và lọc.
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<OperationResult<PagedResult<GetProductSampleRequestDTO>>> GetSampleRequestForVUManufacturing(ProductQuery query, CancellationToken ct = default);
 
         /// <summary>
         /// Lấy thông tin chi tiết của một yêu cầu mẫu theo ID.

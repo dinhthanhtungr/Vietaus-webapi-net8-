@@ -9,6 +9,7 @@ using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Features.Shared.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
+using VietausWebAPI.Core.Domain.Entities.OrderSchema;
 using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
 using VietausWebAPI.Core.Domain.Enums.CustomerEnum;
 using VietausWebAPI.Core.Domain.Enums.Visibilitys;
@@ -82,13 +83,17 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service
 
         /// <summary>
         /// Phương thức áp dụng phạm vi xem cho truy vấn Customer
+        /// Quy tắc:
+        /// - Admin/President/Developer/CustomerViewAll/Lab: thấy tất cả
+        /// - Sales thường: KH mình quản + claim Work (còn hạn)
+        /// - Leader: KH do group quản + claim Work của group (còn hạn)
         /// </summary>
         /// <param name="q"></param>
         /// <param name="v"></param>
         /// <returns></returns>
         public IQueryable<Customer> ApplyCustomer(IQueryable<Customer> q, ViewerScope v)
         {
-            q = q.Where(c => c.IsActive == true && c.CompanyId == v.CompanyId);
+            q = q.Where(c => c.IsActive == true);
 
             if (v.ScopeType is ViewerScopeType.AdminFull or ViewerScopeType.LabFull)
                 return q;
@@ -110,22 +115,56 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service
 
         /// <summary>
         /// Phương thức áp dụng phạm vi xem cho truy vấn SampleRequest
+        /// Quy tắc:
+        /// - Admin/President/Developer/CustomerViewAll/Lab: thấy tất cả
+        /// - Sales thường: chỉ thấy SR thuộc customer mình (hoặc group) quản lý
+        /// - Leader: chỉ thấy SR thuộc customer mình (hoặc group) quản lý
         /// </summary>
         /// <param name="q"></param>
         /// <param name="v"></param>
         /// <returns></returns>
         public IQueryable<SampleRequest> ApplySampleRequest(IQueryable<SampleRequest> q, ViewerScope v)
         {
-            q = q.Where(sr => sr.IsActive == true && sr.CompanyId == v.CompanyId);
+            // Base: active + tenant
+            q = q.Where(sr => sr.IsActive == true);
 
-            if (v.ScopeType is ViewerScopeType.AdminFull || v.ScopeType is ViewerScopeType.LabFull)
+            // Full view
+            if (v.ScopeType is ViewerScopeType.AdminFull or ViewerScopeType.LabFull)
                 return q;
 
-            var now = v.Now;
-            // Kế thừa visibility từ Customer
-            var scopeIds = v.EmployeeIdsInScope;
-            return q.Where(sr => scopeIds.Contains(sr.CreatedBy));
+            // Sales scoped: chỉ thấy SR thuộc customer mình (hoặc group) quản lý
+            var visibleCustomers = ApplyCustomer(_unitOfWork.CustomerRepository.Query(), v);
+
+            // Lọc theo CustomerId
+            return q.Where(sr => visibleCustomers.Select(c => c.CustomerId).Contains(sr.CustomerId));
         }
+
+        /// <summary>
+        /// Phương thức áp dụng phạm vi xem cho truy vấn MerchandiseOrder
+        /// Quy tắc:
+        /// - Admin/President/Developer/CustomerViewAll/Lab: thấy tất cả
+        /// - Sales thường: chỉ thấy SR thuộc customer mình (hoặc group) quản lý
+        /// - Leader: chỉ thấy SR thuộc customer mình (hoặc group) quản lý
+        /// </summary>
+        /// <param name="q"></param>
+        /// <param name="v"></param>
+        /// <returns></returns>
+        public IQueryable<MerchandiseOrder> ApplyMerchandiseOrder(IQueryable<MerchandiseOrder> q, ViewerScope v)
+        {
+            // Base: active + tenant
+            q = q.Where(sr => sr.IsActive == true);
+
+            // Full view
+            if (v.ScopeType is ViewerScopeType.AdminFull or ViewerScopeType.LabFull)
+                return q;
+
+            // Sales scoped: chỉ thấy SR thuộc customer mình (hoặc group) quản lý
+            var visibleCustomers = ApplyCustomer(_unitOfWork.CustomerRepository.Query(), v);
+
+            // Lọc theo CustomerId
+            return q.Where(sr => visibleCustomers.Select(c => c.CustomerId).Contains(sr.CustomerId));
+        }
+
 
     }
 }

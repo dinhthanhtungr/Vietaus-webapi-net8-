@@ -14,6 +14,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures
         public Guid ProductId { get; set; }
 
 
-        public List<PostMaterialFormula> materialFormulas { get; set; } = new List<PostMaterialFormula>();
+        public List<PostMaterialFormula> Items { get; set; } = new List<PostMaterialFormula>();
     }
 }

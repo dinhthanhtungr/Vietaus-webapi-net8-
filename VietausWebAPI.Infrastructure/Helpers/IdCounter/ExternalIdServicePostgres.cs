@@ -51,19 +51,6 @@ namespace VietausWebAPI.Infrastructure.Helpers.IdCounter
                     DO UPDATE SET ""LastNo"" = ""IdCounters"".""LastNo"" + 1
                     RETURNING ""LastNo"";";
 
-                //cmd.CommandText = @"
-                //    INSERT INTO public.""IdCounters"" (""CompanyId"", ""Prefix"", ""Period"", ""LastNo"")
-                //    VALUES (@CompanyId, @Prefix, @Period, 1)
-                //    ON CONFLICT (""CompanyId"", ""Prefix"")
-                //    DO UPDATE SET
-                //      ""LastNo"" = CASE
-                //                     WHEN public.""IdCounters"".""Period"" = EXCLUDED.""Period""
-                //                       THEN public.""IdCounters"".""LastNo"" + 1
-                //                     ELSE 1
-                //                   END,
-                //      ""Period"" = EXCLUDED.""Period""
-                //    RETURNING ""LastNo"";";
-
                 cmd.Parameters.Add(new NpgsqlParameter("CompanyId", companyId));
                 cmd.Parameters.Add(new NpgsqlParameter("Prefix", prefix));
                 cmd.Parameters.Add(new NpgsqlParameter("Period", period));

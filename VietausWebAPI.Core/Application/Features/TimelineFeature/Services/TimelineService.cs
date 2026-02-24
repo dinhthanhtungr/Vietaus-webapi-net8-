@@ -5,6 +5,8 @@ using System.ComponentModel.Design;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.EventLogDtos;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.ManufacturingTimeline;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.MerchadiseTimeline;
@@ -14,7 +16,6 @@ using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.AuditSchema;
 using VietausWebAPI.Core.Domain.Enums.Logs;
-using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static QuestPDF.Helpers.Colors;
 
@@ -24,11 +25,12 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUser _currentUser;
-
-        public TimelineService(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+        private readonly IVisibilityHelper _visibilityHelper;
+        public TimelineService(IUnitOfWork unitOfWork, ICurrentUser currentUser, IVisibilityHelper visibilityHelper)
         {
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;
+            _visibilityHelper = visibilityHelper;
         }
 
         // ======================================================================== Get ======================================================================== 
@@ -215,11 +217,15 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
             string? kw = string.IsNullOrWhiteSpace(query.Keyword) ? null : query.Keyword!.Trim();
             string? likeKw = kw is null ? null : $"%{kw}%";
 
+            var viewer = await _visibilityHelper.BuildViewerScopeAsync(ct);
+
             // 1) Base query: MerchandiseOrder
             var baseQ = _unitOfWork.MerchandiseOrderRepository.Query()
                 .AsNoTracking()
                 .Where(mo => mo.IsActive == true);
 
+
+            baseQ = _visibilityHelper.ApplyMerchandiseOrder(baseQ, viewer);
             // Nếu có id cụ thể (trường hợp muốn tìm đúng 1 đơn)
             if (query.id.HasValue && query.id.Value != Guid.Empty)
                 baseQ = baseQ.Where(mo => mo.MerchandiseOrderId == query.id.Value);

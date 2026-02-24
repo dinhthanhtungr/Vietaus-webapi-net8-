@@ -13,6 +13,7 @@ using VietausWebAPI.Core.Application.Features.Warehouse.Queries;
 using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 using VietausWebAPI.Core.Domain.Enums.WareHouses;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 
 namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 {
@@ -25,6 +26,9 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
+
+
+        // ======================================================================== Get ======================================================================== 
 
         public async Task<List<ProductAvailabilityVm>> GetProductAvailabilityVmsAsync(List<string> productExternalIds, CancellationToken ct = default)
         {
@@ -53,6 +57,176 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 
             throw new Exception("Lỗi khi lấy danh sách người giao hàng.");
         }
+
+        public async Task<OperationResult<PagedResult<GetStockAvaiable>>> GetStockAvailableAsync(WarehouseReadServiceQuery query)
+        {
+            try
+            {
+                var pageNumber = query.PageNumber <= 0 ? 1 : query.PageNumber;
+                var pageSize = query.PageSize <= 0 ? 15 : query.PageSize;
+
+                // 1) Base query: ShelfStock
+                var shelfQuery = _unitOfWork.WarehouseShelfStockRepository.Query()
+                    .Where(s => s.Code != null && s.Code != "");
+
+                if (!string.IsNullOrWhiteSpace(query.KeyWord))
+                {
+                    var kw = query.KeyWord.Trim();
+                    shelfQuery = shelfQuery.Where(x =>
+                        (x.Code ?? "").Contains(kw)
+                    );
+                }
+
+                if (query.StockTypes.HasValue)
+                {
+                    shelfQuery = shelfQuery.Where(x => x.StockType == query.StockTypes.Value);
+                }
+
+
+                // 2) Group OnHand theo Code + StockType (ra DTO trước)
+                var onHandGrouped =
+                    from s in shelfQuery
+                    group s by new { s.Code, s.StockType } into g
+                    select new GetStockAvaiable
+                    {
+                        ShelfStockId = g.Min(x => x.ShelfStockId),
+                        Code = g.Key.Code,
+                        StockType = g.Key.StockType,
+
+                        OnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m,
+                        ReservedOpenAllKg = 0m, // sẽ fill sau
+                        AvailableKg = 0m        // sẽ fill sau
+                    };
+
+                // 3) Paging (lấy page items trước)
+                var totalCount = await onHandGrouped.CountAsync();
+
+                var items = await onHandGrouped
+                    .OrderBy(x => x.Code)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                // Nếu page rỗng thì khỏi query tempstock
+                if (items.Count == 0)
+                {
+                    var empty = new PagedResult<GetStockAvaiable>(items, totalCount, pageNumber, pageSize);
+                    return OperationResult<PagedResult<GetStockAvaiable>>.Ok(empty);
+                }
+
+
+                var materialCodes = items
+                .Where(x => x.StockType == StockType.RawMaterial
+                         || x.StockType == StockType.DefectiveRawMaterial)
+                .Select(x => x.Code)
+                .Distinct()
+                .ToList();
+
+                var productCodes = items
+                    .Where(x => x.StockType == StockType.FinishedGood
+                                || x.StockType == StockType.DefectiveFinishedGood)
+                    .Select(x => x.Code)
+                    .Distinct()
+                    .ToList();
+
+
+                var materialMap = await _unitOfWork.MaterialRepository.Query()
+                    .Where(m => m.ExternalId != null && materialCodes.Contains(m.ExternalId))
+                    .Select(m => new
+                    {
+                        Code = m.ExternalId!,
+                        Name = m.Name,
+                        CategoryName = m.Category != null ? m.Category.Name : ""
+                    })
+                    .ToDictionaryAsync(x => x.Code);   
+
+                var productMap = await _unitOfWork.ProductRepository.Query()
+                    .Where(p => p.Code != null && productCodes.Contains(p.Code))
+                    .Select(p => new
+                    {
+                        Code = p.Code!,
+                        Name = p.Name,
+                        CategoryName = p.Category != null ? p.Category.Name : ""
+                    })
+                    .ToDictionaryAsync(x => x.Code);  
+
+
+
+                // 4) Lấy danh sách Code đang có trong page để query TempStock gọn
+                var codes = items.Select(x => x.Code).Distinct().ToList();
+
+                // 5) Reserved OPEN từ TempStock (group theo Code)
+                var reservedMap = await _unitOfWork.WarehouseTempStockRepository.Query()
+                    .Where(t => codes.Contains(t.Code)
+                             && t.ReserveStatus == ReserveStatus.Open.ToString())
+                    .GroupBy(t => t.Code)
+                    .Select(g => new
+                    {
+                        Code = g.Key,
+                        ReservedOpenKg = g.Sum(x => (decimal?)x.QtyRequest) ?? 0m
+                        // Nếu muốn trừ QtyUsed:
+                        // ReservedOpenKg = g.Sum(x => (decimal?)((x.QtyRequest ?? 0m) - (x.QtyUsed ?? 0m))) ?? 0m
+                    })
+                    .ToDictionaryAsync(x => x.Code, x => x.ReservedOpenKg);
+
+                // 6) Merge vào items
+                foreach (var it in items)
+                {
+                    // HÀNG LỖI: không cho giữ, không cho dùng
+                    if (it.StockType == StockType.DefectiveRawMaterial
+                     || it.StockType == StockType.DefectiveFinishedGood)
+                    {
+                        it.ReservedOpenAllKg = 0m;
+                        it.AvailableKg = 0m;
+                    }
+                    else
+                    {
+                        // HÀNG BÌNH THƯỜNG
+                        var reserved = reservedMap.TryGetValue(it.Code, out var rv) ? rv : 0m;
+                        it.ReservedOpenAllKg = reserved;
+                        it.AvailableKg = it.OnHandKg - reserved;
+                    }
+                    // NVL
+                    if ((it.StockType == StockType.RawMaterial
+                      || it.StockType == StockType.DefectiveRawMaterial)
+                      && materialMap.TryGetValue(it.Code, out var m))
+                    {
+                        it.CodeName = m.Name ?? string.Empty;
+                        it.CategoryName = m.CategoryName ?? string.Empty;
+                    }
+
+                    // Thành phẩm
+                    else if ((it.StockType == StockType.FinishedGood
+                           || it.StockType == StockType.DefectiveFinishedGood)
+                           && productMap.TryGetValue(it.Code, out var p))
+                    {
+                        it.CodeName = p.Name ?? string.Empty;
+                        it.CategoryName = p.CategoryName ?? string.Empty;
+                    }
+                }
+
+                // 7) Filter tồn kho khả dụng <= 0 (nếu yêu cầu)
+                if (query.OnlyAvailableLeZero)
+                {
+                    items = items
+                        .Where(x => x.AvailableKg <= 0m)
+                        .ToList();
+
+                    totalCount = items.Count;
+                }
+
+                var result = new PagedResult<GetStockAvaiable>(items, totalCount, pageNumber, pageSize);
+                return OperationResult<PagedResult<GetStockAvaiable>>.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return OperationResult<PagedResult<GetStockAvaiable>>.Fail(ex.Message);
+            }
+        }
+
+
+
+
 
 
         //public async Task<decimal> GetAvailableAsync(WarehouseReadServiceQuery query, CancellationToken cancellationToken)

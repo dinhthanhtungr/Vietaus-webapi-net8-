@@ -49,6 +49,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
         public string? Status { get; set; }
 
         public string? Package { get; set; } = string.Empty;
+        public int BagWeight { get; set; }
 
         public DateTime? CreatedDate { get; set; }
 

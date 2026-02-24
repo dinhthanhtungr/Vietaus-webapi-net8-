@@ -112,6 +112,8 @@ namespace VietausWebAPI.Core.Application.Features.Attachments.Services
             // 0) đảm bảo collection tồn tại
             var colExists = await _unitOfWork.AttachmentCollectionRepository.Query()
                               .AnyAsync(c => c.AttachmentCollectionId == collectionId, ct);
+
+
             if (!colExists) throw new KeyNotFoundException("Attachment collection not found.");
 
             // 1) Validate rule
@@ -217,8 +219,10 @@ namespace VietausWebAPI.Core.Application.Features.Attachments.Services
         {
             // 0) Collection tồn tại?
             var colExists = await _unitOfWork.AttachmentCollectionRepository.Query()
-                .AnyAsync(c => c.AttachmentCollectionId == collectionId, ct);
-            if (!colExists) throw new KeyNotFoundException("Attachment collection not found.");
+                .Where(c => c.AttachmentCollectionId == collectionId)
+                .FirstOrDefaultAsync(ct);
+
+            if (colExists == null) throw new KeyNotFoundException("Attachment collection not found.");
 
             // 1) Rule & validate
             if (!AttachmentRules.Map.TryGetValue(slot, out var rule))

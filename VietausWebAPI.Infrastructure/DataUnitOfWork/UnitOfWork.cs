@@ -5,12 +5,14 @@ using VietausWebAPI.Core.Application.Features.Attachments.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.CompanyFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.DevandqaFeatures.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.DevandqaFeatures.RepositoriesContracts.QCInputByQCFeatures;
 using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Identity.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts.SupplierFeatures;
 using VietausWebAPI.Core.Application.Features.Notifications.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.RepositoriesContracts;
@@ -51,6 +53,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             IEmployeesRepository employeesRepository,
             IGroupRepository groupRepository,
             IMemberInGroupRepository memberInGroupRepository,
+            IPartRepository partRepository,
 
             // ==== Sales ====
             ICustomerRepository customerRepository,
@@ -62,13 +65,11 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             IMerchandiseOrderRepository merchandiseOrderRepository,
 
             // ==== Labs (QA/QC, Formula, Sample) ====
-            //IProductStandardRepository productStandardRepository,
-            //IProductInspectionRepository productInspectionRepository,
-            //IProductTestRepository productTestRepository,
             IManufacturingFormulaVersionRepository manufacturingFormulaVersionRepository,
             IFormulaRepository formulaRepository,
             IFormulaMaterialRepository formulaMaterialRepository,
             ISampleRequestRepository sampleRequestRepository,
+            IManufacturingVUFormulaRepository manufacturingVUFormulaRepository,
 
             // ==== Planning ====
             IScheduealRepository scheduealRepository,
@@ -78,17 +79,25 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             // ==== Devandqa (thuộc Labs) ====
             IProductStandardRepository productStandardRepository,
             IProductTestRepository productTestRepository,
+            IProductInspectionRepository productInspectionRepository,
+            IQCInputByQCRepository iQCDetailRepository,
 
+            // QCInputByQCFeatures
+            IQCInputByQCReadRepository qCInputByQCReadRepository,
+            IQCInputByQCWriteRepository qCInputByQCWriteRepository,
             // ==== Product (bạn đang để trong Manufacturing namespace) ====
             IProductRepository productRepository,
 
             // ==== Material ====
             IMaterialRepository materialRepository,
-            ISupplierRepository supplierRepository,
             ICategoryRepository categoryRepository,
             IUnitRepository unitRepository,
             IMaterialsSupplierRepository materialsSupplierRepository,
             IPriceHistorieRepository priceHistorieRepository,
+
+            // ======================================================================== SupplierFeature ======================================================================== 
+            ISupplierReadRepository supplierReadRepository,
+            ISupplierWriteRepository supplierWriteRepository,
 
             // ==== Manufacturing ====
             IMfgProductionOrderRepository mfgProductionOrderRepository,
@@ -149,6 +158,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             EmployeesRepository = employeesRepository;
             GroupRepository = groupRepository;
             MemberInGroupRepository = memberInGroupRepository;
+            PartRepository = partRepository;
 
             // ===== Sales =====
             CustomerRepository = customerRepository;
@@ -163,10 +173,12 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             ProductStandardRepository = productStandardRepository;
             ProductTestRepository = productTestRepository;
 
+
             ManufacturingFormulaVersionRepository = manufacturingFormulaVersionRepository;
             FormulaRepository = formulaRepository;
             FormulaMaterialRepository = formulaMaterialRepository;
             SampleRequestRepository = sampleRequestRepository;
+            ManufacturingVUFormulaRepository = manufacturingVUFormulaRepository;
 
             // ===== Planning =====
             ScheduealRepository = scheduealRepository;
@@ -174,17 +186,25 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
 
             // ===== QAQC Detail =====
             //IQCDetailRepository = iQCDetailRepository;
-
-            // ===== Product =====
+            ProductInspectionRepository = productInspectionRepository;
             ProductRepository = productRepository;
+            //QCInputByWarehouseRepository = qCInputByWarehouseRepository;
+            QCInputByQCRepository = iQCDetailRepository;
+
+            // QCInputByQCFeatures
+            QCInputByQCReadRepository = qCInputByQCReadRepository;
+            QCInputByQCWriteRepository = qCInputByQCWriteRepository;
 
             // ===== Material =====
             MaterialRepository = materialRepository;
-            SupplierRepository = supplierRepository;
             CategoryRepository = categoryRepository;
             UnitRepository = unitRepository;
             MaterialsSupplierRepository = materialsSupplierRepository;
             PriceHistorieRepository = priceHistorieRepository;
+
+            // ======================================================================== SupplierFeature ======================================================================== 
+            SupplierReadRepository = supplierReadRepository;
+            SupplierWriteRepository = supplierWriteRepository;
 
             // ===== Manufacturing =====
             MfgProductionOrderRepository = mfgProductionOrderRepository;
@@ -227,16 +247,16 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         }
 
         // ==== Tx/Save/Dispose ====
-        public async Task<IDbContextTransaction> BeginTransactionAsync()
-            => await _context.Database.BeginTransactionAsync();
+        public async Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct = default)
+            => await _context.Database.BeginTransactionAsync(ct);
 
-        public async Task CommitTransactionAsync()
-            => await _context.Database.CommitTransactionAsync();
+        public async Task CommitTransactionAsync(CancellationToken ct = default)
+            => await _context.Database.CommitTransactionAsync(ct);
 
-        public async Task RollbackTransactionAsync()
-            => await _context.Database.RollbackTransactionAsync();
+        public async Task RollbackTransactionAsync(CancellationToken ct = default)
+            => await _context.Database.RollbackTransactionAsync(ct);
 
-        public async Task<int> SaveChangesAsync()
+        public async Task<int> SaveChangesAsync(CancellationToken ct = default)
             => await _context.SaveChangesAsync();
 
         public void Dispose() => _context.Dispose();

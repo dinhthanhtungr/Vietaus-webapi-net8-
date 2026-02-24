@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.SampleRequest;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.CreateSampleRequest;
+using VietausWebAPI.Core.Application.Features.Labs.Queries.ProductFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRequestFeature;
 using VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.MerchandiseOrderFeatures;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
@@ -71,6 +72,25 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.SampleRequest
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
+
+
+        [HttpGet("GetForVU")]
+        //[Authorize(Roles = "Admin")] // chỉ Admin/SaleManager
+        public async Task<IActionResult> GetSampleRequestForVUManufacturing([FromQuery] ProductQuery query, CancellationToken ct = default)
+        {
+            try
+            {
+                var result = await _sampleRequestService.GetSampleRequestForVUManufacturing(query, ct);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
+
 
         [HttpGet("GetById/{id}")]
         public async Task<IActionResult> GetSampleRequestById(Guid id, CancellationToken ct = default)

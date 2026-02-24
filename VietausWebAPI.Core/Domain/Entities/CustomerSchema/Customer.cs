@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using VietausWebAPI.Core.Domain.Entities.CompanySchema;
+using VietausWebAPI.Core.Domain.Entities.DevandqaSchema;
 using VietausWebAPI.Core.Domain.Entities.HrSchema;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
@@ -24,6 +25,7 @@ public partial class Customer
     public string? ApplicationName { get; set; }
 
     public string? RegistrationNumber { get; set; }
+    public string? RegistrationAddress { get; set; }
 
     public string? TaxNumber { get; set; }
 

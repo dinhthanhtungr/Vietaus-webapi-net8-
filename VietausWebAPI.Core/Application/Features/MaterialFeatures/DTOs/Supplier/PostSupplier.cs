@@ -14,6 +14,8 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier
         public string? SupplierName { get; set; }
 
         public string? RegistrationNumber { get; set; }
+        public string? RegistrationAddress { get; set; }
+
 
         public string? TaxNumber { get; set; }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Entities.DevandqaSchema;
 
 namespace VietausWebAPI.Core.Domain.Entities.WarehouseSchema
 {
@@ -21,5 +22,7 @@ namespace VietausWebAPI.Core.Domain.Entities.WarehouseSchema
         public bool IsActive { get; set; } = true;
         // Navigation properties
         public WarehouseRequest? WarehouseRequest { get; set; }
+
+        public ICollection<QCInputByQC> QCInputByQCs { get; set; } = new List<QCInputByQC>();
     }
 }

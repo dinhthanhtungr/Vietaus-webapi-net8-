@@ -21,6 +21,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.DevandqaSc
                   .HasDefaultValueSql("gen_random_uuid()");
 
             entity.Property(x => x.ProductExternalId).HasColumnName("productexternalid").HasColumnType("citext");
+            entity.Property(x => x.externalId).HasColumnName("externalid").HasColumnType("citext");
             entity.Property(x => x.Status).HasColumnName("status").HasColumnType("citext");
 
             entity.Property(x => x.DeltaE).HasColumnName("deltae").HasColumnType("citext");
@@ -44,6 +45,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.DevandqaSc
             entity.Property(x => x.ProductId).HasColumnName("productid");
             entity.Property(x => x.Weight).HasColumnName("weight");
             entity.Property(x => x.Shape).HasColumnName("shape").HasColumnType("citext");
+            entity.Property(x => x.packed).HasColumnName("packed").HasColumnType("citext");
 
             entity.HasOne(d => d.Product).WithMany(d => d.ProductStandards)
                 .HasForeignKey(d => d.ProductId)
@@ -62,6 +64,8 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.DevandqaSc
 
             // Gợi ý index
             entity.HasIndex(x => x.ProductId).HasDatabaseName("ix_productstandard_productid");
+            entity.HasIndex(x => x.externalId).HasDatabaseName("ix_productstandard_externalid");
+            entity.HasIndex(x => x.ProductExternalId).HasDatabaseName("ix_productstandard_productexternalid");
             entity.HasIndex(x => x.CreatedDate).HasDatabaseName("ix_productstandard_createddate");
         }
     }

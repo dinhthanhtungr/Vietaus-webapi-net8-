@@ -27,6 +27,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.CustomerSc
             entity.Property(e => e.CustomerGroup).HasColumnName("CustomerGroup").HasColumnType("citext");
             entity.Property(e => e.ApplicationName).HasColumnName("ApplicationName").HasColumnType("citext");
             entity.Property(e => e.RegistrationNumber).HasColumnName("RegistrationNumber").HasColumnType("citext");
+            entity.Property(e => e.RegistrationAddress).HasColumnName("RegistrationAddress").HasColumnType("citext");
             entity.Property(e => e.TaxNumber).HasColumnName("TaxNumber").HasColumnType("citext");
             entity.Property(e => e.Phone).HasColumnName("Phone").HasColumnType("citext");
             entity.Property(e => e.Website).HasColumnName("Website").HasColumnType("citext");

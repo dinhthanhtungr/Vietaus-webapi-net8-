@@ -25,7 +25,7 @@ public partial class PurchaseOrderDetail
     public string? MaterialExternalIDSnapshot { get; set; }
     public string? MaterialNameSnapshot { get; set; }
 
-    public bool IsActive { get; set; }
+    public bool IsActive { get; set; } = true;
 
     public DateTime? DeliveryDate { get; set; }
 

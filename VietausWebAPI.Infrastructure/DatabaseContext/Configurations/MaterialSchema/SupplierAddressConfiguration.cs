@@ -24,6 +24,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
             entity.Property(e => e.Country).HasColumnType("citext");
             entity.Property(e => e.District).HasColumnType("citext");
             entity.Property(e => e.IsPrimary).HasDefaultValue(false);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.PostalCode).HasColumnType("citext");
             entity.Property(e => e.Province).HasColumnType("citext");
 

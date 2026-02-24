@@ -54,7 +54,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
             entity.HasOne(d => d.MaterialsSuppliers)
                   .WithMany(p => p.PriceHistories)   // cần ICollection<PriceHistory> trong MaterialsSupplier
                   .HasForeignKey(d => d.MaterialsSuppliersId)
-                  .OnDelete(DeleteBehavior.Restrict)
+                  .OnDelete(DeleteBehavior.Cascade)
                   .HasConstraintName("fk_pricehistory_materialsSuppliersId");
         }
     }

@@ -27,6 +27,9 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.WarehouseS
             entity.Property(e => e.WeightKg)
                   .HasPrecision(18, 3)
                   .HasColumnName("weightKg");
+            entity.Property(x => x.IsActive)
+                  .HasDefaultValue(true)
+                  .HasColumnName("isActive");
 
             // tên index bạn đang dùng
             entity.HasIndex(e => e.RequestId, "IX_WarehouseRequestDetail_RequestCode");

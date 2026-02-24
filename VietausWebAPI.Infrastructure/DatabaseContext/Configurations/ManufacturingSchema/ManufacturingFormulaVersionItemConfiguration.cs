@@ -27,11 +27,14 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.Manufactur
                   .OnDelete(DeleteBehavior.Cascade)
                   .HasConstraintName("fk_mf_version_items_version");
 
-            entity.Property(x => x.MaterialId).HasColumnName("materialId").IsRequired();
+            entity.Property(x => x.MaterialId).HasColumnName("materialId");
             entity.Property(x => x.CategoryId).HasColumnName("category_id");
-            entity.Property(x => x.Quantity).HasPrecision(18, 6).HasColumnName("quantity").IsRequired();
-            entity.Property(x => x.UnitPrice).HasPrecision(16, 2).HasColumnName("unitPrice").IsRequired();
-            entity.Property(x => x.TotalPrice).HasPrecision(16, 2).HasColumnName("totalPrice").IsRequired();
+            entity.Property(x => x.ProductId).HasColumnName("product_id");
+            entity.Property(x => x.itemType).HasColumnName("item_type");
+
+            entity.Property(x => x.Quantity).HasColumnName("quantity").HasPrecision(12, 10);
+            entity.Property(x => x.UnitPrice).HasColumnName("unit_price").HasPrecision(18, 2);
+            entity.Property(x => x.TotalPrice).HasColumnName("total_price").HasPrecision(18, 2);
             entity.Property(x => x.Unit).HasColumnName("unit").HasColumnType("text").IsRequired();
             entity.Property(x => x.MaterialNameSnapshot).HasColumnName("materialNameSnapshot").HasColumnType("text").IsRequired();
             entity.Property(x => x.MaterialExternalIdSnapshot).HasColumnName("materialExternalIdSnapshot").HasColumnType("text").IsRequired();
@@ -39,6 +42,11 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.Manufactur
             entity.HasIndex(x => x.ManufacturingFormulaVersionId).HasDatabaseName("ix_mf_version_items_version");
             entity.HasIndex(x => new { x.ManufacturingFormulaVersionId, x.MaterialId }).HasDatabaseName("ix_mfm_version_items_material");
             entity.HasIndex(x => new { x.ManufacturingFormulaVersionId, x.MaterialId }).IsUnique().HasDatabaseName("ux_mfm_version_items_version_material");
+
+            entity.HasOne(x => x.Product).WithMany(c => c.ManufacturingFormulaVersionItems)
+                  .HasForeignKey(x => x.ProductId)
+                  .OnDelete(DeleteBehavior.Restrict)
+                  .HasConstraintName("FK__Mfm__productId");
 
             entity.HasOne(x => x.Category).WithMany(c => c.Items)
                   .HasForeignKey(x => x.CategoryId)

@@ -17,6 +17,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs
         public string? CustomerGroup { get; set; }
         public string? ApplicationName { get; set; }
         public string? RegistrationNumber { get; set; }
+        public string? RegistrationAddress { get; set; }
         public string? TaxNumber { get; set; }
         public DateTime? IssueDate { get; set; }
         public string? IssuedPlace { get; set; }
@@ -27,8 +28,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs
         public LeadStatus? LeadStatus { get; set; }
 
         public PatchCustomerNote PatchCustomerNote { get; set; } = new PatchCustomerNote();
-        public List<GetAddress> Addresses { get; set; } = new List<GetAddress>();
-
-        public List<GetContact> Contacts { get; set; } = new List<GetContact>();
+        public List<PatchAddress> Addresses { get; set; } = new List<PatchAddress>();
+        public List<PatchContact> Contacts { get; set; } = new List<PatchContact>();
     }
 }

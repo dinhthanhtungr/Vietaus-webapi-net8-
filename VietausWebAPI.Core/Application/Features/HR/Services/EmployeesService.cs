@@ -19,6 +19,8 @@ using VietausWebAPI.Core.Identity;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
+using VietausWebAPI.Core.Application.Features.HR.DTOs.Parts;
+using VietausWebAPI.Core.Application.Features.HR.Querys.Parts;
 
 namespace VietausWebAPI.Core.Application.Features.HR.Services
 {
@@ -66,6 +68,7 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
 
             // 2) Base query từ repository (mặc định NoTracking)
             var q = _unitOfWork.ApplicationUserRepository.Query()
+                .Include(u => u.Employee)
                 .Include(u => u.UserRoles)
                     .ThenInclude(ur => ur.Role)
                     .AsQueryable();
@@ -76,8 +79,7 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
                 var kw = keyword.Trim().ToLower();
 
                 q = q.Where(u =>
-                    (u.UserName ?? "").ToLower().Contains(kw) ||
-                    (u.Email ?? "").ToLower().Contains(kw) ||
+                    (u.Employee.ExternalId ?? "").ToLower().Contains(kw) ||
                     (u.personName ?? "").ToLower().Contains(kw)
                 );
 
@@ -146,7 +148,7 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
             var items = await q
                 .Include(g => g.MemberInGroups) 
                     .ThenInclude(gm => gm.ProfileNavigation)// hoặc GroupMembers, tuỳ bạn đặt tên
-                .OrderBy(g => g.Name)
+                .OrderByDescending(g => g.CreatedDate)
                 .Skip((pageIndex - 1) * pageSize)
                 .Take(pageSize)
                 .Select(g => new GetGroupDTOs
@@ -161,7 +163,7 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
                                     : null,
                     CreatedDate = g.CreatedDate,
                     CreatedBy = g.CreatedBy,
-                    MemberCount = g.MemberInGroups.Count()   // hoặc g.GroupMembers.Count()
+                    MemberCount = g.MemberInGroups.Where(m => m.IsActive).Count()   // hoặc g.GroupMembers.Count()
                 })
                 .ToListAsync();
 
@@ -196,7 +198,6 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
 
                     q = q.Where(e =>
                         (e.FullName != null && EF.Functions.ILike(e.FullName, kw)) ||
-                        (e.Email != null && EF.Functions.ILike(e.Email, kw)) ||
                         (e.ExternalId != null && EF.Functions.ILike(e.ExternalId, kw))
                     );
                 }
@@ -276,6 +277,10 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
 
         public async Task<OperationResult> CreateNewGroupAsync(PostGroupDTOs group)
         {
+            group.CreatedBy = _currentUser.EmployeeId;
+            group.CreatedDate = DateTime.Now;
+            group.CompanyId = _currentUser.CompanyId;
+
             await _unitOfWork.BeginTransactionAsync();
             try
             {
@@ -431,6 +436,56 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
             var roles = await _unitOfWork.EmployeesRepository.GetRoleDTOsAsync(ct);
             return roles;
         }
-        // Implement methods from IEmployeesCommonService here
+
+        public async Task<OperationResult<PagedResult<GetParts>>> GetSummaryParts(PartQuery query, CancellationToken ct = default)
+        {
+            try
+            {
+                query ??= new PartQuery();
+
+                var pageSize = query.PageSize <= 0 ? 50 : query.PageSize;
+                var pageNumber = query.PageNumber <= 0 ? 1 : query.PageNumber;
+                var skip = (pageNumber - 1) * pageSize;
+
+                // Base query
+                IQueryable<Part> q = _unitOfWork.PartRepository.Query();
+
+                // Filter
+                if (!string.IsNullOrWhiteSpace(query.keyword))
+                {
+                    var k = query.keyword.Trim();
+                    q = q.Where(x =>
+                        x.ExternalId.Contains(k) ||
+                        x.PartName.Contains(k));
+                }
+
+                //q = query.SortDesc
+                //    ? q.OrderByDescending(x => x.ExternalId)
+                //    : q.OrderBy(x => x.ExternalId);
+
+                // Total count
+                var total = await q.CountAsync(ct);
+
+                // Page items + projection DTO
+                var items = await q
+                    .Skip(skip)
+                    .Take(pageSize)
+                    .Select(x => new GetParts
+                    {
+                        Id = x.PartId,
+                        ExternalId = x.ExternalId,
+                        Name = x.PartName
+                    })
+                    .ToListAsync(ct);
+
+                var result = new PagedResult<GetParts>(items, total, pageNumber, pageSize);
+                return OperationResult<PagedResult<GetParts>>.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // log ex nếu bạn có ILogger
+                return OperationResult<PagedResult<GetParts>>.Fail($"GetSummaryParts failed: {ex.Message}");
+            }
+        }
     }
 }

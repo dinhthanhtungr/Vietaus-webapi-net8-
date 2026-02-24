@@ -22,6 +22,8 @@ using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using static System.Collections.Specialized.BitVector32;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Formats.Asn1;
+using VietausWebAPI.Core.Domain.Enums.Formulas;
 
 namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
 {
@@ -118,6 +120,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
 
                         Weight = x.Weight,
                         Package = x.Package,
+                        ItemType = ItemType.Material,
 
                         // Lấy Price từ MaterialsSupplier
                         // Nếu có SupplierId trong query -> lấy giá của supplier đó
@@ -143,6 +146,167 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                 // nếu muốn giữ stack trace thì log rồi throw; còn nếu trả message cho client thì dùng OperationResult thay vì throw Exception
                 throw new Exception($"Lỗi khi lấy danh sách vật tư: {ex.Message}", ex);
             }
+        }
+
+        public async Task<PagedResult<GetMaterialSummary>> GetAllMPAsync(MaterialQuery query, CancellationToken ct = default)
+        {
+            if (query.PageNumber <= 0) query.PageNumber = 1;
+            if (query.PageSize <= 0) query.PageSize = 15;
+
+            var skip = (query.PageNumber - 1) * query.PageSize;
+            var supplierFilter = query.SupplierId;
+
+            // -------------------- MATERIALS base --------------------
+            var materialsBase = _unitOfWork.MaterialRepository
+                .Query(track: false)
+                .Where(x => x.IsActive == true);
+
+            if (query.MaterialId.HasValue)
+                materialsBase = materialsBase.Where(x => x.MaterialId == query.MaterialId.Value);
+
+            if (query.CategoryId.HasValue)
+                materialsBase = materialsBase.Where(x => x.CategoryId == query.CategoryId.Value);
+
+            if (query.From.HasValue)
+                materialsBase = materialsBase.Where(x => x.CreatedDate >= query.From.Value);
+
+            if (query.To.HasValue)
+                materialsBase = materialsBase.Where(x => x.CreatedDate <= query.To.Value);
+
+            if (query.SupplierId.HasValue)
+            {
+                materialsBase = materialsBase.Where(x =>
+                    x.MaterialsSuppliers.Any(ms => ms.SupplierId == query.SupplierId.Value));
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.Keyword))
+            {
+                var keyword = query.Keyword.Trim();
+                materialsBase = materialsBase.Where(x =>
+                    EF.Functions.ILike(x.ExternalId, $"%{keyword}%")
+                    || EF.Functions.ILike(x.Name, $"%{keyword}%")
+                    || EF.Functions.ILike(x.CustomCode, $"%{keyword}%"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.Category))
+            {
+                var categoryKeyword = query.Category.Trim();
+                materialsBase = materialsBase.Where(x =>
+                    EF.Functions.ILike(x.Category.ExternalId, $"%{categoryKeyword}%")
+                    || EF.Functions.ILike(x.Category.Name, $"%{categoryKeyword}%"));
+            }
+
+            // Project material -> DTO
+            var materialsQ = materialsBase.Select(x => new
+            {
+                Dto = new GetMaterialSummary
+                {
+                    MaterialId = x.MaterialId,
+                    ExternalId = x.ExternalId,
+                    CustomCode = x.CustomCode,
+                    Name = x.Name,
+                    ItemType = ItemType.Material,
+
+                    CategoryId = x.CategoryId,
+                    Category = x.Category.ExternalId,
+
+                    Weight = x.Weight,
+                    Package = x.Package,
+                    Unit = x.Unit,
+
+                    Price = supplierFilter.HasValue
+                        ? x.MaterialsSuppliers
+                            .Where(ms => ms.SupplierId == supplierFilter.Value && ms.IsActive == true)
+                            .OrderByDescending(ms => ms.UpdatedDate ?? ms.CreateDate)
+                            .Select(ms => ms.CurrentPrice)
+                            .FirstOrDefault()
+                        : x.MaterialsSuppliers
+                            .Where(ms => ms.IsActive == true)
+                            .OrderByDescending(ms => ms.UpdatedDate ?? ms.CreateDate)
+                            .Select(ms => ms.CurrentPrice)
+                            .FirstOrDefault()
+                },
+                CreatedDateSort = x.CreatedDate
+            });
+
+
+            // -------------------- PRODUCTS base --------------------
+            var productsBase = _unitOfWork.ProductRepository
+                .Query(track: false)
+                .Where(p => p.IsActive == true && p.Name != null && p.ColourCode != null);
+
+            // Filter tương ứng với MaterialId = ProductId
+            if (query.MaterialId.HasValue)
+                productsBase = productsBase.Where(p => p.ProductId == query.MaterialId.Value);
+
+
+            const string khCategoryCode = "KH";
+
+            // From/To: nếu Product không có CreatedDate thì bỏ 2 filter này (hoặc dùng field khác)
+            if (query.From.HasValue)
+                productsBase = productsBase.Where(p => p.CreatedDate >= query.From.Value);
+
+            if (query.To.HasValue)
+                productsBase = productsBase.Where(p => p.CreatedDate <= query.To.Value);
+
+            // SupplierId: product không có supplier -> nếu filter SupplierId thì loại product
+            if (query.SupplierId.HasValue)
+                productsBase = productsBase.Where(_ => false);
+
+            if (!string.IsNullOrWhiteSpace(query.Keyword))
+            {
+                var keyword = query.Keyword.Trim();
+                productsBase = productsBase.Where(p =>
+                    EF.Functions.ILike(p.ColourCode, $"%{keyword}%")
+                    || EF.Functions.ILike(p.Name, $"%{keyword}%")
+                    || EF.Functions.ILike(p.Code, $"%{keyword}%"));
+            }
+
+            // Category text filter: product category = "KH"
+            if (!string.IsNullOrWhiteSpace(query.Category))
+            {
+                var categoryKeyword = query.Category.Trim();
+                // Nếu user gõ cái gì không giống "KH" thì loại hết product
+                // (cho phép contains để giống material)
+                if (!khCategoryCode.Contains(categoryKeyword, StringComparison.OrdinalIgnoreCase))
+                    productsBase = productsBase.Where(_ => false);
+            }
+
+            // Project product -> DTO
+            var productsQ = productsBase.Select(p => new
+            {
+                Dto = new GetMaterialSummary
+                {
+                    MaterialId = p.ProductId,
+                    ExternalId = p.ColourCode,
+                    CustomCode = p.Code,
+                    Name = p.Name,
+                    ItemType = ItemType.Product,
+
+                    CategoryId = null,
+                    Category = khCategoryCode,
+
+                    Price = null,
+                    Weight = null,
+                    Package = null,
+                    Unit = null
+                },
+                CreatedDateSort = p.CreatedDate
+            });
+
+
+            // -------------------- CONCAT AFTER FILTER --------------------
+            var q = materialsQ.Concat(productsQ);
+            var total = await q.CountAsync(ct);
+
+            var items = await q
+                .OrderByDescending(x => x.CreatedDateSort)
+                .Skip(skip)
+                .Take(query.PageSize)
+                .Select(x => x.Dto)
+                .ToListAsync(ct);
+
+            return new PagedResult<GetMaterialSummary>(items, total, query.PageNumber, query.PageSize);
         }
 
         public async Task<OperationResult<GetMaterial>> GetMaterialByIdAsync(Guid Id, CancellationToken ct = default)
@@ -653,5 +817,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
             // caller save chung với các thay đổi khác 
             return;
         }
+
+
     }
 }

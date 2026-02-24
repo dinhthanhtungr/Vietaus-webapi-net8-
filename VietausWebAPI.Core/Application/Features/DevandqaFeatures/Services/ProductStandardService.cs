@@ -9,6 +9,7 @@ using VietausWebAPI.Core.Application.Features.DevandqaFeatures.Queries;
 using VietausWebAPI.Core.Application.Features.DevandqaFeatures.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Shared.Helper;
+using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.DevandqaSchema;
@@ -19,39 +20,40 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUser _currentUser;
-        public ProductStandardService(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+        private readonly IExternalIdService _externalIdService;
+        public ProductStandardService(IUnitOfWork unitOfWork
+                                    , ICurrentUser currentUser
+                                    , IExternalIdService externalIdService)
         {
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;
+            _externalIdService = externalIdService;
         }
 
         // ======================================================================== Get ========================================================================
 
-        public async Task<OperationResult<GetProductStandard>> GetByIdAsync(ProductStandardQuery id, CancellationToken cancellationToken)
+        public async Task<OperationResult<GetProductStandard>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             try
             {
                 // Base query: chỉ đọc, nhẹ
-                var q = _unitOfWork.ProductStandardRepository.Query();
+                var q = _unitOfWork.ProductStandardRepository.Query()
+                    .Where(s => s.Id == id);
 
 
                 // Filter theo Id
-                if (id.ProductStandard.HasValue)
-                {
-                    q = q.Where(ps => ps.Id == id.ProductStandard.Value);
-                }
-
-                if (id.ProductId.HasValue)
-                {
-                    q = q.Where(ps => ps.ProductId == id.ProductId.Value);
-                }
 
                 // Project thẳng sang DTO (server-side)
                 var dto = await q.Select(ps => new GetProductStandard
                 {
                     Id = ps.Id,
                     ProductId = ps.ProductId,
+
+                    ExternalId = ps.externalId,
+
                     ProductExternalId = ps.ProductExternalId,
+                    ProductName = ps.Product != null ? ps.Product.Name : null,
+
                     Status = ps.Status,
                     DeltaE = ps.DeltaE,
                     PelletSize = ps.PelletSize,
@@ -67,7 +69,10 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                     DwellTime = ps.DwellTime,
                     BlackDots = ps.BlackDots,
                     MigrationTest = ps.MigrationTest,
+
+                    packed = ps.packed,
                     Weight = ps.Weight,
+
                     Shape = ps.Shape,
                     CompanyId = ps.CompanyId,
                     CreatedBy = ps.CreatedBy,
@@ -122,6 +127,7 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                         Status = ps.Status ?? string.Empty,
                         Density = ps.Density ?? string.Empty,
                         MeltIndex = ps.MeltIndex ?? string.Empty,
+                        packed = ps.packed ?? string.Empty,
                         weight = ps.Weight,                 // DTO là int?
                         CreatedDate = ps.CreatedDate,
                         Id = ps.Id
@@ -139,7 +145,6 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
             }
         }
 
-        // ======================================================================== Post ========================================================================
         public async Task<OperationResult> AddAsync(PostProductStandard productStandard, CancellationToken cancellationToken)
             {
                 try
@@ -175,6 +180,8 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                     {
                         Id = Guid.CreateVersion7(),   // bỏ qua Id từ DTO để tránh client ép GUID
                         ProductId = productStandard.ProductId,
+
+                        externalId = await _externalIdService.NextAsync("STD", cancellationToken),
                         ProductExternalId = productStandard.ProductExternalId,
                         Status = productStandard.Status,
                         DeltaE = productStandard.DeltaE,
@@ -196,7 +203,7 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
 
                         CompanyId = companyId,
                         CreatedBy = createdBy,
-                        CreatedDate = DateTime.UtcNow
+                        CreatedDate = DateTime.Now
                     };
 
                     await _unitOfWork.ProductStandardRepository.AddAsync(entity, cancellationToken);
@@ -242,49 +249,61 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
         {
             try
             {
-                if (dto == null || dto.Id == Guid.Empty)
+                if (dto is null)
                     return OperationResult.Fail("Dữ liệu cập nhật không hợp lệ.");
 
-                var q = _unitOfWork.ProductStandardRepository.Query().Where(x => x.Id == dto.Id);
+                // 1) Xác định key: ưu tiên ProductStandardId, fallback externalId (nếu bạn muốn)
+                if (dto.ProductStandardId is null || dto.ProductStandardId == Guid.Empty)
+                {
+                    // Nếu bạn KHÔNG muốn fallback externalId thì return fail luôn
+                    if (string.IsNullOrWhiteSpace(dto.externalId))
+                        return OperationResult.Fail("Thiếu ProductStandardId (hoặc externalId) để cập nhật ProductStandard.");
+                }
+
+                var q = _unitOfWork.ProductStandardRepository.Query(track: true);
+
+                // Ưu tiên update theo Id
+                if (dto.ProductStandardId is not null && dto.ProductStandardId != Guid.Empty)
+                {
+                    var id = dto.ProductStandardId.Value;
+                    q = q.Where(x => x.Id == id);
+                }
 
                 var entity = await q.FirstOrDefaultAsync(ct);
-                if (entity == null)
+                if (entity is null)
                     return OperationResult.Fail("Không tìm thấy ProductStandard.");
 
-                // helper nhỏ để trim nếu không null
-                static string? T(string? s) => s is null ? null : s.Trim();
+                static string? T(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 
                 var changed = false;
 
-                // ----- value types (nullable input) -----
-                changed |= PatchHelper.SetIf(dto.ProductId, () => entity.ProductId, v => entity.ProductId = v);
+                // Weight: null => không update, có giá trị => update
                 changed |= PatchHelper.SetIf(dto.Weight, () => entity.Weight, v => entity.Weight = v);
 
-                // ----- ref types (string…) -----
-                changed |= PatchHelper.SetIfRef(T(dto.ProductExternalId), () => entity.ProductExternalId, v => entity.ProductExternalId = v);
-                changed |= PatchHelper.SetIfRef(T(dto.Status), () => entity.Status, v => entity.Status = v);
-                changed |= PatchHelper.SetIfRef(T(dto.DeltaE), () => entity.DeltaE, v => entity.DeltaE = v);
-                changed |= PatchHelper.SetIfRef(T(dto.PelletSize), () => entity.PelletSize, v => entity.PelletSize = v);
-                changed |= PatchHelper.SetIfRef(T(dto.Moisture), () => entity.Moisture, v => entity.Moisture = v);
-                changed |= PatchHelper.SetIfRef(T(dto.Density), () => entity.Density, v => entity.Density = v);
-                changed |= PatchHelper.SetIfRef(T(dto.MeltIndex), () => entity.MeltIndex, v => entity.MeltIndex = v);
-                changed |= PatchHelper.SetIfRef(T(dto.TensileStrength), () => entity.TensileStrength, v => entity.TensileStrength = v);
-                changed |= PatchHelper.SetIfRef(T(dto.ElongationAtBreak), () => entity.ElongationAtBreak, v => entity.ElongationAtBreak = v);
-                changed |= PatchHelper.SetIfRef(T(dto.FlexuralStrength), () => entity.FlexuralStrength, v => entity.FlexuralStrength = v);
-                changed |= PatchHelper.SetIfRef(T(dto.FlexuralModulus), () => entity.FlexuralModulus, v => entity.FlexuralModulus = v);
-                changed |= PatchHelper.SetIfRef(T(dto.IzodImpactStrength), () => entity.IzodImpactStrength, v => entity.IzodImpactStrength = v);
-                changed |= PatchHelper.SetIfRef(T(dto.Hardness), () => entity.Hardness, v => entity.Hardness = v);
-                changed |= PatchHelper.SetIfRef(T(dto.DwellTime), () => entity.DwellTime, v => entity.DwellTime = v);
-                changed |= PatchHelper.SetIfRef(T(dto.BlackDots), () => entity.BlackDots, v => entity.BlackDots = v);
-                changed |= PatchHelper.SetIfRef(T(dto.MigrationTest), () => entity.MigrationTest, v => entity.MigrationTest = v);
-                changed |= PatchHelper.SetIfRef(T(dto.Shape), () => entity.Shape, v => entity.Shape = v);
+                // ====== PATCH string: null => CLEAR (set null) ======
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.ProductExternalId), () => entity.ProductExternalId, v => entity.ProductExternalId = v);
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.Status), () => entity.Status, v => entity.Status = v);
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.DeltaE), () => entity.DeltaE, v => entity.DeltaE = v);
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.PelletSize), () => entity.PelletSize, v => entity.PelletSize = v);
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.Moisture), () => entity.Moisture, v => entity.Moisture = v);
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.Density), () => entity.Density, v => entity.Density = v);
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.MeltIndex), () => entity.MeltIndex, v => entity.MeltIndex = v);
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.TensileStrength), () => entity.TensileStrength, v => entity.TensileStrength = v);
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.ElongationAtBreak), () => entity.ElongationAtBreak, v => entity.ElongationAtBreak = v);
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.FlexuralStrength), () => entity.FlexuralStrength, v => entity.FlexuralStrength = v);
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.FlexuralModulus), () => entity.FlexuralModulus, v => entity.FlexuralModulus = v);
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.IzodImpactStrength), () => entity.IzodImpactStrength, v => entity.IzodImpactStrength = v);
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.Hardness), () => entity.Hardness, v => entity.Hardness = v);
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.Shape), () => entity.Shape, v => entity.Shape = v);
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.DwellTime), () => entity.DwellTime, v => entity.DwellTime = v);
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.BlackDots), () => entity.BlackDots, v => entity.BlackDots = v);
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.MigrationTest), () => entity.MigrationTest, v => entity.MigrationTest = v);
+
+                changed |= PatchHelper.SetIfRefNullable(TKeepNull(dto.packed), () => entity.packed, v => entity.packed = v);
+
 
                 if (!changed)
                     return OperationResult.Ok("Không có thay đổi.");
-
-                // (tuỳ chọn) audit cập nhật
-                // entity.UpdatedBy   = _currentUser?.EmployeeId ?? _currentUser?.UserId ?? Guid.Empty;
-                // entity.UpdatedDate = DateTime.UtcNow;
 
                 await _unitOfWork.SaveChangesAsync();
                 return OperationResult.Ok("Cập nhật thành công.");
@@ -294,5 +313,14 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                 return OperationResult.Fail($"Lỗi khi cập nhật ProductStandard: {ex.Message}");
             }
         }
+
+        // ======================================================================== hELPER ========================================================================
+        static string? TKeepNull(string? s)
+        {
+            // giữ null để clear, chỉ trim khi có string
+            return s is null ? null : s.Trim();
+        }
+
+
     }
 }

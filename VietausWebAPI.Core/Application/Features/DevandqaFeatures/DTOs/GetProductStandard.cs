@@ -11,7 +11,11 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.DTOs
         public Guid Id { get; set; }
         public Guid ProductId { get; set; }
 
+        public string? ExternalId { get; set; }
+
         public string? ProductExternalId { get; set; }
+        public string? ProductName { get; set; }
+
         public string? Status { get; set; }
         public string? DeltaE { get; set; }
         public string? PelletSize { get; set; }
@@ -30,6 +34,8 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.DTOs
 
 
         public int Weight { get; set; }
+        public string? packed { get; set; }
+
         public string? Shape { get; set; }
 
         public Guid CompanyId { get; set; }

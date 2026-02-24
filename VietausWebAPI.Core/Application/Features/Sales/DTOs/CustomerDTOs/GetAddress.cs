@@ -16,5 +16,6 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs
         public string? Country { get; set; }
         public string? PostalCode { get; set; }
         public bool? IsPrimary { get; set; }
+        public bool IsActive { get; set; }
     }
 }

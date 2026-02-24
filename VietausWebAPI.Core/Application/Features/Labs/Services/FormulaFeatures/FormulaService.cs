@@ -1,12 +1,14 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
+using Shared.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
+using VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.FormulaFeature;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Notifications.ServiceContracts;
@@ -16,6 +18,7 @@ using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
+using VietausWebAPI.Core.Domain.Enums.Formulas;
 using VietausWebAPI.Core.Domain.Enums.Products;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
@@ -23,16 +26,27 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
     public class FormulaService : IFormulaService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IFormulaPDF _IFormulaPDF;
         private readonly IMapper _mapper;
         private readonly ICurrentUser _currentUser;
         private readonly INotificationService _notificationService;
 
-        public FormulaService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUser currentUser, INotificationService notificationService)
+        private readonly IExternalIdService _externalId;
+
+        public FormulaService(IUnitOfWork unitOfWork
+                            , IMapper mapper
+                            , ICurrentUser currentUser
+                            , INotificationService notificationService
+                            , IFormulaPDF IFormulaPDF
+            , IExternalIdService externalIdService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _currentUser = currentUser;
             _notificationService = notificationService;
+            _IFormulaPDF = IFormulaPDF;
+
+            _externalId = externalIdService;
         }
 
         // ======================================================================== Get ======================================================================== 
@@ -71,6 +85,11 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                 if (query.ProductId is Guid pid && pid != Guid.Empty)
                     q = q.Where(p => p.ProductId == pid);
 
+                if(!string.IsNullOrWhiteSpace(query.status))
+                {
+                    q = q.Where(p => p.Status == query.status);
+                }
+
                 // Đếm trước
                 var totalCount = await q.CountAsync(ct);
 
@@ -104,7 +123,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                         SentByNameSnapshot = f.SentByNavigation != null ? f.SentByNavigation.FullName : null,
 
                         CreatedByName = f.CreatedByNavigation != null ? (f.CreatedByNavigation.FullName).Trim() : null,
-
+                        Note = f.Note,
                         TotalPrice = (decimal?)f.FormulaMaterials.Where(m => m.IsActive == true)
                                     .Select(m =>
                                         (m.Quantity) *
@@ -117,52 +136,13 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                                         )
                                     ).Sum(),
 
-                        // ==== TÍNH TOTAL PRICE THEO RULE VA/VU ====
-                        //TotalPrice =
-                        //    // 1) Thử lấy theo VA: chọn VA IsStandard gần nhất, rồi SUM vật tư của VA
-                        //    (
-                        //        f.ManufacturingFormulaSources
-                        //         .Where(mf => mf.IsActive == true && mf.IsStandard == true)
-                        //         .OrderByDescending(mf => (DateTime?)(mf.UpdatedDate ))
-                        //         .Select(mf => (decimal?)              // Ép về decimal? để dùng ??
-                        //             mf.ManufacturingFormulaMaterials
-                        //               .Where(mm => mm.IsActive == true)
-                        //               .Select(mm =>
-                        //                   (mm.Quantity) *
-                        //                   (
-                        //                       ms.Where(s => s.MaterialId == mm.MaterialId && (s.IsActive ?? true))
-                        //                         .OrderByDescending(s => (DateTime?)(s.UpdatedDate ?? s.CreateDate))
-                        //                         .ThenByDescending(s => (s.IsPreferred ?? false))
-                        //                         .Select(s => (decimal?)s.CurrentPrice)
-                        //                         .FirstOrDefault() ?? 0m
-                        //                   )
-                        //               ).Sum()
-                        //         )
-                        //         .FirstOrDefault()
-                        //    )
-                        //    // 2) Nếu không có VA chuẩn → fallback về VU (FormulaMaterials)
-                        //    ??
-                        //    (
-                        //        (decimal?)
-                        //        f.FormulaMaterials
-                        //         .Where(m => m.IsActive == true)
-                        //         .Select(m =>
-                        //             (m.Quantity) *
-                        //             (
-                        //                 ms.Where(s => s.MaterialId == m.MaterialId && (s.IsActive ?? true))
-                        //                   .OrderByDescending(s => (DateTime?)(s.UpdatedDate ?? s.CreateDate))
-                        //                   .ThenByDescending(s => (s.IsPreferred ?? false))
-                        //                   .Select(s => (decimal?)s.CurrentPrice)
-                        //                   .FirstOrDefault() ?? 0m
-                        //             )
-                        //         ).Sum()
-                        //    ),
-
                         materialFormulas = f.FormulaMaterials
                                 .Where(m => m.IsActive == true)
                                 .Select(m => new GetMaterialFormula
                                 {
-                                    MaterialId = m.MaterialId,
+                                    ItemId = m.MaterialId ?? Guid.Empty, // Fix CS0266 and CS8629: assign Guid.Empty if null
+                                    itemType = m.itemType,
+
                                     CategoryId = m.CategoryId,
                                     Quantity = m.Quantity,
                                     UnitPrice = m.UnitPrice,
@@ -183,7 +163,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
             }
         }
 
-        // ======================================================================== Post ======================================================================== 
+        // ======================================================================== Post =======================================================================
 
         /// <summary>
         /// Tạo công thức mới cho sản phẩm (theo VU)
@@ -198,58 +178,127 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
             var userId = _currentUser.EmployeeId;
             var companyId = _currentUser.CompanyId;
 
-            if (req.materialFormulas is null || !req.materialFormulas.Any())
-                throw new ArgumentException("Công thức phải có ít nhất 1 vật tư.", nameof(req.materialFormulas));
+            if (req.Items is null || !req.Items.Any())
+                return OperationResult.Fail("Công thức phải có ít nhất 1 vật tư.");
 
-            int affected = 0;//
+
+            // 1) Kiểm tra product tồn tại
+            var productExists = await _unitOfWork.ProductRepository.Query()
+                .AnyAsync(p => p.ProductId == req.ProductId, ct);
+
+            if (!productExists)
+                return OperationResult.Fail("Sản phẩm không tồn tại.");
+
+            // 2) Làm sạch dữ liệu đầu vào
+            var cleaned = req.Items.Where(x => x != null
+                     && x.ItemId != Guid.Empty
+                     && x.Quantity > 0
+                     && x.UnitPrice >= 0)
+            .ToList();
+
+            if (cleaned.Count == 0)
+                return OperationResult.Fail("Không có dòng hợp lệ (ItemId/Quantity/UnitPrice).");
+
+
+            int affected = 0;
             await using var tx = await _unitOfWork.BeginTransactionAsync(); 
 
             try
             {
-                Guid guid = req.ProductId;
-
-
-                // Case1: Kiểm tra sản phẩm có tồn tại không
-                var exists = await _unitOfWork.ProductRepository.Query()
-                    .AnyAsync(p => p.ProductId == req.ProductId, ct);
-
-                if (!exists) throw new ArgumentException("Product does not exist", nameof(req.ProductId));
-
-                // Tạo mới công thức
-                var formula = _mapper.Map<Formula>(req);
-
-                // Làm sạch để tránh lỗi null
-                formula.FormulaMaterials = (formula.FormulaMaterials ?? new List<FormulaMaterial>())
-                    .Where(x => x != null
-                             && x.MaterialId != Guid.Empty
-                             && x.Quantity > 0
-                             && x.UnitPrice >= 0)
+                // 3) Kiểm tra tồn tại theo từng ItemType
+                var materialIds = cleaned
+                    .Where(x => x.itemType == ItemType.Material)
+                    .Select(x => x.ItemId)
+                    .Distinct()
                     .ToList();
 
-                //    - Tính TotalPrice từng dòng (round 2 số thập phân, có thể đổi theo rule công ty)
-                foreach (var i in formula.FormulaMaterials)
+                var productItemIds = cleaned
+                    .Where(x => x.itemType == ItemType.Product)
+                    .Select(x => x.ItemId)
+                    .Distinct()
+                    .ToList();
+
+                if(materialIds.Count > 0)
                 {
-                    i.TotalPrice = Math.Round(i.Quantity * i.UnitPrice, 2, MidpointRounding.AwayFromZero);
+                    var existingMaterialIds = await _unitOfWork.MaterialRepository.Query()
+                        .Where(m => materialIds.Contains(m.MaterialId))
+                        .Select(m => m.MaterialId)
+                        .ToListAsync(ct);
+
+                    var missingMaterialIds = materialIds.Except(existingMaterialIds).ToList();
+                    if (missingMaterialIds.Any())
+                        return OperationResult.Fail($"Materials do not exist: {string.Join(", ", missingMaterialIds)}");
                 }
 
-                //    - Tổng cộng công thức
-                formula.TotalPrice = formula.FormulaMaterials.Sum(i => i.TotalPrice);
+                if(productItemIds.Count > 0)
+                {
+                    var existingProductIds = await _unitOfWork.ProductRepository.Query()
+                        .Where(p => productItemIds.Contains(p.ProductId))
+                        .Select(p => p.ProductId)
+                        .ToListAsync(ct);
+                    var missingProductIds = productItemIds.Except(existingProductIds).ToList();
+                    if (missingProductIds.Any())
+                        return OperationResult.Fail($"Products do not exist: {string.Join(", ", missingProductIds)}");
+                }
 
+                // 4) Tạo mới công thức
+                var formula = new Formula
+                {
+                    FormulaId = Guid.CreateVersion7(),
+                    ProductId = req.ProductId,
+                    CompanyId = companyId,
+                    CreatedBy = userId,
+                    CreatedDate = now,
+                    IsActive = true,
+                    Note = req.Note,
 
-                formula.ExternalId = await ExternalIdGenerator.GenerateExternalId(
-                    "VU",
-                    prefix => _unitOfWork.FormulaRepository.GetLatestExternalIdStartsWithAsync(prefix)
-                );
+                    FormulaMaterials = new List<FormulaMaterial>()
+                };
+
+                // 5) Tạo công thức vật tư
+                Guid guid = req.ProductId;
 
                 formula.Name = await ExternalIdGenerator.GenerateFormulaCode(
                     "F",
                     prefix => _unitOfWork.FormulaRepository.GetLatestExternalIdStartsWithAsync(prefix, guid)
                 );
 
-                formula.ProductId = req.ProductId;
-                formula.CompanyId = companyId;
-                formula.CreatedBy = userId;
+                formula.ExternalId = await _externalId.NextAsync(DocumentPrefix.VU.ToString(), ct: ct);
 
+                //6) Map dtos -> entity
+                foreach (var item in cleaned)
+                {
+                    var lineTotal = Math.Round(item.Quantity * item.UnitPrice, 2, MidpointRounding.AwayFromZero);
+
+                    var formulaMaterial = new FormulaMaterial
+                    {
+                        FormulaMaterialId =  Guid.CreateVersion7(),
+                        FormulaId = formula.FormulaId,
+
+                        MaterialId = item.itemType == ItemType.Material
+                            ? item.ItemId
+                            : (Guid?)null,
+
+                        ProductId = item.itemType == ItemType.Product
+                            ? item.ItemId
+                            : (Guid?)null,
+
+                        itemType = item.itemType,
+
+                        CategoryId = item.CategoryId,
+                        Quantity = item.Quantity,
+                        UnitPrice = item.UnitPrice,
+                        TotalPrice = lineTotal,
+                        Unit = item.Unit,
+                        MaterialNameSnapshot = item.MaterialNameSnapshot,
+                        MaterialExternalIdSnapshot = item.MaterialExternalIdSnapshot,
+                        IsActive = true
+                    };
+                    formula.FormulaMaterials.Add(formulaMaterial);
+                }
+
+                // Cách an toàn nhất: bỏ qua req.TotalPrice, luôn tính theo dòng còn hiệu lực
+                formula.TotalPrice = formula.FormulaMaterials.Sum(x => x.TotalPrice);
 
                 await _unitOfWork.FormulaRepository.AddAsync(formula, ct);
                 affected = await _unitOfWork.SaveChangesAsync();
@@ -265,7 +314,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
             }
         }
 
-        // ======================================================================== Patch ======================================================================== 
+        // ====================================================================== Patch ======================================================================
 
         /// <summary>
         /// Cập nhật dữ liệu công thức
@@ -379,6 +428,14 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                     }
                 }
 
+                static (ItemType type, Guid id) KeyOf(FormulaMaterial fm)
+                {
+                    if (fm.MaterialId.HasValue) return (ItemType.Material, fm.MaterialId.Value);
+                    if (fm.ProductId.HasValue) return (ItemType.Product, fm.ProductId.Value);
+                    return (ItemType.Material, Guid.Empty); // tránh crash; ideally never happens
+                }
+
+
                 // Patch các field đơn
                 SetIfRef(req.Note, () => formulaExist.Note, v => formulaExist.Note = v);
                 SetIfRef(req.Name, () => formulaExist.Name, v => formulaExist.Name = v);
@@ -389,40 +446,45 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
 
                 // 2) Cập nhật công thức vật tư - xóa thêm sửa
 
-                var existingMaterials = formulaExist.FormulaMaterials.ToDictionary(fm => fm.MaterialId, fm => fm);
+                var existing = formulaExist.FormulaMaterials
+                    .Where(x => x.IsActive) // hoặc lấy tất cả rồi xử lý IsActive sau
+                    .ToDictionary(KeyOf, fm => fm);
 
-                foreach(var m in req.materialFormulas)
+                foreach (var m in req.materialFormulas)
                 {
-                    if(!existingMaterials.TryGetValue(m.MaterialId, out var link))
+                    var key = (m.itemType, m.ItemId);
+                    if (m.ItemId == Guid.Empty) continue; // bỏ row rác
+
+                    if (!existing.TryGetValue(key, out var link))
                     {
-                        // New link
                         link = new FormulaMaterial
                         {
                             FormulaMaterialId = Guid.CreateVersion7(),
                             FormulaId = formulaExist.FormulaId,
-                            MaterialId = m.MaterialId,
                             CategoryId = m.CategoryId,
-                            Quantity = m.Quantity ,
+                            Quantity = m.Quantity,
                             UnitPrice = m.UnitPrice,
                             TotalPrice = decimal.Round(m.Quantity * m.UnitPrice, 2, MidpointRounding.AwayFromZero),
                             Unit = m.Unit,
                             MaterialNameSnapshot = m.MaterialNameSnapshot,
                             MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot,
-                            IsActive = true
+                            IsActive = true,
+
+                            // ✅ map theo itemType
+                            itemType = m.itemType,
+                            MaterialId = m.itemType == ItemType.Material ? m.ItemId : (Guid?)null,
+                            ProductId = m.itemType == ItemType.Product ? m.ItemId : (Guid?)null,
                         };
 
                         await _unitOfWork.FormulaMaterialRepository.AddAsync(link, cancellationToken ?? default);
                     }
-
                     else
                     {
-                        // UPDATE: so sánh và gán khi khác
+                        // UPDATE
                         if (m.CategoryId != link.CategoryId) link.CategoryId = m.CategoryId;
-
                         if (m.Quantity != link.Quantity) link.Quantity = m.Quantity;
                         if (m.UnitPrice != link.UnitPrice) link.UnitPrice = m.UnitPrice;
 
-                        // luôn đồng bộ TotalPrice theo BE để nhất quán
                         var newTotal = decimal.Round(link.Quantity * link.UnitPrice, 2, MidpointRounding.AwayFromZero);
                         if (newTotal != link.TotalPrice) link.TotalPrice = newTotal;
 
@@ -430,15 +492,27 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                         SetIfRef(m.MaterialNameSnapshot, () => link.MaterialNameSnapshot, v => link.MaterialNameSnapshot = v);
                         SetIfRef(m.MaterialExternalIdSnapshot, () => link.MaterialExternalIdSnapshot, v => link.MaterialExternalIdSnapshot = v);
 
-                        if (link.IsActive == false) link.IsActive = true; // RE-activate nếu trước đó bị xóa mềm
+                        // ✅ đảm bảo đúng type/id (tránh case đổi Material<->Product)
+                        if (link.itemType != m.itemType) link.itemType = m.itemType;
+                        link.MaterialId = m.itemType == ItemType.Material ? m.ItemId : (Guid?)null;
+                        link.ProductId = m.itemType == ItemType.Product ? m.ItemId : (Guid?)null;
+
+                        if (link.IsActive == false) link.IsActive = true;
                     }
                 }
 
+
                 // SOFT-DELETE: những dòng đang active nhưng không còn trong payload
-                var incomingIds = req.materialFormulas.Select(x => x.MaterialId).ToHashSet();
-                foreach (var old in formulaExist.FormulaMaterials.Where(x => x.IsActive && !incomingIds.Contains(x.MaterialId)))
+                var incomingKeys = req.materialFormulas
+                    .Where(x => x.ItemId != Guid.Empty)
+                    .Select(x => (x.itemType, x.ItemId))
+                    .ToHashSet();
+
+                foreach (var old in formulaExist.FormulaMaterials.Where(x => x.IsActive))
                 {
-                    old.IsActive = false;
+                    var oldKey = KeyOf(old);
+                    if (oldKey.id != Guid.Empty && !incomingKeys.Contains(oldKey))
+                        old.IsActive = false;
                 }
 
                 // Cách an toàn nhất: bỏ qua req.TotalPrice, luôn tính theo dòng còn hiệu lực
@@ -461,6 +535,74 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
             {
                 await _unitOfWork.RollbackTransactionAsync();
                 return OperationResult.Fail(ex.Message);
+            }
+        }
+
+
+        // ===================================================== Export PDF ===================================================================
+        public async Task<byte[]> ExportToPdfAsync(Guid data, CancellationToken ct = default)
+        {
+            var now = DateTime.Now;
+            var userId = _currentUser.EmployeeId;
+            var companyId = _currentUser.CompanyId;
+
+            // NOTE: READ-ONLY => transaction không cần thiết.
+            // Nhưng bạn muốn giữ "y chang" thì mình vẫn để đây.
+            using var tx = await _unitOfWork.BeginTransactionAsync();
+
+            try
+            {
+                // 1) Validate input tối thiểu
+                if (data == null)
+                    throw new ArgumentNullException(nameof(data));
+
+
+                // 2) Lấy dữ liệu thật từ DB theo FormulaExternalId + CompanyId
+                var dto = await _unitOfWork.FormulaRepository.Query()
+                    .Where(f =>
+                        f.IsActive &&
+                        f.CompanyId.HasValue && f.CompanyId.Value == companyId &&
+                        f.FormulaId == data)
+                    .Select(f => new FormulaPDFDTOs
+                    {
+                        FormulaExternalId = f.ExternalId,
+                        Note = f.Note,
+
+                        colourCode = f.Product.ColourCode ?? "",
+                        productName = f.Product.Name ?? "",
+
+                        // AddRate: hiện schema bạn đưa không có AddRate => map tạm từ UsageRate (double?) -> decimal
+                        AddRate = (decimal)(f.Product.UsageRate ?? 0),
+
+                        materials = f.FormulaMaterials
+                            .Where(m => m.IsActive)
+                            .OrderBy(m => m.MaterialExternalIdSnapshot ?? m.Material.ExternalId)
+                            .Select(m => new FormulaPDFMaterialDTOs
+                            {
+                                ExternalId = (m.MaterialExternalIdSnapshot ?? m.Material.ExternalId) ?? "",
+                                MaterialName = (m.MaterialNameSnapshot ?? m.Material.Name) ?? "",
+                                Quantity = m.Quantity,
+                                CategoryId = m.CategoryId
+                            })
+                            .ToList()
+                    })
+                    .FirstOrDefaultAsync(ct);
+
+                if (dto == null)
+                    throw new KeyNotFoundException($"Không tìm thấy Formula: {data} (CompanyId={companyId}).");
+
+                // 3) Render PDF
+                //var pdfBytes = _IFormulaPDF.Render(dto);
+
+                // 4) Commit (nếu vẫn giữ transaction)
+                await tx.CommitAsync(ct);
+
+                throw new KeyNotFoundException($"Không tìm thấy Formula: {data} (CompanyId={companyId}).");
+            }
+            catch
+            {
+                await tx.RollbackAsync(ct);
+                throw;
             }
         }
     }

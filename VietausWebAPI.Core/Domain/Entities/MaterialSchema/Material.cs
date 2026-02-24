@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
 using VietausWebAPI.Core.Domain.Entities.CompanySchema;
+using VietausWebAPI.Core.Domain.Entities.DevandqaSchema;
 using VietausWebAPI.Core.Domain.Entities.HrSchema;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
@@ -66,5 +67,6 @@ public partial class Material
     public virtual ICollection<PurchaseOrderDetail> PurchaseOrderDetails { get; set; } = new List<PurchaseOrderDetail>();
 
     public virtual ICollection<SupplyRequestDetail> SupplyRequestDetails { get; set; } = new List<SupplyRequestDetail>();
+    //public virtual ICollection<QCInputByWarehouse> QCInputByWarehouses { get; set; } = new List<QCInputByWarehouse>();
 
 }

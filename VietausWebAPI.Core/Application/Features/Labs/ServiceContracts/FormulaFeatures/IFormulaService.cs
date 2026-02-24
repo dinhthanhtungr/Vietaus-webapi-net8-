@@ -30,6 +30,14 @@ namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.FormulaF
          CancellationToken ct = default);
 
         /// <summary>
+        /// In xuất công thức ra file PDF.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<byte[]> ExportToPdfAsync(Guid data, CancellationToken ct = default);
+
+        /// <summary>
         /// Cấp nhật công thức.
         /// </summary>
         /// <param name="req"></param>

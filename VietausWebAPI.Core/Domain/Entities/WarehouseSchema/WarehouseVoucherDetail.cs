@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Entities.DevandqaSchema;
+using VietausWebAPI.Core.Domain.Enums.WareHouses;
 
 namespace VietausWebAPI.Core.Domain.Entities.WarehouseSchema
 {
@@ -20,11 +22,15 @@ namespace VietausWebAPI.Core.Domain.Entities.WarehouseSchema
         public int? SlotId { get; set; }            // FK -> WarehouseShelfStock.SlotId (int)
         public int? PurposeId { get; set; }         // FK -> UsagePurpose.PurposeId
         public bool IsIncrease { get; set; }        // tăng (true) / giảm (false)
+
+        public VoucherDetailType VoucherType { get; set; } 
         public string? Note { get; set; }
 
         // Navigations
         public WarehouseVoucher Voucher { get; set; } = default!;
         public WarehouseShelfStock? Slot { get; set; }
         public UsagePurpose? Purpose { get; set; }
+
+        public ICollection<QCInputByQC> QCInputByQCs { get; set; } = new List<QCInputByQC>();
     }
 }

@@ -7,6 +7,7 @@ using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.Querys;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
+using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 
 namespace VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures
 {
@@ -51,5 +52,8 @@ namespace VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.Cu
         /// <param name="prefix"></param>
         /// <returns></returns>
         Task<string?> GetLatestExternalIdStartsWithAsync(string prefix);
+
+        Task AddAddressAsync(List<Address> addedAddresses, CancellationToken ct);
+        Task AddContactAsync(List<Contact> addedContacts, CancellationToken ct); 
     }
 }

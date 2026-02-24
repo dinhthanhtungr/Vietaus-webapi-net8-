@@ -11,6 +11,7 @@ namespace VietausWebAPI.Core.Domain.Enums.Products
         Unknown = 0,
         Draft = 1,
         Approved = 2,
-        SampleSent = 3
+        SampleSent = 3,
+        Cancelled = 4
     }
 }

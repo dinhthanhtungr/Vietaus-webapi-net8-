@@ -16,6 +16,7 @@ public partial class Supplier
     public string? SupplierName { get; set; }
 
     public string? RegistrationNumber { get; set; }
+    public string? RegistrationAddress { get; set; }
 
     public string? TaxNumber { get; set; }
 
@@ -56,4 +57,6 @@ public partial class Supplier
     public virtual ICollection<SupplierAddress> SupplierAddresses { get; set; } = new List<SupplierAddress>();
 
     public virtual ICollection<SupplierContact> SupplierContacts { get; set; } = new List<SupplierContact>();
+
+
 }

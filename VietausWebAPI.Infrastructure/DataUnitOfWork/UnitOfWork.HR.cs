@@ -12,5 +12,6 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IEmployeesRepository EmployeesRepository { get; }
         public IGroupRepository GroupRepository { get; }
         public IMemberInGroupRepository MemberInGroupRepository { get; }
+        public IPartRepository PartRepository { get; }
     }
 }

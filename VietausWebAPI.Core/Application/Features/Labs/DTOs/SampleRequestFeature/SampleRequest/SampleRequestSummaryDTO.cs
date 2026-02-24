@@ -15,6 +15,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
         public string? ColourCode { get; set; }
         public string? Status { get; set; } = string.Empty;
         public string? CustomerName { get; set; } = string.Empty;
+        public string? CustomerExternalId { get; set; } = string.Empty; 
         public string? LabName { get; set; } = string.Empty;
         public string? CreatedBy { get; set; } = string.Empty;
         public DateTime? CreatedDate { get; set; }

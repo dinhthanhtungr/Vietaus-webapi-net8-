@@ -30,6 +30,8 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.DTOs
 
 
         public int Weight { get; set; }
+        public string? packed { get; set; }
+
         public string? Shape { get; set; }
     }
 }

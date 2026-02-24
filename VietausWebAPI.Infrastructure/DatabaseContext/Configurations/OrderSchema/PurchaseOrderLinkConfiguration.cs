@@ -31,6 +31,11 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
                   .WithMany(mo => mo.PurchaseOrderLinks)
                   .HasForeignKey(x => x.MerchandiseOrderId)
                   .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.SupplyRequest)
+                  .WithMany(mo => mo.PurchaseOrderLinks)
+                  .HasForeignKey(x => x.SupplyRequestId)
+                  .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

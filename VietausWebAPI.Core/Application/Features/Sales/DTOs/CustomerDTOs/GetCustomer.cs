@@ -21,6 +21,8 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs
         public string? ApplicationName { get; set; }
 
         public string? RegistrationNumber { get; set; }
+        public string? RegistrationAddress { get; set; }
+
         public DateTime? IssueDate { get; set; }
         public string? IssuedPlace { get; set; }
         public string? FaxNumber { get; set; }

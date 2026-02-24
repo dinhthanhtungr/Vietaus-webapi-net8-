@@ -20,10 +20,12 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.Manufactur
             entity.Property(x => x.ManufacturingFormulaId).HasColumnName("manufacturing_formula_id");
             entity.Property(x => x.MaterialId).HasColumnName("material_id");
             entity.Property(x => x.CategoryId).HasColumnName("category_id");
+            entity.Property(x => x.ProductId).HasColumnName("product_id");
+            entity.Property(x => x.itemType).HasColumnName("item_type");
 
-            entity.Property(x => x.Quantity).HasColumnName("quantity").HasPrecision(18, 6);
-            entity.Property(x => x.UnitPrice).HasColumnName("unit_price").HasPrecision(16, 2);
-            entity.Property(x => x.TotalPrice).HasColumnName("total_price").HasPrecision(16, 2);
+            entity.Property(x => x.Quantity).HasColumnName("quantity").HasPrecision(12, 10);
+            entity.Property(x => x.UnitPrice).HasColumnName("unit_price").HasPrecision(18, 2);
+            entity.Property(x => x.TotalPrice).HasColumnName("total_price").HasPrecision(18, 2);
             entity.Property(x => x.Unit).HasColumnName("unit");
             entity.Property(x => x.MaterialNameSnapshot).HasColumnName("material_name_snapshot");
             entity.Property(x => x.MaterialExternalIdSnapshot).HasColumnName("material_externalid_snapshot");
@@ -40,6 +42,12 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.Manufactur
                   .HasForeignKey(x => x.ManufacturingFormulaId)
                   .OnDelete(DeleteBehavior.Cascade)
                   .HasConstraintName("FK__Mfm__manufacturingFormulaId");
+
+            entity.HasOne(x => x.Product)
+                  .WithMany(f => f.ManufacturingFormulaMaterials)
+                  .HasForeignKey(x => x.ProductId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .HasConstraintName("FK__Mfm__productId");
 
             entity.HasOne(x => x.Category)
                   .WithMany(c => c.ManufacturingFormulaMaterials)

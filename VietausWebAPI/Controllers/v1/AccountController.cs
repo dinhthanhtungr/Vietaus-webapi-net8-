@@ -12,6 +12,7 @@ using System.Security.Claims;
 using System.Runtime.Intrinsics.X86;
 using VietausWebAPI.Core.Application.Features.Shared.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Shared.DTO;
+using VietausWebAPI.Core.Application.Features.HR.DTOs.Employees;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1._0
 {
@@ -61,7 +62,6 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
         /// <param name="registerDTO">Contains user registration information</param>
         /// <returns>Returns success or error message</returns>
         [HttpPost("Register")]
-        //[Authorize(Roles = "Admin")]
         public async Task<ActionResult<RegisterResultDTO>> PostRegister(RegisterDTO registerDTO)
         {
             try
@@ -71,7 +71,6 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
 
                 var user = new ApplicationUser
                 {
-                    Email = registerDTO.Email,
                     UserName = registerDTO.UserName,
                     personName = registerDTO.PersonName,
                     EmployeeId = registerDTO.EmployeeId
@@ -93,8 +92,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
 
                 await _context.UserRoles.AddAsync(new ApplicationUserRole { UserId = user.Id, RoleId = role.Id });
                 await _context.SaveChangesAsync();
-                var resp = new RegisterResultDTO(user.Id, user.UserName!, user.Email!, user.EmployeeId, defaultRole);
-                return Ok(resp);
+                return Ok();
             }
 
             catch (Exception ex)
@@ -411,7 +409,6 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
 
 
         [HttpGet("admin-data")]
-        [Authorize(Roles = "Admin")]
         public IActionResult GetAdminData()
         {
             return Ok("This is admin-only data!");
@@ -419,15 +416,16 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
 
 
         [HttpPatch("update-user-role-status")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateUserRoleStatus(string email, string roleName, bool isActive)
+        public async Task<IActionResult> UpdateUserRoleStatus(Guid employeeId, string roleName, bool isActive)
         {
-            if (email == null || roleName == null)
+            if (employeeId == Guid.Empty || roleName == null)
             {
-                return BadRequest(new { Message = "Email or roleName can't empty" });
+                return BadRequest(new { Message = "EmployeeId or roleName can't empty" });
             }
 
-            var user = await _UserManager.FindByEmailAsync(email);
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == employeeId);
+
 
             if (user == null)
             {
@@ -454,7 +452,6 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
         }
 
         [HttpPost("reset-password")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ResetPassword(ResetPasswordDTO resetPasswordDTO)
         {
             if (!ModelState.IsValid)
@@ -487,6 +484,33 @@ namespace VietausWebAPI.WebAPI.Controllers.v1._0
                 result.Errors.Select(e => e.Description));
                 return Problem(errorMessage);
             }
+        }
+
+
+
+        
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                var msg = string.Join(" | ",
+                    ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                return Problem(msg);
+            }
+
+            var user = await _UserManager.FindByNameAsync(dto.UserName);
+            if (user == null)
+                return NotFound(new { Message = "User not found" });
+
+            // Check & change
+            var result = await _UserManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
+
+            if (result.Succeeded)
+                return Ok(new { Message = "Password changed successfully" });
+
+            var errorMessage = string.Join(" | ", result.Errors.Select(e => e.Description));
+            return Problem(errorMessage);
         }
     }
 }

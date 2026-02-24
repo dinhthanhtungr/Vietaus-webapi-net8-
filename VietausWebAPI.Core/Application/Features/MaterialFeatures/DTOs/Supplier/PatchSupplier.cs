@@ -14,6 +14,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier
 
         public string? SupplierName { get; set; }
         public string? RegistrationNumber { get; set; }
+        public string? RegistrationAddress { get; set; }
         public DateTime? IssueDate { get; set; }
         public string? IssuedPlace { get; set; }
         public string? FaxNumber { get; set; }
@@ -31,8 +32,8 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier
 
         public string? CompanyName { get; set; }
         public bool? IsActive { get; set; } = true;
-        public List<GetSupplierAddress> SupplierAddresses { get; set; } = new List<GetSupplierAddress>();
+        public List<PatchSupplierAddress> SupplierAddresses { get; set; } = new List<PatchSupplierAddress>();
 
-        public List<GetSupplierContact> SupplierContacts { get; set; } = new List<GetSupplierContact>();
+        public List<PatchSupplierContact> SupplierContacts { get; set; } = new List<PatchSupplierContact>();
     }
 }

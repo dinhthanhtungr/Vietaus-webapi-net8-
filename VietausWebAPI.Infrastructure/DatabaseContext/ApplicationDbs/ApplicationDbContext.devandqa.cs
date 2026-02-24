@@ -15,5 +15,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
         public virtual DbSet<QcPassDetailHistory> QcPassDetailHistories { get; set; } = default!;
         public virtual DbSet<QcPassHistory> QcPassHistories { get; set; } = default!;
         public virtual DbSet<ProductInspection> ProductInspections { get; set; } = default!;
+        public virtual DbSet<QCInputByQC> QCInputByQCs { get; set; } = default!;
+        //public virtual DbSet<QCInputByWarehouse> QCInputByWarehouses { get; set; } = default!;
     }
 }

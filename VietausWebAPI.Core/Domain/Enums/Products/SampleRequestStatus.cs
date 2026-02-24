@@ -11,7 +11,6 @@ namespace VietausWebAPI.Core.Domain.Enums.Products
         New,            // Mới
         SampleReceived, // Nhận mẫu
         InProgress,     // Đang xử lý
-        FirstSuccess,     // Xác nhận lần đâu
         SampleSent,     // Gửi mẫu
         Cancelled,      // Hủy
         Completed        // Hoàn thành

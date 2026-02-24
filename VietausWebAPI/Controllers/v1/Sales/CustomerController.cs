@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PuppeteerSharp;
 using VietausWebAPI.Core.Application.Features.HR.DTOs.Groups;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.Querys;
@@ -111,18 +112,31 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
             }
         }
 
-        [HttpPatch("UpdateCustomerAsync")]
-        [Authorize(Roles = RoleSets.Sales)]
-        public async Task<IActionResult> UpdateCustomerAsync([FromBody] PatchCustomer customer)
+        [HttpPatch("update")]
+        public async Task<IActionResult> UpdateCustomerAsync([FromBody] PatchCustomer request)
         {
-            if (customer == null || customer.CustomerId == Guid.Empty)
+            if (request == null || request.CustomerId == Guid.Empty)
             {
-                return BadRequest("Invalid customer data.");
+                return BadRequest("Invalid request data.");
             }
-            await _customerService.UpdateCustomerAsync(customer);
-
-            return Ok();
-
+            try
+            {
+                var result = await _customerService.UpdateCustomerAsync(request);
+                if (!result.Success)
+                {
+                    return BadRequest(result.Message);
+                }
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
 
         [HttpGet("GetCustomerByEmployeeAssignment")]

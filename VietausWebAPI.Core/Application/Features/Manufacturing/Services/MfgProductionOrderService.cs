@@ -16,10 +16,12 @@ using VietausWebAPI.Core.Application.Features.Manufacturing.Queries.MfgProductio
 using VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrderFeatures;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.EventLogDtos;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.Services;
+using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
@@ -28,14 +30,13 @@ using VietausWebAPI.Core.Application.Shared.Models.SaleAndMfgs;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
+using VietausWebAPI.Core.Domain.Enums.Category;
 using VietausWebAPI.Core.Domain.Enums.Formulas;
 using VietausWebAPI.Core.Domain.Enums.Logs;
 using VietausWebAPI.Core.Domain.Enums.Manufacturings;
 using VietausWebAPI.Core.Domain.Enums.Merchadises;
-using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static QuestPDF.Helpers.Colors;
-using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 
 namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 {
@@ -49,11 +50,11 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
         private readonly IWarehouseReservationService _warehouseReservationService;
 
         public MfgProductionOrderService(IUnitOfWork unitOfWork
-            , IMapper mapper
-            , IExternalIdService externalId
-            , ICurrentUser currentUser
-            , ITimelineService timeLineService
-            , IWarehouseReservationService warehouseReservationService)
+                                       , IMapper mapper
+                                       , IExternalIdService externalId
+                                       , ICurrentUser currentUser
+                                       , ITimelineService timeLineService
+                                       , IWarehouseReservationService warehouseReservationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -63,7 +64,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             _warehouseReservationService = warehouseReservationService;
         }
 
-        // ======================================================================== Get ======================================================================== 
+        // ======================================================================== Get ========================================================================
 
         /// <summary>
         /// Lấy danh sách đơn hàng với phân trang và lọc
@@ -624,7 +625,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             StepOfProduct = null
                         };
                         await _unitOfWork.SchedualMfgRepository.AddAsync(schedual, ct);
-                        await _warehouseReservationService.EnsureWarehouseIssueRequestAsync(existing, now, userId, companyId, ct);
+                        await _warehouseReservationService.EnsureWarehouseIssueRequestAsync (existing, now, userId, companyId, ct);
                     
                     }
                 }
@@ -695,10 +696,10 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 // Products
                 var products = await _unitOfWork.ProductRepository.Query()
                     .Where(p => productIds.Contains(p.ProductId))
-                    .Select(p => new { p.ProductId, p.ColourCode, p.Name, p.CategoryId })
+                    .Select(p => new { p.ProductId, p.ColourCode, p.Name, p.CategoryId, p.ColourName })
                     .ToDictionaryAsync(
                         x => x.ProductId,
-                        x => new ProductRow(x.ProductId, x.ColourCode, x.Name, x.CategoryId),
+                        x => new ProductRow(x.ProductId, x.ColourCode, x.Name, x.CategoryId, x.ColourName),
                         ct);
 
                 // 1) Lọc các PSF đang hiệu lực tại 'now'
@@ -761,7 +762,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         x.FormulaId,
                         Row = new FmItemRow
                         {
-                            MaterialId = x.MaterialId,
+                            ItemId = x.itemType == ItemType.Material
+                                    ? x.MaterialId ?? Guid.Empty
+                                    : x.ProductId ?? Guid.Empty,
                             CategoryId = x.CategoryId,
                             Quantity = x.Quantity,
                             Unit = x.Unit,
@@ -784,7 +787,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             m.ManufacturingFormulaId,
                             Row = new FmItemRow
                             {
-                                MaterialId = m.MaterialId,
+                                ItemId = m.itemType == ItemType.Material
+                                    ? m.MaterialId ?? Guid.Empty
+                                    : m.ProductId ?? Guid.Empty,
                                 CategoryId = m.CategoryId,
                                 Quantity = m.Quantity,
                                 Unit = m.Unit,
@@ -799,8 +804,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
                 // Price map: lấy bản ghi giá mới nhất cho mỗi MaterialId (đúng như cách bạn đang làm)
                 var allMatIds = new HashSet<Guid>();
-                foreach (var list in fmItemsByVu.Values) foreach (var it in list) allMatIds.Add(it.MaterialId);
-                foreach (var list in fmItemsByVa.Values) foreach (var it in list) allMatIds.Add(it.MaterialId);
+                foreach (var list in fmItemsByVu.Values) foreach (var it in list) allMatIds.Add(it.ItemId);
+                foreach (var list in fmItemsByVa.Values) foreach (var it in list) allMatIds.Add(it.ItemId);
 
                 var msRaw = await _unitOfWork.MaterialsSupplierRepository.Query()
                     .Where(ms => allMatIds.Contains(ms.MaterialId))
@@ -876,7 +881,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
             // === Tạo MFG order ===
             var mfgId = Guid.CreateVersion7();
-            var mfgExternalId = await _externalId.NextAsync("MFG", ct: ct);
+            var mfgExternalId = await _externalId.NextAsync(DocumentPrefix.MFG.ToString(), ct: ct);
 
             var order = new MfgProductionOrder
             {
@@ -887,6 +892,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 ProductId = product.ProductId,
                 ProductExternalIdSnapshot = product.ColourCode,
                 ProductNameSnapshot = product.Name,
+                ColorName = product.ColourName,
+
 
                 CustomerId = mo.CustomerId,
                 CustomerExternalIdSnapshot = mo.CustomerExternalIdSnapshot,

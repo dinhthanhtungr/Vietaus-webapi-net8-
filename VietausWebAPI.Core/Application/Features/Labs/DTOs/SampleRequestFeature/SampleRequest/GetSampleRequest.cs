@@ -13,9 +13,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
 
         public string? ExternalId { get; set; }
 
+        public Guid? CustomerId { get; set; }
         public string? CustomerName { get; set; }
         public string? CustomerCode { get; set; }
-        public Guid CustomerId { get; set; }
 
         public string? ManagerName { get; set; }
 
@@ -29,7 +29,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
         public DateTime? RequestTestSampleDate { get; set; }
         public DateTime? ResponseDeliveryDate { get; set; }
         public DateTime? RealPriceQuoteDate { get; set; }
-
         public DateTime? ExpectedPriceQuoteDate { get; set; }
 
         public string RequestType { get; set; } = string.Empty;
@@ -41,10 +40,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
         public string? OtherComment { get; set; }
         public string? InfoType { get; set; }
 
-        public Guid? FormulaId { get; set; }
+        public GetSampleFormula? Formula { get; set; }
 
         public string? SaleComment { get; set; }
-
         public string? AdditionalComment { get; set; } = string.Empty;
         public string? CustomerProductCode { get; set; } = string.Empty;
 
@@ -53,17 +51,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
         public string Status { get; set; } = "New";
 
         public string Package { get; set; } = string.Empty;
-
-        public GetSampleFormula? Formula { get; set; }
-
-        public DateTime? CreatedDate { get; set; }
-
-        public Guid? CreatedBy { get; set; }
-
-        public DateTime? UpdatedDate { get; set; }
-
-        public Guid? UpdatedBy { get; set; }
-
-        public Guid? CompanyId { get; set; }
+        public int BagWeight { get; set; }
     }
 }

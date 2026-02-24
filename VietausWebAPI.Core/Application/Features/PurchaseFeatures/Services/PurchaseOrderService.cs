@@ -12,6 +12,7 @@ using VietausWebAPI.Core.Application.Features.PurchaseFeatures.DTOs;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.DTOs.Material_warehouse;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.Queries;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.EventLogDtos;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper;
@@ -21,10 +22,10 @@ using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
+using VietausWebAPI.Core.Domain.Enums.Category;
 using VietausWebAPI.Core.Domain.Enums.Logs;
 using VietausWebAPI.Core.Domain.Enums.Orders;
 using VietausWebAPI.Core.Domain.Enums.WareHouses;
-using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
@@ -278,7 +279,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                 var userId = _CurrentUser.EmployeeId;
                 var companyId = _CurrentUser.CompanyId;
 
-                using var transaction = await _unitOfWork.BeginTransactionAsync();
+                using var transaction = await _unitOfWork.BeginTransactionAsync();  
 
                 PurchaseOrderSnapshot? snapshot = null; 
 
@@ -308,7 +309,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                 var po = new PurchaseOrder
                 {
                     PurchaseOrderId = Guid.CreateVersion7(),
-                    ExternalId = await _idService.NextAsync("DDH", ct: ct),
+                    ExternalId = await _idService.NextAsync(DocumentPrefix.DDH.ToString(), ct: ct),
                     SupplierId = req.SupplierId,
                     OrderType = req.OrderType,
 

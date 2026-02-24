@@ -60,6 +60,10 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.WarehouseS
             entity.Property(x => x.Note)
                   .HasColumnName("note");
 
+            entity.Property(x => x.VoucherType)
+                  .HasColumnName("voucherType")
+                  .HasConversion<int>();
+
             // Dòng phải duy nhất trong 1 phiếu
             entity.HasIndex(x => new { x.VoucherId, x.LineNo })
                   .IsUnique()

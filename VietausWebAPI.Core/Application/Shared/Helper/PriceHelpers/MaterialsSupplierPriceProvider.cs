@@ -44,7 +44,9 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.PriceHelpers
 
             // BOM VA
             var bom = await _uow.ManufacturingFormulaMaterialRepository.Query()
-                .Where(x => x.ManufacturingFormulaId == mfId)
+                .Where(x => x.ManufacturingFormulaId == mfId
+                         && x.IsActive
+                         && x.itemType == ItemType.Material)     // ✅ chỉ Material mới có giá trong MaterialsSupplier
                 .Select(x => new { x.MaterialId, x.Quantity })
                 .ToListAsync(ct);
 
@@ -63,7 +65,11 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.PriceHelpers
                 .GroupBy(x => x.MaterialId)
                 .ToDictionary(g => g.Key, g => g.OrderByDescending(r => r.Stamp).First().CurrentPrice ?? 0m);
 
-            var materialCost = bom.Sum(row => row.Quantity * (priceMap.TryGetValue(row.MaterialId, out var unit) ? unit : 0m));
+            var materialCost = bom.Sum(row =>
+            {
+                var unit = priceMap.TryGetValue(row.MaterialId.GetValueOrDefault(), out var u) ? u : 0m;
+                return row.Quantity * unit;
+            });
 
             // Suy ra Product để áp phụ phí:
             // 1) Ưu tiên ProductStandardFormula còn hiệu lực
@@ -111,65 +117,84 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.PriceHelpers
         // ===================== VU (Formula / SampleRequests) =====================
         private async Task<decimal> CalcFromVU(Guid vuId, CancellationToken ct)
         {
-            // Lấy tenant từ Formula (nullable), nếu null sẽ cố suy ra từ đơn hàng gần nhất
-            var vu = await _uow.FormulaRepository.Query()
-                .Where(f => f.FormulaId == vuId && f.IsActive)
-                .Select(f => new { f.FormulaId, f.CompanyId })
-                .FirstOrDefaultAsync(ct);
-
-            if (vu == null)
-                throw new InvalidOperationException("Công thức VU không tồn tại hoặc đã bị vô hiệu.");
-
-            // BOM VU
-            var bom = await _uow.FormulaMaterialRepository.Query()
-                .Where(x => x.FormulaId == vuId)
-                .Select(x => new { x.MaterialId, x.Quantity })
-                .ToListAsync(ct);
-
-            if (bom.Count == 0)
-                throw new InvalidOperationException("Công thức VU không có vật tư.");
-
-            var matIds = bom.Select(b => b.MaterialId).Distinct().ToList();
-
-            Guid? tenantId = vu.CompanyId;
-
-            if (tenantId == null || tenantId == Guid.Empty)
+            try
             {
-                // suy ra tenant từ đơn hàng gần nhất dùng VU này
-                tenantId = await _uow.MerchandiseOrderRepository.Query()
+                // Lấy tenant từ Formula (nullable), nếu null sẽ cố suy ra từ đơn hàng gần nhất
+                var vu = await _uow.FormulaRepository.Query()
+                    .Where(f => f.FormulaId == vuId && f.IsActive)
+                    .Select(f => new { f.FormulaId, f.CompanyId })
+                    .FirstOrDefaultAsync(ct);
+
+                if (vu == null)
+                    throw new InvalidOperationException("Công thức VU không tồn tại hoặc đã bị vô hiệu.");
+
+                // BOM VU
+                var bom = await _uow.FormulaMaterialRepository.Query()
+                    .Where(x => x.FormulaId == vuId
+                             && x.IsActive
+                             && x.itemType == ItemType.Material
+                             && x.MaterialId != null)                // ✅ tránh null
+                    .Select(x => new { MaterialId = x.MaterialId!.Value, x.Quantity })
+                    .ToListAsync(ct);   
+
+                if (bom.Count == 0)
+                    throw new InvalidOperationException("Công thức VU không có vật tư.");
+
+                var matIds = bom.Select(b => b.MaterialId).Distinct().ToList();
+
+                //Guid? tenantId = vu.CompanyId;
+
+                //if (tenantId == null || tenantId == Guid.Empty)
+                //{
+                //    // suy ra tenant từ đơn hàng gần nhất dùng VU này
+                //    tenantId = await _uow.MerchandiseOrderRepository.Query()
+                //        .Where(o => o.IsActive)
+                //        .SelectMany(o => o.MerchandiseOrderDetails, (o, d) => new { o, d })
+                //        .Where(x => x.d.FormulaId == vuId && x.d.IsActive)
+                //        .OrderByDescending(x => x.o.CreateDate)
+                //        .Select(x => (Guid?)x.o.CompanyId)
+                //        .FirstOrDefaultAsync(ct);
+                //}
+
+                // Lấy giá mới nhất theo tenant nếu có, nếu không có tenant thì đành không filter tenant
+                var priceMap = await _uow.MaterialsSupplierRepository.Query()
+                    .Where(ms => matIds.Contains(ms.MaterialId))
+                    .GroupBy(ms => ms.MaterialId)
+                    .Select(g => new
+                    {
+                        MaterialId = g.Key,
+                        CurrentPrice = g
+                            .OrderByDescending(ms => ms.UpdatedDate ?? ms.CreateDate)
+                            .Select(ms => (decimal?)ms.CurrentPrice)   // ÉP RÕ RÀNG về decimal?
+                            .FirstOrDefault()
+                    })
+                    .ToDictionaryAsync(x => x.MaterialId, x => x.CurrentPrice ?? 0m, ct);
+
+                var materialCost = bom.Sum(row =>
+                {
+                    var unit = priceMap.TryGetValue(row.MaterialId, out var u) ? u : 0m;
+                    return row.Quantity * unit;
+                });
+
+
+                // Suy product từ đơn hàng gần nhất dùng VU này → áp phụ phí
+                Guid? productId = await _uow.MerchandiseOrderRepository.Query()
                     .Where(o => o.IsActive)
                     .SelectMany(o => o.MerchandiseOrderDetails, (o, d) => new { o, d })
                     .Where(x => x.d.FormulaId == vuId && x.d.IsActive)
                     .OrderByDescending(x => x.o.CreateDate)
-                    .Select(x => (Guid?)x.o.CompanyId)
+                    .Select(x => (Guid?)x.d.ProductId)
                     .FirstOrDefaultAsync(ct);
+
+                var addOn = await ComputeAddOnAsync(productId, ct);
+                return Math.Round(materialCost + addOn, 2, MidpointRounding.AwayFromZero);
             }
 
-            // Lấy giá mới nhất theo tenant nếu có, nếu không có tenant thì đành không filter tenant
-            IQueryable<dynamic> priceQ = _uow.MaterialsSupplierRepository.Query()
-                .Where(ms => matIds.Contains(ms.MaterialId))
-                .Select(ms => new { ms.MaterialId, Stamp = (DateTime?)(ms.UpdatedDate ?? ms.CreateDate), ms.CurrentPrice });
+            catch (Exception ex)
+            {
+                return 0m;
+            }
 
-
-            var msRaw = await priceQ.ToListAsync(ct);
-
-            var priceMap = msRaw
-                .GroupBy(x => (Guid)x.MaterialId)
-                .ToDictionary(g => g.Key, g => g.OrderByDescending(r => (DateTime?)r.Stamp).First().CurrentPrice ?? 0m);
-
-            var materialCost = bom.Sum(row => row.Quantity * (priceMap.TryGetValue(row.MaterialId, out var unit) ? unit : 0m));
-
-            // Suy product từ đơn hàng gần nhất dùng VU này → áp phụ phí
-            Guid? productId = await _uow.MerchandiseOrderRepository.Query()
-                .Where(o => o.IsActive)
-                .SelectMany(o => o.MerchandiseOrderDetails, (o, d) => new { o, d })
-                .Where(x => x.d.FormulaId == vuId && x.d.IsActive)
-                .OrderByDescending(x => x.o.CreateDate)
-                .Select(x => (Guid?)x.d.ProductId)
-                .FirstOrDefaultAsync(ct);
-
-            var addOn = await ComputeAddOnAsync(productId, ct);
-            return Math.Round(materialCost + addOn, 2, MidpointRounding.AwayFromZero);
         }
 
         // ===================== Add-on theo Product =====================

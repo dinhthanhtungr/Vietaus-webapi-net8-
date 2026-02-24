@@ -11,7 +11,7 @@ namespace VietausWebAPI.Core.Application.Features.HR.DTOs.Groups
         public string? GroupType { get; set; }
 
         public string? ExternalId { get; set; }
-
+        public Guid? PartId { get; set; }
         public string? Name { get; set; }
         public DateTime? CreatedDate { get; set; }
 
