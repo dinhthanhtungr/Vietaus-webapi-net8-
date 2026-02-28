@@ -90,6 +90,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                         x.ResponseDeliveryDate,
                         x.RealPriceQuoteDate,
                         x.ExpectedPriceQuoteDate,
+                        x.NumberDeliverySampleDate,
                         x.RequestType,
                         x.ExpectedQuantity,
                         x.ExpectedPrice,
@@ -103,6 +104,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                         x.BranchId,
                         x.Status,
                         x.Package,
+
 
                         // Product
                         Product = new
@@ -142,7 +144,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                         }
                     })
                     .FirstOrDefaultAsync(ct);
-                // Map sang DTO trả về
+                // Map sang DTO t   rả về
                 var sample = new GetSampleRequest
                 {
                     SampleRequestId = dto.SampleRequestId,
@@ -160,6 +162,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     ResponseDeliveryDate = dto.ResponseDeliveryDate,
                     RealPriceQuoteDate = dto.RealPriceQuoteDate,
                     ExpectedPriceQuoteDate = dto.ExpectedPriceQuoteDate,
+                    NumberDeliverySampleDate = dto.NumberDeliverySampleDate,
                     RequestType = dto.RequestType ?? string.Empty,
                     ExpectedQuantity = dto.ExpectedQuantity,
                     ExpectedPrice = dto.ExpectedPrice,
@@ -172,8 +175,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                         ? new GetSampleFormula 
                             { 
                                 FormulaId = dto.FormulaId.Value,
-                                IsSelect = true
-
+                                IsSelect = true,
+                                Status = dto.Status,
                         }
                         : null,
                     SaleComment = dto.SaleComment,
@@ -281,6 +284,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                         || ((x.Product != null ? x.Product.ColourCode : "") ?? "").Contains(keyword)
                         || ((x.Customer != null ? x.Customer.ExternalId : "") ?? "").Contains(keyword)
                         || ((x.Customer != null ? x.Customer.CustomerName : "") ?? "").Contains(keyword)
+                        || ((x.Product != null ? x.Product.Name : "") ?? "").Contains(keyword)
                     );
                 }
 
@@ -419,8 +423,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                         ExternalId = sr.ExternalId,
                         CustomerName = sr.Customer.CustomerName,
                         CustomerCode = sr.Customer.ExternalId,
-                        SaleComment = sr.SaleComment,
-                        AdditionalComment = sr.AdditionalComment ?? string.Empty,
+                        SaleComment = sr.Product.Requirement ?? string.Empty,
+                        AdditionalComment = sr.Product.LabComment,
 
                         // 1 Product -> nhiều Formula
                         SampleFormulas = sr.Product.Formulas
@@ -521,6 +525,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     product.ProductId = Guid.CreateVersion7();
                     product.CompanyId = companyId;
                     product.IsActive = true;
+                    
 
                     await _unitOfWork.ProductRepository.AddAsync(product, ct);
                     productId = product.ProductId;
@@ -530,6 +535,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 var sample = _mapper.Map<SampleRequest>(req.Sample);
 
                 sample.SampleRequestId = Guid.CreateVersion7();
+                sample.NumberDeliverySampleDate = req.Sample.NumberDeliverySampleDate;
+                sample.InfoType = req.Sample.InfoType;
                 // ép các field hệ thống (override luôn data client gửi)
                 sample.CompanyId = companyId;
                 sample.CreatedBy = userId;
@@ -788,7 +795,5 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 return OperationResult.Fail($"Lỗi khi cập nhật: {ex.Message}");
             }
         }
-
-
     }
 }

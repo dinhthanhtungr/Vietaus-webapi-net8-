@@ -11,6 +11,7 @@ using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.EventLogDtos;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.Services;
+using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Domain.Enums.Logs;
@@ -25,15 +26,19 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
         private readonly ITimelineService _timeLineService;
         private readonly ICurrentUser _currentUser;
 
+        private readonly IWarehouseReservationService _warehouseReservationService;
+
         public DeliveryOrderPdfService(IUnitOfWork unitOfWork
             , IDeliveryOrderPdfRenderHelper pdfRenderHelper
             , ITimelineService timelineService
-            , ICurrentUser currentUser)
+            , ICurrentUser currentUser
+            , IWarehouseReservationService warehouseReservationService)
         {
             _unitOfWork = unitOfWork;
             _pdfRenderHelper = pdfRenderHelper;
             _timeLineService = timelineService;
-            _currentUser = currentUser; 
+            _currentUser = currentUser;
+            _warehouseReservationService = warehouseReservationService;
         }
         
         // Tạm thời cmt

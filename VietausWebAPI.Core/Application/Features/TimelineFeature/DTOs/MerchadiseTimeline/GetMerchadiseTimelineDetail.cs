@@ -12,7 +12,7 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.Merchadis
         public string CreatedByName { get; set; } = string.Empty;
         public DateTime CreatedDate { get; set; }
         public string CompanyName { get; set; } = string.Empty;
-
+        
         public string? Note { get; set; }
     }
 }

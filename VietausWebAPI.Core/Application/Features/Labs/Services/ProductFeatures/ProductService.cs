@@ -31,6 +31,55 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.ProductFeatures
             _currentUser = currentUser;
         }
 
+        public async Task<OperationResult<int>> ChangeCustomerByProductAsync(ChangeCustomerForProductRequest req, CancellationToken ct = default)
+        {
+            if (req.ProductId == Guid.Empty) return OperationResult<int>.Fail("ProductId không hợp lệ.");
+            if (req.NewCustomerId == Guid.Empty) return OperationResult<int>.Fail("CustomerId mới không hợp lệ.");
+
+            var companyId = _currentUser.CompanyId;
+            var userId = _currentUser.EmployeeId;
+            var now = DateTime.Now;
+
+            await using var tx = await _unitOfWork.BeginTransactionAsync(ct);
+            try 
+            {
+                // (1) Check product tồn tại trong company (optional nhưng nên có)
+                var productExists = await _unitOfWork.ProductRepository.Query()
+                    .AnyAsync(p => p.ProductId == req.ProductId && p.CompanyId == companyId && p.IsActive, ct);
+
+                if (!productExists)
+                    return OperationResult<int>.Fail("Không tìm thấy Product hoặc Product không thuộc Company hiện tại.");
+
+                // (2) Check customer tồn tại trong company (optional nhưng nên có)
+                var customerExists = await _unitOfWork.CustomerRepository.Query()
+                    .AnyAsync(c => c.CustomerId == req.NewCustomerId && c.IsActive == true, ct);
+
+                if (!customerExists)
+                    return OperationResult<int>.Fail("Customer không tồn tại hoặc không thuộc Company hiện tại.");
+
+                // (3) Update tất cả SampleRequest của product này
+                var srQuery = _unitOfWork.SampleRequestRepository.Query()
+                    .Where(sr => sr.CompanyId == companyId
+                              && sr.IsActive
+                              && sr.ProductId == req.ProductId);
+
+                // Nếu bạn dùng EF Core 7+ (khuyên dùng)
+                var affected = await srQuery.ExecuteUpdateAsync(setters => setters
+                        .SetProperty(x => x.CustomerId, req.NewCustomerId)
+                        .SetProperty(x => x.UpdatedDate, now)
+                        .SetProperty(x => x.UpdatedBy, userId),
+                    ct);
+
+                await tx.CommitAsync(ct);
+                return OperationResult<int>.Ok(affected);
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync(ct);
+                return OperationResult<int>.Fail("Có lỗi xảy ra khi đổi khách hàng cho Product. " + ex.Message);
+            }
+        }
+
         /// <summary>
         /// Lấy danh sách Product có phân trang và lọc
         /// </summary>
@@ -71,7 +120,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.ProductFeatures
                 if (query.CustomerId is Guid customerId && customerId != Guid.Empty)
                 {
                     q = q.Where(p => sampleRequestQ
-                        .Any(sr => sr.ProductId == p.ProductId && sr.CustomerId == customerId));
+                        .Any(sr => sr.ProductId == p.ProductId && (sr.CustomerId == customerId || sr.Customer.IsLead)));
                 }
 
                 // 4) Count sau khi đã filter
@@ -120,11 +169,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.ProductFeatures
                         // Map formulas -> List<GetSampleFormula>
                         // (Nếu muốn nhẹ hơn: chỉ lấy Top N hoặc chỉ lấy formula "current/latest" — xem phần dưới)
                         SampleFormula = p.Formulas
-                            .OrderByDescending(f => f.CreatedDate) // hoặc UpdatedDate tuỳ nghiệp vụ
+                            .Where(f => f.Status != "Draft" && f.Status != "Inprocess")   // hoặc "InProcess"
+                            .OrderByDescending(f => f.CreatedDate)
                             .Select(f => new GetSampleFormula
                             {
-                                // TODO: map đúng field của GetSampleFormula của bạn
-                                // Ví dụ (đổi lại theo DTO thật):
                                 FormulaId = f.FormulaId,
                                 ExternalId = f.ExternalId,
                                 Name = f.Name,

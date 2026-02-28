@@ -229,7 +229,7 @@
         IR,     // Phiếu sự cố (incident report)
         WO,     // Work Order / Phiếu lệnh sửa chữa
         PR,     // PO mua vật tư
-        PO,     // PO mua NVL
+        PO,     // PO mua vat tư (nếu có bảng purchase.orders)
         INV,    // Invoice (Hóa đơn)
         RCPT,   //  Biên nhận / Phiếu thu (nếu có)
                 // ===== Kế toán: AP (Mua hàng - Công nợ phải trả) =====

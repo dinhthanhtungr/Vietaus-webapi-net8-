@@ -28,8 +28,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.DeliverySc
             entity.Property(x => x.ProductExternalIdSnapShot)
                   .HasColumnType("citext");
 
-            entity.Property(x => x.ProductNameSnapShot)
-                  .HasMaxLength(256);
+            entity.Property(x => x.ProductNameSnapShot).HasColumnType("citext");
 
             entity.Property(x => x.LotNoList)
                   .HasColumnType("citext");

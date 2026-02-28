@@ -47,6 +47,8 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
 
             //Helpers
             services.AddScoped<IFormulaPDF, FormulaPDF>();
+            services.AddScoped<IFormulaXML, FormulaXML>();
+            services.AddScoped<IVUFormulaPDF, VUFormulaPDF>();
             return services;
         }
     }

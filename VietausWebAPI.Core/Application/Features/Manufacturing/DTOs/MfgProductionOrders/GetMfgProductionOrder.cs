@@ -46,6 +46,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProducti
         public string BagType { get; set; } = string.Empty;
 
         public string? QcCheck { get; set; }
+        public string? StepOfProduct { get; set; }
         //public GetManufacturingFormula selecktManufacturing { get; set; } = new GetManufacturingFormula(); // Công thức được lab cho phép sản xuất
 
     }

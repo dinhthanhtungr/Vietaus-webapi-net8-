@@ -37,6 +37,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.FormulaF
         /// <returns></returns>
         Task<byte[]> ExportToPdfAsync(Guid data, CancellationToken ct = default);
 
+        Task<byte[]> ExportToXmlAsync(Guid formulaId, CancellationToken ct = default);
+
         /// <summary>
         /// Cấp nhật công thức.
         /// </summary>

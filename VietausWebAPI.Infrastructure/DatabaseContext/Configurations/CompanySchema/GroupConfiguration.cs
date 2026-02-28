@@ -21,9 +21,9 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.CompanySch
                   .ValueGeneratedOnAdd()
                   .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.PartId).HasColumnName("PartId");
-            entity.Property(e => e.GroupType).HasColumnName("GroupType").HasMaxLength(100);
-            entity.Property(e => e.ExternalId).HasColumnName("ExternalId").HasColumnType("citext").HasMaxLength(50);
-            entity.Property(e => e.Name).HasColumnName("Name").HasColumnType("citext").HasMaxLength(200);
+            entity.Property(e => e.GroupType).HasColumnName("GroupType");
+            entity.Property(e => e.ExternalId).HasColumnName("ExternalId").HasColumnType("citext");
+            entity.Property(e => e.Name).HasColumnName("Name").HasColumnType("citext");
             entity.Property(e => e.CreatedDate).HasColumnName("CreatedDate");
             entity.Property(e => e.CreatedBy).HasColumnName("CreatedBy");
             entity.Property(e => e.UpdatedDate).HasColumnName("UpdatedDate");

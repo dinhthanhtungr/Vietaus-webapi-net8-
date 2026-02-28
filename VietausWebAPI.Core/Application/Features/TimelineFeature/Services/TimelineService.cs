@@ -36,167 +36,6 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
         // ======================================================================== Get ======================================================================== 
 
         /// <summary>
-        /// Lấy dữ liệu thông tin trạng thái đơn hàng theo timeline
-        /// </summary>
-        /// <param name="query"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        //public async Task<PagedResult<GetManufacturingTimeline>> GetManufacturingTimelineDetailAsync(TimelineQuery query, CancellationToken ct = default)
-        //{
-        //    if (query.PageNumber <= 0) query.PageNumber = 1;
-        //    if (query.PageSize <= 0) query.PageSize = 15;
-        //    if (query.id == Guid.Empty)
-        //        throw new Exception("Id đơn hàng không hợp lệ.");
-
-        //    // 1) Lấy các MfgProductionOrderId thuộc đơn
-        //    var mfgIds = await _unitOfWork.MfgProductionOrderRepository.Query(false)
-        //        .Where(mpo => mpo.MerchandiseOrderId == query.id && (mpo.IsActive == null || mpo.IsActive == true))
-        //        .Select(x => x.MfgProductionOrderId)
-        //        .ToListAsync(ct);
-
-        //    //var merchadiseExisting = await _unitOfWork.MerchandiseOrderRepository.Query()
-
-
-        //    // 2) Nguồn log = { id đơn } ∪ { tất cả MfgProductionOrderId }
-        //    var sourceIds = new List<Guid>(1 + mfgIds.Count);
-        //    sourceIds.AddRange(mfgIds);
-
-        //    // 3) Base logs + filter tùy query
-        //    var baseLogs = _unitOfWork.EventLogRepository.Query()
-        //        .Where(e => e.IsActive && sourceIds.Contains(e.SourceId));
-
-        //    if (!string.IsNullOrWhiteSpace(query.Status))
-        //        baseLogs = baseLogs.Where(e => e.Status == query.Status);
-
-        //    // 4) Nhóm theo SourceId để phân trang theo NHÓM timeline
-        //    var groupedKeys = await baseLogs
-        //        .GroupBy(e => e.SourceId)
-        //        .Select(g => new
-        //        {
-        //            SourceId = g.Key,
-        //            LatestCreated = g.Max(x => x.CreatedDate)
-        //        })
-        //        .OrderByDescending(x => x.LatestCreated)      // nhóm có hoạt động mới nhất lên trước
-        //        .ToListAsync(ct);
-
-        //    var totalGroups = groupedKeys.Count;
-        //    var page = Math.Max(1, query.PageNumber);
-        //    var size = Math.Max(1, query.PageSize);
-
-        //    var pageGroups = groupedKeys
-        //        .Skip((page - 1) * size)
-        //        .Take(size)
-        //        .ToList();
-
-        //    var pageSourceIds = pageGroups.Select(x => x.SourceId).ToList();
-
-        //    // 5) Lấy logs cho các nhóm ở trang hiện tại
-        //    var pageLogs = await baseLogs
-        //        .Where(e => pageSourceIds.Contains(e.SourceId))
-        //        .OrderBy(e => e.SourceId)
-        //        .ThenByDescending(e => e.CreatedDate)
-        //        .Select(e => new
-        //        {
-        //            e.SourceId,
-        //            e.Status,
-        //            e.CreatedDate,
-        //            e.EmployeeID,
-        //            e.CompanyId,
-        //            e.Note
-        //        })
-        //        .ToListAsync(ct);
-
-        //    // Resolve Employee/Company cho trang hiện tại
-        //    var creatorIds = pageLogs.Select(x => x.EmployeeID).Distinct().ToList();
-
-        //    var empMap = creatorIds.Count == 0
-        //        ? new Dictionary<Guid, (string FullName, string CompanyName)>()
-        //        : await _unitOfWork.EmployeesRepository.Query()
-        //            .AsNoTracking()
-        //            .Where(emp => creatorIds.Contains(emp.EmployeeId))
-        //            .Select(emp => new
-        //            {
-        //                emp.EmployeeId,
-        //                FullName = emp.FullName ?? string.Empty,
-        //                CompanyName = emp.Company != null ? emp.Company.Name : string.Empty
-        //            })
-        //            .ToDictionaryAsync(x => x.EmployeeId,
-        //                               x => (x.FullName, x.CompanyName),
-        //                               ct);
-
-        //    // 6) Group logs -> details theo từng SourceId
-        //    var detailBySource = pageLogs
-        //        .GroupBy(l => l.SourceId)
-        //        .ToDictionary(
-        //            g => g.Key,
-        //            g => g.Select(l => new GetManufacturingTimelineDetail
-        //            {
-        //                Status = l.Status ?? string.Empty,
-        //                CreatedDate = l.CreatedDate,
-        //                CreatedByName = empMap.TryGetValue(l.EmployeeID, out var emp) ? emp.FullName : string.Empty,
-        //                CompanyName = empMap.TryGetValue(l.EmployeeID, out emp) ? emp.CompanyName : string.Empty,
-        //                Note = l.Note
-        //            }).ToList()
-        //        );
-
-        //    // 7) Resolve ExternalId + ColourCode cho từng timeline trong trang (toàn là MFG)
-        //    var pageMfgIds = pageSourceIds; // vì sourceIds đã là danh sách MfgProductionOrderId
-
-        //    // map MfgProductionOrderId -> (ExternalId, ColourCodeSnapshot)
-        //    var mfgBrief = pageMfgIds.Count == 0
-        //        ? new Dictionary<Guid, (string? ExternalId, string? ColourCodeSnapshot)>()
-        //        : await _unitOfWork.MfgProductionOrderRepository.Query(false)
-        //            .AsNoTracking()
-        //            .Where(m => pageMfgIds.Contains(m.MfgProductionOrderId))
-        //            .Select(m => new
-        //            {
-        //                m.MfgProductionOrderId,
-        //                m.ExternalId,
-        //                // Đổi đúng tên field snapshot của bạn tại đây:
-        //                ColourCodeSnapshot = m.ProductExternalIdSnapshot // ví dụ: m.ColourCodeSnapshot hoặc m.ColorCodeSnapshot
-        //            })
-        //            .ToDictionaryAsync(
-        //                x => x.MfgProductionOrderId,
-        //                x => (x.ExternalId, x.ColourCodeSnapshot),
-        //                ct
-        //            );
-
-        //    // 8) Lắp danh sách GetManufacturingTimeline theo thứ tự group của trang
-        //    var items = new List<GetManufacturingTimeline>(pageGroups.Count);
-
-        //    foreach (var grp in pageGroups)
-        //    {
-        //        var srcId = grp.SourceId;
-
-        //        string? externalId = null;
-        //        string? colourCode = null;
-
-        //        if (mfgBrief.TryGetValue(srcId, out var info))
-        //        {
-        //            externalId = info.ExternalId;
-        //            colourCode = info.ColourCodeSnapshot; // lấy thẳng từ snapshot của MFG
-        //        }
-
-        //        items.Add(new GetManufacturingTimeline
-        //        {
-        //            ExternalId = externalId,
-        //            ColourCode = colourCode, // dùng đúng property "ColourCode" theo DTO của bạn
-        //            Details = detailBySource.TryGetValue(srcId, out var ds)
-        //                ? ds.OrderByDescending(d => d.CreatedDate).ToList()
-        //                : new List<GetManufacturingTimelineDetail>()
-        //        });
-        //    }
-        //    // 9) Trả về PagedResult (phân trang theo NHÓM timeline)
-        //    return new PagedResult<GetManufacturingTimeline>(
-        //        items,
-        //        totalGroups,
-        //        page,
-        //        size
-        //    );
-        //}
-
-        /// <summary>
         /// Lấy dữ liệu cho timeline đơn hàng merchandise
         /// </summary>
         /// <param name="query"></param>
@@ -274,7 +113,6 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
             }
 
             // Delivery: áp trên DeliveryOrder.CreateDate thông qua bảng nối DeliveryOrderPO
-            // (giữ nguyên nếu schema DeliveryOrderPO vẫn giống cũ)
             if (hasCreatedRange && query.CreatedScope == TimelineScope.Delivery.ToString())
             {
                 baseQ = baseQ.Where(mo =>
@@ -461,7 +299,8 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                     ColourCode = link.ProductionOrder.ProductExternalIdSnapshot,
                     ProductName = link.ProductionOrder.ProductNameSnapshot,
 
-                    ProductId = link.ProductionOrder.ProductId
+                    ProductId = link.ProductionOrder.ProductId,
+                    ExpectedCompletionDate = link.ProductionOrder.ExpectedDate
                 });
 
             // Nếu vì lý do nào đó 1 MFG gắn với nhiều detail, mình distinct theo MfgProductionOrderId
@@ -530,6 +369,8 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                 {
                     d.ProductId,
                     RequestQuantity = d.ExpectedQuantity,
+
+
                     RealQuantity = d.DeliveryOrderDetails
                                     .Where(dd => dd.IsActive == true)
                                     .Sum(dd => (decimal?)dd.Quantity) ?? 0m,
@@ -625,8 +466,9 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
 
                     RequestQuantity = hasDetail ? (decimal?)md.RequestQuantity : null,
                     RealQuantity = hasDetail ? (decimal?)md.RealQuantity : null,
-                    RequestDate = hasDetail ? md.DeliveryRequestDate : default, // model mới: non-nullable
 
+                    RequestDate = hasDetail ? md.DeliveryRequestDate : default, // model mới: non-nullable
+                    ExpectedDate = m.ExpectedCompletionDate,
                     Details = detailsByMfg.TryGetValue(m.MfgProductionOrderId, out var ds)
                         ? ds.OrderBy(d => d.CreatedDate).ToList()
                         : new List<GetMerchadiseTimelineDetail>()

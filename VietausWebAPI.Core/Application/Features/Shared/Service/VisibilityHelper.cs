@@ -125,18 +125,36 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service
         /// <returns></returns>
         public IQueryable<SampleRequest> ApplySampleRequest(IQueryable<SampleRequest> q, ViewerScope v)
         {
-            // Base: active + tenant
             q = q.Where(sr => sr.IsActive == true);
 
-            // Full view
             if (v.ScopeType is ViewerScopeType.AdminFull or ViewerScopeType.LabFull)
                 return q;
 
-            // Sales scoped: chỉ thấy SR thuộc customer mình (hoặc group) quản lý
+            var now = DateTime.Now;
+
+            // visibleCustomers: IQueryable<Customer> đã được ApplyCustomer lọc theo scope (mình/group)
             var visibleCustomers = ApplyCustomer(_unitOfWork.CustomerRepository.Query(), v);
 
-            // Lọc theo CustomerId
-            return q.Where(sr => visibleCustomers.Select(c => c.CustomerId).Contains(sr.CustomerId));
+            // 1) Non-lead: theo scope là thấy
+            var nonLeadIds = visibleCustomers
+                .Where(c => c.IsLead == false)
+                .Select(c => c.CustomerId);
+
+            // 2) Lead: CHỈ người đang quản lý (claim trực tiếp) mới thấy
+            var leadIdsOnlyMine = visibleCustomers
+                .Where(c => c.IsLead == true
+                    && c.CustomerClaims.Any(cc =>
+                        cc.IsActive == true
+                        && cc.EmployeeId == v.EmployeeId
+                        && cc.ExpiresAt > now
+                    // nếu bạn muốn đúng loại claim quản lý thì mở dòng này
+                    // && cc.Type == ClaimType.Work
+                    ))
+                .Select(c => c.CustomerId);
+
+            var allowedIds = nonLeadIds.Union(leadIdsOnlyMine);
+
+            return q.Where(sr => allowedIds.Contains(sr.CustomerId));
         }
 
         /// <summary>

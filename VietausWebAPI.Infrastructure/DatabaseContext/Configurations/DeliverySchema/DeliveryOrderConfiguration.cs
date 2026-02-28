@@ -22,7 +22,6 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.DeliverySc
                   .HasColumnName("ID");
 
             entity.Property(e => e.Status)
-                  .HasMaxLength(64)
                   .IsRequired()
                   .HasColumnName("Status");
 

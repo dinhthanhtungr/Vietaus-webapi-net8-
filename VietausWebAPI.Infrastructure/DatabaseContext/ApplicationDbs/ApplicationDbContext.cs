@@ -452,9 +452,9 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
                 entity.Property(x => x.UnitPrice).HasColumnName("unit_price").HasPrecision(18, 2);
                 entity.Property(x => x.TotalPrice).HasColumnName("total_price").HasPrecision(18, 2);
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
-                entity.Property(e => e.MaterialNameSnapshot).HasMaxLength(200);
-                entity.Property(e => e.MaterialExternalIdSnapshot).HasMaxLength(50);
-                entity.Property(e => e.Unit).HasMaxLength(32);
+                entity.Property(e => e.MaterialNameSnapshot);
+                entity.Property(e => e.MaterialExternalIdSnapshot);
+                entity.Property(e => e.Unit);
 
                 entity.HasOne(d => d.Product).WithMany(p => p.FormulaMaterials)
                     .HasForeignKey(d => d.ProductId)
@@ -647,8 +647,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
 
                 entity.Property(e => e.ExpectedPriceQuoteDate).HasColumnName("ExpectedPriceQuoteDate");
 
-                entity.Property(e => e.RequestType).HasColumnName("RequestType")
-                    .HasMaxLength(100);
+                entity.Property(e => e.RequestType).HasColumnName("RequestType");
 
                 entity.Property(e => e.ExpectedQuantity).HasColumnName("ExpectedQuantity");
 
@@ -656,22 +655,19 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
                     .HasPrecision(18, 4);
 
                 entity.Property(e => e.SampleQuantity).HasColumnName("SampleQuantity");
+                entity.Property(e => e.NumberDeliverySampleDate).HasColumnName("NumberDeliverySampleDate");
 
-                entity.Property(e => e.OtherComment).HasColumnName("OtherComment")
-                    .HasMaxLength(500);
+                entity.Property(e => e.OtherComment).HasColumnName("OtherComment");
 
-                entity.Property(e => e.InfoType).HasColumnName("InfoType")
-                    .HasMaxLength(100);
+                entity.Property(e => e.InfoType).HasColumnName("InfoType");
 
                 entity.Property(e => e.FormulaId).HasColumnName("FormulaId");
 
                 entity.Property(e => e.SaleComment).HasColumnName("SaleComment");
                 entity.Property(e => e.AdditionalComment).HasColumnName("AdditionalComment");
 
-                entity.Property(e => e.CustomerProductCode).HasColumnName("CustomerProductCode")
-                    .HasMaxLength(100);
+                entity.Property(e => e.CustomerProductCode).HasColumnName("CustomerProductCode");
                 entity.Property(e => e.Status).HasColumnName("Status")
-                    .HasMaxLength(100)
                     .HasDefaultValue("New");
                 entity.Property(e => e.Package).HasColumnName("Package")
                     .HasMaxLength(100);

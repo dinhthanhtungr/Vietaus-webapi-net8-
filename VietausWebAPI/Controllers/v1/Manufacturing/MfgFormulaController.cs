@@ -212,5 +212,28 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Manufacturing
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
+
+        [HttpGet("GeneratePdf")]
+        public async Task<IActionResult> GenerateDeliveryOrderPdf([FromQuery] Guid deliveryOrderId, CancellationToken ct = default)
+        {
+            if (deliveryOrderId == Guid.Empty)
+            {
+                return BadRequest("Delivery Order ID cannot be empty.");
+            }
+            try
+            {
+                var pdfBytes = await _mfgFormulaService.ExportVAFormulaToPdfAsync(deliveryOrderId, ct);
+                if (pdfBytes == null || pdfBytes.Length == 0)
+                {
+                    return NotFound("Delivery Order not found or PDF generation failed.");
+                }
+                return File(pdfBytes, "application/pdf", $"DeliveryOrder_{deliveryOrderId}.pdf");
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred during PDF generation.");
+            }
+        }
     }
 }

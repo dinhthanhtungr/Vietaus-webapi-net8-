@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Composition;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.Queries.FormulaFeature;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.FormulaFeatures;
@@ -135,6 +136,12 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.Formula
                 // Log the exception (not shown here for brevity)
                 return StatusCode(500, "An unexpected error occurred during PDF generation.");
             }
+        }
+        [HttpGet("ExportXml")]
+        public async Task<IActionResult> ExportXml([FromQuery] Guid productId, CancellationToken ct)
+        {
+            var bytes = await _formulaService.ExportToXmlAsync(productId, ct);
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"formula_product_{productId}.xlsx");
         }
     }
 }

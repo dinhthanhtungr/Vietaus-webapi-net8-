@@ -85,5 +85,10 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         Task<OperationResult> UpsertFormulaAsync(PatchMfgFormula req, CancellationToken? cancellationToken = default);
+
+        // ====================================================================== Export PDF ======================================================================
+
+        Task<byte[]> ExportVAFormulaToPdfAsync(Guid mfgProductionOrderId, CancellationToken ct = default);
+
     }
 }

@@ -19,5 +19,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Queries.MfgProdu
         public Guid? MfgFormulaId { get; set; }
         public DateTime? From { get; set; }
         public DateTime? To { get; set; }
+
+        public bool? IsLastUpdate { get; set; }
     }
 }

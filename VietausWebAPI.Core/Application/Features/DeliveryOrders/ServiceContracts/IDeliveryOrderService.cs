@@ -29,5 +29,10 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.ServiceContract
         Task<OperationResult> UpdateAsync(PatchDeliveryOrder putDeliveryOrder, CancellationToken ct = default);
         Task<OperationResult> SoftDeleteAsync(Guid id, CancellationToken ct = default);
         //Task<OperationResult> AssignDeliverersAsync(AssignDeliverersCommand commkand, CancellationToken ct = default);
+
+        // ======================================================================== Excel ======================================================================== 
+
+        Task<List<DeliveryPlanRow>> BuildRowsAsync(DateTime from, DateTime to, CancellationToken ct);
+    
     }
 }

@@ -25,7 +25,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
             entity.HasIndex(e => e.MaterialId, "IX_PurchaseOrderDetails_MaterialId");
             entity.HasIndex(e => e.PurchaseOrderId, "IX_PurchaseOrderDetails_PurchaseOrderId");
 
-            entity.Property(e => e.Note).HasMaxLength(255);
+            entity.Property(e => e.Note);
             entity.Property(e => e.TotalPriceAgreed).HasPrecision(18, 2);
             entity.Property(e => e.BaseCostSnapshot).HasPrecision(18, 2);
             entity.Property(e => e.UnitPriceAgreed).HasPrecision(18, 2);

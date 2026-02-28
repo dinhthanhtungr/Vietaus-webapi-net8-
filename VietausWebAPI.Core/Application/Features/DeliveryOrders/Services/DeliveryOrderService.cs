@@ -205,191 +205,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
         /// <param name="ct"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        //public async Task<PagedResult<GetPODeliveryOrder>> GetSelectableLinesAsync(DeliveryOrderQuery query, CancellationToken ct = default)
-        //{
-        //    try
-        //    {
-        //        if (query.PageNumber <= 0) query.PageNumber = 1;
-        //        if (query.PageSize <= 0) query.PageSize = 15;
-
-        //        var baseQ = _unitOfWork.MerchandiseOrderRepository.Query()
-        //            .Where(po => po.IsActive == true);
-
-        //        if (query.CompanyId.HasValue && query.CompanyId.Value != Guid.Empty)
-        //            baseQ = baseQ.Where(po => po.CompanyId == query.CompanyId);
-
-        //        if (query.MerchandiseOrderId.HasValue && query.MerchandiseOrderId.Value != Guid.Empty)
-        //            baseQ = baseQ.Where(po => po.MerchandiseOrderId == query.MerchandiseOrderId.Value);
-
-        //        if (!string.IsNullOrWhiteSpace(query.Keyword))
-        //        {
-        //            var kw = query.Keyword.Trim();
-        //            baseQ = baseQ.Where(po =>
-        //                (po.CustomerNameSnapshot ?? "").Contains(kw) ||
-        //                (po.CustomerExternalIdSnapshot ?? "").Contains(kw) ||
-        //                (po.ExternalId ?? "").Contains(kw) ||
-        //                (po.PONo ?? "").Contains(kw)
-        //            );
-        //        }
-
-        //        // Đếm tổng
-        //        var totalCount = await baseQ.CountAsync(ct);
-
-        //        // Trang hiện tại: chỉ lấy field cần thiết của header
-        //        var headers = await baseQ
-        //            .OrderByDescending(po => po.CreateDate)
-        //            .Skip((query.PageNumber - 1) * query.PageSize)
-        //            .Take(query.PageSize)
-        //            .Select(po => new GetPODeliveryOrder
-        //            {
-        //                MerchandiseOrderId = po.MerchandiseOrderId,
-        //                ExternalId = po.ExternalId,
-
-        //                CustomerId = po.CustomerId,
-        //                CustomerNameSnapshot = po.CustomerNameSnapshot,
-        //                CustomerExternalIdSnapshot = po.CustomerExternalIdSnapshot,
-        //                PhoneSnapshot = po.PhoneSnapshot,
-
-        //                Note = po.Note,
-        //                ShippingMethod = po.ShippingMethod,
-        //                PONo = po.PONo,
-
-        //                Receiver = po.Receiver,
-        //                DeliveryAddress = po.DeliveryAddress,
-        //                PaymentType = po.PaymentType,
-
-        //                Status = po.Status,
-        //                Currency = po.Currency,
-
-        //                PODetailDeliveryOrder = new List<GetPODetailDeliveryOrder>() // sẽ gắn sau
-        //            })
-        //            .ToListAsync(ct);
-
-        //        if (headers.Count == 0)
-        //            return new PagedResult<GetPODeliveryOrder>(headers, totalCount, query.PageNumber, query.PageSize);
-
-        //        var pagePoIds = headers.Select(h => h.MerchandiseOrderId).ToList();
-
-        //        // -------- Subquery: TỒN kho theo Product (đổi DbSet/cột cho khớp hệ thống của bạn) ----------
-
-        //        //var onHandPerProduct = _unitOfWork.WarehouseShelfStockRepository.Query()
-        //        //        .Where(b => !string.IsNullOrWhiteSpace(b.Code))           // bỏ code rỗng
-        //        //        .GroupBy(b => b.Code.Trim())                              // chuẩn hoá
-        //        //        .Select(g => new {
-        //        //            ProductCode = g.Key,
-        //        //            OnHandQty = g.Sum(x => (decimal?)x.QtyKg)
-        //        //        });
-
-        //        var onHandPerProduct = _unitOfWork.WarehouseShelfStockRepository.Query()
-        //                .Where(b => !string.IsNullOrWhiteSpace(b.Code)
-        //                            && (!query.CompanyId.HasValue || b.CompanyId == query.CompanyId.Value))
-        //                .GroupBy(b => b.Code.Trim().ToUpper())
-        //                .Select(g => new
-        //                {
-        //                    ProductCode = g.Key,
-        //                    OnHandQty = g.Sum(x => (decimal?)x.QtyKg) ?? 0m
-        //                });
-
-
-        //        // -------- Subquery: OPEN RESERVATIONS (trừ kho ảo) theo Product Code ----------
-        //        var openReservePerProduct =
-        //            _unitOfWork.WarehouseTempStockRepository.Query()
-        //                .Where(t => t.ReserveStatus == ReserveStatus.Open.ToString()
-        //                            && !string.IsNullOrWhiteSpace(t.Code)
-        //                            && (!query.CompanyId.HasValue || t.CompanyId == query.CompanyId.Value))
-        //                .GroupBy(t => t.Code!.Trim().ToUpper())
-        //                .Select(g => new
-        //                {
-        //                    ProductCode = g.Key,
-        //                    OpenQty = g.Sum(x => (decimal?)x.QtyRequest) ?? 0m
-        //                });
-
-
-
-        //        // -------- Lấy detail + JOIN cả on-hand và open-reserve ----------
-        //        var detailRowsFlat = await (
-        //            from d in _unitOfWork.MerchandiseOrderRepository.QueryDetail().AsNoTracking()
-        //            join po in _unitOfWork.MerchandiseOrderRepository.Query().AsNoTracking()
-        //                on d.MerchandiseOrderId equals po.MerchandiseOrderId
-        //            where pagePoIds.Contains(d.MerchandiseOrderId) && ((bool?)d.IsActive ?? false)
-
-        //            // JOIN theo ProductExternalIdSnapshot (string) đã chuẩn hoá
-        //            join bal in onHandPerProduct
-        //                on (d.ProductExternalIdSnapshot ?? "").Trim().ToUpper() equals bal.ProductCode into jBal
-        //            from balance in jBal.DefaultIfEmpty()
-
-        //            join rsv in openReservePerProduct
-        //                on (d.ProductExternalIdSnapshot ?? "").Trim().ToUpper() equals rsv.ProductCode into jRsv
-        //            from reserve in jRsv.DefaultIfEmpty()
-
-        //            select new
-        //            {
-        //                d.MerchandiseOrderId,
-        //                ExternalId = po.ExternalId,
-        //                PONo = po.PONo,
-
-        //                MerchandiseOrderDetailId = d.MerchandiseOrderDetailId,
-        //                ProductId = d.ProductId,
-        //                ProductExternalIdSnapshot = d.ProductExternalIdSnapshot,
-        //                ProductNameSnapshot = d.ProductNameSnapshot,
-        //                FormulaExternalIdSnapshot = d.FormulaExternalIdSnapshot,
-
-        //                Quantity = (decimal?)d.ExpectedQuantity ?? 0m,
-        //                IsActiveDetail = (bool?)d.IsActive ?? false,
-
-        //                OnHandQty = (decimal?)balance.OnHandQty ?? 0m,
-        //                OpenQty = (decimal?)reserve.OpenQty ?? 0m,
-
-        //                // clamp về 0 để không âm nếu dữ liệu lệch
-        //                AvailableQty =
-        //                    (((decimal?)balance.OnHandQty ?? 0m) - ((decimal?)reserve.OpenQty ?? 0m)) < 0m
-        //                    ? 0m
-        //                    : (((decimal?)balance.OnHandQty ?? 0m) - ((decimal?)reserve.OpenQty ?? 0m))
-        //            }
-        //        ).OrderBy(x => x.MerchandiseOrderId)
-        //         .ToListAsync(ct);
-
-        //        // ===== Gắn detail vào headers =====
-        //        var headerMap = headers.ToDictionary(h => h.MerchandiseOrderId, h => h);
-
-        //        // ===== Gắn detail vào headers =====
-        //        foreach (var r in detailRowsFlat)
-        //        {
-        //            if (!headerMap.TryGetValue(r.MerchandiseOrderId, out var hdr)) continue;
-
-        //            hdr.PODetailDeliveryOrder.Add(new GetPODetailDeliveryOrder
-        //            {
-        //                MerchandiseOrderId = r.MerchandiseOrderId,
-        //                MerchandiseOrderExternalIdSnapShot = r.ExternalId,
-
-        //                MerchandiseOrderDetailId = r.MerchandiseOrderDetailId,
-        //                ProductId = r.ProductId,
-        //                ProductExternalIdSnapShot = r.ProductExternalIdSnapshot,
-        //                ProductNameSnapShot = r.ProductNameSnapshot,
-
-        //                ManufacturingFormulaExternalIdSnapShot = r.FormulaExternalIdSnapshot,
-        //                LocationNameSnapShot = null,
-        //                PONo = r.PONo,
-
-        //                Quantity = r.Quantity,
-        //                StockQuantity = r.AvailableQty,   // <-- OnHand - Open (đã clamp >= 0)
-        //                IsActive = r.IsActiveDetail
-        //            });
-        //        }
-
-        //        // ===== Trả về PagedResult =====
-        //        return new PagedResult<GetPODeliveryOrder>(headers, totalCount, query.PageNumber, query.PageSize);
-        //    }
-
-        //    catch (Exception ex)
-        //    {
-        //        throw new Exception($"Lỗi khi lấy danh sách: {ex.Message}", ex);
-        //    }
-        //}
-
-        public async Task<OperationResult<PagedResult<GetPODeliveryOrder>>> GetSelectableLinesAsync(
-            DeliveryOrderQuery query,
-            CancellationToken ct = default)
+        public async Task<OperationResult<PagedResult<GetPODeliveryOrder>>> GetSelectableLinesAsync(DeliveryOrderQuery query, CancellationToken ct = default)
         {
             if (query == null)
                 return OperationResult<PagedResult<GetPODeliveryOrder>>.Fail("Query is null");
@@ -506,7 +322,6 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
             return OperationResult<PagedResult<GetPODeliveryOrder>>.Ok(pagedResult, "Tạo phiếu giao hàng thành công");
         }
 
-
         /// <summary>
         /// Lấy chi tiết đơn giao hàng (Delivery Order) theo Id
         /// </summary>
@@ -594,369 +409,6 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
         /// <param name="ct"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        //public async Task<OperationResult> CreateAsync(PostDeliveryOrder req, CancellationToken ct = default)
-        //{
-        //    if (req is null) throw new ArgumentNullException(nameof(req));
-        //    if (req.postDeliveryOrderDetails is null || req.postDeliveryOrderDetails.Count == 0) throw new ArgumentNullException("MerchandiseOrderId is required");
-        //    if (req.SelectedPOIds is null || req.SelectedPOIds.Count == 0) throw new ArgumentNullException("SelectedPOIds is required");
-        //    if (req.CreateBy == Guid.Empty) throw new ArgumentNullException("CreateBy is required");
-
-        //    // Bảo đảm tất cả postDeliveryOrderDetails.MerchadiseOrderId có trong SelectedPOIds (Ý là đều thuộc trong PO)
-        //    // Chỉ kiểm tra mapping PO cho dòng non-attach
-        //    var invalidLines = req.postDeliveryOrderDetails
-        //        .Where(l => l.IsAttach == false)
-        //        .Where(l => !l.MerchandiseOrderId.HasValue || l.MerchandiseOrderId.Value == Guid.Empty || !req.SelectedPOIds.Contains(l.MerchandiseOrderId.Value))
-        //        .ToList();
-
-        //    if (invalidLines.Count > 0)
-        //        throw new ArgumentNullException("SelectedPOIds does not match with non-attach details' MerchandiseOrderId");
-
-        //    // (Khuyến nghị) kiểm tra CustomerId đồng nhất giữa DO và các PO (nếu chính sách yêu cầu 1 DO/1 Customer)
-        //    // var poCustomers = await _db.MerchandiseOrders
-        //    //   .Where(po => cmd.SelectedPOIds.Contains(po.Id))
-        //    //   .Select(po => po.CustomerId).Distinct().ToListAsync(ct);
-        //    // if (poCustomers.Count > 1) throw new InvalidOperationException("Các PO thuộc nhiều khách hàng khác nhau.");
-
-        //    var now = DateTime.Now;
-
-        //    using var tx = await _unitOfWork.BeginTransactionAsync();
-
-        //    // B1: DO header
-        //    var deliveryOrder = new DeliveryOrder
-        //    {
-        //        Id = Guid.CreateVersion7(),
-        //        ExternalId = await _idService.NextAsync(req.CompanyId, "PGH", now, ct: ct),
-        //        CustomerId = req.CustomerId,
-        //        CustomerExternalIdSnapShot = req.CustomerExternalIdSnapShot,
-
-        //        Receiver = req.Receiver,
-        //        DeliveryAddress = req.DeliveryAddress,
-        //        PaymentType = req.PaymentType,
-        //        PaymentDeadline = req.PaymentDeadline,
-        //        TaxNumber = req.TaxNumber,
-
-        //        Note = req.Note,
-        //        CreatedBy = req.CreateBy,
-        //        CreatedDate = now,
-        //        CompanyId = req.CompanyId,
-        //        Status = DeliveryOrderStatus.Pending.ToString(),
-        //        Deliverers = new List<Deliverer>(), // sẽ gắn sau
-        //        DeliveryOrderPOs = new List<DeliveryOrderPO>(),
-        //        Details = new List<DeliveryOrderDetail>()
-        //    };
-
-        //    await _unitOfWork.DeliveryOrderRepository.AddAsync(deliveryOrder);
-
-        //    // B2: Bridge DO–PO
-        //    var linkByPo = new Dictionary<Guid, DeliveryOrderPO>();
-        //    var linkByDeliverer = new Dictionary<Guid, Deliverer>();
-        //    foreach (var poId in req.SelectedPOIds.Distinct())
-        //    {
-        //        var link = new DeliveryOrderPO
-        //        {
-        //            DeliveryOrderId = deliveryOrder.Id,
-        //            MerchandiseOrderId = poId,
-        //        };
-        //        deliveryOrder.DeliveryOrderPOs.Add(link);
-        //        linkByPo[poId] = link;
-        //    }
-
-        //    foreach(var deliverer in req.Deliverers.Distinct())
-        //    {
-        //        var link = new Deliverer
-        //        {
-        //            DeliveryOrderId = deliveryOrder.Id,
-        //            DelivererInforId = deliverer,
-        //        };
-        //        deliveryOrder.Deliverers.Add(link);
-        //        linkByDeliverer[deliverer] = link;
-        //    }
-
-        //    // B3: DO Details
-        //    foreach (var line in req.postDeliveryOrderDetails)
-        //    {
-        //        deliveryOrder.Details.Add(new DeliveryOrderDetail
-        //        {
-        //            //Id = Guid.CreateVersion7(),
-        //            //DeliveryOrderId = deliveryOrder.Id,
-        //            //MerchandiseOrderId = line.MerchandiseOrderId,
-        //            //MerchandiseOrderDetailId = line.MerchandiseOrderDetailId,
-        //            //ProductId = line.ProductId,                 // optional
-        //            //Quantity = line.Quantity,
-        //            //NumOfBags = line.NumOfBags,
-        //            //PONo = line.PONo,
-        //            //ProductExternalIdSnapShot = line.ProductExternalIdSnapShot,
-        //            //ProductNameSnapShot = line.ProductNameSnapShot,
-        //            ////ManufacturingFormulaExternalIdSnapShot = line.ManufacturingFormulaExternalIdSnapShot,
-        //            //LotNoList = line.LocationExternalIdSnapShot,
-        //            //MerchandiseOrderExternalIdSnapShot = line.MerchandiseOrderExternalIdSnapShot,
-        //            //IsActive = true,
-        //            //IsAttach = line.IsAttach                     // <--- NEW
-        //        });
-        //    }
-
-        //    // ====== (B4) Cập nhật RealQuantity cho MerchandiseOrderDetail ======
-        //    // Gom tổng số lượng DO theo MerchandiseOrderDetailId (chỉ lấy dòng có map vào PO detail, bỏ attach)
-
-        //    //var sumByMoDetailId = req.postDeliveryOrderDetails
-        //    //    .Where(x => x.IsAttach == false && x.MerchandiseOrderDetailId.HasValue)
-        //    //    .GroupBy(x => x.MerchandiseOrderDetailId!.Value)
-        //    //    .ToDictionary(g => g.Key, g => g.Sum(x => x.Quantity));
-
-
-
-
-        //    // Nếu không có dòng nào cần cấp nhật thì bỏ qua
-        //    //if (sumByMoDetailId.Count > 0)
-        //    //{
-        //    //    var moDetailIds = sumByMoDetailId.Keys.ToList();
-
-        //    //    // Lấy các MerchandiseOrderDetail cần cập nhật (track: true)
-        //    //    var moDetails = await _unitOfWork.MerchandiseOrderRepository
-        //    //        .QueryDetail(track: true)
-        //    //        .Where(d => moDetailIds.Contains(d.MerchandiseOrderDetailId))
-        //    //        .Select(d => new { Entity = d, d.MerchandiseOrderDetailId, d.RealQuantity, d.ExpectedQuantity, d.Status })
-        //    //        .ToListAsync(ct);
-
-        //    //    // Cập nhật RealQuantity
-        //    //    foreach (var moDetail in moDetails)
-        //    //    {
-        //    //        var add = sumByMoDetailId[moDetail.MerchandiseOrderDetailId];
-        //    //        var current = moDetail.Entity.RealQuantity ?? 0m;
-
-        //    //        moDetail.Entity.RealQuantity = current + add;
-        //    //        // Cập nhật trạng thái nếu cần (ví dụ: nếu RealQuantity >= ExpectedQuantity thì chuyển sang "Completed")
-        //    //        moDetail.Entity.Status = (moDetail.Entity.RealQuantity >= moDetail.Entity.ExpectedQuantity)
-        //    //            ? MerchadiseStatus.Completed.ToString()
-        //    //            : MerchadiseStatus.Delivering.ToString();
-        //    //    }
-
-
-
-
-
-        //    //    var poIds = req.SelectedPOIds.Distinct().ToArray();
-
-        //    //    // 1) Lấy tất cả detail của các PO liên quan (chỉ lấy POId + DetailId + Status)
-        //    //    //    => lấy từ DB nhưng nhẹ (projection). Track false để rẻ.
-        //    //    var dbDetails = await _unitOfWork.MerchandiseOrderRepository
-        //    //        .QueryDetail(track: false)
-        //    //        .Where(d => poIds.Contains(d.MerchandiseOrderId))
-        //    //        .Select(d => new { d.MerchandiseOrderDetailId, d.MerchandiseOrderId, d.Status })
-        //    //        .ToListAsync(ct);
-
-        //    //    // 2) Ghi đè status bằng các thay đổi mới nhất trong memory (moDetails bạn vừa set)
-        //    //    var updated = moDetails.ToDictionary(
-        //    //        x => x.MerchandiseOrderDetailId,
-        //    //        x => x.Entity.Status
-        //    //    );
-
-
-        //    //    // Hợp nhất: dùng status đã update nếu có, còn không thì dùng status từ DB
-        //    //    var merged = dbDetails.Select(d =>
-        //    //    {
-        //    //        var status = updated.TryGetValue(d.MerchandiseOrderDetailId, out var s)
-        //    //            ? s
-        //    //            : d.Status;
-        //    //        return new { d.MerchandiseOrderId, Status = status };
-        //    //    }).ToList();
-
-
-
-
-        //    //    var existedDeliveryStatuses = await _unitOfWork.MerchandiseOrderLogRepository
-        //    //        .Query(track: false)
-        //    //        .Where(log => poIds.Contains(log.MerchandiseOrderId)
-        //    //                      && log.Status == MerchadiseStatus.Delivering.ToString())
-        //    //        .Select(log => log.MerchandiseOrderId)
-        //    //        .Distinct()
-        //    //        .ToListAsync(ct);
-
-        //    //    var needUpdatePoIds = poIds.Except(existedDeliveryStatuses).ToArray();
-
-        //    //    if (needUpdatePoIds.Length > 0)
-        //    //    {
-        //    //        var allLogs = needUpdatePoIds.Select(id => new MerchandiseOrderLog
-        //    //        {
-        //    //            LogId = Guid.CreateVersion7(),
-        //    //            MerchandiseOrderId = id,
-        //    //            Status = MerchadiseStatus.Delivering.ToString(),
-        //    //            Note = $"From DO {deliveryOrder.ExternalId}",
-        //    //            CreatedBy = req.CreateBy,
-        //    //            CreatedDate = now
-        //    //        }).ToList();
-
-        //    //        // (tuỳ bạn) nếu muốn set PO → Delivering (idempotent, nhanh):
-        //    //        await _unitOfWork.MerchandiseOrderRepository.Query(track: false)
-        //    //            .Where(po => poIds.Contains(po.MerchandiseOrderId))
-        //    //            .ExecuteUpdateAsync(s => s
-        //    //                .SetProperty(p => p.Status, _ => MerchadiseStatus.Delivering.ToString())
-        //    //                .SetProperty(p => p.UpdatedBy, _ => req.CreateBy)
-        //    //                .SetProperty(p => p.UpdatedDate, _ => now), ct);
-
-        //    //        await _unitOfWork.MerchandiseOrderLogRepository.AddRangeAsync(allLogs, ct);
-        //    //    }
-
-        //    //    // 2) Tính các PO hoàn tất trong memory
-        //    //    var completed = MerchadiseStatus.Completed.ToString();
-        //    //    var completedPoIds = merged
-        //    //        .GroupBy(x => x.MerchandiseOrderId)
-        //    //        .Where(g => g.All(x => x.Status == completed))
-        //    //        .Select(g => g.Key)
-        //    //        .ToList();
-
-
-        //    //    // 3) Overwrite các PO này sang Completed
-        //    //    var existedCompletedPoIds = await _unitOfWork.MerchandiseOrderLogRepository.Query(track: false)
-        //    //        .Where(l => completedPoIds.Contains(l.MerchandiseOrderId)
-        //    //                 && l.Status == MerchadiseStatus.Completed.ToString())
-        //    //        .Select(l => l.MerchandiseOrderId)
-        //    //        .Distinct()
-        //    //        .ToListAsync(ct);
-
-        //    //    var needCompletedLogPoIds = completedPoIds.Except(existedCompletedPoIds).ToArray();
-
-        //    //    if (needCompletedLogPoIds.Length > 0)
-        //    //    {
-        //    //        var completedLogs = needCompletedLogPoIds.Select(id => new MerchandiseOrderLog
-        //    //        {
-        //    //            LogId = Guid.CreateVersion7(),
-        //    //            MerchandiseOrderId = id,
-        //    //            Status = MerchadiseStatus.Completed.ToString(),
-        //    //            Note = $"Auto-completed from DO {deliveryOrder.ExternalId}",
-        //    //            CreatedBy = req.CreateBy,
-        //    //            CreatedDate = now
-        //    //        }).ToList();
-
-
-        //    //        // (tuỳ bạn) nếu muốn set PO → Completed (idempotent, nhanh):
-        //    //        await _unitOfWork.MerchandiseOrderRepository.Query(track: false)
-        //    //            .Where(po => poIds.Contains(po.MerchandiseOrderId))
-        //    //            .ExecuteUpdateAsync(s => s
-        //    //                .SetProperty(p => p.Status, _ => MerchadiseStatus.Completed.ToString())
-        //    //                .SetProperty(p => p.UpdatedBy, _ => req.CreateBy)
-        //    //                .SetProperty(p => p.UpdatedDate, _ => now), ct);
-        //    //        await _unitOfWork.MerchandiseOrderLogRepository.AddRangeAsync(completedLogs, ct);
-        //    //    }
-
-        //    //}
-
-
-
-
-        //    // ====== (B) Tạo 1 WR/PO + WRD từ cấp phát FIFO theo ProductCode & Lot ======
-        //    // Gom nhu cầu theo PO + ProductCode
-        //    var needsByPoProduct = req.postDeliveryOrderDetails.Where(x => x.IsAttach == false)
-        //        .GroupBy(x => new { x.MerchandiseOrderId, x.ProductExternalIdSnapShot }) // <-- bạn nói "lấy ProductCode" để trừ FIFO
-        //        .ToDictionary(g => (g.Key.MerchandiseOrderId, g.Key.ProductExternalIdSnapShot),
-        //                      g => g.Sum(x => x.Quantity));
-
-        //    // Lấy nhanh map PO→ExternalId để điền RequestName
-        //    var poExternals = await _unitOfWork.MerchandiseOrderRepository
-        //        .Query()
-        //        .Where(po => req.SelectedPOIds.Contains(po.MerchandiseOrderId))
-        //        .Select(po => new { po.MerchandiseOrderId, po.ExternalId })
-        //        .ToDictionaryAsync(x => x.MerchandiseOrderId, x => x.ExternalId, ct);
-
-
-        //    var wrByPo = new Dictionary<Guid, WarehouseRequest>();
-        //    foreach (var poId in req.SelectedPOIds.Distinct())
-        //    {
-        //        // Chỉ tạo WR nếu PO này có dòng tính toán (non-attach)
-        //        var poHasCalc = needsByPoProduct.Keys.Any(k => k.MerchandiseOrderId == poId);
-        //        if (!poHasCalc) continue;
-
-        //        var wr = new WarehouseRequest
-        //        {
-        //            RequestCode = await _idService.NextAsync(req.CompanyId, "WR", now, ct),
-        //            ReqStatus = WarehouseRequestStatus.Pending,
-        //            RequestName = $"WR cho DO {deliveryOrder.ExternalId} – PO {poExternals.GetValueOrDefault(poId)}",
-        //            IsActive = true,
-        //            //codeFromRequest = deliveryOrder.ExternalId,
-        //            ReqType = WareHouseRequestType.ExportForSales,
-        //            CompanyId = req.CompanyId,
-        //            CreatedBy = req.CreateBy,
-        //            CreatedDate = now,
-        //            WarehouseRequestDetails = new List<WarehouseRequestDetail>()
-        //        };
-
-        //        // set qua nav để EF tự set WarehouseRequestId vào link
-        //        //linkByPo[poId].WarehouseRequest = wr;
-        //        wrByPo[poId] = wr;
-
-        //        // Tập nhu cầu của PO này theo ProductCode
-        //        // With this block to ensure the key is not null:
-        //        var needs = needsByPoProduct
-        //            .Where(kv => kv.Key.MerchandiseOrderId == poId)
-        //            .GroupBy(kv => kv.Key.ProductExternalIdSnapShot ?? string.Empty)
-        //            .ToDictionary(g => g.Key, g => g.Sum(x => x.Value));
-
-        //        // Tập nhu cầu của PO này theo ProductCode (đã có 'needs')
-        //        var needsWithCode = needs
-        //            .Where(kv => !string.IsNullOrWhiteSpace(kv.Key))
-        //            .ToDictionary(kv => kv.Key, kv => kv.Value);
-
-        //        var needsNoCode = needs
-        //            .Where(kv => string.IsNullOrWhiteSpace(kv.Key))
-        //            .ToDictionary(kv => kv.Key, kv => kv.Value);
-
-        //        // 2.1) CẤP PHÁT FIFO CHO NHÓM CÓ PRODUCT CODE (dùng kho thật)
-        //        if (needsWithCode.Count > 0)
-        //        {
-        //            var allocations = await AllocateReserveFifoAsync(req.CompanyId, deliveryOrder.ExternalId, req.CreateBy,needsWithCode, ct);
-
-        //            // Sinh WRD từ allocations (mỗi lô = 1 dòng)
-        //            foreach (var (productCode, lots) in allocations)
-        //            {
-        //                foreach (var a in lots)
-        //                {
-        //                    wr.WarehouseRequestDetails.Add(new WarehouseRequestDetail
-        //                    {
-
-        //                        ProductCode = productCode,
-        //                        ProductName = deliveryOrder.Details.FirstOrDefault(s => !string.IsNullOrEmpty(s.ProductNameSnapShot))?.ProductNameSnapShot, // snapshot tên nếu cần, hoặc tra theo master
-        //                        LotNumber = a.LotKey,
-        //                        WeightKg = a.Qty,
-        //                        StockStatus = WareHouseRequestType.ExportForSales.ToString(),
-        //                    });
-        //                }
-        //            }
-        //        }
-
-        //        // 2.2) DÒNG KHÔNG CÓ PRODUCT CODE (hàng ngoài danh mục) từ calcLines (non-attach)
-        //        if (needsNoCode.Count > 0)
-        //        {
-        //            var snapQty = needsNoCode.Values.Sum();
-        //            if (snapQty > 0)
-        //            {
-        //                var firstLine = req.postDeliveryOrderDetails
-        //                    .FirstOrDefault(x => x.MerchandiseOrderId == poId
-        //                                         && string.IsNullOrWhiteSpace(x.ProductExternalIdSnapShot));
-
-        //                wr.WarehouseRequestDetails.Add(new WarehouseRequestDetail
-        //                {
-
-        //                    ProductCode = "",
-        //                    ProductName = firstLine?.ProductNameSnapShot ?? "(No Code Item)",
-        //                    LotNumber = null,
-        //                    WeightKg = snapQty,
-        //                    StockStatus = WareHouseRequestType.ExportForSales.ToString(),
-        //                });
-        //            }
-        //        }
-        //    }
-        //    // ====== (C) Lưu & Commit ======
-        //    // Lưu ý: bạn đã AddAsync(deliveryOrder) từ trước; các nav (DOPO/WR/WRD/DODetail)
-        //    // đều bám trong graph deliveryOrder, EF sẽ tự insert đúng thứ tự.
-        //    await _unitOfWork.SaveChangesAsync();
-        //    await tx.CommitAsync(ct);
-
-        //    return OperationResult.Ok(deliveryOrder.Status);
-
-        //}
-
-
-        // ======================================================================== Patch ======================================================================== 
         public async Task<OperationResult<GetDeliveryOrder>> CreateAsync(PostDeliveryOrder request, CancellationToken ct = default)
         {
 
@@ -1231,99 +683,6 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
         /// <param name="id"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        //public async Task<OperationResult> SoftDeleteAsync(Guid id, CancellationToken ct = default)
-        //{
-        //    await using var tx = await _unitOfWork.BeginTransactionAsync();
-
-        //    try
-        //    {
-        //        var existingDO = await _unitOfWork.DeliveryOrderRepository
-        //            .Query(track: true)
-        //            .Include(x => x.Details)
-        //            .Include(x => x.DeliveryOrderPOs)
-        //            .Include(x => x.Deliverers)
-        //            .Where(p => p.Id == id && p.IsActive == true)
-        //            .FirstOrDefaultAsync(ct);
-
-        //        if (existingDO == null)
-        //            return OperationResult.Fail("Đơn giao hàng không tồn tại.");
-
-
-        //        // 2) Guard nghiệp vụ: đã xuất kho thật?
-        //        //var hasPostedIssue = await _unitOfWork.WarehouseRequestRepository.Query(track: false)
-        //        //    .AnyAsync(wr => wr.codeFromRequest == existingDO.ExternalId && wr.ReqStatus == WarehouseRequestStatus.Approved, ct);
-
-        //        //var hasPostedIssue = existingDO.DeliveryOrderPOs
-        //        //    .Any(dop => dop.WarehouseRequest != null && dop.WarehouseRequest.ReqStatus == WarehouseRequestStatus.Approved);
-
-        //        //if (hasPostedIssue)
-        //        //    return OperationResult.Fail("Không thể xoá đơn giao hàng đã được xuất kho.");
-
-        //        //// 3) lấy tất cả các WR liên quan để xoá mềm
-        //        //var wrIds = existingDO.DeliveryOrderPOs
-        //        //    .Where(p => p.WarehouseRequestId.HasValue)
-        //        //    .Select(p => p.WarehouseRequestId!.Value)
-        //        //    .Distinct()
-        //        //    .ToList();
-
-        //        var wrExternalId = existingDO.DeliveryOrderPOs
-        //            .Where(p => !string.IsNullOrEmpty(p.DeliveryOrder.ExternalId))
-        //            .Select(p => p.DeliveryOrder.ExternalId)
-        //            .Distinct()
-        //            .ToList();
-
-        //        // Release tất cả các TempStock liên quan
-        //        //if(wrIds.Count > 0)
-        //        //{
-        //        //    await ReleaseTempStockByWRIdsAsync(wrExternalId, ct);
-
-        //        //    // Soft delete các WR + WRD liên quan
-        //        //    var wrs = await _unitOfWork.WarehouseRequestRepository.Query(track: true)
-        //        //        .Where(wr => wrIds.Contains(wr.RequestId))
-        //        //        .Include(wr => wr.WarehouseRequestDetails)
-        //        //        .ToListAsync(ct);
-
-        //        //    foreach (var wr in wrs)
-        //        //    {
-        //        //        wr.IsActive = false;
-        //        //        wr.ReqStatus = WarehouseRequestStatus.Cancelled;
-        //        //        wr.UpdatedDate = DateTime.Now;
-        //        //        wr.UpdatedBy = existingDO.UpdatedBy;
-        //        //    }
-
-        //        //    var wrDetail = await _unitOfWork.WarehouseRequestDetailRepository.Query(track: true)
-        //        //        .Where(wrd => wrIds.Contains(wrd.RequestId))
-        //        //        .ToListAsync(ct);
-
-        //        //    foreach (var wd in wrDetail)
-        //        //    {
-        //        //        wd.IsActive = false;
-        //        //    }
-        //        //}
-
-        //        existingDO.IsActive = false;
-        //        existingDO.UpdatedDate = DateTime.Now;
-        //        existingDO.Status = "Cancelled";
-        //        existingDO.UpdatedBy = existingDO.UpdatedBy;
-
-        //        foreach (var dd in existingDO.Details.Where(x => x.IsActive))
-        //        {
-        //            dd.IsActive = false;
-        //        }
-
-        //        await _unitOfWork.SaveChangesAsync();
-        //        await tx.CommitAsync(ct);
-        //        return OperationResult.Ok();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        await tx.RollbackAsync(ct);
-        //        return OperationResult.Fail($"Lỗi khi xoá đơn giao hàng: {ex.InnerException?.Message}");
-        //    }
-        //}
-
-
-
         public async Task<OperationResult> SoftDeleteAsync(Guid id, CancellationToken ct = default)
         {
             await using var tx = await _unitOfWork.BeginTransactionAsync();
@@ -1634,6 +993,71 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
         }
 
 
+
+
+        public async Task<List<DeliveryPlanRow>> BuildRowsAsync(DateTime from, DateTime to, CancellationToken ct)
+        {
+            var q = _unitOfWork.MfgOrderPORepository.Query()
+                .Where(x => x.IsActive)
+                .Where(x => x.Detail.IsActive)
+                .Where(x => x.Detail.DeliveryRequestDate >= from && x.Detail.DeliveryRequestDate < to.AddDays(1))
+                .Select(x => new
+                {
+                    Order = x.Detail.MerchandiseOrder,
+                    Detail = x.Detail,
+                    Prod = x.ProductionOrder,
+                    Customer = x.Detail.MerchandiseOrder.Customer,
+
+                    // ✅ Lấy list ExternalId của ManufacturingFormula đang chọn
+                    VAExternalIds = x.ProductionOrder.ProductionSelectVersions
+                        .Where(v => v.ValidTo == null && v.ManufacturingFormula != null)
+                        .Select(v => v.ManufacturingFormula!.ExternalId)
+                        .Distinct()
+                        .ToList()
+                });
+
+            var data = await q.ToListAsync(ct);
+
+            var rows = new List<DeliveryPlanRow>();
+            var stt = 1;
+
+            foreach (var it in data)
+            {
+                var prod = it.Prod;
+
+                var pending = prod.TotalQuantity == null;
+                var qtyText = pending ? $"{prod.TotalQuantityRequest}*" : prod.TotalQuantity.Value.ToString();
+
+                // join list VA externalId -> chuỗi
+                var vaList = (it.VAExternalIds ?? new List<string>())
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .Distinct()
+                    .ToList();
+
+                var vaText = vaList.Count == 0 ? "" : string.Join(", ", vaList);
+
+                rows.Add(new DeliveryPlanRow
+                {
+                    Stt = stt++,
+                    CustomerName = it.Order.CustomerNameSnapshot,
+                    Code = it.Detail.ProductExternalIdSnapshot,
+
+                    // ✅ thay LotNo bằng danh sách VA externalId
+                    LotNo = vaText,
+
+                    QuantityText = qtyText,
+                    QuantityIsPending = pending,
+
+                    Factory = "",
+                    PickupTimeText = "",
+                    Driver = "",
+                    Note = it.Detail.Comment ?? "",
+                    Address = it.Order.DeliveryAddress
+                });
+            }
+
+            return rows;
+        }
     }
 
 }

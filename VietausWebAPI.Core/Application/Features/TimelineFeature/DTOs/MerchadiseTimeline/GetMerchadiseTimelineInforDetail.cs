@@ -16,6 +16,7 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.Merchadis
         public string? DeliveryList { get; set; }
 
         public DateTime RequestDate { get; set; }
+        public DateTime? ExpectedDate { get; set; }
 
         public decimal? RequestQuantity { get; set; }
         public decimal? RealQuantity { get; set; }

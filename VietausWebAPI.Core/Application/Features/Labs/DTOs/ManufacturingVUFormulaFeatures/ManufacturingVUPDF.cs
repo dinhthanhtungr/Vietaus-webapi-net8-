@@ -10,6 +10,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.ManufacturingVUFormu
     public class ManufacturingVUPDF
     {
         public string BatchNo { get; set; } = string.Empty;
+        public DateTime? RequestDate { get; set; }
+        public string BagType { get; set; } = string.Empty;
         public GetManufacturingVUFormula getManufacturingVUFormula { get; set; } = new GetManufacturingVUFormula();
         public List<FormulaPDFMaterialDTOs> materials { get; set; } = new List<FormulaPDFMaterialDTOs>();
 

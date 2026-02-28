@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.HrSchema;
+using VietausWebAPI.Core.Domain.Enums.Manufacturings;
 
 namespace VietausWebAPI.Core.Domain.Entities.SampleRequestSchema
 {
@@ -12,9 +13,11 @@ namespace VietausWebAPI.Core.Domain.Entities.SampleRequestSchema
         public Guid ManufacturingVUFormulaId { get; set; }
         public Guid FormulaId { get; set; }
 
+        public ManufacturingProductOrder status { get; set; }
 
         public decimal? TotalProductionQuantity { get; set; }
         public int? NumOfBatches { get; set; }
+
         public string? LabNote { get; set; }
         public string? Requirement { get; set; }
         public string? QcCheck { get; set; }
@@ -27,5 +30,7 @@ namespace VietausWebAPI.Core.Domain.Entities.SampleRequestSchema
         public virtual Formula Formula { get; set; } = null!;
         public virtual Employee? CreatedByNavigation { get; set; }
         public virtual Employee? UpdatedByNavigation { get; set; }
+
+        public virtual ICollection<FormulaMaterialSnapshot> FormulaMaterialSnapshots { get; set; } = new List<FormulaMaterialSnapshot>();
     }
 }

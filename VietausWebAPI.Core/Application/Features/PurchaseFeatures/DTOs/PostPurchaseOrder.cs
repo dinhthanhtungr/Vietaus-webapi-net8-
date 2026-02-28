@@ -14,7 +14,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.DTOs
         public string? ExternalId { get; set; }
         public string? OrderType { get; set; }
 
-        public Guid? SupplierId { get; set; }
+        public Guid SupplierId { get; set; }
         public DateTime? RequestDeliveryDate { get; set; }
         public DateTime? RealDeliveryDate { get; set; }
         public string? Comment { get; set; }

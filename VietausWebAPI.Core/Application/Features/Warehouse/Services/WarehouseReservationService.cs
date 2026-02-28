@@ -298,6 +298,21 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             await _unitOfWork.WarehouseRequestRepository.AddAsync(wr, ct);
         }
 
+        public async Task EnsureWarehouseRequestDeletedAsync(string externalId, CancellationToken ct)
+        {
+            externalId = (externalId ?? "").Trim();
+            if (externalId.Length == 0) return;
+
+            await _unitOfWork.WarehouseRequestRepository.Query(track: true)
+                .Where(wr => wr.codeFromRequest == externalId && wr.IsActive)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(wr => wr.IsActive, false)
+                    .SetProperty(wr => wr.UpdatedDate, DateTime.Now)
+                    .SetProperty(wr => wr.UpdatedBy, _currentUser.EmployeeId),
+                    ct);
+        }
+
+
         /// <summary>
         /// Hàm kiểm tra "freshness" của danh sách mã NVL so với expected xem có thay đổi không.
         /// </summary>
@@ -384,78 +399,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             return (isFresh, current);
         }
 
-        //public async Task<int> CancelReserveAsync(WarehouseReservationServiceQuery query, CancellationToken ct)
-        //{
-        //    var q = _unitOfWork.WarehouseTempStockRepository.Query()
-        //                .Where(x => x.CompanyId == query.companyId
-        //                && x.SnapshotSetId == query.snapshotSetId
-        //                && x.VaCode == query.vaCode
-        //                && x.Code == query.code
-        //                && x.TempType == TempType.Reserve
-        //                && x.ReserveStatus == ReserveStatus.Open);
 
-        //    if(!string.IsNullOrEmpty(query.lotKey))
-        //    {
-        //        q = q.Where(x => x.LotKey == query.lotKey);
-        //    }
 
-        //    var rows = await q.ToListAsync(ct);
-        //    foreach(var row in rows)
-        //    {
-        //        row.ReserveStatus = ReserveStatus.Cancelled;
-        //    }
-
-        //    return await _unitOfWork.SaveChangesAsync();
-        //}
-
-        //public async Task<int> ConsumeReserveAsync(WarehouseReservationServiceQuery query, CancellationToken ct)
-        //{
-        //    var q = _unitOfWork.WarehouseTempStockRepository.Query()
-        //                .Where(x => x.CompanyId == query.companyId
-        //                && x.SnapshotSetId == query.snapshotSetId
-        //                && x.VaCode == query.vaCode
-        //                && x.Code == query.code
-        //                && x.TempType == TempType.Reserve
-        //                && x.ReserveStatus == ReserveStatus.Open);
-
-        //    if (!string.IsNullOrEmpty(query.lotKey))
-        //    {
-        //        q = q.Where(x => x.LotKey == query.lotKey);
-        //    }
-
-        //    var rows = await q.ToListAsync();
-
-        //    foreach( var row in rows)
-        //    {
-        //        row.ReserveStatus = ReserveStatus.Consumed;
-        //        row.LinkedIssueId = query.issueId;
-        //    }
-
-        //    return await _unitOfWork.SaveChangesAsync();
-        //}
-
-        //public async Task<long> ReserveAsync(WarehouseReservationServiceQuery query, CancellationToken ct)
-        //{
-        //    var row = new WarehouseTempStock
-        //    {
-        //        CompanyId = query.companyId,
-        //        SnapshotSetId = query.snapshotSetId,
-        //        TempType = TempType.Reserve,
-        //        VaCode = query.vaCode,
-        //        VaLineCode = query.vaLineCode,
-        //        Code = query.code,
-        //        LotKey = query.lotKey,
-        //        QtyRequest = query.qtyRequest,
-        //        ReserveStatus = Domain.Enums.ReserveStatus.Open,
-        //        CreatedBy = query.createdBy,
-        //        CreatedDate = DateTime.Now
-        //    };
-
-        //    await _unitOfWork.WarehouseTempStockRepository.AddAsync(row);
-
-        //    await _unitOfWork.SaveChangesAsync();
-
-        //    return row.TempId;
-        //}
     }
 }

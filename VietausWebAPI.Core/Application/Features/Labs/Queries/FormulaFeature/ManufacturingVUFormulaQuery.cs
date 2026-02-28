@@ -11,5 +11,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Queries.FormulaFeature
     {
         public string? Keyword { get; set; }
         public Guid? ManufacturingVUFormulaId { get; set; }
+        public Guid? ProductId { get; set; }
     }
 }

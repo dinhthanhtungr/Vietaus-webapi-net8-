@@ -22,8 +22,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUser _currentUser;
-        private readonly IFormulaPDF _FormulaPDF;
-        public ManufacturingVUFormulaService(IUnitOfWork unitOfWork, ICurrentUser currentUser, IFormulaPDF formulaPDF)
+        private readonly IVUFormulaPDF _FormulaPDF;
+        public ManufacturingVUFormulaService(IUnitOfWork unitOfWork, ICurrentUser currentUser, IVUFormulaPDF formulaPDF)
         {
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;
@@ -118,6 +118,11 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
             IQueryable<ManufacturingVUFormula> baseQuery =
                 _unitOfWork.ManufacturingVUFormulaRepository.Query();
 
+            // Filter by ProductId
+            if (req.ProductId.HasValue)
+            {
+                baseQuery = baseQuery.Where(x => x.Formula.ProductId == req.ProductId.Value);
+            }
 
             // Keyword (search trên formula code/name, product name, colour code)
             if (!string.IsNullOrWhiteSpace(req.Keyword))
@@ -187,6 +192,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                     UpdatedBy = user.EmployeeId,
                     CreatedDate = now
                 };
+
+                var 
 
 
                 await _unitOfWork.ManufacturingVUFormulaRepository.AddAsync(manufacturingVUFormula, ct);
@@ -287,11 +294,21 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                         x.NumOfBatches,
                         x.QcCheck,
                         x.LabNote,
+                        x.Formula,
 
                         ProductId = x.Formula.Product.ProductId,
                         ColourCode = x.Formula.Product.ColourCode,
                         Name = x.Formula.Product.Name,
                         BatchNo = x.Formula.ExternalId,
+
+                        UserRate = x.Formula.Product.UsageRate,
+                        x.Requirement,
+
+                        RequestDate = x.Formula.Product.SampleRequests
+                            .Where(sr => sr.IsActive)
+                            .OrderByDescending(sr => sr.CreatedDate)
+                            .Select(sr => sr.RequestDeliveryDate)
+                            .FirstOrDefault(),
 
                         Materials = x.Formula.FormulaMaterials
                             .Where(m => m.IsActive)
@@ -328,6 +345,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                 var dto = new ManufacturingVUPDF
                 {
                     BatchNo = formula.BatchNo,
+                    RequestDate = formula.RequestDate,
+
+
                     getManufacturingVUFormula = new GetManufacturingVUFormula
                     {
                         ManufacturingVUFormulaId = formula.ManufacturingVUFormulaId,
@@ -343,8 +363,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                         CustomerCode = customer?.ExternalId,
                         CustomerName = customer?.CustomerName,
 
+                        userRate = formula.UserRate,
                         LabNote = formula.LabNote,
-                        Requirement = customer?.SaleComment
+                        Requirement = formula.Requirement
                     },
 
                     materials = formula.Materials ?? new List<FormulaPDFMaterialDTOs>()

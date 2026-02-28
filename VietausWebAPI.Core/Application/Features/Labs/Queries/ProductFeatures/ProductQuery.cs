@@ -12,6 +12,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Queries.ProductFeatures
         public Guid? CompanyId { get; set; }
         public string? Keyword { get; set; }
         public string? status { get; set; }
+
+        public bool? IsMerchediseOrder { get; set; }
         public Guid? FormulaId { get; set; }
         public Guid? CustomerId { get; set; }
         public Guid? ProductId { get; set; }

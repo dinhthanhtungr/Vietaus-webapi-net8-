@@ -527,56 +527,56 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
 
                 // 2) Validate tối thiểu: kiểm tra MST trùng (giữ code của bạn)
                 var taxNorm = NormalizeTaxCode(customer.TaxNumber);
-                if (!string.IsNullOrEmpty(taxNorm))
-                {
-                    var existedInfo = await _unitOfWork.CustomerRepository.Query()
-                        .Where(c =>
-                            ((c.TaxNumber ?? "")
-                                .Replace("-", "")
-                                .Replace(".", "")
-                                .Replace(" ", "")
-                                .ToUpper()) == taxNorm
-                            && c.CompanyId == companyId)
-                        .Select(c => new
-                        {
-                            c.ExternalId,
-                            c.CustomerId,
-                            c.CustomerName,
-                            c.TaxNumber,
-                            Assignment = c.CustomerAssignments
-                                .Where(a => a.IsActive)
-                                .OrderByDescending(a => a.CreatedDate)
-                                .Select(a => new
-                                {
-                                    a.EmployeeId,
-                                    EmployeeName = a.Employee.FullName,
-                                    a.GroupId,
-                                    GroupName = a.Group.Name
-                                })
-                                .FirstOrDefault()
-                        })
-                        .FirstOrDefaultAsync();
+                //if (!string.IsNullOrEmpty(taxNorm))
+                //{
+                //    var existedInfo = await _unitOfWork.CustomerRepository.Query()
+                //        .Where(c =>
+                //            ((c.TaxNumber ?? "")
+                //                .Replace("-", "")
+                //                .Replace(".", "")
+                //                .Replace(" ", "")
+                //                .ToUpper()) == taxNorm
+                //            && c.CompanyId == companyId)
+                //        .Select(c => new
+                //        {
+                //            c.ExternalId,
+                //            c.CustomerId,
+                //            c.CustomerName,
+                //            c.TaxNumber,
+                //            Assignment = c.CustomerAssignments
+                //                .Where(a => a.IsActive)
+                //                .OrderByDescending(a => a.CreatedDate)
+                //                .Select(a => new
+                //                {
+                //                    a.EmployeeId,
+                //                    EmployeeName = a.Employee.FullName,
+                //                    a.GroupId,
+                //                    GroupName = a.Group.Name
+                //                })
+                //                .FirstOrDefault()
+                //        })
+                //        .FirstOrDefaultAsync();
 
-                    if (existedInfo != null)
-                    {
-                        var dto = new AddCustomerResultDto(
-                            existedInfo.CustomerId,
-                            existedInfo.ExternalId,
-                            existedInfo.CustomerName,
-                            existedInfo.TaxNumber ?? string.Empty,
-                            existedInfo.Assignment?.EmployeeId ?? Guid.Empty,
-                            existedInfo.Assignment?.EmployeeName ?? string.Empty,
-                            existedInfo.Assignment?.GroupId ?? Guid.Empty,
-                            existedInfo.Assignment?.GroupName ?? string.Empty
-                        );
+                //    if (existedInfo != null)
+                //    {
+                //        var dto = new AddCustomerResultDto(
+                //            existedInfo.CustomerId,
+                //            existedInfo.ExternalId,
+                //            existedInfo.CustomerName,
+                //            existedInfo.TaxNumber ?? string.Empty,
+                //            existedInfo.Assignment?.EmployeeId ?? Guid.Empty,
+                //            existedInfo.Assignment?.EmployeeName ?? string.Empty,
+                //            existedInfo.Assignment?.GroupId ?? Guid.Empty,
+                //            existedInfo.Assignment?.GroupName ?? string.Empty
+                //        );
 
-                        return OperationResult<AddCustomerResultDto>.Fail(dto,
-                            $"Mã số thuế {customer.TaxNumber} đã tồn tại cho khách hàng \"{dto.Name}\" " +
-                            $"và hiện đang do {(dto.EmployeeName ?? "chưa gán")} quản lý" +
-                            $"{(dto.GroupName is null ? "" : $" ({dto.GroupName})")}."
-                        );
-                    }
-                }
+                //        return OperationResult<AddCustomerResultDto>.Fail(dto,
+                //            $"Mã số thuế {customer.TaxNumber} đã tồn tại cho khách hàng \"{dto.Name}\" " +
+                //            $"và hiện đang do {(dto.EmployeeName ?? "chưa gán")} quản lý" +
+                //            $"{(dto.GroupName is null ? "" : $" ({dto.GroupName})")}."
+                //        );
+                //    }
+                //}
 
                 // 3) Lấy group hiện tại của người tạo (để auto-claim / assign)
                 var groupId = await _unitOfWork.MemberInGroupRepository.Query()
@@ -681,7 +681,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                             EmployeeId = userId,
                             GroupId = groupId.Value,
                             Type = ClaimType.Work,
-                            ExpiresAt = now.AddHours(Math.Max(1, customer.ClaimTtlHours)),
+                            ExpiresAt = now.AddYears(1),
                             IsActive = true,
                             CompanyId = companyId
                         };

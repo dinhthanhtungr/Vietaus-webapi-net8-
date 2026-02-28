@@ -464,108 +464,125 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrde
         // ======================================================================== Patch ========================================================================
 
         /// <summary>
-        /// Xóa mềm đơn hàng
+        /// Hủy đơn hàng
         /// </summary>
         /// <param name="query"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<OperationResult> SoftDelete(PatchMerchandiseOrderInformation query, CancellationToken ct = default)
+        public async Task<OperationResult> CancelMerchadiseOrder(PatchMerchandiseOrderInformation query, CancellationToken ct = default)
         {
+            var now = DateTime.Now;
 
-            throw new ApplicationException("An error occurred while fetching manufacturing formulas.");
-            //var now = DateTime.Now;
+            // 1) Chặn từ sớm: đã có phiếu giao hoàn tất thì không cho xoá
+            var hasLockedDelivery = await _unitOfWork.DeliveryOrderPORepository.Query(false)
+                .AnyAsync(dop =>
+                    dop.MerchandiseOrderId == query.MerchandiseOrderId
+                    && dop.IsActive
+                    && dop.DeliveryOrder.Status == "Completed", ct);
 
-            //// 1) Chặn từ sớm (ngoài transaction) để giảm thời gian giữ tx
-            //var hasLockedDelivery = await _unitOfWork.DeliveryOrderPORepository.Query(false)
-            //    .AnyAsync(dop => dop.MerchandiseOrderId == query.MerchandiseOrderId
-            //                     && dop.IsActive
-            //                     && dop.DeliveryOrder.Status == "Completed", ct);
-            //if (hasLockedDelivery)
-            //    return OperationResult.Fail("Đơn đã có phiếu giao hoàn tất, không thể xoá mềm.");
+            if (hasLockedDelivery)
+                return OperationResult.Fail("Đơn đã có phiếu giao hoàn tất, không thể xoá mềm.");
 
-            //await using var tx = await _unitOfWork.BeginTransactionAsync();
+            await using var tx = await _unitOfWork.BeginTransactionAsync();
 
-            //// 2) Lấy đơn cần xoá (tracking)
-            //var mo = await _unitOfWork.MerchandiseOrderRepository.Query(track: true)
-            //    .FirstOrDefaultAsync(o => o.MerchandiseOrderId == query.MerchandiseOrderId, ct);
-            //if (mo == null) return OperationResult.Fail("Không tìm thấy đơn hàng.");
-            //if (mo.IsActive == false)
-            //{
-            //    await tx.CommitAsync(ct);
-            //    return OperationResult.Ok("Đơn đã bị vô hiệu hóa trước đó.");
-            //}
+            // 2) Lấy đơn cần xoá (tracking)
+            var mo = await _unitOfWork.MerchandiseOrderRepository.Query(track: true)
+                .FirstOrDefaultAsync(o => o.MerchandiseOrderId == query.MerchandiseOrderId, ct);
 
-            //// 3) Lấy mfgMini một lần (để ghi log)
-            //var mfgMini = await _unitOfWork.MfgProductionOrderRepository.Query(false)
-            //    .Where(m => m.MerchandiseOrderId == query.MerchandiseOrderId && m.IsActive == true)
-            //    .Select(m => new { m.MfgProductionOrderId, m.ExternalId })
-            //    .ToListAsync(ct);
-            //var mfgIds = mfgMini.Select(x => x.MfgProductionOrderId).ToList();
+            if (mo == null) return OperationResult.Fail("Không tìm thấy đơn hàng.");
 
-            //// 4) Bulk updates KHÔNG cần Id list ở Details / dùng JOIN ở các bảng con
-            //await _unitOfWork.MerchandiseOrderRepository.QueryDetail(true)
-            //    .Where(d => d.MerchandiseOrderId == query.MerchandiseOrderId && d.IsActive == true)
-            //    .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsActive, false), ct);
+            if (!mo.IsActive)
+            {
+                await tx.CommitAsync(ct);
+                return OperationResult.Ok("Đơn đã bị vô hiệu hóa trước đó.");
+            }
 
-            //if (mfgIds.Count > 0)
-            //{
-            //    await _unitOfWork.MfgProductionOrderRepository.Query(true)
-            //        .Where(m => m.MerchandiseOrderId == query.MerchandiseOrderId && m.IsActive == true)
-            //        .ExecuteUpdateAsync(s => s
-            //            .SetProperty(x => x.IsActive, false)
-            //            .SetProperty(x => x.Status, _ => ManufacturingProductOrder.Cancelled.ToString())
-            //            .SetProperty(x => x.UpdatedBy, _ => query.UpdatedBy), ct);
+            // 3) Lấy danh sách MfgProductionOrder liên quan (để log + update)
+            //    Cascade đúng theo model: MfgOrderPO.Detail.MerchandiseOrderId
+            var mfgMini = await _unitOfWork.MfgOrderPORepository.Query(false)
+                .Where(x => x.IsActive
+                            && x.Detail.IsActive
+                            && x.Detail.MerchandiseOrderId == query.MerchandiseOrderId)
+                .Select(x => new
+                {
+                    x.MfgProductionOrderId,
+                    x.ProductionOrder.ExternalId
+                })
+                .ToListAsync(ct);
 
-            //    await _unitOfWork.ManufacturingFormulaRepository.Query(true)
-            //        .Where(f => f.MfgProductionOrder.MerchandiseOrderId == query.MerchandiseOrderId && f.IsActive)
-            //        .ExecuteUpdateAsync(s => s
-            //            .SetProperty(x => x.IsActive, false)
-            //            .SetProperty(x => x.Status, _ => "Cancelled")
-            //            .SetProperty(x => x.UpdatedBy, _ => query.UpdatedBy)
-            //            .SetProperty(x => x.UpdatedDate, _ => now), ct);
+            var mfgIds = mfgMini.Select(x => x.MfgProductionOrderId).Distinct().ToList();
 
-            //    await _unitOfWork.ManufacturingFormulaMaterialRepository.Query(true)
-            //        .Where(mm => mm.ManufacturingFormula.MfgProductionOrder.MerchandiseOrderId == query.MerchandiseOrderId && mm.IsActive)
-            //        .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsActive, false), ct);
-            //}
+            // Chặn khi lệnh sản xuất đã chạy/đã hoàn tất:
+            // var hasLockedMfg = await _unitOfWork.MfgProductionOrderRepository.Query(false)
+            //   .AnyAsync(m => mfgIds.Contains(m.MfgProductionOrderId)
+            //                 && m.IsActive
+            //                 && m.Status != ManufacturingProductOrder.New.ToString()
+            //                 && m.Status != ManufacturingProductOrder.Cancelled.ToString(), ct);
+            // if (hasLockedMfg) return OperationResult.Fail("Đã có lệnh sản xuất đang chạy/hoàn tất, không thể xoá đơn.");
 
-            //// 5) Cập nhật MerchandiseOrder (tracked entity)
+            // 4) Bulk updates: deactivate Details
+            await _unitOfWork.MerchandiseOrderRepository.QueryDetail(true)
+                .Where(d => d.MerchandiseOrderId == query.MerchandiseOrderId && d.IsActive)
+                .ExecuteUpdateAsync(s => s
+                    //.SetProperty(x => x.IsActive, _ => false)
+                    .SetProperty(x => x.Status, _ => "Cancelled")
+                , ct);
+
+            // 5) Bulk updates: deactivate link table MfgOrderPO (theo Detail.MerchandiseOrderId)
+            await _unitOfWork.MfgOrderPORepository.Query(true)
+                .Where(x => x.IsActive && x.Detail.MerchandiseOrderId == query.MerchandiseOrderId)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsActive, _ => false), ct);
+
+            // 6) Bulk updates: deactivate MfgProductionOrder theo ids (nếu có)
+            if (mfgIds.Count > 0)
+            {
+                await _unitOfWork.MfgProductionOrderRepository.Query(true)
+                    .Where(m => m.IsActive && mfgIds.Contains(m.MfgProductionOrderId))
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(x => x.IsActive, _ => false)
+                        .SetProperty(x => x.Status, _ => ManufacturingProductOrder.Canceled.ToString())
+                        .SetProperty(x => x.UpdatedBy, _ => query.UpdatedBy)
+                        .SetProperty(x => x.UpdatedDate, _ => now)
+                    , ct);
+            }
+
+            // 7) Update MerchandiseOrder (tracked entity)
             //mo.IsActive = false;
-            //mo.Status = MerchadiseStatus.Cancelled.ToString();
-            //mo.UpdatedBy = query.UpdatedBy;
-            //mo.UpdatedDate = now;
+            mo.Status = MerchadiseStatus.Cancelled.ToString(); // bạn đang dùng enum này
+            mo.UpdatedBy = query.UpdatedBy;
+            mo.UpdatedDate = now;
+            mo.Note = string.IsNullOrWhiteSpace(query.DeletedReason)
+                ? mo.Note
+                : $"{mo.Note}\n[SoftDelete] {query.DeletedReason}".Trim();
 
-            //// 6) Logs: AddRange 1 lần
-            //var logs = mfgMini.Select(m => new EventLogModels
-            //{
-            //    employeeId = query.UpdatedBy,
-            //    eventType = EventType.ManufacturingProductOrder,
-            //    sourceId = m.MfgProductionOrderId,
-            //    sourceCode = m.ExternalId ?? string.Empty,
-            //    status = ManufacturingProductOrder.Cancelled.ToString(),
-            //    note = $"Cascade soft delete from Merchandise {mo.ExternalId}"
-            //}).ToList();
+            // 8) Logs: batch 1 lần
+            var logs = mfgMini.Select(m => new EventLogModels
+            {
+                employeeId = query.UpdatedBy,
+                eventType = EventType.ManufacturingProductOrder,
+                sourceId = m.MfgProductionOrderId,
+                sourceCode = m.ExternalId ?? string.Empty,
+                status = ManufacturingProductOrder.Canceled.ToString(),
+                note = $"Cascade soft delete from Merchandise {mo.ExternalId}"
+            }).ToList();
 
-            //logs.Add(new EventLogModels
-            //{
-            //    employeeId = query.UpdatedBy,
-            //    eventType = EventType.MerchadiseStatus,
-            //    sourceId = mo.MerchandiseOrderId,
-            //    sourceCode = mo.ExternalId ?? string.Empty,
-            //    status = "SoftDeleted",
-            //    note = $"Soft delete Merchandise {mo.ExternalId}, deleted reason: {query.DeletedReason}"
-            //});
+            logs.Add(new EventLogModels
+            {
+                employeeId = query.UpdatedBy,
+                eventType = EventType.MerchadiseStatus,
+                sourceId = mo.MerchandiseOrderId,
+                sourceCode = mo.ExternalId ?? string.Empty,
+                status = MerchadiseStatus.Cancelled.ToString(),
+                note = $"Soft delete Merchandise {mo.ExternalId}, reason: {query.DeletedReason}"
+            });
 
-            //await _TimelineService.AddEventLogRangeAsync(logs, ct); // tạo hàm batch nếu chưa có
+            await _TimelineService.AddEventLogRangeAsync(logs, ct);
 
-            //await _unitOfWork.SaveChangesAsync();
-            //await tx.CommitAsync(ct);
+            await _unitOfWork.SaveChangesAsync();
+            await tx.CommitAsync(ct);
 
-            //return OperationResult.Ok($"Đã soft delete đơn {mo.ExternalId} và dữ liệu liên quan.");
-
-
+            return OperationResult.Ok($"Đã hủy đơn {mo.ExternalId} và {mfgIds.Count} lệnh sản xuất liên quan.");
         }
-
         /// <summary>
         /// Cập nhật trang thái duyệt đơn hàng
         /// </summary>

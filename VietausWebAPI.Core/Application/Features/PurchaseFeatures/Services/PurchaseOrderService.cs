@@ -15,6 +15,7 @@ using VietausWebAPI.Core.Application.Features.PurchaseFeatures.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.EventLogDtos;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
@@ -37,14 +38,21 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
         private readonly ITimelineService _TimelineService;
         private readonly IMaterialService _materialService;
         private readonly ICurrentUser _CurrentUser;
+        private readonly IWarehouseReservationService _WarehouseReservationService;
 
-        public PurchaseOrderService(IUnitOfWork unitOfWork, IExternalIdService idService, ITimelineService timelineService, ICurrentUser currentUser, IMaterialService materialService )
+        public PurchaseOrderService(IUnitOfWork unitOfWork
+                                  , IExternalIdService idService
+                                  , ITimelineService timelineService
+                                  , ICurrentUser currentUser
+                                  , IMaterialService materialService
+                                  , IWarehouseReservationService warehouseReservationService)   
         {
             _unitOfWork = unitOfWork;
             _idService = idService;
             _TimelineService = timelineService;
             _CurrentUser = currentUser;
             _materialService = materialService;
+            _WarehouseReservationService = warehouseReservationService; 
         }
 
         // ======================================================================== Get ======================================================================== 
@@ -56,8 +64,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
         /// <param name="ct"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task<OperationResult<PagedResult<GetSamplePurchaseOrder>>> GetAllAsync(
-            PurchaseOrderQuery query, CancellationToken ct = default)
+        public async Task<OperationResult<PagedResult<GetSamplePurchaseOrder>>> GetAllAsync(PurchaseOrderQuery query, CancellationToken ct = default)
         {
             try
             {
@@ -208,7 +215,24 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                                 DeliveryDate = d.DeliveryDate,
                                 Note = d.Note
                             })
-                            .ToList()
+                            .ToList(),
+
+                        PurchaseOrderSnapshot = po.PurchaseOrderSnapshot != null ? new PurchaseOrderSnapshot
+                        {
+                            EmployeeExternalIdSnapshot = po.PurchaseOrderSnapshot.EmployeeExternalIdSnapshot,
+                            EmployeeFullNameSnapshot = po.PurchaseOrderSnapshot.EmployeeFullNameSnapshot,
+                            PhoneNumberSnapshot = po.PurchaseOrderSnapshot.PhoneNumberSnapshot,
+                            EmailSnapshot = po.PurchaseOrderSnapshot.EmailSnapshot,
+                            SupplierExternalIdSnapshot = po.PurchaseOrderSnapshot.SupplierExternalIdSnapshot,
+                            SupplierNameSnapshot = po.PurchaseOrderSnapshot.SupplierNameSnapshot,
+                            SupplierContactSnapshot = po.PurchaseOrderSnapshot.SupplierContactSnapshot,
+                            SupplierPhoneNumberSnapshot = po.PurchaseOrderSnapshot.SupplierPhoneNumberSnapshot,
+                            SupplierAddressSnapshot = po.PurchaseOrderSnapshot.SupplierAddressSnapshot,
+                            TotalPrice = po.PurchaseOrderSnapshot.TotalPrice,
+                            DeliveryAddress = po.PurchaseOrderSnapshot.DeliveryAddress,
+                            PaymentTypes = po.PurchaseOrderSnapshot.PaymentTypes,
+                            Vat = po.PurchaseOrderSnapshot.Vat
+                        } : null
                     })
                     .FirstOrDefaultAsync(ct);
 
@@ -221,6 +245,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                     ExternalId = result.PO.ExternalId,
                     OrderType = result.PO.OrderType,
                     SupplierId = result.PO.SupplierId,
+                    PLPUComment = result.PO.PLPUComment,
                     Comment = result.PO.Comment,
                     Status = result.PO.Status,
                     RequestDeliveryDate = result.PO.RequestDeliveryDate,
@@ -232,7 +257,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                     UpdatedBy = result.PO.UpdatedBy,
                     MerchadiseOrderList = string.Join(",", result.MerchExternalIds),
                     PurchaseOrderDetails = result.Details,
-                    PurchaseOrderSnapshot = result.PO.PurchaseOrderSnapshot // nếu DTO cố tình chứa entity
+                    PurchaseOrderSnapshot = result.PurchaseOrderSnapshot    
                 };
 
                 return OperationResult<GetPurchaseOrder>.Ok(dto);
@@ -269,20 +294,28 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
             try
             {
                 if (req is null) throw new ArgumentNullException(nameof(req));
-
-                if (req.PurchaseOrderDetails.Count == 0) throw new InvalidOperationException("PO phải có ít nhất 1 dòng chi tiết.");
+                if (req.PurchaseOrderDetails is null || req.PurchaseOrderDetails.Count == 0)
+                    throw new InvalidOperationException("PO phải có ít nhất 1 dòng chi tiết.");
                 if (req.PurchaseOrderDetails.Any(d => d.UnitPriceAgreed is null))
                     throw new InvalidOperationException("Thiếu UnitPriceAgreed trong chi tiết.");
-
 
                 var now = DateTime.Now;
                 var userId = _CurrentUser.EmployeeId;
                 var companyId = _CurrentUser.CompanyId;
 
-                using var transaction = await _unitOfWork.BeginTransactionAsync();  
+                await using var transaction = await _unitOfWork.BeginTransactionAsync();
 
-                PurchaseOrderSnapshot? snapshot = null; 
+                var dup = req.PurchaseOrderDetails
+                    .GroupBy(x => x.MaterialId)
+                    .FirstOrDefault(g => g.Count() > 1);
 
+                if (dup != null)
+                {
+                    throw new InvalidOperationException($"Vật tư bị trùng trong PO: {dup.Key}");
+                }
+
+                // 1) Snapshot
+                PurchaseOrderSnapshot? snapshot = null;
                 if (req.PurchaseOrderSnapshot is not null)
                 {
                     snapshot = new PurchaseOrderSnapshot
@@ -304,115 +337,155 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                     await _unitOfWork.PurchaseOrderSnapshotRepository.AddAsync(snapshot, ct);
                 }
 
-
-                // 2 Tạo PO
+                // 2) Create PO header
                 var po = new PurchaseOrder
                 {
                     PurchaseOrderId = Guid.CreateVersion7(),
                     ExternalId = await _idService.NextAsync(DocumentPrefix.DDH.ToString(), ct: ct),
                     SupplierId = req.SupplierId,
                     OrderType = req.OrderType,
-
                     Comment = req.Comment,
                     PLPUComment = req.PLPUComment,
-
                     RequestDeliveryDate = req.RequestDeliveryDate,
                     RealDeliveryDate = req.RealDeliveryDate,
-
                     CompanyId = companyId,
-                    Status = PurchaseOrderStatus.Pending.ToString(), // tuỳ quy ước
+                    Status = PurchaseOrderStatus.Pending.ToString(),
                     CreateDate = now,
                     CreatedBy = userId,
-                    PurchaseOrderSnapshot = snapshot
+                    PurchaseOrderSnapshot = snapshot,
+                    
                 };
-
-
-
                 await _unitOfWork.PurchaseOrderRepository.AddAsync(po, ct);
 
-                var linkByPo = new Dictionary<Guid, PurchaseOrderLink>();
-                // Bridge MerchadiseOrders nếu có
+                // 3) Links
                 foreach (var merchId in req.MerchadiseOrderIds.Distinct())
                 {
-                    var link = new PurchaseOrderLink
+                    po.PurchaseOrderLinks.Add(new PurchaseOrderLink
                     {
                         PurchaseOrderId = po.PurchaseOrderId,
                         MerchandiseOrderId = merchId
-                    };
-                    po.PurchaseOrderLinks.Add(link);
-                    linkByPo[merchId] = link;
+                    });
                 }
 
-
-                // 3 Tạo chi tiết PO
+                // 4) Prepare: load MaterialsSupplier existing
                 var materialIds = req.PurchaseOrderDetails.Select(x => x.MaterialId).Distinct().ToList();
 
-                // Load MaterialsSupplier hiện có cho supplier này và các material nói trên
                 var msList = await _unitOfWork.MaterialsSupplierRepository.Query()
                     .Where(ms => ms.SupplierId == req.SupplierId && materialIds.Contains(ms.MaterialId))
                     .ToListAsync(ct);
 
-                // Build dictionary để tra nhanh
-                var msDict = msList.ToDictionary(k => k.MaterialId, v => v);
+                // Key theo MaterialId (vì supplier đã cố định)
+                var msDict = msList.ToDictionary(x => x.MaterialId);
 
-                // 4) Tạo PurchaseOrderDetail, đồng thời xử lý giá
+                // (Optional) nếu bạn cần snapshot MaterialName/ExternalId chính xác từ DB:
+                // load Materials theo materialIds để fallback khi request thiếu snapshot
+                var materialList = await _unitOfWork.MaterialRepository.Query()
+                    .Where(m => materialIds.Contains(m.MaterialId))
+                    .Select(m => new { m.MaterialId, m.Name, m.ExternalId })
+                    .ToListAsync(ct);
+                var materialDict = materialList.ToDictionary(x => x.MaterialId);
+
+                // 5) Create details + ensure MaterialsSupplier
+                var currency = "VND"; // TODO: lấy từ Supplier hoặc Company setting nếu có
+
+                // (Optional) gom các update giá để xử lý batch
+                var priceUpdates = new List<(Guid materialsSuppliersId, decimal newPrice, decimal oldPrice, string currency)>();
+
                 foreach (var detailReq in req.PurchaseOrderDetails)
                 {
+                    // 5.1 create PO detail
+                    var unitPrice = detailReq.UnitPriceAgreed!.Value;
+
                     var detail = new PurchaseOrderDetail
                     {
                         PurchaseOrderId = po.PurchaseOrderId,
 
                         Package = detailReq.Package,
-
                         RequestQuantity = detailReq.RequestQuantity,
 
                         BaseCostSnapshot = detailReq.BaseCostSnapshot,
                         BaseDateSnapshot = detailReq.BaseDateSnapshot,
 
-                        UnitPriceAgreed = detailReq.UnitPriceAgreed, // != null đã validate
-                        TotalPriceAgreed = (detailReq.UnitPriceAgreed ?? 0m) * detailReq.RequestQuantity,
+                        UnitPriceAgreed = unitPrice,
+                        TotalPriceAgreed = unitPrice * detailReq.RequestQuantity,
 
                         MaterialId = detailReq.MaterialId,
-                        MaterialExternalIDSnapshot = detailReq.MaterialExternalIDSnapshot,
-                        MaterialNameSnapshot = detailReq.MaterialNameSnapshot,
+                        MaterialExternalIDSnapshot = detailReq.MaterialExternalIDSnapshot
+                            ?? materialDict.GetValueOrDefault(detailReq.MaterialId)?.ExternalId,
+                        MaterialNameSnapshot = detailReq.MaterialNameSnapshot
+                            ?? materialDict.GetValueOrDefault(detailReq.MaterialId)?.Name,
 
-                        DeliveryDate = detailReq.DeliveryDate ,
+                        DeliveryDate = detailReq.DeliveryDate,
                         Note = detailReq.Note,
-                        // Các snapshot của Material nếu cần: MaterialExternalIDSnapshot, MaterialNameSnapshot...
                     };
                     await _unitOfWork.PurchaseOrderDetailRepository.AddAsync(detail, ct);
 
-
-
-
-                    var agreedPrice = detailReq.UnitPriceAgreed!.Value;
-                    var currency = "VND"; // hoặc lấy theo Supplier/Company default
-
-                    // Tìm MaterialsSupplier, nếu chưa có thì tạo
+                    // 5.2 ensure MaterialsSupplier exists (auto create if first-time)
                     if (!msDict.TryGetValue(detailReq.MaterialId, out var ms))
                     {
-                        var materialName = detailReq.MaterialNameSnapshot ?? "Unknown";
-                        return OperationResult.Fail($"Nhà cung cấp không có vật tư {materialName}");
+                        ms = new MaterialsSupplier
+                        {
+                            MaterialsSuppliersId = Guid.CreateVersion7(),
+                            SupplierId = req.SupplierId,
+                            MaterialId = detailReq.MaterialId,
+
+                            CurrentPrice = unitPrice,
+                            Currency = currency,
+
+                            CreateDate = now,
+                            CreatedBy = userId,
+                            IsActive = true,
+                            IsPreferred = false,
+                        };
+
+                        await _unitOfWork.MaterialsSupplierRepository.AddAsync(ms, ct);
+                        msDict[detailReq.MaterialId] = ms;
+
+                        // tạo PriceHistory cho lần đầu (tuỳ business, bạn có thể coi OldPrice = null)
+                        var ph = new PriceHistory
+                        {
+                            PriceHistoryId = Guid.CreateVersion7(),
+                            MaterialsSuppliersId = ms.MaterialsSuppliersId,
+                            OldPrice = null,
+                            Currency = currency,
+                            CreateDate = now,
+                            CreatedBy = userId
+                        };
+                        await _unitOfWork.PriceHistorieRepository.AddAsync(ph, ct);
+
+                        continue; // đã set current price rồi
                     }
 
-                    // So sánh giá: có thể dùng decimal trực tiếp, hoặc chấp nhận epsilon nếu có tỷ giá/rounding
-                    var currentPrice = ms.CurrentPrice ?? 0m;
-                    var priceChanged = currentPrice != agreedPrice || !string.Equals(ms.Currency, currency, StringComparison.OrdinalIgnoreCase);
+                    // 5.3 price change handling
+                    var oldPrice = ms.CurrentPrice ?? 0m;
+                    var oldCurrency = ms.Currency ?? currency;
 
-                    if (priceChanged)
+                    var changed = oldPrice != unitPrice
+                                  || !string.Equals(oldCurrency, currency, StringComparison.OrdinalIgnoreCase);
+
+                    if (changed)
                     {
-                        await _materialService.ChangePriceHelper(ms.MaterialsSuppliersId, agreedPrice);
+                        priceUpdates.Add((ms.MaterialsSuppliersId, unitPrice, oldPrice, currency));
                     }
+                }
 
+                // 6) Apply price updates (batch-friendly)
+                foreach (var u in priceUpdates)
+                {
+                    // Nếu ChangePriceHelper của bạn đã lo PriceHistory + update ms:
+                    await _materialService.ChangePriceHelper(u.materialsSuppliersId, u.newPrice);
+
+                    // Nếu helper chỉ update ms mà KHÔNG add history, thì bạn tự add PriceHistory ở đây.
                 }
 
                 await _unitOfWork.SaveChangesAsync();
                 await transaction.CommitAsync(ct);
+
                 return OperationResult.Ok("Purchase Order created successfully.");
             }
-
-            catch (Exception ex)
+            catch (Exception)
             {
+                // (nên log ex ở đây)
                 return OperationResult.Fail("Có lỗi xảy ra khi tạo Đơn mua hàng. Vui lòng thử lại hoặc liên hệ IT.");
             }
         }
@@ -447,18 +520,25 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                 PatchHelper.SetIfRef(existingPO.Comment, () => patchPurchaseOrder.Comment, v => existingPO.Comment = v);
                 PatchHelper.SetIfRef(existingPO.PLPUComment, () => patchPurchaseOrder.PLPUComment, v => existingPO.PLPUComment = v);
 
-                if (patchPurchaseOrder.IsActive.HasValue)
+                // CHỈ xoá mềm khi client gửi IsActive = false
+                if (patchPurchaseOrder.IsActive == false)
                 {
-                    existingPO.IsActive = false;
-                    foreach (var dd in existingPO.PurchaseOrderLinks.Where(x => x.IsActive))
-                    {
-                        dd.IsActive = false;
-                    }
+                    // Xoá mềm bảng con bằng update thẳng DB (không cần Include)
+                    await _unitOfWork.PurchaseOrderLinkRepository.Query(track: false)
+                        .Where(x => x.PurchaseOrderId == existingPO.PurchaseOrderId && x.IsActive)
+                        .ExecuteUpdateAsync(s => s
+                            .SetProperty(x => x.IsActive, false),
+                            ct);
 
-                    foreach (var dd in existingPO.PurchaseOrderDetails.Where(x => x.IsActive))
-                    {
-                        dd.IsActive = false;
-                    }
+                    await _unitOfWork.PurchaseOrderDetailRepository.Query(track: false)
+                        .Where(x => x.PurchaseOrderId == existingPO.PurchaseOrderId && x.IsActive)
+                        .ExecuteUpdateAsync(s => s
+                            .SetProperty(x => x.IsActive, false),
+                            ct);
+
+                    // Xoá mềm warehouse request theo ExternalId 
+                    if (!string.IsNullOrEmpty(existingPO.ExternalId))
+                        await _WarehouseReservationService.EnsureWarehouseRequestDeletedAsync(existingPO.ExternalId, ct);
                 }
 
                 await _unitOfWork.SaveChangesAsync();

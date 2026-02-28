@@ -38,5 +38,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.ProductF
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<GetProductInformation> GetInformationByIdAsync(Guid productId, CancellationToken ct = default);
+
+        /// <summary>
+        /// Thay đổi khách hàng của một sản phẩm
+        /// 
+        Task<OperationResult<int>> ChangeCustomerByProductAsync(ChangeCustomerForProductRequest req, CancellationToken ct = default);
     }
 }

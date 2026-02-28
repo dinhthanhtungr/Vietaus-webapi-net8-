@@ -24,7 +24,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
             entity.Property(e => e.IssuedPlace).HasColumnType("citext");
             entity.Property(e => e.SupplierName).HasColumnType("citext");
             entity.Property(e => e.Note).HasColumnType("citext");
-            entity.Property(e => e.Phone).HasMaxLength(20);
+            entity.Property(e => e.Phone);
             entity.Property(e => e.RegistrationNumber).HasColumnType("citext");
             entity.Property(e => e.RegistrationAddress).HasColumnType("citext");
             entity.Property(e => e.Website).HasColumnType("citext");

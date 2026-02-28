@@ -166,7 +166,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
             }
             try
             {
-                var result = await _merchandiseOrderService.SoftDelete(request, ct);
+                var result = await _merchandiseOrderService.CancelMerchadiseOrder(request, ct);
                 if (!result.Success)
                 {
                     return BadRequest(result.Message);

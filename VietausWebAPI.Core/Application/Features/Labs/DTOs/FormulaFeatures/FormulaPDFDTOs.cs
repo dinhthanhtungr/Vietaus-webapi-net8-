@@ -15,6 +15,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures
         public string FormulaExternalId { get; set; } = string.Empty;
         public decimal AddRate { get; set; }
         public string? Note { get; set; } = string.Empty;
+        public string? Requirement { get; set; } = string.Empty;
+
+        public DateTime RequestDate { get; set; }
         public List<FormulaPDFMaterialDTOs> materials { get; set; } = new List<FormulaPDFMaterialDTOs>();
     }
 }

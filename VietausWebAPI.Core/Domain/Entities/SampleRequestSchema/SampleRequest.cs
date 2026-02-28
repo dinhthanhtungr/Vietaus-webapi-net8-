@@ -35,6 +35,7 @@ public partial class SampleRequest
     public double? ExpectedQuantity { get; set; }
     public decimal? ExpectedPrice { get; set; }
     public double? SampleQuantity { get; set; }
+    public int? NumberDeliverySampleDate { get; set; }
 
     public string? OtherComment { get; set; }
     public string? InfoType { get; set; }

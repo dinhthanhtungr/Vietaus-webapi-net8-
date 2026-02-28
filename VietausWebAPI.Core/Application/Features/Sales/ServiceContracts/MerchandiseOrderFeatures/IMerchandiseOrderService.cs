@@ -66,7 +66,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.Merchan
         /// <param name="id"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<OperationResult> SoftDelete(PatchMerchandiseOrderInformation query, CancellationToken ct = default);
+        Task<OperationResult> CancelMerchadiseOrder(PatchMerchandiseOrderInformation query, CancellationToken ct = default);
 
     }
 }

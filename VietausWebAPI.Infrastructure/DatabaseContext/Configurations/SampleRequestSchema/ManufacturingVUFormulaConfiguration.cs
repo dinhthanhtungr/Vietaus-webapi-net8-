@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
+using VietausWebAPI.Core.Domain.Enums.Manufacturings;
 
 namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.SampleRequestSchema
 {
@@ -37,7 +38,10 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.SampleRequ
             entity.Property(x => x.Requirement)
                   .HasColumnName("requirement")
                   .HasColumnType("citext");
-
+            entity.Property(x => x.status)
+                  .HasColumnName("status")
+                  .HasConversion<int>()
+                  .HasDefaultValueSql("1"); 
             entity.Property(x => x.QcCheck)
                   .HasColumnName("qccheck")
                   .HasColumnType("citext");
@@ -57,22 +61,28 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.SampleRequ
             // ====== RELATIONSHIPS ======
 
             entity.HasOne(d => d.Formula)
-                  .WithMany(d => d.ManufacturingVUFormulas) // nếu Formula có collection navigation thì thay bằng .WithMany(x => x.ManufacturingVUFormulas)
+                  .WithMany(d => d.ManufacturingVUFormulas)
                   .HasForeignKey(d => d.FormulaId)
-                  .OnDelete(DeleteBehavior.ClientSetNull)
+                  .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_ManufacturingVUFormula_Formula");
 
             entity.HasOne(d => d.CreatedByNavigation)
                   .WithMany()
                   .HasForeignKey(d => d.CreatedBy)
-                  .OnDelete(DeleteBehavior.ClientSetNull)
+                  .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_ManufacturingVUFormula_CreatedBy");
 
             entity.HasOne(d => d.UpdatedByNavigation)
                   .WithMany()
                   .HasForeignKey(d => d.UpdatedBy)
-                  .OnDelete(DeleteBehavior.ClientSetNull)
+                  .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_ManufacturingVUFormula_UpdatedBy");
+
+            entity.HasMany(d => d.FormulaMaterialSnapshots)
+                  .WithOne(d => d.ManufacturingVUFormula)
+                  .HasForeignKey(d => d.ManufacturingVUFormulaId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .HasConstraintName("FK_ManufacturingVUFormula_FormulaMaterialSnapshots");
 
             // ====== INDEXES ======
             entity.HasIndex(x => x.FormulaId)

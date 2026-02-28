@@ -27,7 +27,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProducti
 
         public bool? IsActive { get; set; }
 
-
+        public string? StepOfProduct { get; set; }
         public string? QcCheck { get; set; }
         //public virtual ICollection<PatchMfgFormulaMaterial> ManufacturingFormulaMaterials { get; set; } = new List<PatchMfgFormulaMaterial>();
     }

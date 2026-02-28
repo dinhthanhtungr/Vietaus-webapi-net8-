@@ -57,6 +57,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts
         /// <returns></returns>
         Task<OperationResult<GetMfgProductionOrder>> GetByIdAsync( Guid id, CancellationToken ct = default);
 
+        Task<OperationResult<Guid>> CreateInternalAsync(CreateMfgProductionOrderInternal req, CancellationToken ct = default);
+
         /// <summary>
         /// Cập nhật thông tin theo đơn hàng mới
         /// </summary>
