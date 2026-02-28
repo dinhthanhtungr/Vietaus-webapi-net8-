@@ -193,7 +193,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                     CreatedDate = now
                 };
 
-                var 
 
 
                 await _unitOfWork.ManufacturingVUFormulaRepository.AddAsync(manufacturingVUFormula, ct);
