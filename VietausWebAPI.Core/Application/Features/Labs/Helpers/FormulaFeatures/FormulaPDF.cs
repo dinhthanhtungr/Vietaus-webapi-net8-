@@ -68,13 +68,13 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
 
                     row.AutoItem().Text(tx =>
                     {
-                        tx.Span("Ngày in: ").FontSize(9);
-                        tx.Span($"{DateTime.Now:dd/MM/yyyy}")
-                          .FontSize(9).Black();
+                        //tx.Span("Ngày in: ").FontSize(9);
+                        //tx.Span($"{DateTime.Now:dd/MM/yyyy}")
+                        //  .FontSize(9).Black();
 
-                        //tx.Span(" - Ngày yêu cầu: ").FontSize(9);
-                        //tx.Span($"{d.RequestDate:dd/MM/yyyy}")
-                        //  .FontSize(11).Black();
+                        tx.Span("Ngày kế hoạch tạo phiếu: ").FontSize(9);
+                        tx.Span($"{d.CreatedDate:dd/MM/yyyy}")
+                          .FontSize(11).Black();
                     });
 
                 });
@@ -124,7 +124,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                             t.Cell().Element(GridCell).Text(tx =>
                             {
                                 tx.Span("Khách hàng: ").FontSize(labelSize);
-                                tx.Span($"{($"{s.CustomerCode} - {s.CustomerName}".Trim(' ', '-'))}")
+                                tx.Span($"{($"{s.CustomerCode} ".Trim(' ', '-'))}")/* - { s.CustomerName}*/
                                   .FontSize(valueSize).Black();
                             });
 
@@ -175,8 +175,12 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                                 tx.Span($"{d.RequestDate:dd/MM/yyyy}")
                                   .FontSize(valueSize).Black();
                             });
-                            t.Cell().Element(GridCell).Text("").FontSize(labelSize);
-
+                            t.Cell().Element(GridCell).Text(tx =>
+                            {
+                                tx.Span("Tỷ lệ sử dụng: ").FontSize(labelSize);
+                                tx.Span($"{s.userRate?.ToString() ?? ""} %")
+                                  .FontSize(valueSize).Black();
+                            });
                             t.Cell().Element(GridCell).Text(tx =>
                             {
                                 tx.Span("Tổng khối lượng (kg): ").FontSize(labelSize);
@@ -193,7 +197,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                     });
 
                     if (!string.IsNullOrWhiteSpace(s.LabNote))
-                        AddRow("Ghi chú thực hiện:", $"{d.BagType} : {s.LabNote}");
+                        AddRow("Yêu cầu ca SX và QC thực hiện:", $"{d.BagType} : {s.LabNote}");
 
                     var req = s.Requirement;
                     var note = s.PlpuNote;
@@ -225,7 +229,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
 
                 // Header row (xám)
                 t.Cell().Element(BoxHeaderCell).Text("Note/Lưu ý").SemiBold();
-                t.Cell().Element(BoxHeaderCell).Text("Requirement/Yêu cầu ca SX và QC thực hiện").SemiBold();
+                t.Cell().Element(BoxHeaderCell).Text("Phản hồi trước của khách hàng").SemiBold();
 
                 // Content row
                 t.Cell().Element(BoxBodyCell).Text(string.IsNullOrWhiteSpace(note) ? "-" : note).FontSize(9);
@@ -292,7 +296,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                     h.Cell().Element(HeaderCell).Text("Code").FontSize(9).Bold();
                     h.Cell().Element(HeaderCell).Text("Name").FontSize(9).Bold();
                     h.Cell().Element(HeaderCell).Text("Lot #").FontSize(9).Bold();
-                    h.Cell().Element(HeaderCell).AlignMiddle().Text("Std (kg)").FontSize(9).Bold();
+                    h.Cell().Element(HeaderCell).AlignMiddle().Text("Std").FontSize(9).Bold();
 
                     h.Cell().Element(HeaderCell).AlignMiddle().Text("SL / mẻ (kg)").FontSize(9).Bold();
                     h.Cell().Element(HeaderCell).AlignMiddle().Text("SL / mẻ (g)").FontSize(9).Bold();
@@ -326,7 +330,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
 
                         table.Cell().Element(BodyCell).Text(m.ExternalId).FontSize(10).Bold();
                         table.Cell().Element(BodyCell).Text(m.MaterialName).FontSize(10).ClampLines(2).Bold();
-                        table.Cell().Element(BodyCell).Text("-").FontSize(10).Bold();
+                        table.Cell().Element(BodyCell)
+                            .Text(string.IsNullOrWhiteSpace(m.LotNo) ? "-" : m.LotNo)
+                            .FontSize(8)
+                            .Bold();
 
                         table.Cell().Element(BodyCell).AlignRight().Text(FormatKgPretty(std, 7)).FontSize(10).Bold();
 

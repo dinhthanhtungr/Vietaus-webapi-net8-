@@ -13,7 +13,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.DTOs
         public Guid PurchaseOrderId { get; set; }
 
         public string? Package { get; set; }
-
+        public int? LineNo { get; set; }
         public decimal? RequestQuantity { get; set; }
         public decimal? RealQuantity { get; set; }
 

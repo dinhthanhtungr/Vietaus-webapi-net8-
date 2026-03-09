@@ -12,11 +12,12 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.Merchadis
         public string ExternalId { get; set; } = string.Empty;
 
         public string CreatedName { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
         public DateTime CreatedDate { get; set; }
 
         public string CustomerName { get; set; } = string.Empty;
         public string CustomerExternalId { get; set; } = string.Empty;
 
-        public List<GetMerchadiseTimelineDetail> Details { get; set; } = new List<GetMerchadiseTimelineDetail>();
+        public List<GetMerchadiseTimelineDetail> Details { get; set; } = new();
     }
 }

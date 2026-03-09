@@ -20,6 +20,9 @@ namespace VietausWebAPI.Infrastructure.Helpers.Repositories
             await _context.Set<T>().AddAsync(entity, ct);
         }
 
+        public async Task AddRangeAsync(IEnumerable<T> entities, CancellationToken ct = default)
+            => await _context.Set<T>().AddRangeAsync(entities, ct);
+
         public IQueryable<T> Query(bool track = false)
         {
             var q = _context.Set<T>().AsQueryable();

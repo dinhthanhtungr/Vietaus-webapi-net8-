@@ -13,6 +13,8 @@ using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
 using VietausWebAPI.Infrastructure.Utilities;
 
+
+
 namespace VietausWebAPI.Infrastructure.Repositories.Sales
 {
     public class CustomerRepository : ICustomerRepository
@@ -147,12 +149,15 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
 
         public async Task<string?> GetLatestExternalIdStartsWithAsync(string prefix)
         {
-            return await _context.Customers
-                .Where(e => e.ExternalId.StartsWith(prefix))
-                .OrderByDescending(e => e.ExternalId.Length)   // dài hơn => số lớn hơn
-                .ThenByDescending(e => e.ExternalId)           // cùng độ dài thì so chuỗi
-                .Select(e => e.ExternalId)
-                .FirstOrDefaultAsync();
+            var sql = """
+                    SELECT c."ExternalId"
+                    FROM "Customer"."Customer" c
+                    WHERE c."ExternalId" ~ ('^' || @p0 || '_[0-9]+$')
+                    ORDER BY (SUBSTRING(c."ExternalId" FROM '([0-9]+)$'))::bigint DESC
+                    LIMIT 1;
+                    """;
+
+            return await _context.Database.SqlQueryRaw<string>(sql, prefix).FirstOrDefaultAsync();
         }
 
         public IQueryable<Address> QueryAddress(bool track = false)

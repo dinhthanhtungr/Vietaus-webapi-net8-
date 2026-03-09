@@ -183,5 +183,28 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.DeliveryOrders
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 fileName);
         }
+
+        [HttpGet("export-delivery-finish")]
+        public async Task<IActionResult> ExportDeliveryFinish(
+            [FromQuery] DateTime from,
+            [FromQuery] DateTime to,
+            CancellationToken ct)
+        {
+            // guard nhẹ giống style bạn
+            if (from == default || to == default)
+                return BadRequest("from/to is required.");
+
+            if (to.Date < from.Date)
+                return BadRequest("to must be >= from.");
+
+            var rows = await _deliveryOrderService.BuildDeliveryFinishRowsAsync(from, to, ct);
+
+            var bytes = _exportDeliveryPlan.ExportDeliveryFinish(rows, from, to);
+
+            var fileName = $"DS_GiaoHang_HoanTat_{from:yyyyMMdd}_{to:yyyyMMdd}.xlsx";
+            return File(bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                fileName);
+        }
     }
 }

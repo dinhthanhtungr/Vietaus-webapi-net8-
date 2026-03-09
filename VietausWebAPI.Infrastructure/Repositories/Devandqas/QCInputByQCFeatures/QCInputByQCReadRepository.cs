@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Shared.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,8 +33,6 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
             var hasKeyword = !string.IsNullOrWhiteSpace(query.Keyword);
             var kw = hasKeyword ? query.Keyword!.Trim() : "";
 
-            // Nếu keyword của bạn CHỈ search ProductCode/ProductName/Lot thì để false (nhẹ).
-            // Nếu keyword cần search cả QCEmployeeName/CSName/CSExternalId thì bật true.
             var keywordIncludesQcFields = false;
 
             var needQcForFilter =
@@ -41,20 +40,41 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
                 query.HasQC.HasValue ||
                 (hasKeyword && keywordIncludesQcFields);
 
+            // ✅ BẮT BUỘC: chỉ lấy voucher header có VoucherType = ImportOther
+            var requiredHeaderType = (int)RequestType.ImportOther;
+
+            var allowedDetailTypes = new[]
+            {
+                VoucherDetailType.Waiter,
+                VoucherDetailType.QCPass,
+                VoucherDetailType.QCFail,
+                VoucherDetailType.Special
+            };
+
+
             // =========================
-            // PHASE 1: base query để lọc + count + lấy pageIds
+            // PHASE 1
             // =========================
             var q1 =
                 from vd in _context.WarehouseVoucherDetails.AsNoTracking()
                 join v in _context.WarehouseVouchers.AsNoTracking()
                     on vd.VoucherId equals v.VoucherId
+                where v.VoucherType == requiredHeaderType
+                   && allowedDetailTypes.Contains(vd.VoucherType)   // ✅ CHỈ 4 loại
                 select new { vd, v };
 
             if (query.VoucherDetailId > 0)
                 q1 = q1.Where(x => x.vd.VoucherDetailId == query.VoucherDetailId);
 
+            // ✅ Theo model mới: VoucherDetailType nằm ở DETAIL
             if (query.VoucherDetailType.HasValue)
-                q1 = q1.Where(x => x.v.VoucherType == (int)query.VoucherDetailType.Value);
+            {
+                var t = query.VoucherDetailType.Value;
+                if (!allowedDetailTypes.Contains(t))
+                    return new PagedResult<GetSummaryQCInput>(new List<GetSummaryQCInput>(), 0, pageNumber, pageSize);
+
+                q1 = q1.Where(x => x.vd.VoucherType == t);
+            }
 
             if (query.FromDate.HasValue)
                 q1 = q1.Where(x => x.v.CreatedDate >= query.FromDate.Value);
@@ -62,7 +82,6 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
             if (query.ToDate.HasValue)
                 q1 = q1.Where(x => x.v.CreatedDate <= query.ToDate.Value);
 
-            // Keyword phần vd (nhẹ)
             if (hasKeyword)
             {
                 q1 = q1.Where(x =>
@@ -82,7 +101,6 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
             }
             else
             {
-                // Phase 1 có QC filter (nhưng vẫn chỉ lấy id)
                 var q1WithQc =
                     from x in q1
                     let qcLatest = _context.QCInputByQCs.AsNoTracking()
@@ -116,15 +134,14 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
                         ? q1WithQc.Where(x => x.qc != null)
                         : q1WithQc.Where(x => x.qc == null);
 
-                // Nếu bạn bật keywordIncludesQcFields = true thì nhớ dùng OR (đừng ép qc != null)
                 if (hasKeyword && keywordIncludesQcFields)
                 {
                     q1WithQc = q1WithQc.Where(x =>
-                        (x.qc != null && (
+                        x.qc != null && (
                             (x.qc.CSName ?? "").Contains(kw) ||
                             (x.qc.CSExternalId ?? "").Contains(kw) ||
                             (x.QCEmployeeName ?? "").Contains(kw)
-                        ))
+                        )
                     );
                 }
 
@@ -144,13 +161,15 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
                 return new PagedResult<GetSummaryQCInput>(new List<GetSummaryQCInput>(), total, pageNumber, pageSize);
 
             // =========================
-            // PHASE 2: lấy đúng page rows rồi mới lấy qcLatest + employee
+            // PHASE 2
             // =========================
             var itemsQuery =
                 from vd in _context.WarehouseVoucherDetails.AsNoTracking()
                 join v in _context.WarehouseVouchers.AsNoTracking()
                     on vd.VoucherId equals v.VoucherId
-                where pageIds.Contains(vd.VoucherDetailId)
+                where v.VoucherType == requiredHeaderType     // ✅ filter theo header (bắt buộc)
+                    && allowedDetailTypes.Contains(vd.VoucherType)
+                    && pageIds.Contains(vd.VoucherDetailId)
 
                 let qcLatest = _context.QCInputByQCs.AsNoTracking()
                     .Where(qc => qc.VoucherDetailId == vd.VoucherDetailId)
@@ -174,8 +193,8 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
                     Name = vd.ProductName,
                     LotNumber = vd.LotNumber ?? "",
                     QtyKg = vd.QtyKg,
-                    Unit = "kg",
-                    VoucherType = vd.VoucherType,
+                    Unit = "-", // bạn đang set "-"
+                    VoucherType = vd.VoucherType, // ✅ theo model mới: lấy từ detail
 
                     HasQC = qcLatest != null,
                     QCInputByQCId = qcLatest != null ? qcLatest.QCInputByQCId : null,
@@ -242,7 +261,6 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
                 from po in _context.PurchaseOrders.AsNoTracking()
                     .Where(po =>
                         r != null &&
-                        r.ReqType == WareHouseRequestType.ImportFromSupplier &&
                         po.ExternalId != null &&
                         po.ExternalId == r.codeFromRequest &&
                         po.IsActive == true

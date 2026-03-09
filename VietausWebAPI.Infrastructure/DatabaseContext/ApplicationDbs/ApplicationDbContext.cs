@@ -449,8 +449,8 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
 
                 entity.Property(e => e.ProductId).HasColumnName("product_id");
                 entity.Property(x => x.Quantity).HasColumnName("quantity").HasPrecision(12, 10);
-                entity.Property(x => x.UnitPrice).HasColumnName("unit_price").HasPrecision(18, 2);
-                entity.Property(x => x.TotalPrice).HasColumnName("total_price").HasPrecision(18, 2);
+                entity.Property(x => x.UnitPrice).HasColumnName("unit_price").HasPrecision(22, 6);
+                entity.Property(x => x.TotalPrice).HasColumnName("total_price").HasPrecision(22, 6);
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
                 entity.Property(e => e.MaterialNameSnapshot);
                 entity.Property(e => e.MaterialExternalIdSnapshot);

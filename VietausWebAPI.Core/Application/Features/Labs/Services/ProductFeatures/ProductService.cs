@@ -101,6 +101,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.ProductFeatures
                 q = q.Where(x => !string.IsNullOrWhiteSpace(x.Name)
                               && !string.IsNullOrWhiteSpace(x.ColourCode));
 
+
+
                 // 2) Keyword
                 if (!string.IsNullOrWhiteSpace(query.Keyword))
                 {

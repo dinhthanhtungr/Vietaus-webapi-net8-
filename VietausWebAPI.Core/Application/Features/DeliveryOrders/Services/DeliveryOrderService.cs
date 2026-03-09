@@ -75,6 +75,12 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                 if (query.DeliveryOrderId.HasValue && query.DeliveryOrderId.Value != Guid.Empty)
                     baseQ = baseQ.Where(po => po.Id == query.DeliveryOrderId);
 
+                if (query.From.HasValue)
+                    baseQ = baseQ.Where(po => po.CreatedDate >= query.From.Value);
+
+                if (query.To.HasValue)
+                    baseQ = baseQ.Where(po => po.CreatedDate <= query.To.Value);
+
                 if (!string.IsNullOrWhiteSpace(query.Keyword))
                 {
                     var kw = query.Keyword.Trim();
@@ -197,7 +203,6 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
             //throw new NotImplementedException();
         }
 
-        // Tạm thời cmt để thử chức năng mới
         /// <summary>
         /// Lấy danh sách đơn hàng (PO) có thể chọn để giao hàng, kèm theo tồn kho
         /// </summary>
@@ -587,21 +592,21 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
         /// <returns></returns>
         public async Task<OperationResult> UpdateAsync(PatchDeliveryOrder req, CancellationToken ct = default)
         {
-            await using var tx = await _unitOfWork.BeginTransactionAsync();
-
+            await _unitOfWork.BeginTransactionAsync();
             try
             {
                 var now = DateTime.Now;
                 var userId = _currentUser.EmployeeId;
-                var companyId = _currentUser.CompanyId;
 
                 var existingDO = await _unitOfWork.DeliveryOrderRepository
                     .Query(track: true)
-                    .Where(p => p.Id == req.Id && p.IsActive == true)
-                    .FirstOrDefaultAsync(ct);
+                    .FirstOrDefaultAsync(p => p.Id == req.Id && p.IsActive, ct);
 
                 if (existingDO == null)
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
                     return OperationResult.Fail("Đơn giao hàng không tồn tại.");
+                }
 
                 existingDO.UpdatedDate = now;
                 existingDO.UpdatedBy = userId;
@@ -609,21 +614,12 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                 PatchHelper.SetIfRef(req.Note, () => existingDO.Note, v => existingDO.Note = v);
                 PatchHelper.SetIfRef(req.Status, () => existingDO.Status, v => existingDO.Status = v ?? string.Empty);
 
-                //PatchHelper.SetIf(req.IsActive, () => existingDO.IsActive, v => existingDO.IsActive = v);
-                // ===== Đồng bộ Deliverers =====
-                // Quy ước PATCH:
-                // - req.Deliverers == null  => KHÔNG đụng vào danh sách Deliverers (giữ nguyên)
-                // - req.Deliverers != null  => xem như "set" lại toàn bộ danh sách: add mới những cái có trong req mà chưa có, xóa cái không còn trong req
+                // ===== SYNC Deliverers (replace set) =====
                 if (req.Deliverers != null)
                 {
-                    // Chuẩn hoá input: Distinct & loại Guid.Empty
-                    var incomingIds = req.Deliverers
-                        .Where(id => id != Guid.Empty)
-                        .Distinct()
-                        .ToList();
+                    var incomingIds = req.Deliverers.Where(x => x != Guid.Empty).Distinct().ToList();
 
-                    // (Khuyến nghị) Kiểm tra tồn tại DelivererInfor + đúng Company
-                    // Nếu bạn không có cột CompanyId trong DelivererInfor thì bỏ filter CompanyId.
+                    // 1) validate DelivererInfor tồn tại
                     var validInforIds = await _unitOfWork.DelivererInforRepository
                         .Query(track: false)
                         .Where(x => incomingIds.Contains(x.Id))
@@ -632,50 +628,59 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
 
                     if (validInforIds.Count != incomingIds.Count)
                     {
-                        var missing = incomingIds.Except(validInforIds).ToList();
-                        return OperationResult.Fail($"DelivererInforId không hợp lệ hoặc không thuộc công ty: {string.Join(", ", missing)}");
+                        await _unitOfWork.RollbackTransactionAsync();
+                        return OperationResult.Fail("Có DelivererInforId không hợp lệ.");
                     }
 
-                    // Tập hiện có trong DB
-                    var existingIds = existingDO.Deliverers.Select(d => d.DelivererInforId).ToList();
+                    // 2) lấy existing set từ DB (no tracking)
+                    var existingIds = await _unitOfWork.DelivererRepository
+                        .Query(track: false)
+                        .Where(d => d.DeliveryOrderId == existingDO.Id)
+                        .Select(d => d.DelivererInforId)
+                        .ToListAsync(ct);
 
-                    // Tính chênh lệch
-                    var toAddIds = validInforIds.Except(existingIds).ToList();
-                    var toRemoveIds = existingIds.Except(validInforIds).ToList();
+                    var toAdd = validInforIds.Except(existingIds).ToList();
+                    var toRemove = existingIds.Except(validInforIds).ToList();
 
-                    // Xoá những Deliverer không còn trong req
-                    if (toRemoveIds.Count > 0)
+                    // 3) delete theo query => KHÔNG dính concurrency kiểu Remove(entity)
+                    if (toRemove.Count > 0)
                     {
-                        var removeEntities = existingDO.Deliverers
-                            .Where(d => toRemoveIds.Contains(d.DelivererInforId))
-                            .ToList();
-
-                        foreach (var del in removeEntities)
-                            await _unitOfWork.DelivererRepository.RemoveAsync(del);
+                        await _unitOfWork.DelivererRepository
+                            .Query(track: false)
+                            .Where(d => d.DeliveryOrderId == existingDO.Id && toRemove.Contains(d.DelivererInforId))
+                            .ExecuteDeleteAsync(ct);
                     }
 
-                    // Thêm mới những DelivererInforId chưa có
-                    foreach (var id in toAddIds)
+                    // 4) add missing
+                    foreach (var id in toAdd)
                     {
-                        existingDO.Deliverers.Add(new Deliverer
+                        await _unitOfWork.DelivererRepository.AddAsync(new Deliverer
                         {
                             Id = Guid.CreateVersion7(),
                             DeliveryOrderId = existingDO.Id,
-                            DelivererInforId = id
-                        });
+                            DelivererInforId = id,
+                            // nếu Deliverer có audit fields thì set luôn như Customer:
+                            // CreatedDate = now, CreatedBy = userId, UpdatedDate = now, UpdatedBy = userId
+                        }, ct);
                     }
                 }
+
+                await _unitOfWork.SaveChangesAsync(ct);
+                await _unitOfWork.CommitTransactionAsync();
                 return OperationResult.Ok();
-
             }
-
+            catch (DbUpdateConcurrencyException)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return OperationResult.Fail("Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại và thử lại.");
+            }
             catch (Exception ex)
             {
-                await tx.RollbackAsync(ct);
-                return OperationResult.Fail($"DelivererInforId không hợp lệ hoặc không thuộc công ty: {string.Join(", ", ex.InnerException?.Message)}");
+                await _unitOfWork.RollbackTransactionAsync();
+                return OperationResult.Fail(ex.InnerException?.Message ?? ex.Message);
             }
-
         }
+
 
         /// <summary>
         /// Xóa mềm đơn giao hàng (Delivery Order), cùng với các WR/WRD và giải phóng TempStock liên quan
@@ -1058,6 +1063,93 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
 
             return rows;
         }
+
+
+
+        public async Task<List<DeliveryFinishRow>> BuildDeliveryFinishRowsAsync(DateTime fromDate, DateTime toDate, CancellationToken ct)
+        {
+            var from = fromDate.Date;
+            var to = toDate.Date.AddDays(1); // [from, to)
+
+            var q = _unitOfWork.DeliveryOrderRepository.Query()
+                .Where(d => d.IsActive == true)
+                .Where(d => d.CreatedDate >= from && d.CreatedDate < to)
+                .SelectMany(d => d.Details.Where(det => det.IsActive),
+                    (d, det) => new
+                    {
+                        Delivery = d,
+                        Det = det,
+
+                        // link qua MO Detail (optional)
+                        MODetail = det.MerchandiseOrderDetail,
+
+                        // link qua MO (optional)
+                        MO = det.MerchandiseOrderDetail != null
+                            ? det.MerchandiseOrderDetail.MerchandiseOrder
+                            : null,
+
+                        // Lấy tên người giao (lấy 1 người đầu tiên)
+                        DelivererNames = d.Deliverers
+                            .Select(x => x.DelivererInfor.Name)
+                            .Where(n => n != null && n != "")
+                            .Distinct()
+                            .ToList()
+                    });
+
+            var data = await q.ToListAsync(ct);
+
+            var rows = new List<DeliveryFinishRow>(capacity: data.Count);
+            var stt = 1;
+
+            foreach (var it in data)
+            {
+                var mo = it.MO;
+                var md = it.MODetail;
+
+                var deliverer = (it.DelivererNames != null && it.DelivererNames.Count > 0)
+                    ? it.DelivererNames[0]
+                    : "";
+
+                rows.Add(new DeliveryFinishRow
+                {
+                    // nếu bạn muốn có STT trong excel thì thêm property Stt vào DTO,
+                    // hoặc bạn map STT ở lúc export excel cũng được.
+                    // Stt = stt++,
+
+                    DeliveryExternalId = it.Delivery.ExternalId,
+                    OrderExternalId = mo?.ExternalId,
+
+                    OrderCreatedDate = mo != null ? mo.CreateDate : (DateTime?)null,
+                    DeliveryRequestDate = md != null ? md.DeliveryRequestDate : (DateTime?)null,
+                    DeliveryActualDate = it.Delivery.CreatedDate,
+
+                    CustomerName = mo != null
+                        ? mo.CustomerNameSnapshot
+                        : it.Delivery.CustomerExternalIdSnapShot,
+
+                    DelivererName = deliverer,
+
+                    ProductDisplay =
+                        (it.Det.ProductExternalIdSnapShot ?? "")
+                        + " - "
+                        + (it.Det.ProductNameSnapShot ?? ""),
+
+                    WarehouseDisplay = "", // bạn có kho thì map vô đây
+
+                    LotNoOrBatch = it.Det.LotNoList,
+                    QuantityKg = it.Det.Quantity,
+                    NumOfBags = it.Det.NumOfBags,
+                    PoNo = it.Det.PONo,
+
+                    Note = it.Delivery.Note
+                });
+
+                stt++;
+            }
+
+            return rows;
+        }
+
     }
 
 }

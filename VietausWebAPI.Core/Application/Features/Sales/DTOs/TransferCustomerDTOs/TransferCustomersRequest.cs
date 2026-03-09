@@ -16,6 +16,8 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.TransferCustomerDTO
         public Guid CompanyId { get; set; }
         public Guid CreatedBy { get; set; }      // có thể lấy từ claims
         public List<Guid> CustomerIds { get; set; } = new();
+
+        public bool TransferAllCustomers { get; set; } // thêm cờ này
     }
 
 }

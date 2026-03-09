@@ -13,7 +13,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures
         public string colourCode { get; set; } = string.Empty;
         public string productName { get; set; } = string.Empty; 
         public string FormulaExternalId { get; set; } = string.Empty;
-        public decimal AddRate { get; set; }
+        public double AddRate { get; set; }
         public string? Note { get; set; } = string.Empty;
         public string? Requirement { get; set; } = string.Empty;
 

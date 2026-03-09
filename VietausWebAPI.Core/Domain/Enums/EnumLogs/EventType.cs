@@ -12,5 +12,7 @@ namespace VietausWebAPI.Core.Domain.Enums.Logs
         DeliveryOrderStatus = 2,
         ManufacturingProductOrderFormula = 3,
         MerchadiseStatus = 4,
+        SamplerStatus = 5,
+        SupplyRequestStatus = 6,
     }
 }

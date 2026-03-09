@@ -8,7 +8,7 @@ namespace VietausWebAPI.Infrastructure.Persistence.Configurations.SampleRequestS
     {
         public void Configure(EntityTypeBuilder<FormulaMaterialSnapshot> b)
         {
-            b.ToTable("FormulaMaterialSnapshots", "SampleRequestSchema"); // đổi schema/table nếu bạn đang dùng khác
+            b.ToTable("FormulaMaterialSnapshots", "SampleRequests"); // đổi schema/table nếu bạn đang dùng khác
 
             b.HasKey(x => x.FormulaMaterialSnapshotId);
 
@@ -18,16 +18,19 @@ namespace VietausWebAPI.Infrastructure.Persistence.Configurations.SampleRequestS
             b.Property(x => x.ManufacturingVUFormulaId)
              .IsRequired();
 
+            b.Property(x => x.CategoryId)
+             .IsRequired();
+
             b.Property(x => x.Quantity)
              .HasColumnType("decimal(18,6)")
              .IsRequired();
 
             b.Property(x => x.UnitPrice)
-             .HasColumnType("decimal(16,2)")
+             .HasPrecision(22, 6)
              .IsRequired();
 
             b.Property(x => x.TotalPrice)
-             .HasColumnType("decimal(16,2)")
+             .HasPrecision(22, 6)
              .IsRequired();
 
             b.Property(x => x.itemType)
@@ -39,6 +42,8 @@ namespace VietausWebAPI.Infrastructure.Persistence.Configurations.SampleRequestS
 
             b.Property(x => x.MaterialExternalIdSnapshot)
              .HasMaxLength(100);
+
+            b.Property(x => x.LotNo);
 
             b.Property(x => x.Unit)
              .HasMaxLength(50);

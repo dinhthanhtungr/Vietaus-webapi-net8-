@@ -21,6 +21,9 @@
         public const string CustomerViewAll = "CustomerViewAll";
         public const string Delete = "Delete";
         public const string Edit = "Edit";
+        public const string LGUser = "LGUser";
+        public const string HNUser = "HNUser";
+        public const string ACUser = "ACUser";
 
         //role nhận thông báo
         public const string LabNotify = "LabNotify";

@@ -9,6 +9,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures
 {
     public class PostMaterialFormula
     {
+        public int LineNo { get; set; }
+
         public Guid ItemId { get; set; }
         public ItemType itemType { get; set; }
 

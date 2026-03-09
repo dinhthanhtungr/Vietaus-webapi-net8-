@@ -60,6 +60,9 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.WarehouseS
             entity.Property(x => x.Note)
                   .HasColumnName("note");
 
+            entity.Property(x => x.ExpiryDate)
+                  .HasColumnName("expirydate");
+
             entity.Property(x => x.VoucherType)
                   .HasColumnName("voucherType")
                   .HasConversion<int>();

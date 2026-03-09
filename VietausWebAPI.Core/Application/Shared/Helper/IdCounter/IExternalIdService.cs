@@ -9,5 +9,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.IdCounter
     public interface IExternalIdService
     {
         Task<string> NextAsync(string prefix, CancellationToken ct = default);
+
+        Task<string> GenerateCodeAsync(string prefix, CancellationToken ct = default);
     }
 }

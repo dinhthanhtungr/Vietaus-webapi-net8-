@@ -6,27 +6,27 @@ using System.Threading.Tasks;
 
 namespace VietausWebAPI.Core.Domain.Enums.WareHouses
 {
+    /// <summary>
+    /// StockType sẽ được sử dụng để phân loại loại hàng hóa trong kho, giúp quản lý và báo cáo chính xác hơn. Ví dụ:
+    /// - FinishedGood: Hàng thành phẩm
+    /// - DefectiveFinishedGood: Hàng thành phẩm lỗi
+    /// - RawMaterial: Nguyên vật liệu
+    /// - DefectiveRawMaterial: Nguyên vật liệu lỗi
+    /// - Other: Khác
+    /// Đây là stocktype bên anh Qúy mình để vậy cho nhớ
+    /// </summary>
     public enum WareHouseRequestType
     {
-        // === Nhập kho (số lẻ) ===
-        ImportFinishedGoods = 1,          // Nhập kho thành phẩm
-        ImportDefectiveGoods = 3,         // Nhập kho hàng lỗi
-        ImportFromSupplier = 5,           // Nhập kho mua hàng (NCC)
-        ImportInternalTransfer = 7,       // Nhập kho điều chuyển nội bộ
-        ImportReturnedGoods = 9,          // Nhập kho hàng trả về
-        ImportAdjustmentIncrease = 11,    // Nhập điều chỉnh (tăng)
-        ImportPlasticCut = 13,            // Nhập kho nhựa cắt rửa
-        ImportOther = 15,                 // Khác
+        ImportFinishedGood = 1,           // Nhập hàng thành phẩm
+        ImportDefectiveFinishedGood = 3,  // Nhập hàng thành phẩm lỗi
+        ImportRawMaterial = 5,            // Nhập nguyên vật liệu
+        ImportDefectiveRawMaterial = 7,   // Nhập nguyên vật liệu lỗi
+        ImportOther = 9,                  // Nhập khác
 
-        // === Xuất kho (số chẵn) ===
-        ExportForProduction = 2,          // Xuất cho sản xuất (NVL)
-        ExportForSales = 4,               // Xuất bán (thành phẩm)
-        ExportInternalTransfer = 6,       // Xuất điều chuyển nội bộ
-        ExportReturnToSupplier = 8,       // Xuất trả lại NCC
-        ExportForRecycle = 10,            // Xuất tái chế/phế liệu
-        ExportForLab = 12,                // Xuất cho Lab, R&D
-        ExportForAuditLoss = 14,          // Xuất kiểm kê/hao hụt
-        ExportForCleaning = 16,           // Xuất vật tư/nhựa rửa máy
-        ExportOther = 18                  // Khác
+        ExportFinishedGood = 2,           // Xuất hàng thành phẩm
+        ExportDefectiveFinishedGood = 4,  // Xuất hàng thành phẩm lỗi
+        ExportRawMaterial = 6,            // Xuất nguyên vật liệu
+        ExportDefectiveRawMaterial = 8,   // Xuất nguyên vật liệu lỗi
+        ExportOther = 10,                 // Xuất khác
     }
 }

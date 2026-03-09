@@ -7,6 +7,8 @@ using VietausWebAPI.Core.Application.Features.Shared.DTO.Visibility;
 using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
 using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
+using VietausWebAPI.Core.Domain.Entities.CompanySchema;
+
 
 namespace VietausWebAPI.Core.Application.Features.Shared.ServiceContracts
 {
@@ -46,5 +48,12 @@ namespace VietausWebAPI.Core.Application.Features.Shared.ServiceContracts
         /// <param name="v">Phạm vi người xem</param>
         /// <returns></returns>
         IQueryable<MerchandiseOrder> ApplyMerchandiseOrder(IQueryable<MerchandiseOrder> q, ViewerScope v);
+
+        /// <summary>
+        /// Phân quyền xem nhóm: Admin/President/Developer/CustomerViewAll/Lab thấy tất cả, Sales thường thấy nhóm có thành viên là mình, Leader thấy nhóm do mình quản lý
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<IQueryable<Group>> ApplyGroupAsync(IQueryable<Group> q, CancellationToken ct = default);
     }
 }

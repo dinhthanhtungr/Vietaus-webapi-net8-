@@ -22,7 +22,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
                   .IsRequired();
 
             entity.Property(e => e.OldPrice)
-                  .HasPrecision(18, 4)
+                  .HasPrecision(22, 6)
                   .HasColumnName("oldPrice");
 
             entity.Property(e => e.Currency)

@@ -122,7 +122,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                             t.Cell().Element(GridCell).Text(tx =>
                             {
                                 tx.Span("Khách hàng: ").FontSize(labelSize);
-                                tx.Span($"{($"{s.CustomerCode} - {s.CustomerName}".Trim(' ', '-'))}")
+                                tx.Span($"{($"{s.CustomerCode} ".Trim(' ', '-'))}") /*- { s.CustomerName}*/
                                   .FontSize(valueSize).Black();
                             });
 
@@ -294,7 +294,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                     h.Cell().Element(HeaderCell).Text("Code").FontSize(9).Bold();
                     h.Cell().Element(HeaderCell).Text("Name").FontSize(9).Bold();
                     h.Cell().Element(HeaderCell).Text("Lot #").FontSize(9).Bold();
-                    h.Cell().Element(HeaderCell).AlignMiddle().Text("Std (kg)").FontSize(9).Bold();
+                    h.Cell().Element(HeaderCell).AlignMiddle().Text("Std").FontSize(9).Bold();
 
                     h.Cell().Element(HeaderCell).AlignMiddle().Text("SL / mẻ (kg)").FontSize(9).Bold();
                     h.Cell().Element(HeaderCell).AlignMiddle().Text("SL / mẻ (g)").FontSize(9).Bold();
@@ -312,7 +312,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                     table.Cell().ColumnSpan(7).Element(GroupTitleCell)
                         .AlignCenter().Text(CategoryTitle(g.Key)).SemiBold();
 
-                    foreach (var m in g.OrderBy(x => x.ExternalId))
+                    foreach (var m in g)
                     {
                         var std = m.Quantity;
 
@@ -328,23 +328,26 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
 
                         table.Cell().Element(BodyCell).Text(m.ExternalId).FontSize(10).Bold();
                         table.Cell().Element(BodyCell).Text(m.MaterialName).FontSize(10).ClampLines(2).Bold();
-                        table.Cell().Element(BodyCell).Text("-").FontSize(10).Bold();
+                        table.Cell().Element(BodyCell)
+                            .Text(string.IsNullOrWhiteSpace(m.LotNo) ? "-" : m.LotNo)
+                            .FontSize(8)
+                            .Bold();
 
                         table.Cell().Element(BodyCell).AlignRight().Text(FormatKgPretty(std, 7)).FontSize(10).Bold();
 
-                        table.Cell().Element(BodyCell).AlignRight().Text(FormatKgPretty(perBatchKg, 5)).FontSize(10).Bold();
-                        table.Cell().Element(BodyCell).AlignRight().Text(FormatGPretty(perBatchKg, 2)).FontSize(10).Bold();
+                        table.Cell().Element(BodyCell).AlignRight().Text(FormatKgPretty(perBatchKg, 7)).FontSize(10).Bold();
+                        table.Cell().Element(BodyCell).AlignRight().Text(FormatGPretty(perBatchKg, 4)).FontSize(10).Bold();
 
-                        table.Cell().Element(BodyCell).AlignRight().Text(FormatKgPretty(totalKg, 5)).FontSize(10).Bold();
+                        table.Cell().Element(BodyCell).AlignRight().Text(FormatKgPretty(totalKg, 7)).FontSize(10).Bold();
                     }
                 }
                 table.Cell().ColumnSpan(3).Element(TotalLabelCell)
                     .AlignCenter().Text("Tổng").SemiBold();
 
-                table.Cell().Element(TotalCell).AlignRight().Text(FormatKgPretty(sumStd, 6)).FontSize(10).Bold();
-                table.Cell().Element(TotalCell).AlignRight().Text(FormatKgPretty(sumPerBatch, 6)).FontSize(10).Bold();
-                table.Cell().Element(TotalCell).AlignRight().Text(FormatGPretty(sumPerBatch, 2)).FontSize(10).Bold();
-                table.Cell().Element(TotalCell).AlignRight().Text(FormatKgPretty(sumTotal, 6)).FontSize(10).Bold();
+                table.Cell().Element(TotalCell).AlignRight().Text(FormatKgPretty(sumStd, 7)).FontSize(10).Bold();
+                table.Cell().Element(TotalCell).AlignRight().Text(FormatKgPretty(sumPerBatch, 7)).FontSize(10).Bold();
+                table.Cell().Element(TotalCell).AlignRight().Text(FormatGPretty(sumPerBatch, 4)).FontSize(10).Bold();
+                table.Cell().Element(TotalCell).AlignRight().Text(FormatKgPretty(sumTotal, 7)).FontSize(10).Bold();
 
             });
 

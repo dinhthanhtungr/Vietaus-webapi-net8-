@@ -120,44 +120,55 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                     .Take(query.PageSize)
                     .Select(po => new
                     {
-                        PO = po,
-                        // Lấy list Merchandise ExternalIds qua link (để lát nữa Join ở memory)
+                        po.PurchaseOrderId,
+                        po.ExternalId,
+                        po.Status,
+                        po.OrderType,
+                        po.Comment,
+                        po.RequestDeliveryDate,
+                        po.RealDeliveryDate,
+                        po.CreateDate,
+
+                        SupplierName = po.Supplier != null ? po.Supplier.SupplierName : null,
+                        SupplierExternalId = po.Supplier != null ? po.Supplier.ExternalId : null,
+
                         MerchandiseExternalIds = po.PurchaseOrderLinks
                             .Where(l => l.MerchandiseOrder != null)
                             .Select(l => l.MerchandiseOrder.ExternalId)
                             .Distinct()
                             .ToList(),
 
-                        // Lấy luôn detail cần hiển thị
+                        TotalAmount = po.PurchaseOrderDetails.Sum(d => d.TotalPriceAgreed),
+
                         Details = po.PurchaseOrderDetails.Select(d => new GetSamplePurchaseOrderDetail
                         {
+                            LineNo = d.LineNo,
                             MaterialExternalIDSnapshot = d.MaterialExternalIDSnapshot,
                             MaterialNameSnapshot = d.MaterialNameSnapshot,
                             UnitPriceAgreed = d.UnitPriceAgreed,
                             RequestQuantity = d.RequestQuantity,
                             RealQuantity = d.RealQuantity
-                        }).ToList()
+                        }).OrderBy(d => d.LineNo).ToList()
                     })
                     .ToListAsync(ct);
 
                 // Map ra DTO cuối + string.Join ở memory (không làm trong SQL)
                 var items = poPage.Select(x => new GetSamplePurchaseOrder
                 {
-                    PurchaseOrderId = x.PO.PurchaseOrderId,
-                    ExternalId = x.PO.ExternalId,
-                    MerchediseListExternalId = string.Join(", ", x.MerchandiseExternalIds.Distinct()),
-                    Status = x.PO.Status,
-                    OrderType = x.PO.OrderType,
-                    SupplierName = x.PO.Supplier?.SupplierName,
-                    SupplierExternalId = x.PO.Supplier?.ExternalId,
-                    TotalAmount = x.PO.PurchaseOrderDetails.Sum(d => d.TotalPriceAgreed),
-                    Comment = x.PO.Comment,
-                    RequestDeliveryDate = x.PO.RequestDeliveryDate,
-                    RealDeliveryDate = x.PO.RealDeliveryDate,
-                    CreateDate = x.PO.CreateDate,
+                    PurchaseOrderId = x.PurchaseOrderId,
+                    ExternalId = x.ExternalId,
+                    MerchediseListExternalId = string.Join(", ", x.MerchandiseExternalIds),
+                    Status = x.Status,
+                    OrderType = x.OrderType,
+                    SupplierName = x.SupplierName,
+                    SupplierExternalId = x.SupplierExternalId,
+                    TotalAmount = x.TotalAmount,
+                    Comment = x.Comment,
+                    RequestDeliveryDate = x.RequestDeliveryDate,
+                    RealDeliveryDate = x.RealDeliveryDate,
+                    CreateDate = x.CreateDate,
                     Details = x.Details
-                })
-                .ToList();
+                }).ToList();
 
                 var paged = new PagedResult<GetSamplePurchaseOrder>(items, totalCount, query.PageNumber, query.PageSize);
 
@@ -202,6 +213,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                         Details = po.PurchaseOrderDetails
                             .Select(d => new GetPurchaseOrderDetail
                             {
+                                LineNo = d.LineNo,
                                 PurchaseOrderDetailId = d.PurchaseOrderDetailId,
                                 MaterialId = d.MaterialId,
                                 MaterialExternalIDSnapshot = d.MaterialExternalIDSnapshot,
@@ -215,6 +227,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                                 DeliveryDate = d.DeliveryDate,
                                 Note = d.Note
                             })
+                            .OrderBy(d => d.LineNo)
                             .ToList(),
 
                         PurchaseOrderSnapshot = po.PurchaseOrderSnapshot != null ? new PurchaseOrderSnapshot
@@ -390,7 +403,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
 
                 // (Optional) gom các update giá để xử lý batch
                 var priceUpdates = new List<(Guid materialsSuppliersId, decimal newPrice, decimal oldPrice, string currency)>();
-
+                var lineNo = 1; 
                 foreach (var detailReq in req.PurchaseOrderDetails)
                 {
                     // 5.1 create PO detail
@@ -402,6 +415,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
 
                         Package = detailReq.Package,
                         RequestQuantity = detailReq.RequestQuantity,
+                        LineNo = lineNo++,
 
                         BaseCostSnapshot = detailReq.BaseCostSnapshot,
                         BaseDateSnapshot = detailReq.BaseDateSnapshot,
@@ -506,7 +520,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
             {
                 var now = DateTime.Now;
 
-                var existingPO = await _unitOfWork.PurchaseOrderRepository.Query()
+                var existingPO = await _unitOfWork.PurchaseOrderRepository.Query(track: true)
                     .FirstOrDefaultAsync(po => po.PurchaseOrderId == patchPurchaseOrder.PurchaseOrderId && po.IsActive == true, ct);
 
                 if (existingPO == null)
@@ -520,10 +534,10 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                 PatchHelper.SetIfRef(existingPO.Comment, () => patchPurchaseOrder.Comment, v => existingPO.Comment = v);
                 PatchHelper.SetIfRef(existingPO.PLPUComment, () => patchPurchaseOrder.PLPUComment, v => existingPO.PLPUComment = v);
 
-                // CHỈ xoá mềm khi client gửi IsActive = false
                 if (patchPurchaseOrder.IsActive == false)
                 {
-                    // Xoá mềm bảng con bằng update thẳng DB (không cần Include)
+                    existingPO.IsActive = false;
+
                     await _unitOfWork.PurchaseOrderLinkRepository.Query(track: false)
                         .Where(x => x.PurchaseOrderId == existingPO.PurchaseOrderId && x.IsActive)
                         .ExecuteUpdateAsync(s => s
@@ -536,7 +550,6 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                             .SetProperty(x => x.IsActive, false),
                             ct);
 
-                    // Xoá mềm warehouse request theo ExternalId 
                     if (!string.IsNullOrEmpty(existingPO.ExternalId))
                         await _WarehouseReservationService.EnsureWarehouseRequestDeletedAsync(existingPO.ExternalId, ct);
                 }
@@ -548,7 +561,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(ct);
-                return OperationResult.Fail($"Lỗi api: {ex.InnerException?.Message}");
+                return OperationResult.Fail($"Lỗi api: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 

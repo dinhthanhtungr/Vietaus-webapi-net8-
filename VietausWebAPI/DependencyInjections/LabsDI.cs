@@ -34,6 +34,7 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
             services.AddScoped<IFormulaMaterialRepository, FormulaMaterialRepository>();
             services.AddScoped<ISampleRequestRepository, SampleRequestRepository>();
             services.AddScoped<IManufacturingVUFormulaRepository, ManufacturingVUFormulaRepository>();
+            services.AddScoped<IFormulaMaterialSnapshotRepository, FormulaMaterialSnapshotRepository>();
 
             // Services
             //services.AddScoped<IProductStandardService, ProductStandardService>();

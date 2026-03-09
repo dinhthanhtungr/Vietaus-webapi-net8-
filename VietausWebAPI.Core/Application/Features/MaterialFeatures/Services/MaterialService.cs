@@ -118,8 +118,15 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                         CategoryId = x.CategoryId,
                         Category = x.Category.ExternalId,
 
+                        Unit = x.Unit,
+
                         Weight = x.Weight,
-                        Package = x.Package,
+                        Package =
+    string.IsNullOrWhiteSpace(x.Package)
+        ? ""
+        : x.Weight != null
+            ? $"{x.Package} {x.Weight}{(string.IsNullOrWhiteSpace(x.Unit) ? "" : $" ({x.Unit})")}"
+            : x.Package,
                         ItemType = ItemType.Material,
 
                         // Lấy Price từ MaterialsSupplier

@@ -10,5 +10,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers.Excels
     public interface IExportDeliveryPlan
     {
         byte[] ExportDeliveryPlanExcel(List<DeliveryPlanRow> rows);
+
+        byte[] ExportDeliveryFinish(List<DeliveryFinishRow> rows, DateTime fromDate, DateTime toDate);
     }
 }

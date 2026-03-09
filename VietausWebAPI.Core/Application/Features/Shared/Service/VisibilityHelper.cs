@@ -11,6 +11,7 @@ using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
 using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
+using VietausWebAPI.Core.Domain.Entities.CompanySchema;
 using VietausWebAPI.Core.Domain.Enums.CustomerEnum;
 using VietausWebAPI.Core.Domain.Enums.Visibilitys;
 using VietausWebAPI.WebAPI.Helpers.Securities.Roles;
@@ -91,27 +92,90 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service
         /// <param name="q"></param>
         /// <param name="v"></param>
         /// <returns></returns>
-        public IQueryable<Customer> ApplyCustomer(IQueryable<Customer> q, ViewerScope v)
-        {
-            q = q.Where(c => c.IsActive == true);
+        //public IQueryable<Customer> ApplyCustomer(IQueryable<Customer> q, ViewerScope v)
+        //{
+        //    q = q.Where(c => c.IsActive == true);
 
-            if (v.ScopeType is ViewerScopeType.AdminFull or ViewerScopeType.LabFull)
-                return q;
+        //    if (v.ScopeType is ViewerScopeType.AdminFull or ViewerScopeType.LabFull)
+        //        return q;
 
-            var now = v.Now;
-            // SalesScoped
-            return q.Where(c =>
-                c.IsLead
-                || (!v.IsLeader && (
-                       c.CustomerAssignments.Any(a => a.IsActive && a.EmployeeId == v.EmployeeId)
-                    || c.CustomerClaims.Any(cl => cl.IsActive && cl.Type == ClaimType.Work
-                                                  && cl.ExpiresAt > now && cl.EmployeeId == v.EmployeeId)))
-                || (v.IsLeader && v.GroupId != null && (
-                       c.CustomerAssignments.Any(a => a.IsActive && a.GroupId == v.GroupId)
-                    || c.CustomerClaims.Any(cl => cl.IsActive && cl.Type == ClaimType.Work
-                                                  && cl.ExpiresAt > now && cl.GroupId == v.GroupId)))
-            );
-        }
+        //    var now = v.Now;
+        //    // SalesScoped
+        //    return q.Where(c =>
+        //        c.IsLead
+        //        || (!v.IsLeader && (
+        //               c.CustomerAssignments.Any(a => a.IsActive && a.EmployeeId == v.EmployeeId)
+        //            || c.CustomerClaims.Any(cl => cl.IsActive && cl.Type == ClaimType.Work
+        //                                          && cl.ExpiresAt > now && cl.EmployeeId == v.EmployeeId)))
+        //        || (v.IsLeader && v.GroupId != null && (
+        //               c.CustomerAssignments.Any(a => a.IsActive && a.GroupId == v.GroupId)
+        //            || c.CustomerClaims.Any(cl => cl.IsActive && cl.Type == ClaimType.Work
+        //                                          && cl.ExpiresAt > now && cl.GroupId == v.GroupId)))
+        //    );
+        //}
+
+            public IQueryable<Customer> ApplyCustomer(IQueryable<Customer> q, ViewerScope v)
+            {
+                q = q.Where(c => c.IsActive == true);
+
+                if (v.ScopeType is ViewerScopeType.AdminFull or ViewerScopeType.LabFull)
+                    return q;
+
+                var now = v.Now;
+
+                return q.Where(c =>
+                    // =========================
+                    // 1) CUSTOMER LEAD
+                    // =========================
+                    (c.IsLead && (
+                        // Lead chưa có claim hợp lệ => ai cũng thấy
+                        !c.CustomerClaims.Any(cl =>
+                            cl.IsActive
+                            && cl.Type == ClaimType.Work
+                            && cl.ExpiresAt > now)
+
+                        // Có claim hợp lệ và mình là người claim => thấy
+                        || c.CustomerClaims.Any(cl =>
+                            cl.IsActive
+                            && cl.Type == ClaimType.Work
+                            && cl.ExpiresAt > now
+                            && cl.EmployeeId == v.EmployeeId)
+
+                        // Có claim hợp lệ và mình là leader của group đó => thấy
+                        || (v.IsLeader && v.GroupId != null && c.CustomerClaims.Any(cl =>
+                            cl.IsActive
+                            && cl.Type == ClaimType.Work
+                            && cl.ExpiresAt > now
+                            && cl.GroupId == v.GroupId))
+                    ))
+
+                    // =========================
+                    // 2) CUSTOMER THƯỜNG
+                    // =========================
+                    || (!c.IsLead && (
+                        (!v.IsLeader && (
+                            c.CustomerAssignments.Any(a =>
+                                a.IsActive
+                                && a.EmployeeId == v.EmployeeId)
+                            || c.CustomerClaims.Any(cl =>
+                                cl.IsActive
+                                && cl.Type == ClaimType.Work
+                                && cl.ExpiresAt > now
+                                && cl.EmployeeId == v.EmployeeId)
+                        ))
+                        || (v.IsLeader && v.GroupId != null && (
+                            c.CustomerAssignments.Any(a =>
+                                a.IsActive
+                                && a.GroupId == v.GroupId)
+                            || c.CustomerClaims.Any(cl =>
+                                cl.IsActive
+                                && cl.Type == ClaimType.Work
+                                && cl.ExpiresAt > now
+                                && cl.GroupId == v.GroupId)
+                        ))
+                    ))
+                );
+            }
 
         /// <summary>
         /// Phương thức áp dụng phạm vi xem cho truy vấn SampleRequest
@@ -123,6 +187,40 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service
         /// <param name="q"></param>
         /// <param name="v"></param>
         /// <returns></returns>
+        //public IQueryable<SampleRequest> ApplySampleRequest(IQueryable<SampleRequest> q, ViewerScope v)
+        //{
+        //    q = q.Where(sr => sr.IsActive == true);
+
+        //    if (v.ScopeType is ViewerScopeType.AdminFull or ViewerScopeType.LabFull)
+        //        return q;
+
+        //    var now = DateTime.Now;
+
+        //    // visibleCustomers: IQueryable<Customer> đã được ApplyCustomer lọc theo scope (mình/group)
+        //    var visibleCustomers = ApplyCustomer(_unitOfWork.CustomerRepository.Query(), v);
+
+        //    // 1) Non-lead: theo scope là thấy
+        //    var nonLeadIds = visibleCustomers
+        //        .Where(c => c.IsLead == false)
+        //        .Select(c => c.CustomerId);
+
+        //    // 2) Lead: CHỈ người đang quản lý (claim trực tiếp) mới thấy
+        //    var leadIdsOnlyMine = visibleCustomers
+        //        .Where(c => c.IsLead == true
+        //            && c.CustomerClaims.Any(cc =>
+        //                cc.IsActive == true
+        //                && cc.EmployeeId == v.EmployeeId
+        //                && cc.ExpiresAt > now
+        //            // nếu bạn muốn đúng loại claim quản lý thì mở dòng này
+        //            // && cc.Type == ClaimType.Work
+        //            ))
+        //        .Select(c => c.CustomerId);
+
+        //    var allowedIds = nonLeadIds.Union(leadIdsOnlyMine);
+
+        //    return q.Where(sr => allowedIds.Contains(sr.CustomerId));
+        //}
+
         public IQueryable<SampleRequest> ApplySampleRequest(IQueryable<SampleRequest> q, ViewerScope v)
         {
             q = q.Where(sr => sr.IsActive == true);
@@ -130,31 +228,10 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service
             if (v.ScopeType is ViewerScopeType.AdminFull or ViewerScopeType.LabFull)
                 return q;
 
-            var now = DateTime.Now;
-
-            // visibleCustomers: IQueryable<Customer> đã được ApplyCustomer lọc theo scope (mình/group)
-            var visibleCustomers = ApplyCustomer(_unitOfWork.CustomerRepository.Query(), v);
-
-            // 1) Non-lead: theo scope là thấy
-            var nonLeadIds = visibleCustomers
-                .Where(c => c.IsLead == false)
+            var visibleCustomers = ApplyCustomer(_unitOfWork.CustomerRepository.Query(), v)
                 .Select(c => c.CustomerId);
 
-            // 2) Lead: CHỈ người đang quản lý (claim trực tiếp) mới thấy
-            var leadIdsOnlyMine = visibleCustomers
-                .Where(c => c.IsLead == true
-                    && c.CustomerClaims.Any(cc =>
-                        cc.IsActive == true
-                        && cc.EmployeeId == v.EmployeeId
-                        && cc.ExpiresAt > now
-                    // nếu bạn muốn đúng loại claim quản lý thì mở dòng này
-                    // && cc.Type == ClaimType.Work
-                    ))
-                .Select(c => c.CustomerId);
-
-            var allowedIds = nonLeadIds.Union(leadIdsOnlyMine);
-
-            return q.Where(sr => allowedIds.Contains(sr.CustomerId));
+            return q.Where(sr => visibleCustomers.Contains(sr.CustomerId));
         }
 
         /// <summary>
@@ -167,22 +244,81 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service
         /// <param name="q"></param>
         /// <param name="v"></param>
         /// <returns></returns>
+        //public IQueryable<MerchandiseOrder> ApplyMerchandiseOrder(IQueryable<MerchandiseOrder> q, ViewerScope v)
+        //{
+        //    // Base: active
+        //    q = q.Where(x => x.IsActive == true);
+        //    // Full view
+        //    if (v.ScopeType is ViewerScopeType.AdminFull or ViewerScopeType.LabFull)
+        //        return q;
+
+        //    if (v.ScopeType == ViewerScopeType.SalesScoped)
+        //    {
+        //        // ✅ Blocklist customer (không cho nhìn thấy đơn của khách này)
+        //        var blockedCustomerId = Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75");
+        //        q = q.Where(x => x.CustomerId != blockedCustomerId);
+        //    }
+
+
+
+
+        //    // Sales scoped: chỉ thấy đơn thuộc customer mình (hoặc group) quản lý
+        //    var visibleCustomers = ApplyCustomer(_unitOfWork.CustomerRepository.Query(), v);
+
+        //    // Lọc theo CustomerId
+        //    return q.Where(x => visibleCustomers.Select(c => c.CustomerId).Contains(x.CustomerId));
+        //}
+
         public IQueryable<MerchandiseOrder> ApplyMerchandiseOrder(IQueryable<MerchandiseOrder> q, ViewerScope v)
         {
-            // Base: active + tenant
-            q = q.Where(sr => sr.IsActive == true);
+            q = q.Where(x => x.IsActive == true);
 
-            // Full view
             if (v.ScopeType is ViewerScopeType.AdminFull or ViewerScopeType.LabFull)
                 return q;
 
-            // Sales scoped: chỉ thấy SR thuộc customer mình (hoặc group) quản lý
-            var visibleCustomers = ApplyCustomer(_unitOfWork.CustomerRepository.Query(), v);
+            if (v.ScopeType == ViewerScopeType.SalesScoped)
+            {
+                var blockedCustomerId = Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75");
+                q = q.Where(x => x.CustomerId != blockedCustomerId);
+            }
 
-            // Lọc theo CustomerId
-            return q.Where(sr => visibleCustomers.Select(c => c.CustomerId).Contains(sr.CustomerId));
+            var visibleCustomers = ApplyCustomer(_unitOfWork.CustomerRepository.Query(), v)
+                .Select(c => c.CustomerId);
+
+            return q.Where(x => visibleCustomers.Contains(x.CustomerId));
         }
 
+        /// <summary>
+        /// Phân quyền xem Group:
+        /// - President / Admin / Developer / CustomerViewAll / LabUser => xem tất cả
+        /// - SaleUser thường => chỉ xem các group mà mình thuộc
+        /// - Role khác => xem tất cả
+        /// </summary>
+        public async Task<IQueryable<Group>> ApplyGroupAsync(IQueryable<Group> q, CancellationToken ct = default)
+        {
+            var hasFullView =
+                   _currentUser.IsInRole(AppRoles.President)
+                || _currentUser.IsInRole(AppRoles.Admin)
+                || _currentUser.IsInRole(AppRoles.Developer)
+                || _currentUser.IsInRole(AppRoles.CustomerViewAll)
+                || _currentUser.IsInRole(AppRoles.LabUser);
 
+            // Có quyền full => thấy hết
+            if (hasFullView)
+                return q;
+
+            // Không phải sale => thấy hết
+            if (!_currentUser.IsInRole(AppRoles.SaleUser))
+                return q;
+
+            // Sale thường => chỉ thấy group mình thuộc
+            var visibleGroupIds = await _unitOfWork.MemberInGroupRepository.Query()
+                .Where(m => m.IsActive == true && m.Profile == _currentUser.EmployeeId)
+                .Select(m => m.GroupId)
+                .Distinct()
+                .ToListAsync(ct);
+
+            return q.Where(g => visibleGroupIds.Contains(g.GroupId));
+        }
     }
 }

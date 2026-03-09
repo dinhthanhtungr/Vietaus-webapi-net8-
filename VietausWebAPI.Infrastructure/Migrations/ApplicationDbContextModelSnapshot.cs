@@ -4513,6 +4513,13 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
+                    b.Property<int>("LineNo")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LotNo")
+                        .HasColumnType("text")
+                        .HasColumnName("lot_no");
+
                     b.Property<Guid>("ManufacturingFormulaId")
                         .HasColumnType("uuid")
                         .HasColumnName("manufacturing_formula_id");
@@ -4539,8 +4546,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("quantity");
 
                     b.Property<decimal>("TotalPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
+                        .HasPrecision(22, 6)
+                        .HasColumnType("numeric(22,6)")
                         .HasColumnName("total_price");
 
                     b.Property<string>("Unit")
@@ -4548,8 +4555,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("unit");
 
                     b.Property<decimal>("UnitPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
+                        .HasPrecision(22, 6)
+                        .HasColumnType("numeric(22,6)")
                         .HasColumnName("unit_price");
 
                     b.Property<int>("itemType")
@@ -4639,6 +4646,9 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("category_id");
 
+                    b.Property<int>("LineNo")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("ManufacturingFormulaVersionId")
                         .HasColumnType("uuid")
                         .HasColumnName("manufacturingFormulaVersionId");
@@ -4667,8 +4677,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("quantity");
 
                     b.Property<decimal>("TotalPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
+                        .HasPrecision(22, 6)
+                        .HasColumnType("numeric(22,6)")
                         .HasColumnName("total_price");
 
                     b.Property<string>("Unit")
@@ -4677,8 +4687,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("unit");
 
                     b.Property<decimal>("UnitPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
+                        .HasPrecision(22, 6)
+                        .HasColumnType("numeric(22,6)")
                         .HasColumnName("unit_price");
 
                     b.Property<int>("itemType")
@@ -4847,8 +4857,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("citext")
                         .HasColumnName("status");
 
-                    b.Property<string>("StepOfProduct")
-                        .HasColumnType("text")
+                    b.Property<int?>("StepOfProduct")
+                        .HasColumnType("integer")
                         .HasColumnName("step_of_product");
 
                     b.Property<int?>("TotalQuantity")
@@ -5001,7 +5011,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("mfg_production_order_id");
 
-                    b.Property<DateTime>("ValidFrom")
+                    b.Property<DateTime?>("ValidFrom")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("valid_from");
 
@@ -5233,8 +5243,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("materialsSuppliersId");
 
                     b.Property<decimal?>("OldPrice")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("numeric(18,4)")
+                        .HasPrecision(22, 6)
+                        .HasColumnType("numeric(22,6)")
                         .HasColumnName("oldPrice");
 
                     b.Property<Guid?>("SupplierId")
@@ -5918,8 +5928,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("BagType");
 
                     b.Property<decimal>("BaseCostSnapshot")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
+                        .HasPrecision(22, 6)
+                        .HasColumnType("numeric(22,6)")
                         .HasColumnName("BaseCostSnapshot");
 
                     b.Property<string>("Comment")
@@ -5988,8 +5998,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("RealQuantity");
 
                     b.Property<decimal>("RecommendedUnitPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
+                        .HasPrecision(22, 6)
+                        .HasColumnType("numeric(22,6)")
                         .HasColumnName("RecommendedUnitPrice");
 
                     b.Property<string>("Status")
@@ -6001,13 +6011,13 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("Status");
 
                     b.Property<decimal>("TotalPriceAgreed")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
+                        .HasPrecision(22, 6)
+                        .HasColumnType("numeric(22,6)")
                         .HasColumnName("TotalPriceAgreed");
 
                     b.Property<decimal>("UnitPriceAgreed")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
+                        .HasPrecision(22, 6)
+                        .HasColumnType("numeric(22,6)")
                         .HasColumnName("UnitPriceAgreed");
 
                     b.HasKey("MerchandiseOrderDetailId")
@@ -6113,8 +6123,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<decimal?>("BaseCostSnapshot")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                        .HasPrecision(22, 6)
+                        .HasColumnType("numeric(22,6)");
 
                     b.Property<DateTime?>("BaseDateSnapshot")
                         .HasColumnType("timestamp without time zone");
@@ -6127,6 +6137,10 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true)
                         .HasColumnName("isActive");
+
+                    b.Property<int>("LineNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("LineNo");
 
                     b.Property<string>("MaterialExternalIDSnapshot")
                         .HasColumnType("citext");
@@ -6155,12 +6169,12 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal?>("TotalPriceAgreed")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                        .HasPrecision(22, 6)
+                        .HasColumnType("numeric(22,6)");
 
                     b.Property<decimal?>("UnitPriceAgreed")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                        .HasPrecision(22, 6)
+                        .HasColumnType("numeric(22,6)");
 
                     b.HasKey("PurchaseOrderDetailId")
                         .HasName("PK__Purchase__5026B698A94EFE60");
@@ -6540,6 +6554,9 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
 
+                    b.Property<int>("LineNo")
+                        .HasColumnType("integer");
+
                     b.Property<string>("MaterialExternalIdSnapshot")
                         .HasColumnType("text");
 
@@ -6559,16 +6576,16 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("quantity");
 
                     b.Property<decimal>("TotalPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
+                        .HasPrecision(22, 6)
+                        .HasColumnType("numeric(22,6)")
                         .HasColumnName("total_price");
 
                     b.Property<string>("Unit")
                         .HasColumnType("text");
 
                     b.Property<decimal>("UnitPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
+                        .HasPrecision(22, 6)
+                        .HasColumnType("numeric(22,6)")
                         .HasColumnName("unit_price");
 
                     b.Property<int>("itemType")
@@ -6594,10 +6611,19 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Property<Guid>("FormulaMaterialSnapshotId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid");
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
+
+                    b.Property<int>("LineNo")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LotNo")
+                        .HasColumnType("text");
 
                     b.Property<Guid>("ManufacturingVUFormulaId")
                         .HasColumnType("uuid");
@@ -6617,14 +6643,16 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("decimal(18,6)");
 
                     b.Property<decimal>("TotalPrice")
-                        .HasColumnType("decimal(16,2)");
+                        .HasPrecision(22, 6)
+                        .HasColumnType("numeric(22,6)");
 
                     b.Property<string>("Unit")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
                     b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(16,2)");
+                        .HasPrecision(22, 6)
+                        .HasColumnType("numeric(22,6)");
 
                     b.Property<int>("itemType")
                         .HasColumnType("integer");
@@ -6635,7 +6663,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.HasIndex("ManufacturingVUFormulaId1");
 
-                    b.ToTable("FormulaMaterialSnapshots", "SampleRequestSchema");
+                    b.ToTable("FormulaMaterialSnapshots", "SampleRequests");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.ManufacturingVUFormula", b =>
@@ -8208,6 +8236,10 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Property<int?>("Bags")
                         .HasColumnType("integer")
                         .HasColumnName("bags");
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("expirydate");
 
                     b.Property<bool>("IsIncrease")
                         .HasColumnType("boolean")

@@ -49,7 +49,7 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         public bool IsActive { get; set; }
 
         public string? QcCheck { get; set; }
-        public string? StepOfProduct { get; set; }
+        public StepOfProduct? StepOfProduct { get; set; }
 
         public Guid CompanyId { get; set; }
         public DateTime CreatedDate { get; set; }

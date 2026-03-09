@@ -33,12 +33,12 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts
         /// <param name="companyId"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task EnsureWarehouseIssueRequestAsync(
-                    MfgProductionOrder existing,
-                    DateTime now,
-                    Guid userId,
-                    Guid companyId,
-                    CancellationToken ct);
+        //Task EnsureWarehouseIssueRequestAsync(
+        //            MfgProductionOrder existing,
+        //            DateTime now,
+        //            Guid userId,
+        //            Guid companyId,
+        //            CancellationToken ct);
 
 
         /// <summary>

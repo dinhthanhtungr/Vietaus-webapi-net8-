@@ -279,7 +279,11 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrde
                         .FirstOrDefaultAsync(ct) ?? Guid.Empty;
 
                     // 1) Set khách không còn là Lead
-                    customer.IsLead = false;
+                    customer.IsLead =false;
+                    if (customer.CompanyId == Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75"))
+                    {
+                        customer.IsLead = true;
+                    }
 
 
                     // 3) Lấy toàn bộ claim hiện tại
@@ -300,27 +304,38 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrde
 
                     _unitOfWork.CustomerClaimRepository.UpdateRange(allClaims);
 
-                    // 6) Tạo log chuyển Lead → Customer
-                    var logId = Guid.CreateVersion7();
-                    var log = new CustomerTransferLog
+                    if (customer.CompanyId == Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75"))
                     {
-                        Id = logId,
-                        FromEmployeeId = merchandiseOrder.CreatedBy,
-                        ToEmployeeId = merchandiseOrder.CreatedBy,
-                        FromGroupId = groupId,
-                        ToGroupId = groupId,
-                        TransferType = TransferType.Saled,
-                        Note = $"Khách hàng chuyển từ Lead sang Customer khi tạo đơn {merchandiseOrder.ExternalId}",
-                        CreatedDate = now,
-                        CreatedBy = merchandiseOrder.CreatedBy,
-                        CompanyId = merchandiseOrder.CompanyId,
-                        DetailCustomerTransfers = new List<DetailCustomerTransfer>
+
+                    }
+
+
+                    else
+                    {
+                        // 6) Tạo log chuyển Lead → Customer
+                        var logId = Guid.CreateVersion7();
+                        var log = new CustomerTransferLog
+                        {
+                            Id = logId,
+                            FromEmployeeId = merchandiseOrder.CreatedBy,
+                            ToEmployeeId = merchandiseOrder.CreatedBy,
+                            FromGroupId = groupId,
+                            ToGroupId = groupId,
+                            TransferType = TransferType.Saled,
+                            Note = $"Khách hàng chuyển từ Lead sang Customer khi tạo đơn {merchandiseOrder.ExternalId}",
+                            CreatedDate = now,
+                            CreatedBy = merchandiseOrder.CreatedBy,
+                            CompanyId = merchandiseOrder.CompanyId,
+                            DetailCustomerTransfers = new List<DetailCustomerTransfer>
                         {
                             new DetailCustomerTransfer { CustomerId = merchandiseOrder.CustomerId }
                         }
-                    };
+                        };
 
-                    await _unitOfWork.CustomerTransferLogRepository.AddAsync(log, ct);
+                        await _unitOfWork.CustomerTransferLogRepository.AddAsync(log, ct);
+                    }
+
+
                 }
 
                 await _unitOfWork.MerchandiseOrderRepository.AddAsync(merchandiseOrder, ct);
@@ -392,34 +407,34 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrde
                         //});
 
 
-                        var reqNotify = new PublishNotificationRequest
-                        {
-                            CompanyId = companyId,
-                            CreatedBy = userId,
-                            CreatedByNameSnapshot = _CurrentUser.personName,
-                            Topic = TopicNotifications.ManufacturingOrderCreated,
-                            Severity = NotificationSeverity.Info,
-                            Title = $"Lệnh sản xuất: {order.ExternalId}",
-                            Message = $"Khách hàng {order.CustomerExternalIdSnapshot}",
-                            Link = $"/plpu/mfgproductionorders/{order.MfgProductionOrderId}",
-                            PayloadJson = JsonSerializer.Serialize(new
-                            {
-                                ProductOrderId = order.MfgProductionOrderId,
-                                CustomerId = order.CustomerId,
-                                CreatedBy = order.CreatedBy,
-                                CreatedDate = order.CreatedDate
-                            }),
-                            TargetRoles = new() { RoleSets.PLPU_Group }
-                        };
+                        //var reqNotify = new PublishNotificationRequest
+                        //{
+                        //    CompanyId = companyId,
+                        //    CreatedBy = userId,
+                        //    CreatedByNameSnapshot = _CurrentUser.personName,
+                        //    Topic = TopicNotifications.ManufacturingOrderCreated,
+                        //    Severity = NotificationSeverity.Info,
+                        //    Title = $"Lệnh sản xuất: {order.ExternalId}",
+                        //    Message = $"Khách hàng {order.CustomerExternalIdSnapshot}",
+                        //    Link = $"/plpu/mfgproductionorders/{order.MfgProductionOrderId}",
+                        //    PayloadJson = JsonSerializer.Serialize(new
+                        //    {
+                        //        ProductOrderId = order.MfgProductionOrderId,
+                        //        CustomerId = order.CustomerId,
+                        //        CreatedBy = order.CreatedBy,
+                        //        CreatedDate = order.CreatedDate
+                        //    }),
+                        //    TargetRoles = new() { RoleSets.PLPU_Group }
+                        //};
 
-                        var ob = new OutboxMessage
-                        {
-                            Type = "Notification.Build",
-                            PayloadJson = JsonSerializer.Serialize(reqNotify),
-                            CreatedAt = DateTime.Now
-                        };
+                        //var ob = new OutboxMessage
+                        //{
+                        //    Type = "Notification.Build",
+                        //    PayloadJson = JsonSerializer.Serialize(reqNotify),
+                        //    CreatedAt = DateTime.Now
+                        //};
 
-                        outboxBuildBatch.Add(ob);    
+                        //outboxBuildBatch.Add(ob);    
                     }
 
 

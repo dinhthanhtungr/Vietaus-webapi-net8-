@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using DocumentFormat.OpenXml.InkML;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,8 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Repository
         /// <param name="ct"></param>
         /// <returns></returns>
         Task AddAsync(T entity, CancellationToken ct = default);
+
+        Task AddRangeAsync(IEnumerable<T> entities, CancellationToken ct = default);
 
         void Remove(T entity); // sync
     }

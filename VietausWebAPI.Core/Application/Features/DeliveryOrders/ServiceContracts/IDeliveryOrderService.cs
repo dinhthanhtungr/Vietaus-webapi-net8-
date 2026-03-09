@@ -33,6 +33,11 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.ServiceContract
         // ======================================================================== Excel ======================================================================== 
 
         Task<List<DeliveryPlanRow>> BuildRowsAsync(DateTime from, DateTime to, CancellationToken ct);
-    
+        Task<List<DeliveryFinishRow>> BuildDeliveryFinishRowsAsync(
+            DateTime fromDate,
+            DateTime toDate,
+            CancellationToken ct);
+
+
     }
 }

@@ -70,6 +70,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             IFormulaMaterialRepository formulaMaterialRepository,
             ISampleRequestRepository sampleRequestRepository,
             IManufacturingVUFormulaRepository manufacturingVUFormulaRepository,
+            IFormulaMaterialSnapshotRepository formulaMaterialSnapshotRepository,
 
             // ==== Planning ====
             IScheduealRepository scheduealRepository,
@@ -172,7 +173,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             // ===== Labs =====
             ProductStandardRepository = productStandardRepository;
             ProductTestRepository = productTestRepository;
-
+            FormulaMaterialSnapshotRepository = formulaMaterialSnapshotRepository;
 
             ManufacturingFormulaVersionRepository = manufacturingFormulaVersionRepository;
             FormulaRepository = formulaRepository;

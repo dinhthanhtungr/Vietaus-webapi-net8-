@@ -11,12 +11,15 @@ namespace VietausWebAPI.Core.Domain.Entities.SampleRequestSchema
     {
         public Guid FormulaMaterialSnapshotId { get; set; }   // PK
         public Guid ManufacturingVUFormulaId { get; set; }    // FK to ManufacturingVUFormula
+        public Guid CategoryId { get; set; }
 
         public decimal Quantity { get; set; }                // DECIMAL(18,6)
         public decimal UnitPrice { get; set; }               // DECIMAL(16,2)
         public decimal TotalPrice { get; set; }              // DECIMAL(16,2)
 
         public ItemType itemType { get; set; }
+        public string? LotNo { get; set; }                        // VARCHAR
+        public int LineNo { get; set; }
 
         public string? MaterialNameSnapshot { get; set; }         // NVARCHAR
         public string? MaterialExternalIdSnapshot { get; set; }   // VARCHAR

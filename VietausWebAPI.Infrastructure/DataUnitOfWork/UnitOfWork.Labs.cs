@@ -16,6 +16,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IManufacturingFormulaVersionRepository ManufacturingFormulaVersionRepository { get; }
         public IFormulaRepository FormulaRepository { get; }
         public IFormulaMaterialRepository FormulaMaterialRepository { get; }
+        public IFormulaMaterialSnapshotRepository FormulaMaterialSnapshotRepository { get; }
 
         public IProductRepository ProductRepository { get; }
         public ISampleRequestRepository SampleRequestRepository { get; }

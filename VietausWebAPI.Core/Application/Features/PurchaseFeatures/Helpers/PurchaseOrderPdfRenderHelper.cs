@@ -52,15 +52,15 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Helpers
                 col.Item().AlignCenter().PaddingTop(5).Text("ĐƠN ĐẶT HÀNG / PURCHASING ORDER").FontSize(10).Bold();
 
 
-                // No và Ngày tạo đơn giao hàng
-                col.Item().PaddingTop(5).AlignRight().Row(row =>
-                {
-                    row.Spacing(25); // khoảng cách giữa 2 phần
+                //// No và Ngày tạo đơn giao hàng
+                //col.Item().PaddingTop(5).AlignRight().Row(row =>
+                //{
+                //    row.Spacing(25); // khoảng cách giữa 2 phần
 
-                    //row.AutoItem().Text($"No: {d.PurchaseOrderExternalIdSnapshot}");
+                //    //row.AutoItem().Text($"No: {d.PurchaseOrderExternalIdSnapshot}");
 
-                    row.AutoItem().Text($"Create Date: {DateTime.Now:dd/MM/yyyy}");
-                });
+                //    row.AutoItem().Text($"Create Date: {DateTime.Now:dd/MM/yyyy}");
+                //});
 
 
                 col.Item().Row(row =>
@@ -134,8 +134,8 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Helpers
                         .PaddingHorizontal(6);
 
 
-                    static string Money(decimal? v) => (v ?? 0m).ToString("#,0.00");
-                    static string Qty(decimal? v) => (v ?? 0m).ToString("0.00");
+                    static string Money(decimal? v) => (v ?? 0m).ToString("#,0.0000");
+                    static string Qty(decimal? v) => (v ?? 0m).ToString("0.0000");
 
                     // ==== Header ====
                     table.Header(row =>

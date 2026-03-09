@@ -103,6 +103,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services.Supp
                 entity.CreatedDate = DateTime.Now;
                 entity.CompanyId = _currentUser.CompanyId;
 
+                await _uow.SupplierWriteRepository.AddAsync(entity, ct);
                 var affected = await _uow.SaveChangesAsync(ct);
                 await _uow.CommitTransactionAsync(ct);
 

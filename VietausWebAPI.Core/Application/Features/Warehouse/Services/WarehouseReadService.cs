@@ -32,27 +32,6 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 
         public async Task<List<ProductAvailabilityVm>> GetProductAvailabilityVmsAsync(List<string> productExternalIds, CancellationToken ct = default)
         {
-            //if (productExternalIds == null || productExternalIds.Count == 0)
-            //    return new();
-
-            //var ids = productExternalIds
-            //    .Where(s => !string.IsNullOrWhiteSpace(s))
-            //    .Select(s => s.Trim())
-            //    .Distinct()
-            //    .ToList();
-
-            //var list = await _unitOfWork.WarehouseShelfStockRepository.Query()
-            //    .Where(s => !string.IsNullOrEmpty(s.Code) && ids.Contains(s.Code))
-            //    .GroupBy(s => new { s.Code, s.BatchNo , s.QtyKg})
-            //    .Select(g => new ProductAvailabilityVm
-            //    {
-            //        ProductExternalId = g.Key.Code,
-            //        LotNumber = g.Key.BatchNo ?? string.Empty,
-            //        AvailableQuantity = g.QtyKg ?? 0m
-            //    })
-            //    .ToListAsync(ct);
-
-            //return list;
 
 
             throw new Exception("Lỗi khi lấy danh sách người giao hàng.");
@@ -65,16 +44,13 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 var pageNumber = query.PageNumber <= 0 ? 1 : query.PageNumber;
                 var pageSize = query.PageSize <= 0 ? 15 : query.PageSize;
 
-                // 1) Base query: ShelfStock
                 var shelfQuery = _unitOfWork.WarehouseShelfStockRepository.Query()
                     .Where(s => s.Code != null && s.Code != "");
 
                 if (!string.IsNullOrWhiteSpace(query.KeyWord))
                 {
                     var kw = query.KeyWord.Trim();
-                    shelfQuery = shelfQuery.Where(x =>
-                        (x.Code ?? "").Contains(kw)
-                    );
+                    shelfQuery = shelfQuery.Where(x => (x.Code ?? "").Contains(kw));
                 }
 
                 if (query.StockTypes.HasValue)
@@ -82,53 +58,49 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                     shelfQuery = shelfQuery.Where(x => x.StockType == query.StockTypes.Value);
                 }
 
-
-                // 2) Group OnHand theo Code + StockType (ra DTO trước)
-                var onHandGrouped =
+                // 1) Header group theo Code + StockType
+                var headerQuery =
                     from s in shelfQuery
                     group s by new { s.Code, s.StockType } into g
                     select new GetStockAvaiable
                     {
                         ShelfStockId = g.Min(x => x.ShelfStockId),
-                        Code = g.Key.Code,
+                        Code = g.Key.Code!,
                         StockType = g.Key.StockType,
-
-                        OnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m,
-                        ReservedOpenAllKg = 0m, // sẽ fill sau
-                        AvailableKg = 0m        // sẽ fill sau
+                        CodeName = "",
+                        CategoryName = "",
+                        TotalOnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m,
+                        ReservedOpenAllKg = 0m,
+                        AvailableKg = 0m,
+                        StockDetailAvaiables = new List<StockDetailAvaiable>()
                     };
 
-                // 3) Paging (lấy page items trước)
-                var totalCount = await onHandGrouped.CountAsync();
+                var totalCount = await headerQuery.CountAsync();
 
-                var items = await onHandGrouped
+                var items = await headerQuery
                     .OrderBy(x => x.Code)
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
 
-                // Nếu page rỗng thì khỏi query tempstock
                 if (items.Count == 0)
                 {
                     var empty = new PagedResult<GetStockAvaiable>(items, totalCount, pageNumber, pageSize);
                     return OperationResult<PagedResult<GetStockAvaiable>>.Ok(empty);
                 }
 
-
+                // 2) Load tên NVL / thành phẩm
                 var materialCodes = items
-                .Where(x => x.StockType == StockType.RawMaterial
-                         || x.StockType == StockType.DefectiveRawMaterial)
-                .Select(x => x.Code)
-                .Distinct()
-                .ToList();
-
-                var productCodes = items
-                    .Where(x => x.StockType == StockType.FinishedGood
-                                || x.StockType == StockType.DefectiveFinishedGood)
+                    .Where(x => x.StockType == StockType.RawMaterial || x.StockType == StockType.DefectiveRawMaterial)
                     .Select(x => x.Code)
                     .Distinct()
                     .ToList();
 
+                var productCodes = items
+                    .Where(x => x.StockType == StockType.FinishedGood || x.StockType == StockType.DefectiveFinishedGood)
+                    .Select(x => x.Code)
+                    .Distinct()
+                    .ToList();
 
                 var materialMap = await _unitOfWork.MaterialRepository.Query()
                     .Where(m => m.ExternalId != null && materialCodes.Contains(m.ExternalId))
@@ -138,7 +110,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                         Name = m.Name,
                         CategoryName = m.Category != null ? m.Category.Name : ""
                     })
-                    .ToDictionaryAsync(x => x.Code);   
+                    .ToDictionaryAsync(x => x.Code);
 
                 var productMap = await _unitOfWork.ProductRepository.Query()
                     .Where(p => p.Code != null && productCodes.Contains(p.Code))
@@ -148,68 +120,99 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                         Name = p.Name,
                         CategoryName = p.Category != null ? p.Category.Name : ""
                     })
-                    .ToDictionaryAsync(x => x.Code);  
+                    .ToDictionaryAsync(x => x.Code);
 
-
-
-                // 4) Lấy danh sách Code đang có trong page để query TempStock gọn
                 var codes = items.Select(x => x.Code).Distinct().ToList();
 
-                // 5) Reserved OPEN từ TempStock (group theo Code)
-                var reservedMap = await _unitOfWork.WarehouseTempStockRepository.Query()
-                    .Where(t => codes.Contains(t.Code)
-                             && t.ReserveStatus == ReserveStatus.Open.ToString())
-                    .GroupBy(t => t.Code)
-                    .Select(g => new
+                // 3) Detail chỉ group theo Code + StockType + Company + LotNo
+                var detailRows = await (
+                    from s in _unitOfWork.WarehouseShelfStockRepository.Query()
+                    where codes.Contains(s.Code)
+                    group s by new
+                    {
+                        s.Code,
+                        s.StockType,
+                        CompanyName = s.Company != null ? s.Company.Name : "",
+                        s.LotNo
+                    }
+                    into g
+                    select new
+                    {
+                        Code = g.Key.Code,
+                        StockType = g.Key.StockType,
+                        CompanyName = g.Key.CompanyName ?? "",
+                        LotNo = g.Key.LotNo,
+                        OnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m
+                    }
+                ).ToListAsync();
+
+                // 4) Reserved group theo Code
+                var reservedRows = await (
+                    from t in _unitOfWork.WarehouseTempStockRepository.Query()
+                    where codes.Contains(t.Code)
+                       && t.ReserveStatus == ReserveStatus.Open.ToString()
+                    group t by t.Code into g
+                    select new
                     {
                         Code = g.Key,
-                        ReservedOpenKg = g.Sum(x => (decimal?)x.QtyRequest) ?? 0m
-                        // Nếu muốn trừ QtyUsed:
-                        // ReservedOpenKg = g.Sum(x => (decimal?)((x.QtyRequest ?? 0m) - (x.QtyUsed ?? 0m))) ?? 0m
-                    })
-                    .ToDictionaryAsync(x => x.Code, x => x.ReservedOpenKg);
+                        ReservedOpenKg = g.Sum(x => (decimal?)((x.QtyRequest ?? 0m) - (x.QtyUsed ?? 0m))) ?? 0m
+                    }
+                ).ToListAsync();
 
-                // 6) Merge vào items
+                var reservedMap = reservedRows.ToDictionary(x => x.Code, x => x.ReservedOpenKg);
+
+                // 5) Merge detail vào header
+                var headerMap = items.ToDictionary(x => (x.Code, x.StockType));
+
+                foreach (var d in detailRows)
+                {
+                    if (!headerMap.TryGetValue((d.Code, d.StockType), out var header))
+                        continue;
+
+                    header.StockDetailAvaiables.Add(new StockDetailAvaiable
+                    {
+                        LotNo = d.LotNo,
+                        CompanyName = d.CompanyName,
+                        OnHandKg = d.OnHandKg
+                    });
+                }
+
+                // 6) Fill Reserved / Available ở header
                 foreach (var it in items)
                 {
-                    // HÀNG LỖI: không cho giữ, không cho dùng
-                    if (it.StockType == StockType.DefectiveRawMaterial
-                     || it.StockType == StockType.DefectiveFinishedGood)
+                    var isDefective =
+                        it.StockType == StockType.DefectiveRawMaterial ||
+                        it.StockType == StockType.DefectiveFinishedGood;
+
+                    var reserved = 0m;
+
+                    if (!isDefective && reservedMap.TryGetValue(it.Code, out var rv))
                     {
-                        it.ReservedOpenAllKg = 0m;
-                        it.AvailableKg = 0m;
+                        reserved = rv;
                     }
-                    else
-                    {
-                        // HÀNG BÌNH THƯỜNG
-                        var reserved = reservedMap.TryGetValue(it.Code, out var rv) ? rv : 0m;
-                        it.ReservedOpenAllKg = reserved;
-                        it.AvailableKg = it.OnHandKg - reserved;
-                    }
-                    // NVL
-                    if ((it.StockType == StockType.RawMaterial
-                      || it.StockType == StockType.DefectiveRawMaterial)
-                      && materialMap.TryGetValue(it.Code, out var m))
+
+                    it.ReservedOpenAllKg = isDefective ? 0m : reserved;
+                    it.AvailableKg = isDefective ? 0m : (it.TotalOnHandKg - reserved);
+
+                    if ((it.StockType == StockType.RawMaterial || it.StockType == StockType.DefectiveRawMaterial)
+                        && materialMap.TryGetValue(it.Code, out var m))
                     {
                         it.CodeName = m.Name ?? string.Empty;
                         it.CategoryName = m.CategoryName ?? string.Empty;
                     }
-
-                    // Thành phẩm
-                    else if ((it.StockType == StockType.FinishedGood
-                           || it.StockType == StockType.DefectiveFinishedGood)
-                           && productMap.TryGetValue(it.Code, out var p))
+                    else if ((it.StockType == StockType.FinishedGood || it.StockType == StockType.DefectiveFinishedGood)
+                        && productMap.TryGetValue(it.Code, out var p))
                     {
                         it.CodeName = p.Name ?? string.Empty;
                         it.CategoryName = p.CategoryName ?? string.Empty;
                     }
                 }
 
-                // 7) Filter tồn kho khả dụng <= 0 (nếu yêu cầu)
+                // 7) Filter available <= 0
                 if (query.OnlyAvailableLeZero)
                 {
                     items = items
-                        .Where(x => x.AvailableKg <= 0m)
+                        .Where(x => (x.AvailableKg ?? 0m) <= 0m)
                         .ToList();
 
                     totalCount = items.Count;
@@ -224,49 +227,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             }
         }
 
-
-
-
-
-
-        //public async Task<decimal> GetAvailableAsync(WarehouseReadServiceQuery query, CancellationToken cancellationToken)
-        //{
-        //    var onHand = await GetOnHandAsync(query, cancellationToken);
-        //    var reserved = await GetReservedOpenAsync(query, cancellationToken);
-        //    return onHand - reserved;
-        //}
-
-        //public async Task<decimal> GetOnHandAsync(WarehouseReadServiceQuery query, CancellationToken cancellationToken)
-        //{
-        //    var q = _unitOfWork.WarehouseShelfStockRepository.Query()
-        //        .Where(x => x.CompanyId == query.companyId && x.Code == query.code);
-
-        //    if (!string.IsNullOrEmpty(query.lotkey))
-        //    {
-        //        q = q.Where(x => x.LotKey == query.lotkey);
-        //    }
-
-        //    return await q.SumAsync(x => (decimal?)x.QtyKg, cancellationToken) ?? 0m;
-        //}
-
-        //public async Task<decimal> GetReservedOpenAsync(WarehouseReadServiceQuery query, CancellationToken cancellationToken)
-        //{
-        //    var q = _unitOfWork.WarehouseTempStockRepository.Query() 
-        //        .Where(x => x.CompanyId == query.companyId && x.Code == query.code
-        //    && x.ReserveStatus == Domain.Enums.ReserveStatus.Open);
-
-        //    if (!string.IsNullOrEmpty(query.lotkey))
-        //    {
-        //        q = q.Where(x => x.LotKey == query.lotkey);
-        //    }
-
-        //    return await q.SumAsync(x => (decimal?)x.QtyRequest, cancellationToken) ?? 0m;
-
-        //}
-
-        public async Task<List<VaAvailabilityVm>> GetVaAvailabilityAsync(
-            Guid manufacturingFormulaId,
-            CancellationToken ct = default)
+        public async Task<List<VaAvailabilityVm>> GetVaAvailabilityAsync( Guid manufacturingFormulaId, CancellationToken ct = default)
         {
             // Lấy danh sách NVL trong công thức (có thể Trim/ToUpper ở C# nếu muốn),
             // NHƯNG ở SQL ta sẽ so sánh trực tiếp với cột citext, KHÔNG bọc hàm cho cột.
@@ -349,9 +310,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
         /// <param name="manufacturingFormulaId"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Dictionary<string, VaAvailabilityVm>> GetVaAvailabilityDictAsync(
-            Guid manufacturingFormulaId,
-            CancellationToken ct = default)
+        public async Task<Dictionary<string, VaAvailabilityVm>> GetVaAvailabilityDictAsync(Guid manufacturingFormulaId, CancellationToken ct = default)
         {
                     var mfm = _unitOfWork.ManufacturingFormulaMaterialRepository.Query()
                         .Where(x => x.ManufacturingFormulaId == manufacturingFormulaId
@@ -404,6 +363,53 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 
                     return dict;
                 }
+
+        /// <summary>
+        /// Lấy dictionary mapping giữa code của NVL trong công thức sản xuất và lotNo của NVL đó trong kho
+        /// </summary>
+        /// <param name="codes"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Dictionary<string, string>> GetLotNoMapByCodesAsync(IEnumerable<string> codes, CancellationToken ct = default)
+        {
+            var codeList = codes
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct()
+                .ToList();
+
+            if (codeList.Count == 0)
+                return new Dictionary<string, string>();
+
+            var rows = await _unitOfWork.WarehouseShelfStockRepository.Query()
+                .Where(x =>
+                    x.Code != null &&
+                    codeList.Contains(x.Code) &&
+                    x.StockType == StockType.RawMaterial &&
+                    x.LotNo != null &&
+                    x.LotNo != "")
+                .Select(x => new
+                {
+                    Code = x.Code!,
+                    LotNo = x.LotNo!,
+                    x.UpdatedDate,
+                    x.ShelfStockId
+                })
+                .ToListAsync(ct);
+
+            var map = rows
+                .GroupBy(x => x.Code)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g
+                        .OrderByDescending(x => x.UpdatedDate)
+                        .ThenByDescending(x => x.ShelfStockId)
+                        .Select(x => x.LotNo.Trim())
+                        .FirstOrDefault() ?? string.Empty
+                );
+
+            return map;
+        }
 
     }
 }

@@ -156,7 +156,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                             .Where(m => m.IsActive == true)
                             .Select(m => new GetMaterialFormula
                             {
-                                ItemId = m.MaterialId ?? Guid.Empty,
+                                LineNo = m.LineNo,
+                                ItemId = m.MaterialId ?? m.ProductId ?? Guid.Empty,
                                 itemType = m.itemType,
                                 CategoryId = m.CategoryId,
                                 Quantity = m.Quantity,
@@ -165,7 +166,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                                 Unit = m.Unit,
                                 MaterialNameSnapshot = m.MaterialNameSnapshot,
                                 MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot
-                            }).ToList()
+                            })
+                            .OrderBy(m => m.LineNo)
+                            .ToList()
                     })
                     .ToListAsync(ct);
 
@@ -283,25 +286,22 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                 formula.ExternalId = await _externalId.NextAsync(DocumentPrefix.VU.ToString(), ct: ct);
 
                 //6) Map dtos -> entity
+                var lineNo = 1;
                 foreach (var item in cleaned)
                 {
                     var lineTotal = Math.Round(item.Quantity * item.UnitPrice, 2, MidpointRounding.AwayFromZero);
 
                     var formulaMaterial = new FormulaMaterial
                     {
-                        FormulaMaterialId =  Guid.CreateVersion7(),
+                        FormulaMaterialId = Guid.CreateVersion7(),
                         FormulaId = formula.FormulaId,
 
-                        MaterialId = item.itemType == ItemType.Material
-                            ? item.ItemId
-                            : (Guid?)null,
+                        LineNo = lineNo++,
 
-                        ProductId = item.itemType == ItemType.Product
-                            ? item.ItemId
-                            : (Guid?)null,
+                        MaterialId = item.itemType == ItemType.Material ? item.ItemId : (Guid?)null,
+                        ProductId = item.itemType == ItemType.Product ? item.ItemId : (Guid?)null,
 
                         itemType = item.itemType,
-
                         CategoryId = item.CategoryId,
                         Quantity = item.Quantity,
                         UnitPrice = item.UnitPrice,
@@ -311,6 +311,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                         MaterialExternalIdSnapshot = item.MaterialExternalIdSnapshot,
                         IsActive = true
                     };
+
                     formula.FormulaMaterials.Add(formulaMaterial);
                 }
 
@@ -481,6 +482,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                             CategoryId = m.CategoryId,
                             Quantity = m.Quantity,
                             UnitPrice = m.UnitPrice,
+                            LineNo = m.LineNo,
                             TotalPrice = decimal.Round(m.Quantity * m.UnitPrice, 2, MidpointRounding.AwayFromZero),
                             Unit = m.Unit,
                             MaterialNameSnapshot = m.MaterialNameSnapshot,
@@ -498,6 +500,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                     else
                     {
                         // UPDATE
+                        if (m.LineNo != link.LineNo) link.LineNo = m.LineNo; // thêm
                         if (m.CategoryId != link.CategoryId) link.CategoryId = m.CategoryId;
                         if (m.Quantity != link.Quantity) link.Quantity = m.Quantity;
                         if (m.UnitPrice != link.UnitPrice) link.UnitPrice = m.UnitPrice;
@@ -570,12 +573,12 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
             try
             {
                 // 1) Validate input tối thiểu
-                if (data == null)
-                    throw new ArgumentNullException(nameof(data));
-
+                if (data == Guid.Empty)
+                    throw new ArgumentException("FormulaId không hợp lệ.", nameof(data));
 
                 // 2) Lấy dữ liệu thật từ DB theo FormulaExternalId + CompanyId
                 var dto = await _unitOfWork.FormulaRepository.Query()
+                    .Include(f => f.Product)
                     .Where(f =>
                         f.IsActive &&
                         f.CompanyId.HasValue && f.CompanyId.Value == companyId &&
@@ -587,6 +590,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
 
                         colourCode = f.Product.ColourCode ?? "",
                         productName = f.Product.Name ?? "",
+                        AddRate = (double)(f.Product.UsageRate ?? 0),
 
                         RequestDate = f.Product.SampleRequests
                             .Where(sr => sr.IsActive)
@@ -596,7 +600,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
 
                         materials = f.FormulaMaterials
                             .Where(m => m.IsActive)
-                            .OrderBy(m => m.MaterialExternalIdSnapshot ?? m.Material.ExternalId)
+                            .OrderBy(m => m.LineNo)
                             .Select(m => new FormulaPDFMaterialDTOs
                             {
                                 ExternalId = (m.MaterialExternalIdSnapshot ?? m.Material.ExternalId) ?? "",
@@ -661,11 +665,14 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
 
                                 materialFormulas = f.FormulaMaterials
                                     .Where(m => m.IsActive)
-                                    .OrderBy(m => m.MaterialExternalIdSnapshot ?? m.Material.ExternalId)
+                                    .OrderBy(m => m.LineNo)
                                     .Select(m => new GetMaterialFormula
                                     {
+                                        LineNo = m.LineNo,
+                                        ItemId = m.MaterialId ?? m.ProductId ?? Guid.Empty,
+                                        itemType = m.itemType,
                                         CategoryId = m.CategoryId,
-                                        Quantity = m.Quantity,     // ✅ Định mức
+                                        Quantity = m.Quantity,
                                         UnitPrice = m.UnitPrice,
                                         TotalPrice = m.TotalPrice,
 

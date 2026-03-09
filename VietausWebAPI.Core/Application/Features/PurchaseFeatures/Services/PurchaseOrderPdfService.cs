@@ -95,6 +95,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
 
                         Details = x.PurchaseOrderDetails
                             .Where(d => d.PurchaseOrderId == x.PurchaseOrderId)
+                            .OrderBy(d => d.LineNo)
                             .Select(d => new PdfPrinterPurchaseOrderDetail
                             {
                                 MaterialId = d.MaterialId,
@@ -140,7 +141,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
             var existed = await _unitOfWork.WarehouseRequestRepository
                 .Query(track: false)
                 .AnyAsync(x => x.IsActive
-                            && x.ReqType == WareHouseRequestType.ImportFromSupplier
+                            && x.ReqType == WareHouseRequestType.ImportOther
                             && x.codeFromRequest == po.ExternalId, ct);
 
             if (existed) return;
@@ -154,7 +155,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                 RequestName = $"Nhập kho NCC - PO {(po.ExternalId ?? po.PurchaseOrderId.ToString())}",
                 IsActive = true,
 
-                ReqType = WareHouseRequestType.ImportFromSupplier,
+                ReqType = WareHouseRequestType.ImportOther,
                 codeFromRequest = po.ExternalId ?? "Error no externalId",
 
                 CompanyId = po.CompanyId.Value,
@@ -165,6 +166,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
 
                 WarehouseRequestDetails = po.PurchaseOrderDetails
                     .Where(d => d.IsActive)
+                    .OrderBy(d => d.LineNo)
                     .Select(d => new WarehouseRequestDetail
                     {
                         // DetailId identity -> không set
@@ -174,7 +176,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                         // Tuỳ nghiệp vụ: bạn đang dùng WeightKg/BagNumber/StockStatus
                         WeightKg = d.RequestQuantity ?? 0m,
                         BagNumber = TryParseBagNumber(d.Package),
-                        StockStatus = "New",
+                        StockStatus = VoucherDetailType.Waiter.ToString(),
 
                         LotNumber = null,
                         IsActive = true

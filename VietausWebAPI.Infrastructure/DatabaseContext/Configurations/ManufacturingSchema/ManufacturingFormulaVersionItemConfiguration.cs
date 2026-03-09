@@ -33,8 +33,8 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.Manufactur
             entity.Property(x => x.itemType).HasColumnName("item_type");
 
             entity.Property(x => x.Quantity).HasColumnName("quantity").HasPrecision(12, 10);
-            entity.Property(x => x.UnitPrice).HasColumnName("unit_price").HasPrecision(18, 2);
-            entity.Property(x => x.TotalPrice).HasColumnName("total_price").HasPrecision(18, 2);
+            entity.Property(x => x.UnitPrice).HasColumnName("unit_price").HasPrecision(22, 6);
+            entity.Property(x => x.TotalPrice).HasColumnName("total_price").HasPrecision(22, 6);
             entity.Property(x => x.Unit).HasColumnName("unit").HasColumnType("text").IsRequired();
             entity.Property(x => x.MaterialNameSnapshot).HasColumnName("materialNameSnapshot").HasColumnType("text").IsRequired();
             entity.Property(x => x.MaterialExternalIdSnapshot).HasColumnName("materialExternalIdSnapshot").HasColumnType("text").IsRequired();

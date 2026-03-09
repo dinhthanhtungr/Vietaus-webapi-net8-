@@ -21,10 +21,13 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.ManufacturingVUFormu
         public string? Name { get; set; }
         public string? CustomerCode { get; set; }
         public string? CustomerName { get; set; }
+
         public double? userRate { get; set; }
 
         public string? LabNote { get; set; }
         public string? Requirement { get; set; }
         public string? PlpuNote { get; set; }
+
+        public List<GetFormulaMaterialSnapshot> MaterialSnapshots { get; set; } = new List<GetFormulaMaterialSnapshot>();
     }
 }

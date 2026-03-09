@@ -147,103 +147,102 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 
 
         // ======================================================================== Update ========================================================================
-        public async Task EnsureWarehouseIssueRequestAsync(
-            MfgProductionOrder existing,
-            DateTime now,
-            Guid userId,
-            Guid companyId,
-            CancellationToken ct)
-        {
-            // --- IDENTITY / TRÙNG LẶP ---
-            // Ưu tiên kiểm theo SourceId nếu bạn có cột trong WarehouseRequest (khuyến nghị thêm)
-            var wrQuery = _unitOfWork.WarehouseRequestRepository.Query(track: false);
+        //public async Task EnsureWarehouseIssueRequestAsync(
+        //    MfgProductionOrder existing,
+        //    DateTime now,
+        //    Guid userId,
+        //    Guid companyId,
+        //    CancellationToken ct)
+        //{
+        //    // --- IDENTITY / TRÙNG LẶP ---
+        //    // Ưu tiên kiểm theo SourceId nếu bạn có cột trong WarehouseRequest (khuyến nghị thêm)
+        //    var wrQuery = _unitOfWork.WarehouseRequestRepository.Query(track: false);
 
-            // Nếu CHƯA có cột nguồn, kiểm bằng RequestCode (pattern duy nhất theo ExternalId)
-            var requestCode = await _externalIdService.NextAsync(DocumentPrefix.PRQ.ToString(), ct: ct);
-            var existedWR = await wrQuery.FirstOrDefaultAsync(
-                x => x.RequestCode == requestCode && x.IsActive, ct);
+        //    // Nếu CHƯA có cột nguồn, kiểm bằng RequestCode (pattern duy nhất theo ExternalId)
+        //    var requestCode = await _externalIdService.NextAsync(DocumentPrefix.PRQ.ToString(), ct: ct);
+        //    var existedWR = await wrQuery.FirstOrDefaultAsync(
+        //        x => x.RequestCode == requestCode && x.IsActive, ct);
 
-            if (existedWR != null)
-            {
-                // Đã có phiếu → thôi, không tạo nữa (idempotent)
-                return;
-            }
+        //    if (existedWR != null)
+        //    {
+        //        // Đã có phiếu → thôi, không tạo nữa (idempotent)
+        //        return;
+        //    }
 
-            // --- LẤY CÔNG THỨC (VERSION HIỆN HÀNH) ---
-            // Version hiện hành = ValidTo == null
-            var currentVersion = await _unitOfWork.ProductionSelectVersionRepository.Query(false)
-                .Where(v => v.MfgProductionOrderId == existing.MfgProductionOrderId && v.ValidTo == null)
-                .Select(v => new { v.ManufacturingFormulaId })
-                .FirstOrDefaultAsync(ct);
+        //    // --- LẤY CÔNG THỨC (VERSION HIỆN HÀNH) ---
+        //    // Version hiện hành = ValidTo == null
+        //    var currentVersion = await _unitOfWork.ProductionSelectVersionRepository.Query(false)
+        //        .Where(v => v.MfgProductionOrderId == existing.MfgProductionOrderId && v.ValidTo == null)
+        //        .Select(v => new { v.ManufacturingFormulaId })
+        //        .FirstOrDefaultAsync(ct);
 
-            if (currentVersion == null || currentVersion.ManufacturingFormulaId == null)
-            {
-                // Không có version/công thức → tuỳ business: có thể bỏ qua hoặc ném lỗi domain
-                // Ở đây mình chọn "bỏ qua" (không tạo phiếu)
-                return;
-            }
+        //    if (currentVersion == null || currentVersion.ManufacturingFormulaId == null)
+        //    {
+        //        // Không có version/công thức → tuỳ business: có thể bỏ qua hoặc ném lỗi domain
+        //        // Ở đây mình chọn "bỏ qua" (không tạo phiếu)
+        //        return;
+        //    }
 
-            // Lấy NVL trong công thức
-            var mats = await _unitOfWork.ManufacturingFormulaMaterialRepository.Query(false)
-                .Where(m => m.ManufacturingFormulaId == currentVersion.ManufacturingFormulaId && m.IsActive)
-                .Select(m => new
-                {
-                    m.MaterialId,
-                    m.MaterialExternalIdSnapshot,
-                    m.MaterialNameSnapshot,
-                    m.Quantity,
-                    m.Unit
-                })
-                .ToListAsync(ct);
+        //    // Lấy NVL trong công thức
+        //    var mats = await _unitOfWork.ManufacturingFormulaMaterialRepository.Query(false)
+        //        .Where(m => m.ManufacturingFormulaId == currentVersion.ManufacturingFormulaId && m.IsActive)
+        //        .Select(m => new
+        //        {
+        //            m.MaterialId,
+        //            m.MaterialExternalIdSnapshot,
+        //            m.MaterialNameSnapshot,
+        //            m.Quantity,
+        //            m.Unit
+        //        })
+        //        .ToListAsync(ct);
 
-            if (mats.Count == 0)
-                return;
+        //    if (mats.Count == 0)
+        //        return;
 
-            // Tính hệ số nhân (ví dụ theo số mẻ)
-            var batches = existing.NumOfBatches ?? 1m;
+        //    // Tính hệ số nhân (ví dụ theo số mẻ)
+        //    var batches = existing.NumOfBatches ?? 1m;
 
-            // --- TẠO HEADER ---
-            var wr = new WarehouseRequest
-            {
-                // RequestId: auto
-                RequestCode = requestCode,                 // unique theo LSX
-                ReqStatus = WarehouseRequestStatus.Pending,                       // tuỳ enum của bạn
-                RequestName = $"Xuất NVL cho LSX {existing.ExternalId}",
-                IsActive = true,
-                ReqType = WareHouseRequestType.ExportForProduction,
-                codeFromRequest = existing.ExternalId ?? "", // nếu bạn vẫn muốn lưu
+        //    // --- TẠO HEADER ---
+        //    var wr = new WarehouseRequest
+        //    {
+        //        // RequestId: auto
+        //        RequestCode = requestCode,                 // unique theo LSX
+        //        ReqStatus = WarehouseRequestStatus.Pending,                       // tuỳ enum của bạn
+        //        RequestName = $"Xuất NVL cho LSX {existing.ExternalId}",
+        //        IsActive = true,
+        //        ReqType = WareHouseRequestType.ExportForProduction,
+        //        codeFromRequest = existing.ExternalId ?? "", // nếu bạn vẫn muốn lưu
 
-                CompanyId = companyId,
-                CreatedDate = now,
-                CreatedBy = userId,
-                UpdatedDate = now,
-                UpdatedBy = userId,
-            };
+        //        CompanyId = companyId,
+        //        CreatedDate = now,
+        //        CreatedBy = userId,
+        //        UpdatedDate = now,
+        //        UpdatedBy = userId,
+        //    };
 
-            await _unitOfWork.WarehouseRequestRepository.AddAsync(wr, ct);
-            await _unitOfWork.SaveChangesAsync(); // để có RequestId cho detail
+        //    await _unitOfWork.WarehouseRequestRepository.AddAsync(wr, ct);
+        //    await _unitOfWork.SaveChangesAsync(); // để có RequestId cho detail
 
-            // --- TẠO DETAIL ---
-            var details = new List<WarehouseRequestDetail>(mats.Count);
-            foreach (var m in mats)
-            {
-                details.Add(new WarehouseRequestDetail
-                {
-                    // DetailId: auto
-                    RequestId = wr.RequestId,
-                    ProductCode = m.MaterialExternalIdSnapshot ?? "",   // mã NVL
-                    ProductName = m.MaterialNameSnapshot ?? "",         // tên NVL
+        //    // --- TẠO DETAIL ---
+        //    var details = new List<WarehouseRequestDetail>(mats.Count);
+        //    foreach (var m in mats)
+        //    {
+        //        details.Add(new WarehouseRequestDetail
+        //        {
+        //            // DetailId: auto
+        //            RequestId = wr.RequestId,
+        //            ProductCode = m.MaterialExternalIdSnapshot ?? "",   // mã NVL
+        //            ProductName = m.MaterialNameSnapshot ?? "",         // tên NVL
 
-                    LotNumber = null,          // để kho pick lot sau
-                    WeightKg = m.Quantity * (existing.TotalQuantity ?? 0), // KHỐI LƯỢNG YÊU CẦU
-                    StockStatus = StockType.RawMaterial.ToString(),   // tuỳ enum string của bạn
-                    IsActive = true
-                });
-            }
+        //            LotNumber = null,          // để kho pick lot sau
+        //            WeightKg = m.Quantity * (existing.TotalQuantity ?? 0), // KHỐI LƯỢNG YÊU CẦU
+        //            StockStatus = StockType.RawMaterial.ToString(),   // tuỳ enum string của bạn
+        //            IsActive = true
+        //        });
+        //    }
 
-            await _unitOfWork.WarehouseRequestDetailRepository.AddRangeAsync(details, ct);
-        }
-
+        //    await _unitOfWork.WarehouseRequestDetailRepository.AddRangeAsync(details, ct);
+        //}
 
         public async Task EnsureWarehouseRequestForDOAsync(
             DeliveryOrder deliveryOrder,
@@ -252,18 +251,22 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             Guid companyId,
             CancellationToken ct)
         {
-        
-            // (Nếu chưa có cột SourceType/SourceId, dùng codeFromRequest và đặt UNIQUE)
             var requestCode = await _externalIdService.NextAsync(DocumentPrefix.PRQ.ToString(), ct: ct);
 
-            // Gộp theo mã sản phẩm để kho dễ xử lý
+            // ✅ Group theo Product + LotNoList để không mất lot
             var detailGroups = deliveryOrder.Details
-                .Where(d => d.IsActive)
-                .GroupBy(d => new { d.ProductExternalIdSnapShot, d.ProductNameSnapShot })
+                .Where(x => x.IsActive)
+                .GroupBy(x => new
+                {
+                    x.ProductExternalIdSnapShot,
+                    x.ProductNameSnapShot,
+                    LotNoList = NormalizeLotList(x.LotNoList) // chuẩn hoá cho đỡ lệch do dấu cách
+                })
                 .Select(g => new
                 {
                     g.Key.ProductExternalIdSnapShot,
                     g.Key.ProductNameSnapShot,
+                    g.Key.LotNoList,
                     Quantity = g.Sum(x => x.Quantity),
                     NumOfBags = g.Sum(x => x.NumOfBags)
                 })
@@ -275,8 +278,8 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 ReqStatus = WarehouseRequestStatus.Pending,
                 RequestName = $"Xuất kho cho PGH {deliveryOrder.ExternalId}",
                 IsActive = true,
-                ReqType = WareHouseRequestType.ExportForSales,
-                codeFromRequest = deliveryOrder.ExternalId ?? "", // nếu bạn vẫn muốn lưu
+                ReqType = WareHouseRequestType.ExportFinishedGood,
+                codeFromRequest = deliveryOrder.ExternalId ?? "",
 
                 CompanyId = companyId,
                 CreatedBy = userId,
@@ -289,13 +292,31 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             {
                 ProductCode = d.ProductExternalIdSnapShot ?? "",
                 ProductName = d.ProductNameSnapShot ?? "",
-                WeightKg = d.Quantity,        // chú ý: nếu Quantity≠kg thì quy đổi trước
+
+                // ✅ Lưu đúng LotNoList theo DO
+                LotNumber = d.LotNoList ?? "",
+
+                WeightKg = d.Quantity,
                 BagNumber = d.NumOfBags,
-                StockStatus = StockType.FinishedGood.ToString(),
+                StockStatus = VoucherDetailType.Export.ToString(),
                 IsActive = true
             }).ToList();
 
             await _unitOfWork.WarehouseRequestRepository.AddAsync(wr, ct);
+
+            static string? NormalizeLotList(string? s)
+            {
+                if (string.IsNullOrWhiteSpace(s)) return null;
+
+                // tách theo , ; | xuống dòng… rồi trim, unique, join lại
+                var lots = s.Split(new[] { ',', ';', '|', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(x => x.Trim())
+                            .Where(x => !string.IsNullOrWhiteSpace(x))
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .ToList();
+
+                return lots.Count == 0 ? null : string.Join(", ", lots);
+            }
         }
 
         public async Task EnsureWarehouseRequestDeletedAsync(string externalId, CancellationToken ct)

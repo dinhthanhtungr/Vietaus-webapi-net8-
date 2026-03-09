@@ -19,6 +19,7 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.DTOs.QCInputB
         public string Unit { get; set; } = "kg";
 
         public VoucherDetailType VoucherType { get; set; }
+        public string RequestCode { get; set; } = string.Empty;
 
         // QC summary
         public bool HasQC { get; set; }

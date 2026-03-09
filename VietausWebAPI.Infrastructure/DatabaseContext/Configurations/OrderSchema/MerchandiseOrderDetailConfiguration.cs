@@ -72,19 +72,19 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
 
             entity.Property(e => e.BaseCostSnapshot)
                   .HasColumnName("BaseCostSnapshot")
-                  .HasPrecision(18, 2);
+                  .HasPrecision(22, 6);
 
             entity.Property(e => e.RecommendedUnitPrice)
                   .HasColumnName("RecommendedUnitPrice")
-                  .HasPrecision(18, 2);
+                  .HasPrecision(22, 6);
 
             entity.Property(e => e.UnitPriceAgreed)
                   .HasColumnName("UnitPriceAgreed")
-                  .HasPrecision(18, 2);
+                  .HasPrecision(22, 6);
 
             entity.Property(e => e.TotalPriceAgreed)
                   .HasColumnName("TotalPriceAgreed")
-                  .HasPrecision(18, 2);
+                  .HasPrecision(22, 6);
 
             entity.Property(e => e.IsActive)
                   .HasColumnName("IsActive")

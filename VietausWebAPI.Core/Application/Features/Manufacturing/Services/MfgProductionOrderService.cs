@@ -84,6 +84,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             var dets = _unitOfWork.MerchandiseOrderRepository.QueryDetail();
             var mos = _unitOfWork.MerchandiseOrderRepository.Query();
 
+            var vers = _unitOfWork.ProductionSelectVersionRepository.Query();
+            var mfs = _unitOfWork.ManufacturingFormulaRepository.Query();
+
             if (!string.IsNullOrWhiteSpace(query.Keyword))
             {
                 var keyword = query.Keyword.Trim();
@@ -95,10 +98,19 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     || (po.ProductNameSnapshot != null && EF.Functions.ILike(po.ProductNameSnapshot, pattern))
                     || (po.ColorName != null && EF.Functions.ILike(po.ColorName, pattern))
                     || (po.CustomerExternalIdSnapshot != null && EF.Functions.ILike(po.CustomerExternalIdSnapshot, pattern))
-                    || (po.CustomerNameSnapshot != null && EF.Functions.ILike(po.CustomerNameSnapshot, pattern))    
+                    || (po.CustomerNameSnapshot != null && EF.Functions.ILike(po.CustomerNameSnapshot, pattern))
                     || (po.FormulaExternalIdSnapshot != null && EF.Functions.ILike(po.FormulaExternalIdSnapshot, pattern))
+
+                    // ✅ thêm search theo ManufacturingFormula.ExternalId (version hiện hành)
+                    || (
+                        from v in vers
+                        join mf in mfs on v.ManufacturingFormulaId equals mf.ManufacturingFormulaId
+                        where v.MfgProductionOrderId == po.MfgProductionOrderId && v.ValidTo == null
+                        select mf.ExternalId
+                    ).Any(x => x != null && EF.Functions.ILike(x, pattern))
                 );
             }
+
 
             if (query.CompanyId.HasValue && query.CompanyId.Value != Guid.Empty)
                 result = result.Where(p => p.CompanyId == query.CompanyId.Value);
@@ -141,6 +153,14 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 {
                     MfgProductionOrderId = o.MfgProductionOrderId,
                     ExternalId = o.ExternalId,
+
+                    MfgFormualaExternalIdSnapshot = (
+                        from v in vers
+                        join mf in mfs on v.ManufacturingFormulaId equals mf.ManufacturingFormulaId
+                        where v.MfgProductionOrderId == o.MfgProductionOrderId && v.ValidTo == null
+                        orderby v.ValidFrom descending
+                        select mf.ExternalId
+                    ).FirstOrDefault(),
 
                     MerchandiseOrderId = (
                         from l in links
@@ -1043,7 +1063,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 CustomerExternalIdSnapshot = mo.CustomerExternalIdSnapshot,
                 CustomerNameSnapshot = mo.CustomerNameSnapshot,
 
-                // snapshot VU (tuỳ bạn có muốn lưu không)
                 FormulaId = detail.FormulaId,
                 FormulaExternalIdSnapshot = detail.FormulaExternalIdSnapshot,
 
@@ -1075,81 +1094,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 UpdatedBy = actorId
             };
 
-            //// === Tạo VA mới ===
-            //var vaId = Guid.CreateVersion7();
-            //var vaExternalId = await _externalId.NextAsync(mo.CompanyId, "VA", now, ct: ct);
-
-            //var mfgFormula = new ManufacturingFormula
-            //{
-            //    ManufacturingFormulaId = vaId,
-            //    ExternalId = vaExternalId,
-            //    Name = await ExternalIdGenerator.GenerateFormulaCode(
-            //        "F",
-            //        prefix => _unitOfWork.ManufacturingFormulaRepository
-            //                    .GetLatestExternalIdStartsWithAsync(prefix, mfgId)
-            //    ),
-            //    Status = ManufacturingProductOrderFormula.New.ToString(),
-            //    TotalPrice = null,
-
-            //    // Nguồn gốc: nếu có VA gần nhất của VU thì link vào; luôn track VU gốc
-            //    SourceManufacturingFormulaId = hasStandardForProduct ? stdVaForProduct!.VaId : (Guid?)null,
-            //    SourceManufacturingExternalIdSnapshot = hasStandardForProduct ? stdVaForProduct!.VaCode : null,
-            //    SourceVUFormulaId = detail.FormulaId,
-            //    SourceVUExternalIdSnapshot = detail.FormulaExternalIdSnapshot,
-
-            //    IsActive = true,
-            //    Note = null,
-
-            //    CreatedDate = now,
-            //    CreatedBy = actorId,
-            //    UpdatedDate = now,
-            //    UpdatedBy = actorId,
-            //    CompanyId = mo.CompanyId
-            //};
-
-            //// === Clone vật tư + scale theo ExpectedQuantity ===
-            //var materials = new List<ManufacturingFormulaMaterial>(fmItems.Count);
-            //decimal total = 0m;
-
-            //foreach (var fm in fmItems)
-            //{
-            //    var qty = fm.Quantity * detail.ExpectedQuantity; // scale
-            //    var unitPrice = ctx.PriceMap.TryGetValue(fm.MaterialId, out var p) ? p : (fm.UnitPrice ?? 0m);
-            //    var lineTotal = unitPrice * qty;
-            //    total += lineTotal;
-
-            //    materials.Add(new ManufacturingFormulaMaterial
-            //    {
-            //        ManufacturingFormulaMaterialId = Guid.CreateVersion7(),
-            //        ManufacturingFormulaId = mfgFormula.ManufacturingFormulaId,
-
-            //        MaterialId = fm.MaterialId,
-            //        CategoryId = fm.CategoryId.GetValueOrDefault(),
-            //        Quantity = qty, // ✅ đã sửa
-            //        Unit = fm.Unit,
-
-            //        UnitPrice = unitPrice,
-            //        TotalPrice = lineTotal,
-
-            //        MaterialNameSnapshot = fm.MaterialNameSnapshot,
-            //        MaterialExternalIdSnapshot = fm.MaterialExternalIdSnapshot
-            //    });
-            //}
-
-            //mfgFormula.TotalPrice = total;
-
-            //// 6) Join entity: chọn phiên bản công thức cho Order
-            //var select = new ProductStandardFormula
-            //{
-            //    ProductStandardFormulaId = Guid.CreateVersion7(),
-            //    ProductId = detail.ProductId,
-            //    ManufacturingFormulaId = mfgFormula.ManufacturingFormulaId,
-            //    ValidFrom = now,
-            //    ValidTo = null,
-            //    CreatedBy = actorId,
-            //    ClosedBy = null,
-            //    CompanyId = mo.CompanyId
-            //};
 
 
             // 7) Liên kết Order với chi tiết đơn hàng (MfgOrderPO)

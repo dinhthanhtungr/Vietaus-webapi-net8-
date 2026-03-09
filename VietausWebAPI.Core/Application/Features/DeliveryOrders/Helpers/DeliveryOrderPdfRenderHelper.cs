@@ -182,8 +182,8 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                         );
 
                     // Grand total TỪ DeliveryOrderDetails (DO)
-                    var grandWeight = _DeliveryOrderDetails.Sum(x => (decimal)(x?.Quantity ?? 0m));
-                    var grandBags = _DeliveryOrderDetails.Sum(x => (int)(x?.NumOfBags ?? 0));
+                    //var grandWeight = _DeliveryOrderDetails.Sum(x => (decimal)(x?.Quantity ?? 0m));
+                    //var grandBags = _DeliveryOrderDetails.Sum(x => (int)(x?.NumOfBags ?? 0));
 
                     foreach (var g in wrGroups)
                     {
@@ -251,9 +251,9 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                     }
 
                     // ===== GRAND TOTAL – TÍNH THEO DO =====
-                    borderStyle(table.Cell().ColumnSpan(6))
-                        .PaddingVertical(4).PaddingHorizontal(6).AlignRight()
-                        .Text(t => { t.Span($"Tổng cộng: {grandWeight:0.00} Kg - {grandBags} Bao").Bold(); t.Span(" (Total)").Bold(); });
+                    //borderStyle(table.Cell().ColumnSpan(6))
+                    //    .PaddingVertical(4).PaddingHorizontal(6).AlignRight()
+                    //    .Text(t => { t.Span($"Tổng cộng: {grandWeight:0.00} Kg - {grandBags} Bao").Bold(); t.Span(" (Total)").Bold(); });
 
 
                 });
@@ -279,6 +279,9 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                     // t.Span($"{d.ContactName ?? ""} - {d.ContactPhone ?? ""}");
                     // Còn nếu bạn đang có 1 chuỗi chung:
                     t.Span(d.Receiver ?? "-");
+                    t.Span(" (").Italic();
+                    t.Span(d.PhoneSnapshot ?? "-").Italic();
+                    t.Span(")").Italic();
                 });
 
                 // ==== Khối chữ ký 3 cột ====

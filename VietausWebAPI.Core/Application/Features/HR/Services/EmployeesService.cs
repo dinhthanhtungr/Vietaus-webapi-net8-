@@ -21,6 +21,7 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Features.HR.DTOs.Parts;
 using VietausWebAPI.Core.Application.Features.HR.Querys.Parts;
+using VietausWebAPI.Core.Application.Features.Shared.ServiceContracts;
 
 namespace VietausWebAPI.Core.Application.Features.HR.Services
 {
@@ -29,6 +30,7 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ICurrentUser _currentUser;
+        private readonly IVisibilityHelper _visibilityHelper;
         private readonly IMapper _mapper;
 
         /// <summary>
@@ -36,12 +38,17 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
         /// </summary>
         /// <param name="unitOfWork"></param>
         /// <param name="mapper"></param>
-        public EmployeesService(IUnitOfWork unitOfWork, IMapper mapper, UserManager<ApplicationUser> userManager, ICurrentUser currentUser)
+        public EmployeesService(IUnitOfWork unitOfWork
+            , IMapper mapper
+            , UserManager<ApplicationUser> userManager
+            , ICurrentUser currentUser
+            , IVisibilityHelper visibilityHelper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _userManager = userManager;
             _currentUser = currentUser;
+            _visibilityHelper = visibilityHelper;
         }
 
 
@@ -129,10 +136,13 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
             var pageIndex = query.PageNumber > 0 ? query.PageNumber : 1;
             var pageSize = query.PageSize > 0 ? query.PageSize : 10;
             var keyword = query.keyword?.Trim();
-            var q = _unitOfWork.GroupRepository.Query();
 
-            var totalCount = await q.CountAsync();   
-            // 3) Filter theo keyword (không phân biệt hoa/thường)
+            IQueryable<Group> q = _unitOfWork.GroupRepository.Query();
+
+            // 1) Phân quyền group trước
+            q = await _visibilityHelper.ApplyGroupAsync(q);
+
+            // 2) Filter keyword
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 var kw = keyword.ToLower();
@@ -144,10 +154,13 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
                 );
             }
 
+            // 3) Count sau khi đã filter + phân quyền
+            var totalCount = await q.CountAsync();
 
+            // 4) Query data
             var items = await q
-                .Include(g => g.MemberInGroups) 
-                    .ThenInclude(gm => gm.ProfileNavigation)// hoặc GroupMembers, tuỳ bạn đặt tên
+                .Include(g => g.MemberInGroups)
+                    .ThenInclude(gm => gm.ProfileNavigation)
                 .OrderByDescending(g => g.CreatedDate)
                 .Skip((pageIndex - 1) * pageSize)
                 .Take(pageSize)
@@ -158,12 +171,14 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
                     ExternalId = g.ExternalId,
                     Name = g.Name,
                     LeaderName = g.MemberInGroups
-                                .FirstOrDefault(m => m.IsAdmin == true && m.ProfileNavigation != null && m.ProfileNavigation.FullName != null) != null
-                                    ? g.MemberInGroups.FirstOrDefault(m => m.IsAdmin == true && m.ProfileNavigation != null && m.ProfileNavigation.FullName != null)!.ProfileNavigation!.FullName!
-                                    : null,
+                        .Where(m => m.IsAdmin == true
+                                 && m.ProfileNavigation != null
+                                 && m.ProfileNavigation.FullName != null)
+                        .Select(m => m.ProfileNavigation!.FullName!)
+                        .FirstOrDefault(),
                     CreatedDate = g.CreatedDate,
                     CreatedBy = g.CreatedBy,
-                    MemberCount = g.MemberInGroups.Where(m => m.IsActive).Count()   // hoặc g.GroupMembers.Count()
+                    MemberCount = g.MemberInGroups.Count(m => m.IsActive)
                 })
                 .ToListAsync();
 
@@ -174,7 +189,6 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
                 pageSize
             );
         }
-
         public async Task<PagedResult<EmployeeSummary>> GetPagedAsync(
             EmployeeQuery? query)
         {

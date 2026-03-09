@@ -29,6 +29,7 @@ using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
 using VietausWebAPI.Core.Domain.Enums.Formulas;
 using VietausWebAPI.Core.Domain.Enums.Notifications;
 using VietausWebAPI.Core.Domain.Enums.Products;
+using VietausWebAPI.Core.Domain.Enums.Visibilitys;
 using VietausWebAPI.WebAPI.Helpers.Securities.Roles;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
@@ -261,21 +262,27 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 if (query.PageNumber <= 0) query.PageNumber = 1;
                 if (query.PageSize <= 0) query.PageSize = 15;
 
-                // ---- 0) Xác định scope xem theo role ----
-                // ngay sau normalize pageSize
                 var viewer = await _visibilityHelper.BuildViewerScopeAsync(ct);
 
-                // Base query
                 var result = _unitOfWork.SampleRequestRepository.Query()
-                    .Where(c => c.IsActive == true); // CompanyId nếu cần: && c.CompanyId == viewer.CompanyId
+                    .Where(x => x.IsActive == true);
 
-                // ÁP QUYỀN (theo người tạo) — đúng rule bạn yêu cầu
+                // Áp quyền xem
                 result = _visibilityHelper.ApplySampleRequest(result, viewer);
 
-                // ---- 3) Keyword ----
-                if (!string.IsNullOrWhiteSpace(query.Keyword))
+                // Block customer mặc định với SalesScoped, nhưng cho phép hiện khi đang search keyword
+                var blockedCustomerId = Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75");
+                var hasKeyword = !string.IsNullOrWhiteSpace(query.Keyword);
+
+                if (viewer.ScopeType == ViewerScopeType.SalesScoped && !hasKeyword)
                 {
-                    var keyword = query.Keyword.Trim();
+                    result = result.Where(x => x.CustomerId != blockedCustomerId);
+                }
+
+                // Keyword
+                if (hasKeyword)
+                {
+                    var keyword = query.Keyword!.Trim();
 
                     result = result.Where(x =>
                         (x.ExternalId ?? "").Contains(keyword)
@@ -288,7 +295,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     );
                 }
 
-                // ---- 4) Status (multi) ----
+                // Status
                 if (query.Statuses is { Count: > 0 })
                 {
                     var statuses = query.Statuses
@@ -299,27 +306,24 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     if (statuses.Count > 0)
                     {
                         result = result.Where(x => statuses.Contains(x.Status));
-                        // Nếu Status là enum: statuses.Contains(x.Status.ToString())
                     }
                 }
 
-                // ---- 5) Date range (CreatedDate) ----
+                // Date range
                 if (query.From.HasValue)
                 {
                     var from = query.From.Value.Date;
                     result = result.Where(x => x.CreatedDate >= from);
                 }
+
                 if (query.To.HasValue)
                 {
                     var toExclusive = query.To.Value.Date.AddDays(1);
                     result = result.Where(x => x.CreatedDate < toExclusive);
                 }
 
-                // ---- 6) Count sau mọi filter ----
                 var totalCount = await result.CountAsync(ct);
 
-                // ---- 7) Sort + Paging + Project ----
-                // Giữ style sort theo ExternalId của bạn; có thêm guard tránh lỗi null/short
                 var items = await result
                     .OrderByDescending(x => x.CreatedDate)
                     .Skip((query.PageNumber - 1) * query.PageSize)
@@ -439,6 +443,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
 
                                 materialFormulas = f.FormulaMaterials
                                     .Where(mf => mf.IsActive)
+                                    .OrderBy(mf => mf.LineNo)
                                     .Select(mf => new GetMaterialFormula
                                     {
                                         itemType = mf.itemType,
@@ -580,22 +585,22 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 await tx.CommitAsync(ct);
 
                 // ====== 6. Gửi notification ======
-                await _notificationService.PublishAsync(new PublishNotificationRequest
-                {
-                    Topic = TopicNotifications.ProductSampleCreated,
-                    Severity = NotificationSeverity.Info,
-                    Title = $"Yêu cầu phối mẫu mới: {sample.ExternalId}",
-                    Message = $"Khách hàng {customerName}",
-                    Link = $"/labs/product-orders/{sample.SampleRequestId}",
-                    PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
-                    {
-                        ProductOrderId = sample.ProductId,
-                        CustomerId = sample.CustomerId,
-                        CreatedBy = sample.CreatedBy,
-                        CreatedDate = sample.CreatedDate
-                    }),
-                    TargetRoles = new() { RoleSets.Lab_Group }
-                }, ct);
+                //await _notificationService.PublishAsync(new PublishNotificationRequest
+                //{
+                //    Topic = TopicNotifications.ProductSampleCreated,
+                //    Severity = NotificationSeverity.Info,
+                //    Title = $"Yêu cầu phối mẫu mới: {sample.ExternalId}",
+                //    Message = $"Khách hàng {customerName}",
+                //    Link = $"/labs/product-orders/{sample.SampleRequestId}",
+                //    PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
+                //    {
+                //        ProductOrderId = sample.ProductId,
+                //        CustomerId = sample.CustomerId,
+                //        CreatedBy = sample.CreatedBy,
+                //        CreatedDate = sample.CreatedDate
+                //    }),
+                //    TargetRoles = new() { RoleSets.Lab_Group }
+                //}, ct);
 
                 // mình nghĩ trả về SampleRequestId hợp lý hơn kết dính bucket
                 return affected > 0
@@ -698,6 +703,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 PatchHelper.SetIfNullable(req.FormulaId, () => existing.FormulaId, v => existing.FormulaId = v);
                 PatchHelper.SetIfRef(req.SaleComment, () => existing.SaleComment, v => existing.SaleComment = v);
                 PatchHelper.SetIfRef(req.Package, () => existing.Package, v => existing.Package = v);
+
+                PatchHelper.SetIfGuid(req.BranchId, () => existing.BranchId, v => existing.BranchId = v);
 
                 // 4) Patch Product (nếu có)
                 var product = existing.Product;

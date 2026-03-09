@@ -52,7 +52,8 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
             var skip = (page - 1) * pageSize;
 
             var q = _unitOfWork.ProductTestRepository.Query();
-
+            var mos = _unitOfWork.MerchandiseOrderRepository.Query();        // header
+            var dets = _unitOfWork.MerchandiseOrderRepository.QueryDetail();  // detail
             // ✅ hiểu id là ProductId => list COA của 1 sản phẩm
 
             // ===== FILTERS =====
@@ -63,8 +64,11 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
 
                 q = q.Where(x =>
                     (x.ExternalId != null && EF.Functions.ILike(x.ExternalId, like))
+                    || (x.ProductExternalId != null && EF.Functions.ILike(x.ProductExternalId, like))
                 );
             }
+
+
 
             // sort mới nhất trước
             q = q.OrderByDescending(x => x.ManufacturingDate).ThenByDescending(x => x.ExpiryDate);

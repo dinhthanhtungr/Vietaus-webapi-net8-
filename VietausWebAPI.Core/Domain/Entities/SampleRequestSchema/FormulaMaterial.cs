@@ -24,6 +24,7 @@ public partial class FormulaMaterial
     public string? MaterialExternalIdSnapshot { get; set; }   // VARCHAR
     public string? Unit { get; set; }                         // VARCHAR
     public bool IsActive { get; set; } = true;
+    public int LineNo { get; set; }
 
 
     public virtual Formula Formula { get; set; } = null!;

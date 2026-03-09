@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Shared.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Enums.Manufacturings;
 
 namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOrders
 {
@@ -28,7 +30,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProducti
         public string? Requirement { get; set; }
         public string? PlpuNote { get; set; }
         public string? QcCheck { get; set; }
-        public string? StepOfProduct { get; set; }
+        public StepOfProduct? StepOfProduct { get; set; }
 
         // nếu muốn tạo xong nhảy thẳng Scheduling
         public string? InitialStatus { get; set; } // null => New

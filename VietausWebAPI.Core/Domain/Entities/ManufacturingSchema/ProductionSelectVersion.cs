@@ -17,7 +17,7 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         public Guid? ManufacturingFormulaId { get; set; }
 
 
-        public DateTime ValidFrom { get; set; }
+        public DateTime? ValidFrom { get; set; }
         public DateTime? ValidTo { get; set; }          // null = hiện hành
 
         public Guid CreatedBy { get; set; }

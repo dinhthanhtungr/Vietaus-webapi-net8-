@@ -12,6 +12,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.ManufacturingVUFormu
         public string BatchNo { get; set; } = string.Empty;
         public DateTime? RequestDate { get; set; }
         public string BagType { get; set; } = string.Empty;
+
+        public DateTime CreatedDate { get; set; }
         public GetManufacturingVUFormula getManufacturingVUFormula { get; set; } = new GetManufacturingVUFormula();
         public List<FormulaPDFMaterialDTOs> materials { get; set; } = new List<FormulaPDFMaterialDTOs>();
 

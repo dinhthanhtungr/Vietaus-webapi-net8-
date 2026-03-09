@@ -130,27 +130,46 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
         /// <exception cref="ArgumentException"></exception>
         public async Task<OperationResult<TransferCustomerDTO>> CreateTransferAsync(TransferCustomersRequest req, CancellationToken ct)
         {
+            if (req == null) throw new ArgumentNullException(nameof(req));
+
             req.CompanyId = _CurrentUser.CompanyId;
             req.CreatedBy = _CurrentUser.EmployeeId;
 
-            if (req == null) throw new ArgumentNullException(nameof(req));
-            if (req.CustomerIds == null || req.CustomerIds.Count == 0)
-                return OperationResult<TransferCustomerDTO>.Fail("CustomerIds is empty.");
             if (req.FromEmployeeId == Guid.Empty || req.ToEmployeeId == Guid.Empty
                 || req.FromGroupId == Guid.Empty || req.ToGroupId == Guid.Empty
                 || req.CompanyId == Guid.Empty || req.CreatedBy == Guid.Empty)
                 return OperationResult<TransferCustomerDTO>.Fail("Some required Id is empty (Guid.Empty).");
+
             if (req.FromEmployeeId == req.ToEmployeeId && req.FromGroupId == req.ToGroupId)
                 return OperationResult<TransferCustomerDTO>.Fail("Source and destination are the same.");
 
-            var customerIds = req.CustomerIds.Distinct().ToList();
             var nowUtc = DateTime.Now;
+
+            List<Guid> customerIds;
+
+            if (req.TransferAllCustomers)
+            {
+                customerIds = await _unitOfWork.CustomerAssignmentRepository.Query()
+                    .Where(a => a.IsActive == true
+                             && a.EmployeeId == req.FromEmployeeId
+                             && a.GroupId == req.FromGroupId)
+                    .Select(a => a.CustomerId)
+                    .Distinct()
+                    .ToListAsync(ct);
+            }
+            else
+            {
+                customerIds = req.CustomerIds?.Distinct().ToList() ?? new List<Guid>();
+            }
+
+            if (customerIds.Count == 0)
+                return OperationResult<TransferCustomerDTO>.Fail("No customers found to transfer.");
 
             await using var tx = await _unitOfWork.BeginTransactionAsync();
 
             try
             {
-                // 0) Validate: tất cả KH đều đang thuộc from-employee + from-group (active)
+                // Validate: tất cả KH đều đang thuộc from-employee + from-group
                 var invalidIds = await _unitOfWork.CustomerAssignmentRepository.Query()
                     .Where(a => customerIds.Contains(a.CustomerId) && a.IsActive == true)
                     .Where(a => !(a.EmployeeId == req.FromEmployeeId && a.GroupId == req.FromGroupId))
@@ -161,7 +180,6 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                 if (invalidIds.Count > 0)
                     throw new InvalidOperationException($"Một số khách hàng không thuộc nguồn hiện tại (from): {string.Join(", ", invalidIds)}");
 
-                // 1) Ghi header + items
                 var log = new CustomerTransferLog
                 {
                     Id = Guid.CreateVersion7(),
@@ -174,24 +192,22 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                     CompanyId = req.CompanyId,
                     CreatedBy = req.CreatedBy,
                     CreatedDate = nowUtc,
-                    DetailCustomerTransfers = customerIds.Select(id => new DetailCustomerTransfer { CustomerId = id }).ToList()
+                    DetailCustomerTransfers = customerIds
+                        .Select(id => new DetailCustomerTransfer { CustomerId = id })
+                        .ToList()
                 };
+
                 await _unitOfWork.CustomerTransferLogRepository.AddAsync(log, ct);
 
-                // 2) Chuyển quyền: đóng bản ghi active cũ + thêm bản ghi active mới
-                //await _unitOfWork.CustomerAssignmentRepository.BulkUpdateEmployeeGroupAsync(
-                //     customerIds, req.ToEmployeeId, req.ToGroupId, req.CreatedBy, nowUtc, ct);
-
-
                 await _unitOfWork.CustomerAssignmentRepository.BulkTransferWithHistoryAsync(
-                        customerIds,
-                        req.FromEmployeeId, req.FromGroupId,
-                        req.ToEmployeeId, req.ToGroupId,
-                        req.CreatedBy, req.CompanyId, nowUtc, ct);
+                    customerIds,
+                    req.FromEmployeeId, req.FromGroupId,
+                    req.ToEmployeeId, req.ToGroupId,
+                    req.CreatedBy, req.CompanyId, nowUtc, ct);
+
                 await _unitOfWork.SaveChangesAsync();
                 await tx.CommitAsync(ct);
 
-                // 3) Projection → DTO
                 var dto = await _unitOfWork.CustomerTransferLogRepository.Query()
                     .Where(x => x.Id == log.Id)
                     .Select(x => new TransferCustomerDTO
@@ -211,7 +227,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                             Code = x.ToEmployee.ExternalId
                         },
                         Customers = x.DetailCustomerTransfers
-                            .Select(d => new CustomerLiteDto
+                            .Select(d => new CustomerLiteDto    
                             {
                                 Id = d.CustomerId,
                                 ExternalId = d.Customer.ExternalId,
@@ -223,12 +239,6 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                     .FirstAsync(ct);
 
                 return OperationResult<TransferCustomerDTO>.Ok(dto);
-            }
-            catch (DbUpdateException ex)
-            {
-                await tx.RollbackAsync(ct);
-                // log ex if needed
-                throw; // giữ stack trace gốc
             }
             catch
             {

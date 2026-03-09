@@ -179,6 +179,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 // Vật tư theo VA
                 var materials = await _unitOfWork.ManufacturingFormulaMaterialRepository.Query(false)
                     .Where(m => m.ManufacturingFormulaId == vaId!.Value)
+                        .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
+                        .ThenBy(x => x.MaterialExternalIdSnapshot)
                     .Select(m => new GetManufacturingFormulaMaterial
                     {
                         itemType = m.itemType,
@@ -239,6 +241,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 // Vật tư theo VU
                 var materials = await _unitOfWork.FormulaMaterialRepository.Query(false)
                     .Where(fm => fm.FormulaId == mpo.VuChosenId.Value)
+                        .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
+                        .ThenBy(x => x.MaterialExternalIdSnapshot)
                     .Select(fm => new GetManufacturingFormulaMaterial
                     {
                         itemType = fm.itemType,
@@ -315,15 +319,17 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     x.ProductionOrder.ProductId,
                     ProductNameSnapshot = x.ProductionOrder.Product.Name,
                     ProductExternalIdSnapshot = x.ProductionOrder.Product.ColourCode,
+
                     IsRecycle = x.ProductionOrder.Product.IsRecycle,
                     x.ProductionOrder.CustomerNameSnapshot,
+                    MerchadiseOrderExternalId = x.Detail.MerchandiseOrder.ExternalId,
                     x.ProductionOrder.TotalQuantityRequest,
                     x.ProductionOrder.Status,
 
                     VuChosenId = x.ProductionOrder.FormulaId,
                     VuChosenExternalIdSnapshot = x.ProductionOrder.FormulaExternalIdSnapshot,
 
-                    x.Detail.TotalPriceAgreed,
+                    x.Detail.UnitPriceAgreed,
                     x.ProductionOrder.CompanyId
                 })
                 .FirstOrDefaultAsync(ct);
@@ -357,6 +363,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
             var materials = await _unitOfWork.ManufacturingFormulaMaterialRepository.Query()
                 .Where(m => m.ManufacturingFormulaId == mfgo.ManufacturingFormulaId && m.IsActive == true)
+                    .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
+                    .ThenBy(x => x.MaterialExternalIdSnapshot)
                 .Select(m => new GetManufacturingFormulaMaterial
                 {
                     ManufacturingFormulaMaterialId = m.ManufacturingFormulaMaterialId,
@@ -388,9 +396,11 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 ProductNameSnapshot = mpo.ProductNameSnapshot,
                 ProductExternalIdSnapshot = mpo.ProductExternalIdSnapshot,
                 IsRecycle = mpo.IsRecycle,
+
+                MerchadiseOrderExternalId = mpo.MerchadiseOrderExternalId,
                 CustomerNameSnapshot = mpo.CustomerNameSnapshot,
 
-                SaleTotalPrice = mpo.TotalPriceAgreed,
+                SaleTotalPrice = mpo.UnitPriceAgreed,
                 TotalQuantityRequest = mpo.TotalQuantityRequest,
 
                 VUFormulaId = mpo.VuChosenId,
@@ -445,6 +455,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                          && x.IsActive);
 
             var materials = await mfmQuery
+                .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
+                .ThenBy(x => x.MaterialExternalIdSnapshot)
                 .Select(x => new GetManufacturingFormulaMaterial
                 {
                     ManufacturingFormulaMaterialId = x.ManufacturingFormulaMaterialId,
@@ -583,7 +595,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             .Sum(),
 
                         ManufacturingFormulaMaterials = f.ManufacturingFormulaMaterials
-                            .OrderBy(m => m.MaterialExternalIdSnapshot)
+                            .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
+                                .ThenBy(x => x.MaterialExternalIdSnapshot)
                             .Select(m => new GetSampleMfgFormulaMaterial
                             {
                                 itemType = m.itemType,
@@ -632,8 +645,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                                   .Sum(),
                               FormulaSourceIdCreatedDate = f.CreatedDate,
                               ManufacturingFormulaMaterials = f.FormulaMaterials
-                                  .OrderBy(m => m.MaterialExternalIdSnapshot)
-                                  .OrderBy(m => m.MaterialExternalIdSnapshot)
+                                .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
+                                    .ThenBy(x => x.MaterialExternalIdSnapshot)
                                   .Select(m => new GetSampleMfgFormulaMaterial
                                   {
                                       itemType = m.itemType,
@@ -720,7 +733,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     Note = v.Note,
 
                     ManufacturingFormulaMaterials = v.Items
-                        .OrderBy(i => i.MaterialExternalIdSnapshot)
+                        .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
+                            .ThenBy(x => x.MaterialExternalIdSnapshot)
                         .Select(i => new GetManufacturingFormulaMaterial
                         {
                             itemType = i.itemType,
@@ -862,7 +876,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 ? new List<(Guid FormulaId, GetSampleMfgFormulaMaterial Mat)>()
                 : await vaMatRepo
                     .Where(m => m.IsActive && vaIds.Contains(m.ManufacturingFormulaId))
-                    .OrderBy(m => m.MaterialExternalIdSnapshot)
+                    .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
+                        .ThenBy(x => x.MaterialExternalIdSnapshot)
                     .Select(m => new
                     {
                         FormulaId = m.ManufacturingFormulaId,
@@ -887,7 +902,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 ? new List<(Guid FormulaId, GetSampleMfgFormulaMaterial Mat)>()
                 : await vuMatRepo
                     .Where(m => m.IsActive && vuIds.Contains(m.FormulaId))
-                    .OrderBy(m => m.MaterialExternalIdSnapshot)
+                    .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
+                        .ThenBy(x => x.MaterialExternalIdSnapshot)
                     .Select(m => new
                     {
 
@@ -1035,26 +1051,30 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 await _unitOfWork.ManufacturingFormulaRepository.AddAsync(mf, ct);
 
                 // 2) Tạo ManufacturingFormulaMaterial
-                var materialEntities = req.ManufacturingFormulaMaterials.Select(m => new ManufacturingFormulaMaterial
-                {
-                    ManufacturingFormulaMaterialId = Guid.CreateVersion7(),
-                    ManufacturingFormulaId = mf.ManufacturingFormulaId,
+                var materialEntities = req.ManufacturingFormulaMaterials
+                    .Select((m, index) => new ManufacturingFormulaMaterial
+                    {
+                        ManufacturingFormulaMaterialId = Guid.CreateVersion7(),
+                        ManufacturingFormulaId = mf.ManufacturingFormulaId,
 
-                    itemType = m.ItemType,
+                        LineNo = index + 1,
 
-                    MaterialId = m.ItemType == ItemType.Material ? m.ItemId : (Guid?)null,
-                    ProductId = m.ItemType == ItemType.Product ? m.ItemId : (Guid?)null,
+                        itemType = m.ItemType,
 
-                    CategoryId = m.CategoryId,
-                    Quantity = m.Quantity,
-                    UnitPrice = m.UnitPrice,
-                    TotalPrice = m.UnitPrice * m.Quantity,
+                        MaterialId = m.ItemType == ItemType.Material ? m.ItemId : (Guid?)null,
+                        ProductId = m.ItemType == ItemType.Product ? m.ItemId : (Guid?)null,
 
-                    MaterialNameSnapshot = m.MaterialNameSnapshot,
-                    MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot,
-                    Unit = m.Unit,
-                    IsActive = m.IsActive
-                }).ToList();
+                        CategoryId = m.CategoryId,
+                        Quantity = m.Quantity,
+                        UnitPrice = m.UnitPrice,
+                        TotalPrice = m.UnitPrice * m.Quantity,
+
+                        MaterialNameSnapshot = m.MaterialNameSnapshot,
+                        MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot,
+                        Unit = m.Unit,
+                        IsActive = m.IsActive
+                    })
+                    .ToList();
 
                 await _unitOfWork.ManufacturingFormulaMaterialRepository.AddRangeAsync(materialEntities, ct);
 
@@ -1160,6 +1180,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     }
                     catch { /* không chặn flow nếu provider lỗi */ }
 
+
+                    // ====== Gửi notification ======
                     if (targetPrice.HasValue && mf.TotalPrice > targetPrice.Value)
                     {
                         // Gửi cảnh báo tới Ban giám đốc (role “Board”) – bạn có thể đổi thành TargetUserIds/TargetTeamIds
@@ -1454,8 +1476,10 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     }
 
                     // 5.3. Upsert những dòng có trong req
-                    foreach (var patchItem in incoming)
+                    for (int idx = 0; idx < incoming.Count; idx++)
                     {
+                        var patchItem = incoming[idx];
+                        var lineNo = idx + 1;
                         // IMPORTANT: bỏ qua dòng rác
                         if (patchItem.ItemId == Guid.Empty) continue;
 
@@ -1481,7 +1505,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                                 resurrectMaterial.Quantity = patchItem.Quantity;
                                 resurrectMaterial.UnitPrice = patchItem.UnitPrice;
                                 resurrectMaterial.TotalPrice = patchItem.TotalPrice;
-
+                                resurrectMaterial.LineNo = lineNo;
                                 resurrectMaterial.Unit = patchItem.Unit ?? resurrectMaterial.Unit;
 
                                 PatchHelper.SetIfRef(patchItem.MaterialNameSnapshot,
@@ -1506,6 +1530,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                                 ProductId = patchItem.ItemType == ItemType.Product ? patchItem.ItemId : (Guid?)null,
 
                                 CategoryId = patchItem.CategoryId,
+                                LineNo = lineNo,
 
                                 Quantity = patchItem.Quantity,
                                 UnitPrice = patchItem.UnitPrice,
@@ -1528,7 +1553,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             .FirstOrDefault(m => m.ManufacturingFormulaMaterialId == patchItem.ManufacturingFormulaMaterialId);
 
                         if (existingMaterial == null) continue;
-
+                        existingMaterial.LineNo = lineNo;
                         // ✅ update type + ids (quan trọng)
                         existingMaterial.itemType = patchItem.ItemType;
                         existingMaterial.MaterialId = patchItem.ItemType == ItemType.Material ? patchItem.ItemId : (Guid?)null;
@@ -1578,6 +1603,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 }
                 catch { /* không chặn flow nếu provider lỗi */ }
 
+
+
+                // ====== Gửi notification ======
                 if (targetPrice.HasValue && existing.TotalPrice > targetPrice.Value)
                 {
                     // Gửi cảnh báo tới Ban giám đốc (role “Board”) – bạn có thể đổi thành TargetUserIds/TargetTeamIds
@@ -1600,25 +1628,26 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     }, ct);
                 }
 
-                if (_materialChanged)
-                {
-                    await _notificationService.PublishAsync(new PublishNotificationRequest
-                    {
-                        Topic = TopicNotifications.WarehouseStockLost,
-                        Severity = NotificationSeverity.Info,
-                        Title = $"Cảnh báo tồn kho: {_MfgExternalId}",
-                        Message = $"Vật tư thay đổi",
-                        Link = $"/plpu/mfgproductionorders/{req.mfgProductionOrderId}",
-                        PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
-                        {
-                            FormulaId = req.ManufacturingFormulaId,
-                            ExternalId = _MfgExternalId,
-                            MpoId = req.mfgProductionOrderId
-                        }),
-                        TargetRoles = new() { RoleSets.PLPU_Group }
-                    }, ct);
+                // ====== Gửi notification ======
+                //if (_materialChanged)
+                //{
+                //    await _notificationService.PublishAsync(new PublishNotificationRequest
+                //    {
+                //        Topic = TopicNotifications.WarehouseStockLost,
+                //        Severity = NotificationSeverity.Info,
+                //        Title = $"Cảnh báo tồn kho: {_MfgExternalId}",
+                //        Message = $"Vật tư thay đổi",
+                //        Link = $"/plpu/mfgproductionorders/{req.mfgProductionOrderId}",
+                //        PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
+                //        {
+                //            FormulaId = req.ManufacturingFormulaId,
+                //            ExternalId = _MfgExternalId,
+                //            MpoId = req.mfgProductionOrderId
+                //        }),
+                //        TargetRoles = new() { RoleSets.PLPU_Group }
+                //    }, ct);
 
-                }
+                //}
 
 
                 return OperationResult.Ok("Cập nhật công thức thành công");
@@ -1693,12 +1722,15 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             };
 
             // 4) Snapshot danh sách vật tư hiện tại (chỉ IsActive)
-            foreach (var m in existing.ManufacturingFormulaMaterials.Where(x => x.IsActive))
+            foreach (var m in existing.ManufacturingFormulaMaterials
+                .Where(x => x.IsActive)
+                    .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
+                    .ThenBy(x => x.MaterialExternalIdSnapshot))
             {
                 var item = new ManufacturingFormulaVersionItem
                 {
                     ManufacturingFormulaVersionId = newVersion.ManufacturingFormulaVersionId,
-
+                    LineNo = m.LineNo,
                     MaterialId = m.MaterialId,
                     CategoryId = m.CategoryId,
                     Quantity = m.Quantity,
@@ -1778,7 +1810,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             //}
         }
 
-
         // ====================================================================== Export PDF ======================================================================
         public async Task<byte[]> ExportVAFormulaToPdfAsync(Guid mfgProductionOrderId, CancellationToken ct = default)
         {
@@ -1804,6 +1835,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         x.ColorName,
                         x.FormulaExternalIdSnapshot,
                         x.RequiredDate,
+                        AddRate = (double)(x.Product.UsageRate ?? 0),
                         CustomerCode = x.CustomerExternalIdSnapshot,
                         CustomerName = x.CustomerNameSnapshot,
 
@@ -1814,6 +1846,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         x.Requirement,
                         x.PlpuNote,
                         x.BagType,
+
+                        x.CreatedDate,
                         // current selected formula (ValidTo == null)
                         Current = x.ProductionSelectVersions
                             .Where(v => v.ValidTo == null && v.ManufacturingFormulaId != null)
@@ -1830,7 +1864,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
                                     Materials = v.ManufacturingFormula.ManufacturingFormulaMaterials
                                         .Where(m => m.IsActive)
-                                        .OrderBy(m => m.MaterialExternalIdSnapshot)
+                                        .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
+                                            .ThenBy(x => x.MaterialExternalIdSnapshot)
                                         .Select(m => new FormulaPDFMaterialDTOs
                                         {
                                             ExternalId =
@@ -1848,7 +1883,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                                                         : (m.Product.Name ?? "")),
 
                                             CategoryId = m.CategoryId,
-                                            Quantity = m.Quantity
+                                            Quantity = m.Quantity,
+
+                                            LotNo = m.LotNo 
                                         })
                                         .ToList()
                                 }
@@ -1864,41 +1901,41 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     throw new InvalidOperationException(
                         $"MPO {data.ProductionOrderNo} chưa chọn công thức VA hiện hành (ProductionSelectVersion.ValidTo == null).");
 
+                var materials = data.Current.Formula.Materials ?? new List<FormulaPDFMaterialDTOs>();
+
+
+                await FillAndPersistLotNoIfNeededAsync(
+                    data.Current.Formula.ManufacturingFormulaId,
+                    materials,
+                    ct);
+
+
                 // Build DTO đúng format VU để reuse _FormulaPDF
                 var dto = new ManufacturingVUPDF
                 {
-                    // BatchNo: dùng MPO.ExternalId (đẹp nhất khi in theo lệnh SX)
                     BatchNo = data.ProductionOrderNo ?? string.Empty,
-                    RequestDate = data.RequiredDate ,
+                    RequestDate = data.RequiredDate,
                     BagType = data.BagType ?? string.Empty,
+                    CreatedDate = data.CreatedDate,
                     getManufacturingVUFormula = new GetManufacturingVUFormula
                     {
-                        // VA không có ManufacturingVUFormulaId -> để Empty (hoặc bạn có thể nhét FormulaId vào nếu muốn)
                         ManufacturingVUFormulaId = Guid.Empty,
-
-                        // FormulaId: dùng ManufacturingFormulaId (vẫn là Guid công thức, renderer chỉ cần hiển thị)
                         FormulaId = data.Current.Formula.ManufacturingFormulaId,
                         FormulaExternalId = data.Current.Formula.ExternalId,
-
-                        // TotalProductionQuantity: VA đang có TotalQuantityRequest (int) -> ép qua decimal?
                         TotalProductionQuantity = Convert.ToDecimal(data.TotalQuantityRequest),
-
+                        userRate = data.AddRate,
                         NumOfBatches = data.NumOfBatches,
                         QcCheck = data.QcCheck,
-
-                        // Map qua đúng field của layout cũ
                         ColourCode = data.ColourCode,
                         Name = data.Name,
-
                         CustomerCode = data.CustomerCode,
                         CustomerName = data.CustomerName,
-
                         LabNote = data.LabNote,
                         Requirement = data.Requirement,
                         PlpuNote = data.PlpuNote
                     },
 
-                    materials = data.Current.Formula.Materials ?? new List<FormulaPDFMaterialDTOs>()
+                    materials = materials
                 };
 
                 var pdfBytes = _FormulaPDF.Render(dto);
@@ -1910,6 +1947,81 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             {
                 await tx.RollbackAsync(ct);
                 throw;
+            }
+        }
+
+        // ====================================================================== Helper ======================================================================
+
+        /// <summary>
+        /// Gắn LotNo vào DTO để in PDF nếu còn thiếu, đồng thời cập nhật ngược lại vào DB để lần sau không bị thiếu nữa.
+        /// </summary>
+        /// <param name="formulaId">ID của công thức sản xuất</param>
+        /// <param name="materials">Danh sách nguyên liệu trong DTO</param>
+        /// <param name="ct">Token hủy bỏ</param>
+        /// <returns></returns>
+        private async Task FillAndPersistLotNoIfNeededAsync(Guid formulaId, List<FormulaPDFMaterialDTOs> materials, CancellationToken ct = default)
+        {
+            var missingLotCodes = materials
+                .Where(x => string.IsNullOrWhiteSpace(x.LotNo))
+                .Select(x => x.ExternalId?.Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToList();
+
+            if (missingLotCodes.Count == 0)
+                return;
+
+            var lotNoMap = await _warehouseReadService.GetLotNoMapByCodesAsync(missingLotCodes!, ct);
+
+            // 1. Fill vào DTO để in PDF
+            foreach (var material in materials)
+            {
+                if (!string.IsNullOrWhiteSpace(material.LotNo))
+                    continue;
+
+                var code = material.ExternalId?.Trim();
+                if (string.IsNullOrWhiteSpace(code))
+                    continue;
+
+                if (lotNoMap.TryGetValue(code, out var lotNo))
+                {
+                    material.LotNo = lotNo;
+                }
+            }
+
+            // 2. Fill ngược lại entity DB
+            var formulaMaterialEntities = await _unitOfWork.ManufacturingFormulaMaterialRepository.Query(track: true)
+                .Where(x => x.ManufacturingFormulaId == formulaId && x.IsActive)
+                .Select(x => new
+                {
+                    Entity = x,
+                    Code = !string.IsNullOrWhiteSpace(x.MaterialExternalIdSnapshot)
+                        ? x.MaterialExternalIdSnapshot
+                        : (x.itemType == ItemType.Material ? x.Material.ExternalId : null)
+                })
+                .ToListAsync(ct);
+
+            var hasUpdated = false;
+
+            foreach (var row in formulaMaterialEntities)
+            {
+                if (!string.IsNullOrWhiteSpace(row.Entity.LotNo))
+                    continue;
+
+                var code = row.Code?.Trim();
+                if (string.IsNullOrWhiteSpace(code))
+                    continue;
+
+                if (lotNoMap.TryGetValue(code, out var lotNo))
+                {
+                    row.Entity.LotNo = lotNo;
+                    hasUpdated = true;
+                }
+            }
+
+            if (hasUpdated)
+            {
+                await _unitOfWork.SaveChangesAsync(ct);
             }
         }
     }

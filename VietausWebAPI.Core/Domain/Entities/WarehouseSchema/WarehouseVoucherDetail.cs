@@ -23,6 +23,8 @@ namespace VietausWebAPI.Core.Domain.Entities.WarehouseSchema
         public int? PurposeId { get; set; }         // FK -> UsagePurpose.PurposeId
         public bool IsIncrease { get; set; }        // tăng (true) / giảm (false)
 
+        public DateTime ExpiryDate { get; set; }
+
         public VoucherDetailType VoucherType { get; set; } 
         public string? Note { get; set; }
 

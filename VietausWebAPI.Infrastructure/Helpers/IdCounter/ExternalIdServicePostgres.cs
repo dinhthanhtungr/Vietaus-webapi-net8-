@@ -24,6 +24,43 @@ namespace VietausWebAPI.Infrastructure.Helpers.IdCounter
             _currentUser = currentUser;
         }
 
+        public async Task<string> GenerateCodeAsync(string prefix, CancellationToken ct = default)
+        {
+            var companyId = _currentUser.CompanyId;
+            const string period = "GLOBAL"; // dùng chung cho loại không có yyMM
+
+            var conn = _context.Database.GetDbConnection();
+            var needOpen = conn.State != System.Data.ConnectionState.Open;
+            if (needOpen) await conn.OpenAsync(ct);
+
+            try
+            {
+                await using var cmd = conn.CreateCommand();
+
+                if (_context.Database.CurrentTransaction is IDbContextTransaction tx)
+                    cmd.Transaction = tx.GetDbTransaction();
+
+                cmd.CommandText = @"
+            INSERT INTO public.""IdCounters"" (""CompanyId"", ""Prefix"", ""Period"", ""LastNo"")
+            VALUES (@CompanyId, @Prefix, @Period, 1)
+            ON CONFLICT (""CompanyId"", ""Prefix"", ""Period"")
+            DO UPDATE SET ""LastNo"" = ""IdCounters"".""LastNo"" + 1
+            RETURNING ""LastNo"";";
+
+                cmd.Parameters.Add(new NpgsqlParameter("CompanyId", companyId));
+                cmd.Parameters.Add(new NpgsqlParameter("Prefix", prefix));
+                cmd.Parameters.Add(new NpgsqlParameter("Period", period));
+
+                var nextNo = Convert.ToInt32(await cmd.ExecuteScalarAsync(ct));
+
+                return $"{prefix}_{nextNo}";
+            }
+            finally
+            {
+                if (needOpen) await conn.CloseAsync();
+            }
+        }
+
         public async Task<string> NextAsync(string prefix, CancellationToken ct = default)
         {
             var now = DateTime.Now;

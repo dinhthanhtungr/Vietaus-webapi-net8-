@@ -26,6 +26,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas
         public string? ProductNameSnapshot { get; set; }
         public string? ProductExternalIdSnapshot { get; set; }
         public bool IsRecycle { get; set; } // Lấy từ Product.IsRecycle
+
+        public string MerchadiseOrderExternalId { get; set; } = string.Empty;
         public string? CustomerNameSnapshot { get; set; }
 
         public decimal? SaleTotalPrice { get; set; } // từ MerchandiseOrder.TotalPrice qua MfgProductionOrder giá sale lên

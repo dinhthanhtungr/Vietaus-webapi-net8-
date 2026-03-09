@@ -95,6 +95,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs
                 .ForMember(d => d.CustomerName, opt => opt.MapFrom(src => src.Customer.CustomerName))
                 .ForMember(d => d.CustomerExternalId, opt => opt.MapFrom(src => src.Customer.ExternalId))
                 .ForMember(d => d.LabName, opt => opt.MapFrom(src => src.Product.CreatedByNavigation.FullName))
+                .ForMember(d => d.EndUserName, opt => opt.MapFrom(src => src.Product.EndUser))
                 .ReverseMap();
 
             CreateMap<SampleRequest, GetSampleRequest>()

@@ -19,7 +19,8 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.Manufactur
 
             entity.Property(x => x.MfgProductionOrderId).HasColumnName("mfg_production_order_id").IsRequired();
             entity.Property(x => x.ManufacturingFormulaId).HasColumnName("manufacturing_formula_id").IsRequired();
-            entity.Property(x => x.ValidFrom).HasColumnName("valid_from").IsRequired();
+            //entity.Property(x => x.ValidFrom).HasColumnName("valid_from").IsRequired();
+            entity.Property(x => x.ValidFrom).HasColumnName("valid_from");
             entity.Property(x => x.ValidTo).HasColumnName("valid_to");
             entity.Property(x => x.CreatedBy).HasColumnName("created_by").IsRequired();
             entity.Property(x => x.ClosedBy).HasColumnName("closed_by");

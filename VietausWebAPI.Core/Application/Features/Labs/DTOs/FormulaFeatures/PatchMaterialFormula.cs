@@ -17,8 +17,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures
         public decimal Quantity { get; set; }            // DECIMAL(18,6)
         public decimal UnitPrice { get; set; }           // DECIMAL(16,2)
         public decimal TotalPrice { get; set; }          // DECIMAL(16,2)
-
-
+        public int LineNo { get; set; }
         public string? MaterialNameSnapshot { get; set; }   // NVARCHAR
         public string? MaterialExternalIdSnapshot { get; set; }   // VARCHAR
         public string? Unit { get; set; }                   // VARCHAR

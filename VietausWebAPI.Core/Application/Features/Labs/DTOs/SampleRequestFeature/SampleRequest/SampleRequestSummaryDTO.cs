@@ -18,6 +18,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
         public string? CustomerExternalId { get; set; } = string.Empty; 
         public string? LabName { get; set; } = string.Empty;
         public string? CreatedBy { get; set; } = string.Empty;
+        public string? EndUserName { get; set; } = string.Empty;
         public DateTime? CreatedDate { get; set; }
         public DateTime? ExpectedDeliveryDate { get; set; }
         public DateTime? RequestDeliveryDate { get; set; }

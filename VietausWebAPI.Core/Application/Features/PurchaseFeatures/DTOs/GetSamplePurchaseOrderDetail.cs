@@ -8,6 +8,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.DTOs
 {
     public class GetSamplePurchaseOrderDetail
     {
+        public int? LineNo { get; set; }
         public string? MaterialExternalIDSnapshot { get; set; }
         public string? MaterialNameSnapshot { get; set; }
 

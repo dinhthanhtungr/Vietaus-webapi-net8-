@@ -27,6 +27,8 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         public string? MaterialExternalIdSnapshot { get; set; }
         public string? Unit { get; set; }
         public bool IsActive { get; set; } = true;
+        public string? LotNo { get; set; }
+        public int LineNo { get; set; }
 
         public virtual Product Product { get; set; } = null!;
         public virtual ManufacturingFormula ManufacturingFormula { get; set; } = null!;

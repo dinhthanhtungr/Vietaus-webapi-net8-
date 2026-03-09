@@ -46,6 +46,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                     .Select(c => new GetCategory
                     {
                         CategoryId = c.CategoryId,
+                        CategoryExternalId = c.ExternalId ?? "",
                         CategoryName = c.Name,
                     })
                     .ToListAsync(ct);

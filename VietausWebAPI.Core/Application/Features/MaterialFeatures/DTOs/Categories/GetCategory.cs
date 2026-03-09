@@ -10,5 +10,6 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Categori
     {
         public Guid CategoryId { get; set; }
         public string CategoryName { get; set; } = string.Empty;
+        public string CategoryExternalId { get; set; } = string.Empty;
     }
 }

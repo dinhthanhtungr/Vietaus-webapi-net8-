@@ -9,16 +9,16 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadSe
 {
     public class GetStockAvaiable
     {
-        public int ShelfStockId { get; set; }                 // PK (identity/serial)
-        public string Code { get; set; } = "";                // mã NVL
+        public int ShelfStockId { get; set; }
+        public string Code { get; set; } = "";
         public StockType StockType { get; set; }
-        public string CodeName { get; set; } = "";            // Tên NVL
-        public string CategoryName { get; set; } = "";          
+        public string CodeName { get; set; } = "";
+        public string CategoryName { get; set; } = "";
 
+        public decimal TotalOnHandKg { get; set; }      // tổng tồn
+        public decimal? ReservedOpenAllKg { get; set; } // tổng giữ chỗ theo code
+        public decimal? AvailableKg { get; set; }       // tổng khả dụng theo code
 
-        // Lấy dữ liệu tồn kho
-        public decimal OnHandKg { get; set; }
-        public decimal? ReservedOpenAllKg { get; set; }
-        public decimal? AvailableKg { get; set; }
+        public List<StockDetailAvaiable> StockDetailAvaiables { get; set; } = new();
     }
 }

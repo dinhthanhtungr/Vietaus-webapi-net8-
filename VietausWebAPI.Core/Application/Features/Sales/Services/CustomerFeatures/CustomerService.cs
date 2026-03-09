@@ -33,17 +33,20 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ICurrentUser _CurrentUser;
+        private readonly IExternalIdService _externalIdService;
         private readonly IVisibilityHelper _visibilityHelper;
 
         public CustomerService (IUnitOfWork unitOfWork
             , IMapper mapper
             , ICurrentUser currentUser
-            , IVisibilityHelper visibilityHelper)
+            , IVisibilityHelper visibilityHelper
+            , IExternalIdService externalIdService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _CurrentUser = currentUser;
             _visibilityHelper = visibilityHelper;
+            _externalIdService = externalIdService; 
         }
 
 
@@ -338,64 +341,29 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
         /// <returns></returns>
         public async Task<OperationResult<GetCustomer>> GetCustomerByIdForSalesAsync(Guid id, CancellationToken ct = default)
         {
-            var now = DateTime.Now;
-            var userId = _CurrentUser.EmployeeId;
-            var companyId = _CurrentUser.CompanyId;
+            if (!_CurrentUser.IsAuthenticated)
+                return OperationResult<GetCustomer>.Fail("Bạn chưa đăng nhập.");
 
-            // 1) Leader scope (nếu có)
-            var leaderGroupId = await _unitOfWork.MemberInGroupRepository.Query()
-                .Where(g => g.Profile == userId && g.IsAdmin == true && g.IsActive == true)
-                .Select(g => (Guid?)g.GroupId)
-                .FirstOrDefaultAsync(ct);
+            // 1) Build scope theo pattern
+            var v = await _visibilityHelper.BuildViewerScopeAsync(ct);
 
-            var isLeader = leaderGroupId.HasValue && leaderGroupId.Value != Guid.Empty;
-            var scopeGroupId = leaderGroupId ?? Guid.Empty;
+            // 2) Apply scope vào Customer query rồi check tồn tại + quyền luôn
+            var canSee = await _visibilityHelper
+                .ApplyCustomer(_unitOfWork.CustomerRepository.Query(), v)
+                .AnyAsync(c => c.CustomerId == id && c.CompanyId == v.CompanyId, ct);
 
-            // 2) Kiểm tra tồn tại + công ty + lấy cờ IsLead
-            var exist = await _unitOfWork.CustomerRepository.Query()
-                .Where(c => c.CustomerId == id && c.CompanyId == companyId)
-                .Select(c => new { c.CustomerId, c.IsLead })
-                .FirstOrDefaultAsync(ct);
+            if (!canSee)
+                return OperationResult<GetCustomer>.Fail("Bạn không có quyền xem khách hàng này hoặc khách hàng không tồn tại.");
 
-
-            if (exist is null)
-                return OperationResult<GetCustomer>.Fail("Không tìm thấy khách hàng.");
-
-            // 3) Tính quyền
-            // 3.1 Assignment (nhân viên / nhóm)
-            var managedByEmployee = await _unitOfWork.CustomerAssignmentRepository.Query()
-                .AnyAsync(a => a.IsActive && a.CustomerId == id && a.EmployeeId == userId, ct);
-
-            var managedByGroup = isLeader && await _unitOfWork.CustomerAssignmentRepository.Query()
-                .AnyAsync(a => a.IsActive && a.CustomerId == id && a.GroupId == scopeGroupId, ct);
-
-            // 3.2 Claim Work còn hạn (cho non-lead)
-            var hasActiveClaim = await _unitOfWork.CustomerClaimRepository.Query()
-                .AnyAsync(cl => cl.IsActive
-                             && cl.Type == ClaimType.Work
-                             && cl.ExpiresAt > now
-                             && cl.CustomerId == id
-                             && (cl.EmployeeId == userId || (isLeader && cl.GroupId == scopeGroupId)), ct);
-
-            bool canOpenDetail =
-                exist.IsLead
-                    ? (managedByEmployee || managedByGroup || hasActiveClaim)
-                    : (managedByEmployee || managedByGroup || hasActiveClaim);
-
-
-            if (!canOpenDetail)
-                return OperationResult<GetCustomer>.Fail("Bạn không có quyền xem khách hàng này.");
-
-            // 4) Có quyền → lấy chi tiết bằng Repository (giữ nguyên code cũ)
+            // 3) Có quyền -> lấy chi tiết như code cũ
             var dto = await _unitOfWork.CustomerRepository.GetCustomerByIdAsync(id);
-
             if (dto is null)
                 return OperationResult<GetCustomer>.Fail("Không tải được chi tiết khách hàng.");
 
-
-            dto.Notes = isLeader
-                ? await GetNotesForLeaderAsync(id, scopeGroupId, companyId, userId, ct)
-                : await GetNotesForSaleAsync(id, userId, companyId, ct);
+            // 4) Notes theo leader/sale
+            dto.Notes = v.IsLeader && v.GroupId is Guid gid
+                ? await GetNotesForLeaderAsync(id, gid, v.CompanyId, v.EmployeeId, ct)
+                : await GetNotesForSaleAsync(id, v.EmployeeId, v.CompanyId, ct);
 
             return OperationResult<GetCustomer>.Ok(dto);
         }
@@ -519,11 +487,10 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                 // 1) ExternalId
                 if (string.IsNullOrWhiteSpace(customer.ExternalId))
                 {
-                    customer.ExternalId = await ExternalIdGenerator.GenerateCode(
-                        "KH",
-                        prefix => _unitOfWork.CustomerRepository.GetLatestExternalIdStartsWithAsync(prefix)
-                    );
+                    customer.ExternalId = await _externalIdService.GenerateCodeAsync("KH");
                 }
+
+
 
                 // 2) Validate tối thiểu: kiểm tra MST trùng (giữ code của bạn)
                 var taxNorm = NormalizeTaxCode(customer.TaxNumber);
@@ -609,12 +576,6 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                         UpdatedBy = userId,
                         UpdatedDate = now,
 
-                        // Lead-first mặc định
-                        //IsLead = !customer.AssignNow || (customer.AssignNow && !customer.ConvertNow),
-                        //LeadStatus = !customer.AssignNow
-                        //    ? LeadStatus.Open                // default lead
-                        //    : (customer.ConvertNow ? LeadStatus.Converted : LeadStatus.Qualified),
-
                         IsLead = true,
                         LeadStatus = LeadStatus.Claimed,
 
@@ -639,26 +600,6 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                             IsActive = true,
                         }).ToList(),
                     };
-
-                    // 4.2) Nếu assign ngay → thêm assignment active
-                    //if (customer.AssignNow)
-                    //{
-                    //    customerEntity.CustomerAssignments = new List<CustomerAssignment>
-                    //    {
-                    //        new CustomerAssignment
-                    //        {
-                    //            EmployeeId = userId,   // hoặc customer.CustomerAssignment.EmployeeId nếu cho phép chọn
-                    //            GroupId = groupId.Value,
-                    //            IsActive = true,
-
-                    //            CompanyId = companyId,
-                    //            CreatedBy  = userId,
-                    //            CreatedDate= now,
-                    //            UpdatedBy  = userId,
-                    //            UpdatedDate= now
-                    //        }
-                    //    };
-                    //}
 
                     await _unitOfWork.CustomerRepository.AddNewCustomer(customerEntity);
                     if (!string.IsNullOrWhiteSpace(customer.Notes))

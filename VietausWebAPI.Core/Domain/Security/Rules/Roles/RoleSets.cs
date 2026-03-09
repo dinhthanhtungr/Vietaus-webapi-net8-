@@ -1,5 +1,6 @@
 ﻿namespace VietausWebAPI.WebAPI.Helpers.Securities.Roles
 {
+
     /// <summary>
     /// Tập hợp chuỗi <b>roles</b> dùng trực tiếp cho
     /// - <c>&lt;AuthorizeView Roles="..." /&gt;</c>
@@ -17,19 +18,19 @@
         public const string Admins = $"{AppRoles.President},{AppRoles.Developer}, {AppRoles.Admin}";
 
         /// <summary>Nhóm quản lý: Trưởng phòng (Leader) và Giám đốc (President).</summary>
-        public const string Managers = $"{AppRoles.Leader},{AppRoles.President}, {AppRoles.Admin}, {AppRoles.Developer}";
+        public const string Managers = $"{AppRoles.Leader},{AppRoles.President}";
 
         /// <summary>Nhóm người dùng phổ thông: User + nhóm chỉ xem toàn bộ khách hàng.</summary>
-        public const string Users = $"{AppRoles.User},{AppRoles.CustomerViewAll},{AppRoles.President}, {AppRoles.Admin}, {AppRoles.Developer}";
+        public const string Users = $"{AppRoles.User},{AppRoles.CustomerViewAll}";
 
         /// <summary>Những role được phép xem giá: PriceView, Purchaser, SaleUser, Admin, Developer.</summary>
-        public const string PriceReaders = $"{AppRoles.PriceView},{AppRoles.Purchaser},{AppRoles.SaleUser},{AppRoles.Admin},{AppRoles.Developer},{AppRoles.President}";
+        public const string PriceReaders = $"{AppRoles.PriceView} ,{AppRoles.Purchaser},{AppRoles.Admin},{AppRoles.Developer},{AppRoles.President}";
 
         /// <summary>Những role có quyền chỉnh sửa (Edit) hoặc có đặc quyền tương đương: Admin, Developer.</summary>
         public const string Editors = $"{AppRoles.Edit},{AppRoles.Admin},{AppRoles.Developer}";
 
         /// <summary>Những role có quyền xóa (Delete) hoặc có đặc quyền tương đương: Admin, Developer.</summary>
-        public const string Deleters = $"{AppRoles.Delete},{AppRoles.Admin},{AppRoles.Developer}";
+        public const string Deleters = $"{AppRoles.Delete}";
 
 
         /* ===================== WAREHOUSE (KHO) ===================== */
@@ -43,62 +44,58 @@
 
         /// <summary>Mở menu PLPU cho các role liên quan sản xuất/kho/mua hàng.</summary>
         public const string PLPU_Group =
-            $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.PLPUUser}";
+            $"{AppRoles.Developer},{AppRoles.PLPUUser},{AppRoles.President}";
 
         /// <summary>Lệnh sản xuất (Manufacturing) – PLPU + Sản xuất.</summary>
         public const string PLPU_Mfg =
-            $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.PLPUUser},{AppRoles.ManufactureUser}";
+            $"{AppRoles.Developer},{AppRoles.PLPUUser},{AppRoles.ManufactureUser}";
 
         /// <summary>Giao hàng của PLPU (logistics nội bộ PLPU/SX) – KHÔNG gồm KHO.</summary>
         public const string PLPU_Shipment =
-            $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.PLPUUser},{AppRoles.ManufactureUser}";
+            $"{AppRoles.Developer},{AppRoles.PLPUUser},{AppRoles.ManufactureUser}";
 
         /// <summary>Mua hàng của PLPU – Purchaser, SaleUser, PLPUUser, Admin, Dev.</summary>
         public const string PLPU_Purchase =
-            $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.PLPUUser},{AppRoles.Purchaser},{AppRoles.SaleUser}";
+            $"{AppRoles.Developer},{AppRoles.PLPUUser},{AppRoles.Purchaser},{AppRoles.SaleUser}";
 
 
         /* ===================== LABS ===================== */
 
         /// <summary>Mở menu Labs (LabUser + quyền cao: Admin, Developer).</summary>
         public const string Lab_Group =
-            $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.LabUser},{AppRoles.President}";
+            $"{AppRoles.Developer},{AppRoles.LabUser},{AppRoles.President}";
 
-        public const string Lab_Managers =
-            $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.LabUser},{AppRoles.President}";
 
-        /* ===================== Sales ===================== */
-
-        /// <summary>Dành cho bán hàng, mua hàng.</summary>
-        public const string CanSeeAllCustomer =
-            $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.President}, {AppRoles.CustomerViewAll}";
-
+        /* ===================== SALES ===================== */
+        public const string LG_Group = $"{AppRoles.LGUser}";
+        public const string HN_Group = $"{AppRoles.HNUser}";
+        public const string AC_Group = $"{AppRoles.ACUser}";
 
         /* ===================== CÁC MODULE KHÁC ===================== */
 
         /// <summary>IMS module: Admin, Dev, IMSUser.</summary>
-        public const string IMS = $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.IMSUser},{AppRoles.President}";
+        public const string IMS = $"{AppRoles.Developer},{AppRoles.IMSUser}";
 
         /// <summary>DIAN module: Admin, Dev, DIANUser.</summary>
-        public const string DIAN = $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.DIANUser},{AppRoles.President}";
+        public const string DIAN = $"{AppRoles.Developer},{AppRoles.DIANUser}";
 
         /// <summary>HR/HCNS: Admin, Dev, HCHRUser.</summary>
-        public const string HR = $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.HCHRUser},{AppRoles.President}";
+        public const string HR = $"{AppRoles.Developer},{AppRoles.HCHRUser},{AppRoles.President}";
 
         /// <summary>Bảo trì: Admin, Dev, MaintenanceUser.</summary>
-        public const string Maintenance = $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.MaintenanceUser},{AppRoles.President}";
+        public const string Maintenance = $"{AppRoles.Developer},{AppRoles.MaintenanceUser}";
 
         /// <summary>Phòng Lab: Admin, Dev, LabUser.</summary>
-        public const string Lab = $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.LabUser},{AppRoles.President}";
+        public const string Lab = $"{AppRoles.Developer},{AppRoles.LabUser},{AppRoles.President}";
 
         /// <summary>Sản xuất: Admin, Dev, ManufactureUser.</summary>
-        public const string Manufacturing = $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.ManufactureUser},{AppRoles.President}";
+        public const string Manufacturing = $"{AppRoles.Developer},{AppRoles.ManufactureUser},{AppRoles.President}";
 
         /// <summary>Bán hàng: Admin, Dev, SaleUser.</summary>
-        public const string Sales = $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.SaleUser},{AppRoles.President}";
-
+        public const string Sales = $"{AppRoles.Developer}, {AppRoles.SaleUser},{AppRoles.President}";
+        public const string SaleLeaders = $"{AppRoles.Developer}, {AppRoles.President},{AppRoles.Leader}";
         /// <summary>Mua hàng: Admin, Dev, Purchaser.</summary>
-        public const string Purchasing = $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.Purchaser},{AppRoles.President}";
+        public const string Purchasing = $"{AppRoles.Developer},{AppRoles.Purchaser}";
 
 
         /* ===================== MATERIAL APPROVAL (Duyệt vật tư) ===================== */
