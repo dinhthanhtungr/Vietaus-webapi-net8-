@@ -39,8 +39,8 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.Manufactur
             entity.Property(e => e.ExpectedDate).HasColumnName("expected_date");
             entity.Property(e => e.RequiredDate).HasColumnName("required_date");
 
-            entity.Property(e => e.TotalQuantityRequest).HasColumnName("total_quantity_request");
-            entity.Property(e => e.TotalQuantity).HasColumnName("total_quantity");
+            entity.Property(e => e.TotalQuantityRequest).HasColumnName("total_quantity_request").HasPrecision(18, 3);
+            entity.Property(e => e.TotalQuantity).HasColumnName("total_quantity").HasPrecision(18, 3);
             entity.Property(e => e.NumOfBatches).HasColumnName("num_of_batches");
 
             entity.Property(e => e.UnitPriceAgreed)

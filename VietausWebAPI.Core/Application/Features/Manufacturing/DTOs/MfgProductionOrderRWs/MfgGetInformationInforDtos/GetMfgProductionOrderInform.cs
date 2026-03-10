@@ -32,8 +32,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProducti
         public DateTime? ExpectedDate { get; set; }
         public DateTime RequiredDate { get; set; }
 
-        public int TotalQuantityRequest { get; set; }
-        public int? TotalQuantity { get; set; }
+        public decimal TotalQuantityRequest { get; set; }
+        public decimal? TotalQuantity { get; set; }
 
         public int? NumOfBatches { get; set; }
         public decimal UnitPriceAgreed { get; set; }

@@ -70,11 +70,25 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs
                 });
 
 
-                // Mã form và ngày
                 col.Item().PaddingTop(10).Row(row =>
                 {
-                    row.RelativeItem().Element(e => e.Text("VA-QA&QC-F18(03)").FontFamily("Open Sans").FontSize(9));
-                    row.ConstantItem(100).AlignRight().Element(e => e.Text("22-08-2023").FontFamily("Open Sans").FontSize(9));
+                    row.RelativeItem()
+                        .AlignLeft()
+                        .Element(e => e.Text("ISO 9001 / ISO 14001 / ISO 45001 / GRS")
+                            .FontFamily("Open Sans")
+                            .FontSize(9));
+
+                    row.RelativeItem()
+                        .AlignCenter()
+                        .Element(e => e.Text("07-07-2022")
+                            .FontFamily("Open Sans")
+                            .FontSize(9));
+
+                    row.RelativeItem()
+                        .AlignRight()
+                        .Element(e => e.Text("VA-WH-F18(03)")
+                            .FontFamily("Open Sans")
+                            .FontSize(9));
                 });
             });
         }

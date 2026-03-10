@@ -16,8 +16,8 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTO
         public Guid FormulaId { get; set; }
         public string? FormulaExternalIdSnapshot { get; set; }
 
-        public int ExpectedQuantity { get; set; }
-        public int? RealQuantity { get; set; }
+        public decimal ExpectedQuantity { get; set; }
+        public decimal? RealQuantity { get; set; }
 
         public string? BagType { get; set; }
         public string? PackageWeight { get; set; }

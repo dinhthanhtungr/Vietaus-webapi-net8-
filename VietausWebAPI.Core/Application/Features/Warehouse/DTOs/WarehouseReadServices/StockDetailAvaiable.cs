@@ -9,6 +9,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadSe
     public class StockDetailAvaiable
     {
         public string? LotNo { get; set; }
+        public string ShelfStockCode { get; set; } = string.Empty;
         public string CompanyName { get; set; } = string.Empty;
         public decimal OnHandKg { get; set; }
     }

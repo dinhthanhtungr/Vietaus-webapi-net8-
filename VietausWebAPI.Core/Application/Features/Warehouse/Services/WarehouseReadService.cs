@@ -128,10 +128,12 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 var detailRows = await (
                     from s in _unitOfWork.WarehouseShelfStockRepository.Query()
                     where codes.Contains(s.Code)
+                          && s.ShelfStockCode != "CT.0.1"
                     group s by new
                     {
                         s.Code,
                         s.StockType,
+                        s.ShelfStockCode,
                         CompanyName = s.Company != null ? s.Company.Name : "",
                         s.LotNo
                     }
@@ -140,6 +142,31 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                     {
                         Code = g.Key.Code,
                         StockType = g.Key.StockType,
+                        ShelfStockCode = g.Key.ShelfStockCode,
+                        CompanyName = g.Key.CompanyName ?? "",
+                        LotNo = g.Key.LotNo,
+                        OnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m
+                    }
+                ).ToListAsync();
+
+                var mixingRows = await (
+                    from s in _unitOfWork.WarehouseShelfStockRepository.Query()
+                    where codes.Contains(s.Code)
+                          && s.ShelfStockCode == "CT.0.1"
+                    group s by new
+                    {
+                        s.Code,
+                        s.StockType,
+                        s.ShelfStockCode,
+                        CompanyName = s.Company != null ? s.Company.Name : "",
+                        s.LotNo
+                    }
+                    into g
+                    select new
+                    {
+                        Code = g.Key.Code,
+                        StockType = g.Key.StockType,
+                        ShelfStockCode = g.Key.ShelfStockCode,
                         CompanyName = g.Key.CompanyName ?? "",
                         LotNo = g.Key.LotNo,
                         OnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m
@@ -172,8 +199,23 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                     header.StockDetailAvaiables.Add(new StockDetailAvaiable
                     {
                         LotNo = d.LotNo,
+                        ShelfStockCode = d.ShelfStockCode,
                         CompanyName = d.CompanyName,
                         OnHandKg = d.OnHandKg
+                    });
+                }
+
+                foreach (var m in mixingRows)
+                {
+                    if (!headerMap.TryGetValue((m.Code, m.StockType), out var header))
+                        continue;
+
+                    header.StockDetailAvaiables.Add(new StockDetailAvaiable
+                    {
+                        LotNo = m.LotNo,
+                        ShelfStockCode = "CT.0.1 - KHO CÂN TRỘN",
+                        CompanyName = m.CompanyName,
+                        OnHandKg = m.OnHandKg
                     });
                 }
 

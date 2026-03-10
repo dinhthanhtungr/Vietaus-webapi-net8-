@@ -1070,7 +1070,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 ExpectedDate = null,
                 RequiredDate = detail.DeliveryRequestDate ?? now, // RequiredDate là non-nullable
 
-                TotalQuantityRequest = (int)detail.ExpectedQuantity,
+                TotalQuantityRequest = detail.ExpectedQuantity,
                 TotalQuantity = null,
 
                 NumOfBatches = null,
