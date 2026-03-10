@@ -430,6 +430,11 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         ProductId = o.ProductId,
                         ProductExternalIdSnapshot = o.ProductExternalIdSnapshot,
                         ProductNameSnapshot = o.ProductNameSnapshot,
+                        SamplerRequestExternalIdSnapshot = o.Product.SampleRequests
+                            .Where(sr => sr.IsActive)
+                            .OrderByDescending(sr => sr.CreatedDate)
+                            .Select(sr => sr.ExternalId)
+                            .FirstOrDefault(),
 
                         // VU khách chọn (snapshot trên Order)
                         FormulaCustomerSelect = o.FormulaId ?? Guid.Empty,

@@ -20,6 +20,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProducti
         public Guid? ProductId { get; set; }
         public string? ProductExternalIdSnapshot { get; set; }
         public string? ProductNameSnapshot { get; set; }
+        public string? SamplerRequestExternalIdSnapshot { get; set; }
 
         public Guid FormulaCustomerSelect { get; set; }
         public string FormulaCustomerExternalIdSelect { get; set; } = string.Empty;
