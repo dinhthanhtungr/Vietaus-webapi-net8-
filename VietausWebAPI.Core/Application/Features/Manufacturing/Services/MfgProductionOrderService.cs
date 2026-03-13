@@ -539,9 +539,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
         // ======================================================================== Post ========================================================================
 
-        public async Task<OperationResult<Guid>> CreateInternalAsync(
-    CreateMfgProductionOrderInternal req,
-    CancellationToken ct = default)
+        public async Task<OperationResult<Guid>> CreateInternalAsync(CreateMfgProductionOrderInternal req, CancellationToken ct = default)
         {
             await _unitOfWork.BeginTransactionAsync();
 

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.Drawing.Diagrams;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -136,6 +137,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             string? vaCode = null;
             DateTime dateTime = DateTime.MinValue;
             string? vaSourceVuCode = null;
+            string? note = null;
 
             if (stdPsf != Guid.Empty)
             {
@@ -162,6 +164,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     vaSourceVuCode = vaInfo.SourceVUExternalIdSnapshot;
                     nameVa = vaInfo.Name;
                     dateTime = vaInfo.CreatedDate;
+                    note = vaInfo.Note;
                 }
             }
 
@@ -218,6 +221,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     VUFormulaId = vaSourceVuId, // VU gốc của VA
                     FormulaExternalIdSnapshot = vaSourceVuCode,
                     FormulaSourceIdCreatedDate = dateTime,
+
+                    Note = note,
 
                     SourceType = FormulaSource.FromVA,
                     FormulaSourceId = vaId!.Value,
@@ -982,27 +987,48 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             if (req.SourceType == null)
                 return OperationResult.Fail("SourceType là bắt buộc (FromVA / FromVU).");
 
-            if (!req.ManufacturingFormulaMaterials.Any())
+            if (req.ManufacturingFormulaMaterials == null || !req.ManufacturingFormulaMaterials.Any())
                 return OperationResult.Fail("Công thức phải có ít nhất 1 nguyên vật liệu.");
 
-            // nếu yêu cầu chọn cho MPO mà không truyền MPO Id
-            if (req.IsSelect && (req.mfgProductionOrderId == null || req.mfgProductionOrderId == Guid.Empty))
-                return OperationResult.Fail("Thiếu MfgProductionOrderId khi IsSelect = true.");
+            // Bắt buộc phải select
+            if (!req.IsSelect)
+                return OperationResult.Fail("Tạo công thức sản xuất bắt buộc phải chọn cho lệnh sản xuất.");
 
-            var now = DateTime.Now; // hoặc DateTime.Now nếu hệ thống bạn đang dùng local time
-            var userId = _currentUser.EmployeeId;       // TODO: thay bằng service thực tế
-            var companyId = _currentUser.CompanyId; // TODO: thay bằng service thực tế
+            if (!req.mfgProductionOrderId.HasValue || req.mfgProductionOrderId.Value == Guid.Empty)
+                return OperationResult.Fail("Thiếu MfgProductionOrderId.");
+
+            var now = DateTime.Now;
+            var userId = _currentUser.EmployeeId;
+            var companyId = _currentUser.CompanyId;
+
+            await _unitOfWork.BeginTransactionAsync();
 
             try
             {
-                var mpo = await _unitOfWork.MfgProductionOrderRepository
-                   .Query(track: true)
-                   .FirstOrDefaultAsync(o =>
-                       o.MfgProductionOrderId == req.mfgProductionOrderId &&
-                       o.CompanyId == companyId &&
-                       o.IsActive,
-                       ct);
+                var mpoId = req.mfgProductionOrderId.Value;
 
+                var mpo = await _unitOfWork.MfgProductionOrderRepository
+                    .Query(track: true)
+                    .Include(o => o.Product)
+                    .FirstOrDefaultAsync(o =>
+                        o.MfgProductionOrderId == mpoId &&
+                        o.CompanyId == companyId &&
+                        o.IsActive,
+                        ct);
+
+                if (mpo == null)
+                    return OperationResult.Fail("Không tìm thấy lệnh sản xuất.");
+
+                var oldMpoStatus = mpo.Status;
+                string? nextMpoStatus = null;
+
+                // Vì flow này luôn select nên formula mới luôn ở trạng thái Checking
+                var formulaStatus = ManufacturingProductOrderFormula.Checking.ToString();
+
+                if (string.Equals(oldMpoStatus, ManufacturingProductOrder.FormulaRequested.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    nextMpoStatus = ManufacturingProductOrder.FormulaSuccess.ToString();
+                }
 
                 // 1) Tạo ManufacturingFormula (VA)
                 var mf = new ManufacturingFormula
@@ -1010,10 +1036,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     ManufacturingFormulaId = Guid.CreateVersion7(),
                     ExternalId = await _externalId.NextAsync(DocumentPrefix.VA.ToString(), ct: ct),
                     Name = "F001",
-                    Status = string.IsNullOrWhiteSpace(req.status)
-                        ? ManufacturingProductOrderFormula.New.ToString()
-                        : req.status,
-
+                    Status = formulaStatus,
                     TotalPrice = req.ManufacturingFormulaMaterials.Sum(x => x.UnitPrice * x.Quantity),
 
                     // Nguồn gốc
@@ -1032,19 +1055,15 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 switch (req.SourceType)
                 {
                     case FormulaSource.FromVA:
-                        mf.SourceManufacturingFormulaId = req.FormulaSourceId;              // VA gốc
+                        mf.SourceManufacturingFormulaId = req.FormulaSourceId;
                         mf.SourceManufacturingExternalIdSnapshot = req.FormulaSourceNameSnapshot;
-                        mf.SourceVUFormulaId = req.VUFormulaId;                         // VU gốc nếu có va thì soucevuformula sẽ là vu sale chọn
+                        mf.SourceVUFormulaId = req.VUFormulaId;
                         mf.SourceVUExternalIdSnapshot = req.FormulaExternalIdSnapshot;
                         break;
 
                     case FormulaSource.FromVU:
-                        mf.SourceVUFormulaId = req.FormulaSourceId;                         // VU gốc
+                        mf.SourceVUFormulaId = req.FormulaSourceId;
                         mf.SourceVUExternalIdSnapshot = req.FormulaSourceNameSnapshot;
-                        break;
-
-                    default:
-                        // nếu sau này có thêm enum khác thì xử lý riêng
                         break;
                 }
 
@@ -1058,11 +1077,10 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         ManufacturingFormulaId = mf.ManufacturingFormulaId,
 
                         LineNo = index + 1,
-
                         itemType = m.ItemType,
 
-                        MaterialId = m.ItemType == ItemType.Material ? m.ItemId : (Guid?)null,
-                        ProductId = m.ItemType == ItemType.Product ? m.ItemId : (Guid?)null,
+                        MaterialId = m.ItemType == ItemType.Material ? m.ItemId : null,
+                        ProductId = m.ItemType == ItemType.Product ? m.ItemId : null,
 
                         CategoryId = m.CategoryId,
                         Quantity = m.Quantity,
@@ -1081,21 +1099,19 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 // 3) Nếu IsStandard = true -> set làm công thức chuẩn cho Product
                 if (req.IsStandard)
                 {
-                    // 3.1. Đóng công thức chuẩn hiện tại (nếu có)
-                    var currentStd = await _unitOfWork.ProductStandardFormulaRepository.Query()
-                        .Where(x => x.CompanyId == companyId
-                                    && x.ProductId == req.ProductId
-                                    && x.ValidTo == null)
-                        .FirstOrDefaultAsync(ct);
+                    var currentStd = await _unitOfWork.ProductStandardFormulaRepository
+                        .Query(track: true)
+                        .FirstOrDefaultAsync(x =>
+                            x.CompanyId == companyId &&
+                            x.ProductId == req.ProductId &&
+                            x.ValidTo == null, ct);
 
                     if (currentStd != null)
                     {
                         currentStd.ValidTo = now;
                         currentStd.ClosedBy = userId;
-                        _unitOfWork.ProductStandardFormulaRepository.UpdateAsync(currentStd, ct);
                     }
 
-                    // 3.2. Tạo dòng chuẩn mới
                     var newStd = new ProductStandardFormula
                     {
                         ProductStandardFormulaId = Guid.CreateVersion7(),
@@ -1112,111 +1128,113 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     await _unitOfWork.ProductStandardFormulaRepository.AddAsync(newStd, ct);
                 }
 
-                // 4) Nếu IsSelect = true -> gán VA này cho lệnh sản xuất hiện tại
-                if (req.IsSelect && req.mfgProductionOrderId.HasValue)
+                // 4) LUÔN tạo select version cho MPO
+                var currentPsv = await _unitOfWork.ProductionSelectVersionRepository
+                    .Query(track: true)
+                    .FirstOrDefaultAsync(x =>
+                        x.CompanyId == companyId &&
+                        x.MfgProductionOrderId == mpoId &&
+                        x.ValidTo == null, ct);
+
+                if (currentPsv != null)
                 {
-                    var mpoId = req.mfgProductionOrderId.Value;
-
-                    // 4.1. Đóng phiên chọn hiện tại (nếu có)
-                    var currentPsv = await _unitOfWork.ProductionSelectVersionRepository.Query()
-                        .Where(x => x.CompanyId == companyId
-                                    && x.MfgProductionOrderId == mpoId
-                                    && x.ValidTo == null)
-                        .FirstOrDefaultAsync(ct);
-
-                    if (currentPsv != null)
-                    {
-                        currentPsv.ValidTo = now;
-                        currentPsv.ClosedBy = userId;
-                        _unitOfWork.ProductionSelectVersionRepository.UpdateAsync(currentPsv, ct);
-                    }
-
-                    // 4.2. Tạo phiên chọn mới
-                    var newPsv = new ProductionSelectVersion
-                    {
-                        ProductionSelectVersionId = Guid.CreateVersion7(),
-                        MfgProductionOrderId = mpoId,
-                        ManufacturingFormulaId = mf.ManufacturingFormulaId,
-                        ValidFrom = now,
-                        ValidTo = null,
-                        CreatedBy = userId,
-                        ClosedBy = null,
-                        CompanyId = companyId
-                    };
-
-                    // 4.3. Cập nhật trạng thái của lệnh sản xuất
-                    if (mpo != null)
-                    {
-                        mpo.Status = ManufacturingProductOrder.FormulaSuccess.ToString();
-                        mpo.UpdatedDate = now;
-                        mpo.UpdatedBy = userId;
-                    }
-
-                    await _TimelineService.AddEventLogAsync(new EventLogModels
-                    {
-                        employeeId = userId,
-                        eventType = EventType.ManufacturingProductOrder,
-                        sourceCode = mpo.ExternalId ?? string.Empty,
-                        sourceId = mpo.MfgProductionOrderId,
-                        status = mpo.Status,
-                        note = $"Cập nhật bởi hệ thống vào {now} bởi {_currentUser.personName}"
-                    }, ct);
-
-                    await _unitOfWork.ProductionSelectVersionRepository.AddAsync(newPsv, ct);
-
-
-                    // 4.5) Kiểm tra GIÁ CẢNH BÁO và bắn Notification (nếu vượt)
-                    // Giả sử bạn có cách lấy giá bán dự kiến/đã chốt từ Sale:
-                    decimal? targetPrice = null;
-                    try
-                    {
-                        // GỢI Ý 1: lấy theo sản phẩm + khách hàng từ lệnh sản xuất (nếu MPO có CustomerId)
-                        // (Tuỳ dữ liệu thực tế của bạn — nếu không có, hãy thay bằng service của bạn)
-                        var customerId = mpo?.CustomerId ?? Guid.Empty; // nếu MPO có CustomerId
-                        targetPrice = await _priceProvider.GetTargetPriceByMpoAsync(
-                            mfgProductionOrderId: req.mfgProductionOrderId ?? Guid.Empty,
-                            ct: ct
-                        );
-                    }
-                    catch { /* không chặn flow nếu provider lỗi */ }
-
-
-                    // ====== Gửi notification ======
-                    if (targetPrice.HasValue && mf.TotalPrice > targetPrice.Value)
-                    {
-                        // Gửi cảnh báo tới Ban giám đốc (role “Board”) – bạn có thể đổi thành TargetUserIds/TargetTeamIds
-                        await _notificationService.PublishAsync(new PublishNotificationRequest
-                        {
-                            Topic = TopicNotifications.PriceOverSellCreated,
-                            Severity = NotificationSeverity.Warning,
-                            Title = $"Cảnh báo giá: {mf.ExternalId}",
-                            Message = $"Tổng chi phí {mf.TotalPrice:N0} > Giá bán {targetPrice.Value:N0}",
-                            Link = $"/labs/mfgformula/{mpo.MfgProductionOrderId}/{mf.ManufacturingFormulaId}",
-                            PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
-                            {
-                                FormulaId = mf.ManufacturingFormulaId,
-                                ExternalId = mf.ExternalId,
-                                TotalCost = mf.TotalPrice,
-                                TargetPrice = targetPrice.Value,
-                                MpoId = req.mfgProductionOrderId
-                            }),
-                            TargetRoles = new() { AppRoles.PLPUNotify, AppRoles.President }
-                        }, ct);
-                    }
+                    currentPsv.ValidTo = now;
+                    currentPsv.ClosedBy = userId;
                 }
 
+                var newPsv = new ProductionSelectVersion
+                {
+                    ProductionSelectVersionId = Guid.CreateVersion7(),
+                    MfgProductionOrderId = mpoId,
+                    ManufacturingFormulaId = mf.ManufacturingFormulaId,
+                    ValidFrom = now,
+                    ValidTo = null,
+                    CreatedBy = userId,
+                    ClosedBy = null,
+                    CompanyId = companyId
+                };
 
-                // 5) Lưu DB
+                await _unitOfWork.ProductionSelectVersionRepository.AddAsync(newPsv, ct);
+
+                // 5) Cập nhật MPO
+                mpo.UpdatedDate = now;
+                mpo.UpdatedBy = userId;
+
+                if (!string.IsNullOrWhiteSpace(nextMpoStatus) &&
+                    !string.Equals(mpo.Status, nextMpoStatus, StringComparison.OrdinalIgnoreCase))
+                {
+                    mpo.Status = nextMpoStatus;
+                }
+
+                // 6) Timeline
+                await _TimelineService.AddEventLogAsync(new EventLogModels
+                {
+                    employeeId = userId,
+                    eventType = EventType.ManufacturingProductOrder,
+                    sourceCode = mpo.ExternalId ?? string.Empty,
+                    sourceId = mpo.MfgProductionOrderId,
+                    status = mpo.Status,
+                    note = $"Cập nhật bởi hệ thống vào {now} bởi {_currentUser.personName}"
+                }, ct);
+
+                // 7) Kiểm tra GIÁ CẢNH BÁO và bắn Notification
+                decimal? targetPrice = null;
+                try
+                {
+                    targetPrice = await _priceProvider.GetTargetPriceByMpoAsync(
+                        mfgProductionOrderId: mpoId,
+                        ct: ct
+                    );
+                }
+                catch
+                {
+                    // không chặn flow nếu provider lỗi
+                }
+
+                var ignoreCustomerId = Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75");
+                var isIgnoreCustomer = mpo.CustomerId == ignoreCustomerId;
+
+                var productDisplay = !string.IsNullOrWhiteSpace(mpo.Product?.ColourCode)
+                    ? mpo.Product.ColourCode
+                    : mpo.Product?.Name ?? string.Empty;
+
+                if (!isIgnoreCustomer && targetPrice.HasValue && (mf.TotalPrice ?? 0m) > targetPrice.Value)
+                {
+                    await _notificationService.PublishAsync(new PublishNotificationRequest
+                    {
+                        Topic = TopicNotifications.PriceOverSellCreated,
+                        Severity = NotificationSeverity.Warning,
+                        Title = $"Cảnh báo giá: {productDisplay} - {mf.ExternalId}",
+                        Message = string.IsNullOrWhiteSpace(productDisplay)
+                            ? $"Tổng chi phí {(mf.TotalPrice ?? 0m):N0} > Giá bán {targetPrice.Value:N0}"
+                            : $"SP {productDisplay}: Tổng chi phí {(mf.TotalPrice ?? 0m):N0} > Giá bán {targetPrice.Value:N0}",
+                        Link = $"/labs/mfgformula/{mpo.MfgProductionOrderId}/{mf.ManufacturingFormulaId}",
+                        PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
+                        {
+                            FormulaId = mf.ManufacturingFormulaId,
+                            ExternalId = mf.ExternalId,
+                            ProductColourCode = mpo.Product?.ColourCode,
+                            ProductCode = mpo.Product?.Code,
+                            ProductName = mpo.Product?.Name,
+                            TotalCost = mf.TotalPrice,
+                            TargetPrice = targetPrice.Value,
+                            MpoId = mpoId,
+                            CustomerId = mpo.CustomerId
+                        }),
+                        TargetRoles = new() { AppRoles.PLPUNotify, AppRoles.President }
+                    }, ct);
+                }
+
                 await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
 
                 return OperationResult.Ok("Tạo công thức sản xuất thành công.");
             }
-
-            catch(Exception ex)
+            catch (Exception ex)
             {
+                await _unitOfWork.RollbackTransactionAsync();
                 return OperationResult.Fail($"Lỗi khi tạo công thức sản xuất: {ex.Message}");
             }
-           
         }
 
         // ====================================================================== Patch ========================================================================
@@ -1246,9 +1264,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
         public async Task<OperationResult> UpsertFormulaAsync(PatchMfgFormula req, CancellationToken? cancellationToken = null)
         {
             var ct = cancellationToken ?? CancellationToken.None;
-            Guid _ProductId = Guid.Empty;
-            string _MfgExternalId = string.Empty;
-            bool _materialChanged = false;
+            Guid productId = Guid.Empty;
+            string mfgExternalId = string.Empty;
+            bool materialChanged = false;
 
             await _unitOfWork.BeginTransactionAsync();
 
@@ -1258,7 +1276,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 var userId = _currentUser.EmployeeId;
                 var companyId = _currentUser.CompanyId;
 
-                // 1) Load công thức sản xuất cần cập nhật (kèm materials + PSV + PSF nếu cần)
                 var existing = await _unitOfWork.ManufacturingFormulaRepository
                     .Query(track: true)
                     .Include(f => f.ManufacturingFormulaMaterials)
@@ -1270,264 +1287,228 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         f => f.ManufacturingFormulaId == req.ManufacturingFormulaId && f.IsActive,
                         ct);
 
-
                 if (existing == null)
                     return OperationResult.Fail($"Không tìm thấy công thức với ID {req.ManufacturingFormulaId}");
 
-                // 2) Cập nhật các field "header" của công thức
                 existing.UpdatedDate = now;
                 existing.UpdatedBy = userId;
 
-                // Status
-                PatchHelper.SetIfRef(req.Status, () => existing.Status, v => existing.Status = v);
-
-                // Ghi chú
                 PatchHelper.SetIfRef(req.Note, () => existing.Note, v => existing.Note = v);
 
-                // Tổng giá (nếu FE gửi)
                 if (req.TotalPrice.HasValue)
                     existing.TotalPrice = req.TotalPrice.Value;
                 else if (req.MfgTotalPrice.HasValue)
                     existing.TotalPrice = req.MfgTotalPrice.Value;
 
-                // 3) Xử lý IsSelect (chọn công thức cho 1 lệnh sản xuất cụ thể)
-                if (req.mfgProductionOrderId.HasValue)
+                MfgProductionOrder? mpoEntity = null;
+
+                // =====================================================
+                // 1) ALWAYS SELECT nếu có MfgProductionOrderId
+                // =====================================================
+                if (req.mfgProductionOrderId.HasValue && req.mfgProductionOrderId.Value != Guid.Empty)
                 {
                     var orderId = req.mfgProductionOrderId.Value;
 
-                    // Lấy ProductId từ lệnh sản xuất
-                    var orderEntity = await _unitOfWork.MfgProductionOrderRepository.Query(track: true)
-                        .Where(o => o.MfgProductionOrderId == orderId && o.IsActive)
-                        .Select(o => new
-                        {
-                            Entity = o,
-                            o.ProductId,
-                            o.ExternalId,
-                            o.Status
-                        })
-                        .FirstOrDefaultAsync(ct);
+                    mpoEntity = await _unitOfWork.MfgProductionOrderRepository
+                        .Query(track: true)
+                        .FirstOrDefaultAsync(o => o.MfgProductionOrderId == orderId && o.IsActive, ct);
+
+                    if (mpoEntity == null)
+                        return OperationResult.Fail("Không tìm thấy lệnh sản xuất.");
+
+                    productId = mpoEntity.ProductId;
+                    mfgExternalId = mpoEntity.ExternalId ?? string.Empty;
 
                     var psvRepo = _unitOfWork.ProductionSelectVersionRepository.Query(track: true);
 
-                    if (req.IsSelect)
+                    var currentActivePsvs = await psvRepo
+                        .Where(psv =>
+                            psv.MfgProductionOrderId == orderId &&
+                            psv.ValidTo == null)
+                        .ToListAsync(ct);
+
+                    var activeOfThisFormula = currentActivePsvs
+                        .FirstOrDefault(psv => psv.ManufacturingFormulaId == existing.ManufacturingFormulaId);
+
+                    var activeOthers = currentActivePsvs
+                        .Where(psv => psv.ManufacturingFormulaId != existing.ManufacturingFormulaId)
+                        .ToList();
+
+                    foreach (var psv in activeOthers)
                     {
-                        // 3.1. Bỏ chọn các công thức khác đang active cho cùng order này
-                        var otherPsvs = await psvRepo
-                            .Where(psv =>
-                                psv.MfgProductionOrderId == orderId &&
-                                psv.ValidTo == null &&
-                                psv.ManufacturingFormulaId != existing.ManufacturingFormulaId)
+                        psv.ValidTo = now;
+                        psv.ClosedBy = userId;
+                    }
+
+                    if (activeOfThisFormula == null)
+                    {
+                        var newPsv = new ProductionSelectVersion
+                        {
+                            ProductionSelectVersionId = Guid.CreateVersion7(),
+                            MfgProductionOrderId = orderId,
+                            ManufacturingFormulaId = existing.ManufacturingFormulaId,
+                            ValidFrom = now,
+                            ValidTo = null,
+                            CreatedBy = userId,
+                            ClosedBy = null,
+                            CompanyId = companyId
+                        };
+
+                        await _unitOfWork.ProductionSelectVersionRepository.AddAsync(newPsv, ct);
+                    }
+
+                    // BE tự quyết định status
+                    var isMpoFormulaRequested =
+                        string.Equals(mpoEntity.Status, ManufacturingProductOrder.FormulaRequested.ToString(), StringComparison.OrdinalIgnoreCase);
+
+                    var isFormulaNew =
+                        string.Equals(existing.Status, ManufacturingProductOrderFormula.New.ToString(), StringComparison.OrdinalIgnoreCase);
+
+                    if (isMpoFormulaRequested && isFormulaNew)
+                    {
+                        existing.Status = ManufacturingProductOrderFormula.Checking.ToString();
+
+                        mpoEntity.Status = ManufacturingProductOrder.FormulaSuccess.ToString();
+                        mpoEntity.UpdatedBy = userId;
+                        mpoEntity.UpdatedDate = now;
+                    }
+                    else
+                    {
+                        // nếu bạn không muốn dùng IsSelect như 1 status thì đổi thành Checking hoặc giữ nguyên
+                        existing.Status = ManufacturingProductOrderFormula.Checking.ToString();
+                    }
+
+                    existing.UpdatedBy = userId;
+                    existing.UpdatedDate = now;
+                }
+
+                // =====================================================
+                // 2) STANDARD
+                // =====================================================
+                if (req.mfgProductionOrderId.HasValue && productId != Guid.Empty)
+                {
+                    if (req.IsStandard)
+                    {
+                        var currentStandards = await _unitOfWork.ProductStandardFormulaRepository
+                            .Query(track: true)
+                            .Where(psf =>
+                                psf.ProductId == productId &&
+                                psf.CompanyId == companyId &&
+                                psf.ValidTo == null)
                             .ToListAsync(ct);
 
-                        foreach (var psv in otherPsvs)
+                        foreach (var psf in currentStandards)
                         {
-                            psv.ValidTo = now;
-                            psv.ClosedBy = userId;
+                            psf.ValidTo = now;
+                            psf.ClosedBy = userId;
                         }
 
-                        // 3.2. Đảm bảo có PSV active cho chính công thức này
-                        var current = await psvRepo
-                            .FirstOrDefaultAsync(psv =>
-                                psv.MfgProductionOrderId == orderId &&
-                                psv.ValidTo == null &&
-                                psv.ManufacturingFormulaId == existing.ManufacturingFormulaId,
-                                ct);
+                        var hasCurrentStdForThisFormula = currentStandards.Any(psf =>
+                            psf.ManufacturingFormulaId == existing.ManufacturingFormulaId);
 
-                        if (current == null)
+                        if (!hasCurrentStdForThisFormula)
                         {
-                            var newPsv = new ProductionSelectVersion
+                            var newStd = new ProductStandardFormula
                             {
-                                MfgProductionOrderId = orderId,
+                                ProductStandardFormulaId = Guid.CreateVersion7(),
+                                ProductId = productId,
                                 ManufacturingFormulaId = existing.ManufacturingFormulaId,
                                 ValidFrom = now,
                                 ValidTo = null,
                                 CreatedBy = userId,
-                                CompanyId = companyId
+                                ClosedBy = null,
+                                CompanyId = companyId,
+                                Note = req.noteWhyStandardChanged ?? string.Empty
                             };
 
-                            await _unitOfWork.ProductionSelectVersionRepository.AddAsync(newPsv);
-                        }
-
-                        // (NEW) Đặt trạng thái công thức nếu bạn muốn phản ánh "đã được chọn"
-                        // existing.Status = "IsSelect"; // hoặc dùng enum riêng cho Formula nếu có
-
-                        // (NEW) Nếu MPO đang FormulaRequested -> chuyển sang FormulaSuccess
-                        if (orderEntity?.Entity != null)
-                        {
-                            // Ưu tiên dùng enum nếu project có:
-                            // if (orderEntity.Status == MpoStatus.FormulaRequested.ToString())
-                            // {
-                            //     orderEntity.Entity.Status = MpoStatus.FormulaSuccess.ToString();
-                            //     orderEntity.Entity.UpdatedBy = userId;
-                            //     orderEntity.Entity.UpdatedDate = now;
-                            // }
-
-                            // Fallback bằng string nếu chưa có enum:
-                            if (string.Equals(orderEntity.Status, ManufacturingProductOrder.FormulaRequested.ToString(), StringComparison.OrdinalIgnoreCase))
-                            {
-                                orderEntity.Entity.Status = ManufacturingProductOrder.FormulaSuccess.ToString();
-                                orderEntity.Entity.UpdatedBy = userId;
-                                orderEntity.Entity.UpdatedDate = now;
-                            }
+                            await _unitOfWork.ProductStandardFormulaRepository.AddAsync(newStd, ct);
                         }
                     }
                     else
                     {
-                        // Unselect: đóng tất cả PSV active cho công thức này trong order này
-                        var currentPsvs = await psvRepo
-                            .Where(psv =>
-                                psv.MfgProductionOrderId == orderId &&
-                                psv.ValidTo == null &&
-                                psv.ManufacturingFormulaId == existing.ManufacturingFormulaId)
+                        var currentStdForThisFormula = await _unitOfWork.ProductStandardFormulaRepository
+                            .Query(track: true)
+                            .Where(psf =>
+                                psf.ProductId == productId &&
+                                psf.CompanyId == companyId &&
+                                psf.ManufacturingFormulaId == existing.ManufacturingFormulaId &&
+                                psf.ValidTo == null)
                             .ToListAsync(ct);
 
-                        foreach (var psv in currentPsvs)
+                        foreach (var psf in currentStdForThisFormula)
                         {
-                            psv.ValidTo = now;
-                            psv.ClosedBy = userId;
-                        }
-                    }
-
-
-                    // 4) Xử lý IsStandard (công thức chuẩn cho Product)
-                    if (orderEntity != null)
-                    {
-                        _ProductId = orderEntity.ProductId;
-                        _MfgExternalId = orderEntity.ExternalId ?? string.Empty;
-                        if (req.IsStandard)
-                        {
-                            // 4.1. Đóng tất cả công thức chuẩn hiện hành của Product này
-                            var currentStandards = existing.ProductStandardFormulas
-                                .Where(psf => psf.ProductId == _ProductId && psf.ValidTo == null)
-                                .ToList();
-
-                            foreach (var psf in currentStandards)
-                            {
-                                psf.ValidTo = now;
-                                psf.ClosedBy = userId;
-                            }
-
-                            // 4.2. Kiểm tra công thức hiện tại đã là chuẩn chưa
-                            var hasCurrentStdForThisFormula = existing.ProductStandardFormulas.Any(psf =>
-                                psf.ProductId == _ProductId
-                                && psf.ManufacturingFormulaId == existing.ManufacturingFormulaId
-                                && psf.ValidTo == null);
-
-                            if (!hasCurrentStdForThisFormula)
-                            {
-                                // Tạo dòng ProductStandardFormula mới
-                                var newStd = new ProductStandardFormula
-                                {
-                                    ProductId = _ProductId,
-                                    ManufacturingFormulaId = existing.ManufacturingFormulaId,
-                                    ValidFrom = now,
-                                    ValidTo = null,
-                                    CreatedBy = userId,
-                                    CompanyId = companyId,
-                                    Note = req.noteWhyStandardChanged ?? string.Empty
-                                };
-
-                                existing.ProductStandardFormulas.Add(newStd);
-                            }
-                        }
-                        else
-                        {
-                            // 4.x. Bỏ chuẩn: đóng lại tất cả chuẩn hiện hành của chính công thức này cho Product này
-                            var currentStdForThisFormula = existing.ProductStandardFormulas
-                                .Where(psf =>
-                                    psf.ProductId == _ProductId
-                                    && psf.ManufacturingFormulaId == existing.ManufacturingFormulaId
-                                    && psf.ValidTo == null)
-                                .ToList();
-
-                            foreach (var psf in currentStdForThisFormula)
-                            {
-                                psf.ValidTo = now;
-                                psf.ClosedBy = userId;
-                            }
+                            psf.ValidTo = now;
+                            psf.ClosedBy = userId;
                         }
                     }
                 }
 
-                // 5) Cập nhật danh sách vật tư trong công thức
+                // =====================================================
+                // 3) MATERIALS
+                // =====================================================
                 if (req.ManufacturingFormulaMaterials != null)
                 {
-                    // TẠO SNAPSHOT TRƯỚC KHI ĐỤNG TỚI MATERIALS
                     CreateFormulaVersionSnapshot(existing, now, req.Note);
 
                     var incoming = req.ManufacturingFormulaMaterials.ToList();
 
-                    // 5.1. Tập Id các dòng vẫn còn tồn tại trên FE
                     var incomingIds = incoming
                         .Where(x => x.ManufacturingFormulaMaterialId != Guid.Empty)
                         .Select(x => x.ManufacturingFormulaMaterialId)
                         .ToHashSet();
 
-                    // 5.2. Soft delete những dòng cũ nhưng không còn trong incoming
-                    foreach (var material in existing.ManufacturingFormulaMaterials
-                                                     .Where(m => m.IsActive)) // chỉ check các dòng đang active
+                    foreach (var material in existing.ManufacturingFormulaMaterials.Where(m => m.IsActive))
                     {
                         if (!incomingIds.Contains(material.ManufacturingFormulaMaterialId))
                         {
-                            _materialChanged = true;
-                            // User đã xóa dòng này trên form → soft delete
                             material.IsActive = false;
+                            materialChanged = true;
                         }
                     }
 
-                    // 5.3. Upsert những dòng có trong req
                     for (int idx = 0; idx < incoming.Count; idx++)
                     {
                         var patchItem = incoming[idx];
                         var lineNo = idx + 1;
-                        // IMPORTANT: bỏ qua dòng rác
-                        if (patchItem.ItemId == Guid.Empty) continue;
 
-                        // ===== NEW ROW =====
+                        if (patchItem.ItemId == Guid.Empty)
+                            continue;
+
                         if (patchItem.ManufacturingFormulaMaterialId == Guid.Empty)
                         {
-                            // 5.3.1. THỬ TÁI SỬ DỤNG DÒNG CŨ (đã bị soft-delete)
                             var resurrectMaterial = existing.ManufacturingFormulaMaterials.FirstOrDefault(m =>
-                                m.ManufacturingFormulaId == existing.ManufacturingFormulaId
-                                && m.itemType == patchItem.ItemType
-                                && (
+                                m.ManufacturingFormulaId == existing.ManufacturingFormulaId &&
+                                m.itemType == patchItem.ItemType &&
+                                (
                                     (patchItem.ItemType == ItemType.Material && m.MaterialId == patchItem.ItemId) ||
                                     (patchItem.ItemType == ItemType.Product && m.ProductId == patchItem.ItemId)
-                                )
-                                && m.CategoryId == patchItem.CategoryId
-                                && !m.IsActive);
+                                ) &&
+                                m.CategoryId == patchItem.CategoryId &&
+                                !m.IsActive);
 
                             if (resurrectMaterial != null)
                             {
                                 resurrectMaterial.IsActive = true;
-
-                                // ✅ update fields
                                 resurrectMaterial.Quantity = patchItem.Quantity;
                                 resurrectMaterial.UnitPrice = patchItem.UnitPrice;
                                 resurrectMaterial.TotalPrice = patchItem.TotalPrice;
                                 resurrectMaterial.LineNo = lineNo;
                                 resurrectMaterial.Unit = patchItem.Unit ?? resurrectMaterial.Unit;
+                                resurrectMaterial.MaterialNameSnapshot = patchItem.MaterialNameSnapshot ?? resurrectMaterial.MaterialNameSnapshot;
+                                resurrectMaterial.MaterialExternalIdSnapshot = patchItem.MaterialExternalIdSnapshot ?? resurrectMaterial.MaterialExternalIdSnapshot;
 
-                                PatchHelper.SetIfRef(patchItem.MaterialNameSnapshot,
-                                    () => resurrectMaterial.MaterialNameSnapshot,
-                                    v => resurrectMaterial.MaterialNameSnapshot = v);
-
-                                PatchHelper.SetIfRef(patchItem.MaterialExternalIdSnapshot,
-                                    () => resurrectMaterial.MaterialExternalIdSnapshot,
-                                    v => resurrectMaterial.MaterialExternalIdSnapshot = v);
-
-                                _materialChanged = true;
+                                materialChanged = true;
                                 continue;
                             }
 
-                            // 5.3.2. THÊM DÒNG MỚI
                             var newMaterial = new ManufacturingFormulaMaterial
                             {
+                                ManufacturingFormulaMaterialId = Guid.CreateVersion7(),
                                 ManufacturingFormulaId = existing.ManufacturingFormulaId,
 
                                 itemType = patchItem.ItemType,
-                                MaterialId = patchItem.ItemType == ItemType.Material ? patchItem.ItemId : (Guid?)null,
-                                ProductId = patchItem.ItemType == ItemType.Product ? patchItem.ItemId : (Guid?)null,
+                                MaterialId = patchItem.ItemType == ItemType.Material ? patchItem.ItemId : null,
+                                ProductId = patchItem.ItemType == ItemType.Product ? patchItem.ItemId : null,
 
                                 CategoryId = patchItem.CategoryId,
                                 LineNo = lineNo,
@@ -1539,29 +1520,42 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                                 Unit = patchItem.Unit ?? string.Empty,
                                 MaterialNameSnapshot = patchItem.MaterialNameSnapshot ?? string.Empty,
                                 MaterialExternalIdSnapshot = patchItem.MaterialExternalIdSnapshot ?? string.Empty,
-
-                                IsActive = patchItem.IsActive ?? true,
+                                IsActive = patchItem.IsActive ?? true
                             };
+                            //existing.ManufacturingFormulaMaterials.Add(newMaterial);
 
-                            _materialChanged = true;
-                            existing.ManufacturingFormulaMaterials.Add(newMaterial);
+                            await _unitOfWork.ManufacturingFormulaMaterialRepository.AddAsync(newMaterial, ct);
+                            materialChanged = true;
                             continue;
                         }
 
-                        // ===== UPDATE OLD ROW =====
                         var existingMaterial = existing.ManufacturingFormulaMaterials
                             .FirstOrDefault(m => m.ManufacturingFormulaMaterialId == patchItem.ManufacturingFormulaMaterialId);
 
-                        if (existingMaterial == null) continue;
+                        if (existingMaterial == null)
+                            continue;
+
+                        var before = new
+                        {
+                            existingMaterial.itemType,
+                            existingMaterial.MaterialId,
+                            existingMaterial.ProductId,
+                            existingMaterial.CategoryId,
+                            existingMaterial.LineNo,
+                            existingMaterial.Quantity,
+                            existingMaterial.UnitPrice,
+                            existingMaterial.TotalPrice,
+                            existingMaterial.Unit,
+                            existingMaterial.MaterialNameSnapshot,
+                            existingMaterial.MaterialExternalIdSnapshot,
+                            existingMaterial.IsActive
+                        };
+
                         existingMaterial.LineNo = lineNo;
-                        // ✅ update type + ids (quan trọng)
                         existingMaterial.itemType = patchItem.ItemType;
-                        existingMaterial.MaterialId = patchItem.ItemType == ItemType.Material ? patchItem.ItemId : (Guid?)null;
-                        existingMaterial.ProductId = patchItem.ItemType == ItemType.Product ? patchItem.ItemId : (Guid?)null;
-
+                        existingMaterial.MaterialId = patchItem.ItemType == ItemType.Material ? patchItem.ItemId : null;
+                        existingMaterial.ProductId = patchItem.ItemType == ItemType.Product ? patchItem.ItemId : null;
                         existingMaterial.CategoryId = patchItem.CategoryId;
-
-                        var oldQtyForUpdate = existingMaterial.Quantity;
 
                         PatchHelper.SetIf(patchItem.Quantity, () => existingMaterial.Quantity, v => existingMaterial.Quantity = v);
                         PatchHelper.SetIf(patchItem.UnitPrice, () => existingMaterial.UnitPrice, v => existingMaterial.UnitPrice = v);
@@ -1574,53 +1568,70 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         if (patchItem.IsActive.HasValue)
                             existingMaterial.IsActive = patchItem.IsActive.Value;
 
-                        if (oldQtyForUpdate != existingMaterial.Quantity)
-                            _materialChanged = true;
+                        var after = new
+                        {
+                            existingMaterial.itemType,
+                            existingMaterial.MaterialId,
+                            existingMaterial.ProductId,
+                            existingMaterial.CategoryId,
+                            existingMaterial.LineNo,
+                            existingMaterial.Quantity,
+                            existingMaterial.UnitPrice,
+                            existingMaterial.TotalPrice,
+                            existingMaterial.Unit,
+                            existingMaterial.MaterialNameSnapshot,
+                            existingMaterial.MaterialExternalIdSnapshot,
+                            existingMaterial.IsActive
+                        };
+
+                        if (!Equals(before, after))
+                            materialChanged = true;
                     }
-
-
                 }
 
-
-
-                    // 6) Save + commit
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
-
-                // ====== 7. Gửi notification ======
-
-                // 4.5) Kiểm tra GIÁ CẢNH BÁO và bắn Notification (nếu vượt)
+                // =====================================================
+                // 4) NOTIFICATION SAU COMMIT
+                // =====================================================
                 decimal? targetPrice = null;
                 try
                 {
-                    // GỢI Ý 1: lấy theo sản phẩm + khách hàng từ lệnh sản xuất (nếu MPO có CustomerId)
-                    // (Tuỳ dữ liệu thực tế của bạn — nếu không có, hãy thay bằng service của bạn)
                     targetPrice = await _priceProvider.GetTargetPriceByMpoAsync(
                         mfgProductionOrderId: req.mfgProductionOrderId ?? Guid.Empty,
                         ct: ct
                     );
                 }
-                catch { /* không chặn flow nếu provider lỗi */ }
-
-
-
-                // ====== Gửi notification ======
-                if (targetPrice.HasValue && existing.TotalPrice > targetPrice.Value)
+                catch
                 {
-                    // Gửi cảnh báo tới Ban giám đốc (role “Board”) – bạn có thể đổi thành TargetUserIds/TargetTeamIds
+                }
+
+                var ignoreCustomerId = Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75");
+                var isIgnoreCustomer = existing.ProductionSelectVersions
+                    .Any(psv => psv.MfgProductionOrder.CustomerId == ignoreCustomerId);
+
+                var productDisplay = mpoEntity != null
+                    ? (!string.IsNullOrWhiteSpace(mpoEntity.Product?.ColourCode)
+                        ? mpoEntity.Product.ColourCode
+                        : mpoEntity.Product?.Name ?? string.Empty)
+                    : string.Empty;
+
+
+                if (!isIgnoreCustomer && targetPrice.HasValue && (existing.TotalPrice ?? 0m) > targetPrice.Value)
+                    {
                     await _notificationService.PublishAsync(new PublishNotificationRequest
                     {
                         Topic = TopicNotifications.PriceOverSellCreated,
                         Severity = NotificationSeverity.Warning,
-                        Title = $"Cảnh báo giá: {_MfgExternalId}",
-                        Message = $"Tổng chi phí {req.TotalPrice:N0} > Giá bán {targetPrice.Value:N0}",
+                        Title = $"Cảnh báo giá: {mpoEntity?.Product?.ColourCode}",
+                        Message = $"Tổng chi phí {(existing.TotalPrice ?? 0m):N0} > Giá bán {targetPrice.Value:N0}",
                         Link = $"/labs/mfgformula/{req.mfgProductionOrderId}/{req.ManufacturingFormulaId}",
                         PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
                         {
                             FormulaId = req.ManufacturingFormulaId,
-                            ExternalId = _MfgExternalId,
-                            TotalCost = req.TotalPrice,
+                            ExternalId = mfgExternalId,
+                            TotalCost = existing.TotalPrice,
                             TargetPrice = targetPrice.Value,
                             MpoId = req.mfgProductionOrderId
                         }),
@@ -1628,30 +1639,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     }, ct);
                 }
 
-                // ====== Gửi notification ======
-                //if (_materialChanged)
-                //{
-                //    await _notificationService.PublishAsync(new PublishNotificationRequest
-                //    {
-                //        Topic = TopicNotifications.WarehouseStockLost,
-                //        Severity = NotificationSeverity.Info,
-                //        Title = $"Cảnh báo tồn kho: {_MfgExternalId}",
-                //        Message = $"Vật tư thay đổi",
-                //        Link = $"/plpu/mfgproductionorders/{req.mfgProductionOrderId}",
-                //        PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
-                //        {
-                //            FormulaId = req.ManufacturingFormulaId,
-                //            ExternalId = _MfgExternalId,
-                //            MpoId = req.mfgProductionOrderId
-                //        }),
-                //        TargetRoles = new() { RoleSets.PLPU_Group }
-                //    }, ct);
-
-                //}
-
 
                 return OperationResult.Ok("Cập nhật công thức thành công");
-            
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -1669,23 +1658,18 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                                 p => p.CurrentValue ?? "(null)");
 
                         var keyStr = string.Join(", ", keys.Select(kv => kv.Key + "=" + kv.Value));
-
                         return $"{entityType} | State={state} | Keys={keyStr}";
                     });
 
                 var debugMessage = "Concurrency entries: " + string.Join(" || ", entriesInfo);
-
-                // Tạm thời trả thẳng ra để anh thấy:
                 return OperationResult.Fail(debugMessage);
             }
-
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync();
                 return OperationResult.Fail(ex.Message);
             }
         }
-
         // ======================================================================== Helper ======================================================================== 
 
         /// <summary>
@@ -1861,6 +1845,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                                     v.ManufacturingFormula.ManufacturingFormulaId,
                                     v.ManufacturingFormula.ExternalId,
                                     v.ManufacturingFormula.Name,
+                                    v.MfgProductionOrder.FormulaExternalIdSnapshot,
 
                                     Materials = v.ManufacturingFormula.ManufacturingFormulaMaterials
                                         .Where(m => m.IsActive)
@@ -1920,6 +1905,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     getManufacturingVUFormula = new GetManufacturingVUFormula
                     {
                         ManufacturingVUFormulaId = Guid.Empty,
+                        SourceVUExternalId = data.Current.Formula.FormulaExternalIdSnapshot,
                         FormulaId = data.Current.Formula.ManufacturingFormulaId,
                         FormulaExternalId = data.Current.Formula.ExternalId,
                         TotalProductionQuantity = Convert.ToDecimal(data.TotalQuantityRequest),

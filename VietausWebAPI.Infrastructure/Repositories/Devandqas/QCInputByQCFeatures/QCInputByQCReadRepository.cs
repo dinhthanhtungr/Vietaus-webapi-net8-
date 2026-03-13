@@ -303,7 +303,173 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
             return await q.FirstOrDefaultAsync(ct);
         }
 
+        public async Task<List<QCInputByQCExportRow>> GetExportRowsAsync(QCInputQuery query, CancellationToken ct)
+        {
+            query ??= new QCInputQuery();
 
+            var hasKeyword = !string.IsNullOrWhiteSpace(query.Keyword);
+            var kw = hasKeyword ? query.Keyword!.Trim() : "";
+
+            var requiredHeaderType = (int)RequestType.ImportOther;
+
+            var allowedDetailTypes = new[]
+            {
+        VoucherDetailType.Waiter,
+        VoucherDetailType.QCPass,
+        VoucherDetailType.QCFail,
+        VoucherDetailType.Special
+    };
+
+            var q =
+                from vd in _context.WarehouseVoucherDetails.AsNoTracking()
+                join v in _context.WarehouseVouchers.AsNoTracking()
+                    on vd.VoucherId equals v.VoucherId
+                where v.VoucherType == requiredHeaderType
+                      && allowedDetailTypes.Contains(vd.VoucherType)
+
+                join r0 in _context.WarehouseRequests.AsNoTracking()
+                    on v.RequestId equals r0.RequestId into rJoin
+                from r in rJoin.DefaultIfEmpty()
+
+                let qcLatest = _context.QCInputByQCs.AsNoTracking()
+                    .Where(qc => qc.VoucherDetailId == vd.VoucherDetailId)
+                    .OrderByDescending(qc => qc.CreatedDate)
+                    .Select(qc => new
+                    {
+                        qc.QCInputByQCId,
+                        qc.CSName,
+                        qc.CSExternalId,
+                        qc.InspectionMethod,
+                        qc.IsCOAProvided,
+                        qc.IsMSDSTDSProvided,
+                        qc.IsMetalDetectionRequired,
+                        qc.IsSuccessQuality,
+                        qc.ImportWarehouseType,
+                        qc.Note,
+                        qc.CreatedDate,
+                        qc.CreatedBy
+                    })
+                    .FirstOrDefault()
+
+                let qcEmployeeName = qcLatest == null
+                    ? null
+                    : _context.Employees.AsNoTracking()
+                        .Where(emp => emp.EmployeeId == qcLatest.CreatedBy)
+                        .Select(emp => emp.FullName)
+                        .FirstOrDefault()
+
+                from po in _context.PurchaseOrders.AsNoTracking()
+                    .Where(po =>
+                        r != null &&
+                        po.ExternalId != null &&
+                        po.ExternalId == r.codeFromRequest &&
+                        po.IsActive == true
+                    )
+                    .OrderByDescending(po => po.CreateDate)
+                    .Take(1)
+                    .DefaultIfEmpty()
+
+                select new
+                {
+                    VoucherDetailId = vd.VoucherDetailId,
+                    vd.ProductCode,
+                    vd.ProductName,
+                    vd.LotNumber,
+                    vd.QtyKg,
+                    VoucherCreatedDate = v.CreatedDate,
+
+                    SupplierName = po != null && po.Supplier != null
+                        ? po.Supplier.SupplierName
+                        : null,
+
+                    qcLatest,
+                    QCEmployeeName = qcEmployeeName
+                };
+
+            if (query.VoucherDetailId > 0)
+                q = q.Where(x => x.VoucherDetailId == query.VoucherDetailId);
+
+            if (query.VoucherDetailType.HasValue)
+            {
+                var t = query.VoucherDetailType.Value;
+                if (!allowedDetailTypes.Contains(t))
+                    return new List<QCInputByQCExportRow>();
+
+                q =
+                    from x in q
+                    join vd in _context.WarehouseVoucherDetails.AsNoTracking()
+                        on x.VoucherDetailId equals vd.VoucherDetailId
+                    where vd.VoucherType == t
+                    select x;
+            }
+
+            if (query.FromDate.HasValue)
+                q = q.Where(x => x.VoucherCreatedDate >= query.FromDate.Value);
+
+            if (query.ToDate.HasValue)
+                q = q.Where(x => x.VoucherCreatedDate <= query.ToDate.Value);
+
+            if (query.HasQC.HasValue)
+            {
+                q = query.HasQC.Value
+                    ? q.Where(x => x.qcLatest != null)
+                    : q.Where(x => x.qcLatest == null);
+            }
+
+            if (query.QCInputByQCId.HasValue)
+                q = q.Where(x => x.qcLatest != null && x.qcLatest.QCInputByQCId == query.QCInputByQCId.Value);
+
+            if (hasKeyword)
+            {
+                q = q.Where(x =>
+                    (x.ProductCode ?? "").Contains(kw) ||
+                    (x.ProductName ?? "").Contains(kw) ||
+                    (x.LotNumber ?? "").Contains(kw) ||
+                    (x.SupplierName ?? "").Contains(kw) ||
+                    (x.QCEmployeeName ?? "").Contains(kw) ||
+                    (x.qcLatest != null && (
+                        (x.qcLatest.CSName ?? "").Contains(kw) ||
+                        (x.qcLatest.CSExternalId ?? "").Contains(kw) ||
+                        (x.qcLatest.Note ?? "").Contains(kw)
+                    ))
+                );
+            }
+
+            var rows = await q
+                .OrderByDescending(x => x.VoucherDetailId)
+                .Select(x => new QCInputByQCExportRow
+                {
+                    MaterialExternalId = x.ProductCode,
+                    MaterialName = x.ProductName,
+                    LotNo = x.LotNumber,
+
+                    ActualReceivedQuantityKg = x.QtyKg,
+
+                    SupplierName = x.SupplierName,
+
+                    ImportWarehouseText = x.qcLatest == null
+                        ? ""
+                        : x.qcLatest.ImportWarehouseType == QcDecision.QCPass ? "Đạt - nhập kho"
+                        : x.qcLatest.ImportWarehouseType == QcDecision.Special ? "Đặc cách - nhập kho"
+                        : x.qcLatest.ImportWarehouseType == QcDecision.QCFail ? "Không đạt - chờ xử lý"
+                        : "",
+
+                    ResultText = x.qcLatest == null
+                        ? ""
+                        : x.qcLatest.ImportWarehouseType == QcDecision.Special ? "Đặc cách"
+                        : x.qcLatest.IsSuccessQuality == true ? "Đạt"
+                        : x.qcLatest.IsSuccessQuality == false ? "Không đạt"
+                        : "",
+
+                    InspectorName = x.QCEmployeeName,
+                    InspectionDate = x.qcLatest != null ? x.qcLatest.CreatedDate : null,
+                    CreatedDate = x.VoucherCreatedDate,
+                    Note = x.qcLatest != null ? x.qcLatest.Note : null
+                })
+                .ToListAsync(ct);
+
+            return rows;
+        }
 
 
     }

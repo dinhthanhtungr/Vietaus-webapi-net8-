@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,6 +13,8 @@ using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
 using VietausWebAPI.Core.Domain.Entities.DevandqaSchema;
 using VietausWebAPI.Core.Domain.Enums.Attachment;
+using VietausWebAPI.Core.Domain.Enums.Devandqa;
+using VietausWebAPI.Core.Domain.Enums.WareHouses;
 
 namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCInputByQCFeatures
 {
@@ -76,7 +79,7 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
                 if (userId == Guid.Empty)
                     return OperationResult<GetQCInputByQC>.Fail("Không lấy được thông tin người dùng hiện tại.");
 
-                // (Khuyên) chặn tạo trùng
+                // chặn tạo trùng
                 var existed = await _uow.QCInputByQCReadRepository
                     .GetLatestByVoucherDetailIdAsync(input.VoucherDetailId, ct);
 
@@ -97,10 +100,17 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
                         Note = existed.Note,
                         AttachmentCollectionId = existed.AttachmentCollectionId
                     };
+
                     return OperationResult<GetQCInputByQC>.Ok(existedDto);
                 }
 
-                // 2) Tạo QCInput
+                // lấy voucher detail để đọc mã NVL + số lot
+                var voucherDetail = await _uow.WarehouseVoucherDetailReadRepository
+                    .GetByIdAsync(input.VoucherDetailId, ct);
+
+                if (voucherDetail == null)
+                    return OperationResult<GetQCInputByQC>.Fail("Không tìm thấy WarehouseVoucherDetail.");
+
                 var entity = new QCInputByQC
                 {
                     QCInputByQCId = Guid.CreateVersion7(),
@@ -108,8 +118,8 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
 
                     CSName = input.CSName,
                     CSExternalId = input.CSExternalId,
-                    MaterialName = input.MaterialName,
-                    MaterialExternalId = input.MaterialExternalId,
+                    MaterialName = voucherDetail.ProductName,
+                    MaterialExternalId = voucherDetail.ProductCode,
 
                     InspectionMethod = input.InspectionMethod,
                     IsCOAProvided = input.IsCOAProvided,
@@ -121,7 +131,6 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
                     Note = input.Note,
 
                     AttachmentCollectionId = input.AttachmentCollectionId,
-
                     AttachmentStatus = (input.HasNewAttachments == true)
                         ? AttachmentUploadStatus.Pending
                         : AttachmentUploadStatus.None,
@@ -132,10 +141,30 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
 
                 await _uow.QCInputByQCWriteRepository.AddAsync(entity, ct);
 
-                // 3) Commit 1 phát
+                // ===== cập nhật trạng thái kho =====
+                var targetStockType = MapQcDecisionToStockType(input.ImportWarehouseType);
+                if (targetStockType.HasValue)
+                {
+                    var materialCode = voucherDetail.ProductCode?.Trim();
+                    var lotNumber = voucherDetail.LotNumber?.Trim();
+
+                    if (!string.IsNullOrWhiteSpace(materialCode) && !string.IsNullOrWhiteSpace(lotNumber))
+                    {
+                        var now = DateTime.Now;
+
+                        var affected = await _uow.WarehouseShelfStockRepository.Query()
+                            .Where(x => x.Code == materialCode
+                                     && x.LotNo == lotNumber
+                                     && x.StockType == (StockType)6)
+                            .ExecuteUpdateAsync(setters => setters
+                                .SetProperty(x => x.StockType, targetStockType.Value)
+                                .SetProperty(x => x.UpdatedBy, userId)
+                                .SetProperty(x => x.UpdatedDate, now), ct);
+                    }
+                }
+
                 await _uow.SaveChangesAsync(ct);
 
-                // 4) Return DTO (có AttachmentCollectionId)
                 var result = new GetQCInputByQC
                 {
                     QCInputByQCId = entity.QCInputByQCId,
@@ -150,7 +179,6 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
                     ImportWarehouseType = entity.ImportWarehouseType,
                     Note = entity.Note,
                     AttachmentCollectionId = entity.AttachmentCollectionId,
-
                     AttachmentStatus = entity.AttachmentStatus,
                     AttachmentLastError = entity.AttachmentLastError,
                 };
@@ -162,7 +190,6 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
                 return OperationResult<GetQCInputByQC>.Fail(ex.Message);
             }
         }
-
         public async Task<OperationResult<GetQCInputByQC>> PatchByVoucherDetailIdAsync(PatchQCInputByQC input, long voucherDetailId, CancellationToken ct)
         {
             var entity = await _uow.QCInputByQCWriteRepository.PatchByVoucherDetailIdAsync(voucherDetailId, input, _currentUser.EmployeeId,ct);
@@ -187,6 +214,24 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
             };
 
             return OperationResult<GetQCInputByQC>.Ok(dto);
+        }
+
+
+        // =================================================== Helper ===================================================
+        private static StockType? MapQcDecisionToStockType(QcDecision? decision)
+        {
+            return decision switch
+            {
+                QcDecision.QCPass => (StockType)3,
+                QcDecision.Special => (StockType)3,
+                QcDecision.QCFail => (StockType)4,
+                _ => null
+            };
+        }
+
+        public async Task<List<QCInputByQCExportRow>> BuildExportRowsAsync(QCInputQuery query, CancellationToken ct)
+        {
+            return await _uow.QCInputByQCReadRepository.GetExportRowsAsync(query, ct);
         }
     }
 }

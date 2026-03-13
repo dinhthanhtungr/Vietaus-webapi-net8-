@@ -21,6 +21,7 @@ using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.Mercha
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContracts.ReadRepositories;
 using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
 
 namespace VietausWebAPI.Infrastructure.DataUnitOfWork
@@ -114,6 +115,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             IWarehouseTempStockRepository warehouseTempStockRepository,
             IWarehouseRequestDetailRepository warehouseRequestDetailRepository,
             IWarehouseRequestRepository warehouseRequestRepository,
+
+            IWarehouseVoucherReadRepository warehouseVoucherReadRepository,
+            IWarehouseVoucherDetailReadRepository warehouseVoucherDetailReadRepository,
 
             // ==== Delivery ====
             IDeliveryOrderRepository deliveryOrderRepository,
@@ -221,6 +225,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             WarehouseTempStockRepository = warehouseTempStockRepository;
             WarehouseRequestDetailRepository = warehouseRequestDetailRepository;
             WarehouseRequestRepository = warehouseRequestRepository;
+
+            WarehouseVoucherReadRepository = warehouseVoucherReadRepository;
+            WarehouseVoucherDetailReadRepository = warehouseVoucherDetailReadRepository;
 
             // ===== Delivery =====
             DeliveryOrderRepository = deliveryOrderRepository;

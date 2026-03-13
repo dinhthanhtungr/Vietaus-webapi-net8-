@@ -22,10 +22,11 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.DTOs
 
         public string? Comment { get; set; }
 
+        //public bool IsActive { get; set; }
+
 
         public DateTime? RequestDeliveryDate { get; set; }
         public DateTime? RealDeliveryDate { get; set; }
-
         public DateTime? CreateDate { get; set; }
 
         public List<GetSamplePurchaseOrderDetail> Details { get; set; } = new List<GetSamplePurchaseOrderDetail>();

@@ -17,5 +17,8 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.RepositoriesC
         Task<PagedResult<GetSummaryQCInput>> GetPagedSummaryAsync(QCInputQuery query, CancellationToken ct);
 
         Task<QCInputByQC?> GetLatestByVoucherDetailIdAsync(long voucherDetailId, CancellationToken ct);
+
+        Task<List<QCInputByQCExportRow>> GetExportRowsAsync(QCInputQuery query, CancellationToken ct);
+
     }
 }

@@ -180,6 +180,8 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                         ? (mo.CreatedByNavigation.FullName ?? string.Empty)
                         : string.Empty,
                     Status = mo.Status ?? string.Empty,
+                    TotalPrice = mo.TotalPrice ?? 0m,
+                    Vat = mo.Vat ?? 0m,
                     CreatedDate = mo.CreateDate,
                     CustomerName = mo.CustomerNameSnapshot,
                     CustomerExternalId = mo.CustomerExternalIdSnapshot,
@@ -350,18 +352,26 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                     .Select(dod => new
                     {
                         dod.ProductId,
-                        DOExternalId = dop.DeliveryOrder.ExternalId
+                        DOExternalId = dop.DeliveryOrder.ExternalId,
+                        dod.LotNoList
                     }))
-                .Where(x => x.DOExternalId != null && x.DOExternalId != "")
+                .Where(x => !string.IsNullOrWhiteSpace(x.DOExternalId))
                 .GroupBy(x => x.ProductId)
                 .Select(g => new
                 {
                     ProductId = g.Key,
-                    DOList = g.Select(x => x.DOExternalId!).Distinct().ToList()
+                    DOList = g
+                        .GroupBy(x => new { x.DOExternalId, x.LotNoList })
+                        .Select(x => new DeliveryInfoDto
+                        {
+                            DOExternalId = x.Key.DOExternalId!,
+                            LotNoList = x.Key.LotNoList
+                        })
+                        .ToList()
                 })
                 .ToListAsync(ct);
 
-            var deliveryListStr = doByProduct.ToDictionary(
+            var deliveryDict = doByProduct.ToDictionary(
                 x => x.ProductId,
                 x => x.DOList
             );
@@ -383,7 +393,8 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                     RequestQuantity = g.Sum(x => (decimal?)x.ExpectedQuantity) ?? 0m,
                     RealQuantity = g.SelectMany(x => x.DeliveryOrderDetails.Where(dd => dd.IsActive))
                                     .Sum(dd => (decimal?)dd.Quantity) ?? 0m,
-                    RequestDate = g.Min(x => x.DeliveryRequestDate)
+                    RequestDate = g.Min(x => x.DeliveryRequestDate),
+                    UnitPrice = g.Average(x => (decimal)x.UnitPriceAgreed)
                 })
                 .ToDictionaryAsync(x => x.ProductId, x => x, ct);
 
@@ -435,9 +446,9 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
             // ----------------------------------------------------
             var items = pageMfg.Select(m =>
             {
-                var doList = deliveryListStr.TryGetValue(m.ProductId, out var list)
+                var deliveries = deliveryDict.TryGetValue(m.ProductId, out var list)
                     ? list
-                    : new List<string>();
+                    : new List<DeliveryInfoDto>();
 
                 var hasDetail = merchDetails.TryGetValue(m.ProductId, out var md);
 
@@ -446,12 +457,14 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                     ExternalId = m.ExternalId,
                     ColourCode = m.ColourCode,
                     ProductName = m.ProductName,
-                    DeliveryList = string.Join(", ", doList),
+
+                    Deliveries = deliveries,
 
                     RequestQuantity = hasDetail ? md!.RequestQuantity : null,
                     RealQuantity = hasDetail ? md!.RealQuantity : null,
                     RequestDate = hasDetail ? md!.RequestDate : default,
                     ExpectedDate = m.ExpectedCompletionDate,
+                    UnitPrice = hasDetail ? md!.UnitPrice : 0m,
 
                     Details = detailsByMfg.TryGetValue(m.MfgProductionOrderId, out var ds)
                         ? ds

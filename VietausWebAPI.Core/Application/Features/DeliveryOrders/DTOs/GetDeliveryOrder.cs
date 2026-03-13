@@ -23,6 +23,8 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs
         public string? TaxNumber { get; set; }
         public string? PhoneSnapshot { get; set; }
 
+        public bool? RequiresUnloading { get; set; }
+
         public string Status { get; set; } = string.Empty; // "Pending", "In Transit", "Delivered", "Cancelled"
 
         public string? Note { get; set; }

@@ -18,6 +18,8 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs
         public string? PONo { get; set; } = null;
         public decimal RequestQuantity { get; set; } 
 
+        public string Note { get; set; } = string.Empty;
+
         public List<GetQuantityAndLots> getQuantityAndLots { get; set; } = new List<GetQuantityAndLots>();
 
     }

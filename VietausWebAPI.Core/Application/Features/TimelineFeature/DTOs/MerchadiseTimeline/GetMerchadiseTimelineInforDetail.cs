@@ -12,8 +12,10 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.Merchadis
         public string? ColourCode { get; set; }
         public string? ProductName { get; set; }
 
+        public decimal UnitPrice { get; set; } = 0;
+
         //public string? MfgList { get; set; }
-        public string? DeliveryList { get; set; }
+        public List<DeliveryInfoDto> Deliveries { get; set; } = new();
 
         public DateTime RequestDate { get; set; }
         public DateTime? ExpectedDate { get; set; }

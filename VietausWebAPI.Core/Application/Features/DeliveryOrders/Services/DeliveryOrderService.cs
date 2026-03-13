@@ -278,6 +278,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                             ProductExternalIdSnapShot = d.ProductExternalIdSnapshot,
                             ProductNameSnapShot = d.ProductNameSnapshot,
 
+                            Note = d.Comment ?? string.Empty,
                             getQuantityAndLots = wrl
                                 // Match tồn kho theo mã thành phẩm
                                 .Where(w => w.Code == d.ProductExternalIdSnapshot)
@@ -454,6 +455,8 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                 TaxNumber = request.TaxNumber,
                 PhoneSnapshot = request.PhoneSnapshot,
 
+                RequiresUnloading = request.RequiresUnloading,
+
                 Note = request.Note,
                 IsActive = request.IsActive,
 
@@ -501,16 +504,6 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                 }
             }
 
-            //if (request.postDeliveryOrderDetails != null)
-            //{
-            //    foreach (var d in request.postDeliveryOrderDetails)
-            //    {
-            //        if (d.MerchandiseOrderId.HasValue && d.MerchandiseOrderId.Value != Guid.Empty)
-            //        {
-            //            poIds.Add(d.MerchandiseOrderId.Value);
-            //        }
-            //    }
-            //}
 
             deliveryOrder.DeliveryOrderPOs = poIds
                 .Select(poId => new DeliveryOrderPO
@@ -534,39 +527,6 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                     })
                     .ToList();
             }
-
-            //// 7. Tạo WarehouseRequest (phiếu yêu cầu xuất kho) cho DO này
-            ////    Dùng codeFromRequest = ExternalId của DeliveryOrder
-            //var warehouseRequestCode = await _idService.NextAsync(companyId, "PXK", now, ct: ct);
-
-            //var warehouseRequest = new WarehouseRequest
-            //{
-            //    // RequestId: để DB tự sinh (IDENTITY) nếu bạn cấu hình như vậy
-            //    RequestCode = warehouseRequestCode,
-            //    ReqStatus = WarehouseRequestStatus.Pending,
-            //    RequestName = $"Xuất kho cho phiếu giao hàng {externalId}",
-            //    IsActive = true,
-
-            //    ReqType = WareHouseRequestType.ExportForSales, // ĐỔI cho đúng enum của bạn
-            //    codeFromRequest = externalId,                 // link về DO qua ExternalId
-
-            //    CompanyId = companyId,
-            //    CreatedBy = userId,
-            //    CreatedDate = now
-            //};
-
-            //// 7.1 Map WarehouseRequestDetails từ DeliveryOrder.Details
-            //warehouseRequest.WarehouseRequestDetails = deliveryOrder.Details
-            //    .Where(d => d.IsActive)
-            //    .Select(d => new WarehouseRequestDetail
-            //    {
-            //        ProductCode = d.ProductExternalIdSnapShot,
-            //        ProductName = d.ProductNameSnapShot,
-            //        WeightKg = d.Quantity,
-            //        BagNumber = d.NumOfBags,
-            //        IsActive = true
-            //    })
-            //    .ToList();
 
             await _warehouseReservationService.EnsureWarehouseRequestForDOAsync(deliveryOrder, now, userId, companyId, ct);
 
@@ -706,26 +666,20 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                 if (existingDO == null)
                     return OperationResult.Fail("Đơn giao hàng không tồn tại.");
 
-                // 2) Gộp số lượng rollback theo MODetailId (chỉ từ DO.Details đang active)
+                // 2) Gộp số lượng rollback theo MODetailId
                 var minusByMoDetailId = existingDO.Details
                     .Where(d => d.IsActive && d.MerchandiseOrderDetailId.HasValue)
                     .GroupBy(d => d.MerchandiseOrderDetailId!.Value)
                     .ToDictionary(g => g.Key, g => g.Sum(x => x.Quantity));
 
-
-                var affectedPoIds = existingDO.DeliveryOrderPOs
-                    .Select(p => p.MerchandiseOrderId)
-                    .Distinct()
-                    .ToList();
-
-                // 3) Lấy đúng các MerchandiseOrderDetail cần cập nhật (track: true), KHÔNG Include gì thêm
                 var moDetailIds = minusByMoDetailId.Keys.ToList();
 
+                // lấy detail cần rollback
                 var moDetails = await _unitOfWork.MerchandiseOrderRepository.QueryDetail(track: true)
                     .Where(d => moDetailIds.Contains(d.MerchandiseOrderDetailId))
                     .ToListAsync(ct);
 
-                // rollback RealQuantity + Status từng dòng
+                // rollback detail
                 foreach (var d in moDetails)
                 {
                     var minus = minusByMoDetailId.GetValueOrDefault(d.MerchandiseOrderDetailId, 0m);
@@ -734,39 +688,45 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                     var after = Math.Max(0m, (d.RealQuantity ?? 0m) - minus);
                     d.RealQuantity = after;
 
-                    var expected = d.ExpectedQuantity;
-                    d.Status = (after >= expected && expected > 0)
-                        ? MerchadiseStatus.Completed.ToString()
-                        : (after > 0 ? MerchadiseStatus.Delivering.ToString()
-                                     : MerchadiseStatus.Approved.ToString()); // hoặc New tuỳ bạn
+                    d.Status = (after >= d.ExpectedQuantity && d.ExpectedQuantity > 0)
+                        ? MerchadiseStatus.Delivered.ToString()
+                        : MerchadiseStatus.Delivering.ToString();
+
                 }
 
-                // 4) Cập nhật lại header PO trạng thái bằng 1 truy vấn nhẹ + tính toán
-                //   -> chỉ cần các trường Expected/Real của detail, không cần Include vào existingDO
+                // affected PO lấy từ detail + bảng nối
+                var affectedPoIdsFromDetails = moDetails
+                    .Select(x => x.MerchandiseOrderId)
+                    .Distinct()
+                    .ToList();
+
+                var affectedPoIds = existingDO.DeliveryOrderPOs
+                    .Select(x => x.MerchandiseOrderId)
+                    .Union(affectedPoIdsFromDetails)
+                    .Distinct()
+                    .ToList();
+
+                // load header thật
                 var poHeaders = await _unitOfWork.MerchandiseOrderRepository.Query(track: true)
+                    .Include(po => po.MerchandiseOrderDetails.Where(dd => dd.IsActive))
                     .Where(po => affectedPoIds.Contains(po.MerchandiseOrderId))
-                    .Select(po => new
-                    {
-                        Entity = po,
-                        Details = po.MerchandiseOrderDetails
-                                   .Where(dd => dd.IsActive)
-                                   .Select(dd => new { dd.ExpectedQuantity, dd.RealQuantity })
-                                   .ToList()
-                    })
                     .ToListAsync(ct);
 
-                foreach (var h in poHeaders)
+                foreach (var po in poHeaders)
                 {
-                    var ds = h.Details;
+                    var ds = po.MerchandiseOrderDetails.Where(x => x.IsActive).ToList();
+
                     bool allCompleted = ds.Count > 0 &&
-                                        ds.All(d => (d.RealQuantity ?? 0m) >= (d.ExpectedQuantity) && (d.ExpectedQuantity) > 0m);
+                                        ds.All(d => (d.RealQuantity ?? 0m) >= d.ExpectedQuantity && d.ExpectedQuantity > 0m);
+
                     bool anyHasQty = ds.Any(d => (d.RealQuantity ?? 0m) > 0m);
 
-                    h.Entity.Status = allCompleted ? MerchadiseStatus.Delivered.ToString()
-                                    : anyHasQty ? MerchadiseStatus.Delivering.ToString()
-                                                  : MerchadiseStatus.Approved.ToString();
-                    h.Entity.UpdatedBy = userId;
-                    h.Entity.UpdatedDate = now;
+                    po.Status = allCompleted
+                        ? MerchadiseStatus.Delivered.ToString()
+                        : MerchadiseStatus.Delivering.ToString();
+
+                    po.UpdatedBy = userId;
+                    po.UpdatedDate = now;
                 }
 
                 // 5) Soft delete DO + Details (đang có entity → set trực tiếp)

@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas;
+using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOrderRWs.UpsertInformationDtos;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.EventLogDtos;
 using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadServices;
@@ -37,6 +39,117 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
         }
 
 
+        // Hàm này củ có freshness để tồn kho vừa thay đổi, vui lòng xem lại
+
+        //public async Task<OperationResult> ReserveAvailabilityAsync(CreateVaSnapshotAndReservations req, CancellationToken ct)
+        //{
+        //    static string Norm(string s) => s?.Trim().ToUpperInvariant() ?? string.Empty;
+
+        //    req.companyId = _currentUser.CompanyId;
+        //    req.createdBy = _currentUser.EmployeeId;
+
+        //    // 0) Kiểm tra đầu vào
+        //    if (req == null || req.reservations == null || req.reservations.Count == 0)
+        //        return new OperationResult { Success = false, Message = "Payload trống." };
+
+
+        //    // 1) Gom các NVL từ payload: bỏ null/rỗng, cộng dồn TotalQuantity theo mã
+        //    var items = req.reservations
+        //        .Where(r => !string.IsNullOrWhiteSpace(r.MaterialExternalIdSnapshot))
+        //        .GroupBy(r => Norm(r.MaterialExternalIdSnapshot!))
+        //        .Select(g => new { Code = g.Key, Required = g.Sum(x => x.TotalQuantity ?? 0m) })
+        //        .Where(x => x.Required > 0m)
+        //        .ToList();
+
+        //    if (items.Count == 0) return new OperationResult() { Success = false, Message = "Nguyên vật liệu rổng"};
+
+        //    // ------ Kiểm tra "freshness" (ngăn submit trùng)
+
+        //    var codeList = items.Select(x => x.Code).ToArray();
+        //    //var (ok, current) = await ValidateFreshnessAsync(req.companyId, codeList, req.expected ?? new(), ct);
+
+        //    //var codeList = items.Select(x => x.Code).ToArray();
+        //    (bool ok, List<VaAvailabilityVm> current) = await ValidateFreshnessAsync(
+        //        req.companyId,
+        //        req.expected ?? new List<VaAvailabilityVm>(),
+        //        codeList,
+        //        ct
+        //    );
+        //    if (!ok)
+        //    {
+        //        return new OperationResult<List<VaAvailabilityVm>>
+        //        {
+        //            Success = false,
+        //            Message = "Nguyên vật liệu đã thay đổi, dữ liệu đã được cập nhật lại.",
+        //            Data = current
+        //        };
+        //    }
+
+        //    // 2) Lấy VaCode từ header công thức (fallback: dùng manufacturingFormulaId)
+        //    var vaCode = await _unitOfWork.MfgProductionOrderRepository.Query()
+        //        .Where(f => f.MfgProductionOrderId == req.manufacturingId)
+        //        .Select(f => f.ExternalId)
+        //        .FirstOrDefaultAsync(ct);
+        //    vaCode ??= req.manufacturingId.ToString();
+        //    var vaCodeNorm = Norm(vaCode);
+
+        //    await using var tx = await _unitOfWork.BeginTransactionAsync();
+
+        //    // 3) (tuỳ chọn) Hủy các RESERVE OPEN cũ của chính VA này (tránh “chồng đặt chỗ”)
+        //    if (req.cancelPreviousOpen)
+        //    {
+        //        await _unitOfWork.WarehouseTempStockRepository.Query()
+        //            .Where(t => t.CompanyId == req.companyId
+        //                     && t.VaCode == vaCodeNorm
+        //                     //&& t.TempType == TempType.Reserve
+        //                     && t.ReserveStatus == ReserveStatus.Open.ToString())
+        //            .ExecuteUpdateAsync(s => s
+        //                .SetProperty(t => t.ReserveStatus, ReserveStatus.Cancelled.ToString())
+        //                .SetProperty(t => t.CreatedDate, DateTime.Now), ct);
+        //    }
+
+
+        //    // 6) Kiểm tra SNAPSHOT đã có trong set này cho các mã (để "chỉ thêm khi chưa có")
+        //    var existingSnapCodes = await _unitOfWork.WarehouseTempStockRepository.Query()
+        //        .Where(t => t.CompanyId == req.companyId
+        //                 && t.VaCode == vaCodeNorm
+        //                 //&& t.TempType == TempType.Snapshot
+        //                 && t.Code != null
+        //                 && codeList.Contains(t.Code!.ToUpper()))
+        //        .Select(t => t.Code!)
+        //        .ToListAsync(ct);
+
+        //    var hasSnap = new HashSet<string>(existingSnapCodes.Select(Norm));
+
+        //    // 7) Ghi dữ liệu: SNAPSHOT (nếu chưa có) + RESERVE (luôn thêm)
+        //    var toInsert = new List<WarehouseTempStock>();
+
+        //    foreach (var it in items)
+        //    {
+
+        //            toInsert.Add(new WarehouseTempStock
+        //            {
+        //                CompanyId = req.companyId,
+
+        //                VaCode = vaCodeNorm,
+        //                Code = it.Code,                 // <- NVL
+        //                QtyRequest = it.Required,
+        //                CreatedBy = req.createdBy,
+        //                CreatedDate = DateTime.Now,m
+        //                ReserveStatus = ReserveStatus.Open.ToString()
+        //            });
+
+        //    }
+
+        //    await _unitOfWork.WarehouseTempStockRepository.AddRangeAsync(toInsert);
+        //    //Tạm bỏ transaction này
+
+        //    //await _unitOfWork.SaveChangesAsync();
+        //    //await tx.CommitAsync(ct);
+
+        //    return new OperationResult() { Success = true, Message = "Reserved successfully" };
+        //}
+
 
         public async Task<OperationResult> ReserveAvailabilityAsync(CreateVaSnapshotAndReservations req, CancellationToken ct)
         {
@@ -49,7 +162,6 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             if (req == null || req.reservations == null || req.reservations.Count == 0)
                 return new OperationResult { Success = false, Message = "Payload trống." };
 
-
             // 1) Gom các NVL từ payload: bỏ null/rỗng, cộng dồn TotalQuantity theo mã
             var items = req.reservations
                 .Where(r => !string.IsNullOrWhiteSpace(r.MaterialExternalIdSnapshot))
@@ -58,93 +170,53 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 .Where(x => x.Required > 0m)
                 .ToList();
 
-            if (items.Count == 0) return new OperationResult() { Success = false, Message = "Nguyên vật liệu rổng"};
+            if (items.Count == 0)
+                return new OperationResult { Success = false, Message = "Nguyên vật liệu rỗng." };
 
-            // ------ Kiểm tra "freshness" (ngăn submit trùng)
-
-            var codeList = items.Select(x => x.Code).ToArray();
-            //var (ok, current) = await ValidateFreshnessAsync(req.companyId, codeList, req.expected ?? new(), ct);
-
-            //var codeList = items.Select(x => x.Code).ToArray();
-            (bool ok, List<VaAvailabilityVm> current) = await ValidateFreshnessAsync(
-                req.companyId,
-                req.expected ?? new List<VaAvailabilityVm>(),
-                codeList,
-                ct
-            );
-            if (!ok)
-            {
-                return new OperationResult<List<VaAvailabilityVm>>
-                {
-                    Success = false,
-                    Message = "Nguyên vật liệu đã thay đổi, dữ liệu đã được cập nhật lại.",
-                    Data = current
-                };
-            }
-
-            // 2) Lấy VaCode từ header công thức (fallback: dùng manufacturingFormulaId)
+            // 2) Lấy VaCode từ MPO
             var vaCode = await _unitOfWork.MfgProductionOrderRepository.Query()
                 .Where(f => f.MfgProductionOrderId == req.manufacturingId)
                 .Select(f => f.ExternalId)
                 .FirstOrDefaultAsync(ct);
+
             vaCode ??= req.manufacturingId.ToString();
             var vaCodeNorm = Norm(vaCode);
 
-            await using var tx = await _unitOfWork.BeginTransactionAsync();
-
-            // 3) (tuỳ chọn) Hủy các RESERVE OPEN cũ của chính VA này (tránh “chồng đặt chỗ”)
+            // 3) Hủy các RESERVE OPEN cũ của chính VA này
             if (req.cancelPreviousOpen)
             {
                 await _unitOfWork.WarehouseTempStockRepository.Query()
                     .Where(t => t.CompanyId == req.companyId
                              && t.VaCode == vaCodeNorm
-                             //&& t.TempType == TempType.Reserve
                              && t.ReserveStatus == ReserveStatus.Open.ToString())
                     .ExecuteUpdateAsync(s => s
                         .SetProperty(t => t.ReserveStatus, ReserveStatus.Cancelled.ToString())
                         .SetProperty(t => t.CreatedDate, DateTime.Now), ct);
             }
 
-
-            // 6) Kiểm tra SNAPSHOT đã có trong set này cho các mã (để "chỉ thêm khi chưa có")
-            var existingSnapCodes = await _unitOfWork.WarehouseTempStockRepository.Query()
-                .Where(t => t.CompanyId == req.companyId
-                         && t.VaCode == vaCodeNorm
-                         //&& t.TempType == TempType.Snapshot
-                         && t.Code != null
-                         && codeList.Contains(t.Code!.ToUpper()))
-                .Select(t => t.Code!)
-                .ToListAsync(ct);
-
-            var hasSnap = new HashSet<string>(existingSnapCodes.Select(Norm));
-
-            // 7) Ghi dữ liệu: SNAPSHOT (nếu chưa có) + RESERVE (luôn thêm)
+            // 4) Insert RESERVE mới
             var toInsert = new List<WarehouseTempStock>();
 
             foreach (var it in items)
             {
-
-                    toInsert.Add(new WarehouseTempStock
-                    {
-                        CompanyId = req.companyId,
-
-                        VaCode = vaCodeNorm,
-                        Code = it.Code,                 // <- NVL
-                        QtyRequest = it.Required,
-                        CreatedBy = req.createdBy,
-                        CreatedDate = DateTime.Now,
-                        ReserveStatus = ReserveStatus.Open.ToString()
-                    });
-
+                toInsert.Add(new WarehouseTempStock
+                {
+                    CompanyId = req.companyId,
+                    VaCode = vaCodeNorm,
+                    Code = it.Code,
+                    QtyRequest = it.Required,
+                    CreatedBy = req.createdBy,
+                    CreatedDate = DateTime.Now,
+                    ReserveStatus = ReserveStatus.Open.ToString()
+                });
             }
 
             await _unitOfWork.WarehouseTempStockRepository.AddRangeAsync(toInsert);
-            await _unitOfWork.SaveChangesAsync();
-            await tx.CommitAsync(ct);
 
-            return new OperationResult() { Success = true, Message = "Reserved successfully" };
+            // KHÔNG SaveChanges ở đây
+            // KHÔNG Commit ở đây
+            return new OperationResult { Success = true, Message = "Reserved successfully" };
         }
-
 
         // ======================================================================== Update ========================================================================
         //public async Task EnsureWarehouseIssueRequestAsync(
@@ -420,7 +492,192 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             return (isFresh, current);
         }
 
+        //=============================================================== PRIVATE - PUBLIC =================================================================
+
+        public async Task<OperationResult> SyncReservationsByFormulaItemsAsync(
+            Guid mfgProductionOrderId,
+            decimal totalQuantity,
+            IEnumerable<PatchMfgProductionOrderFormulaItemRequest> formulaItems,
+            CancellationToken ct = default)
+        {
+            if (mfgProductionOrderId == Guid.Empty)
+                return OperationResult.Fail("MfgProductionOrderId không hợp lệ.");
+
+            if (totalQuantity <= 0)
+                return OperationResult.Fail("TotalQuantity phải lớn hơn 0.");
+
+            if (formulaItems == null)
+                return OperationResult.Fail("Danh sách công thức không hợp lệ.");
+
+            static string Norm(string? s) => s?.Trim().ToUpperInvariant() ?? string.Empty;
+
+            var mpo = await _unitOfWork.MfgProductionOrderRepository
+                .Query(track: false)
+                .Where(x => x.MfgProductionOrderId == mfgProductionOrderId && x.IsActive)
+                .Select(x => new
+                {
+                    x.MfgProductionOrderId,
+                    x.ExternalId,
+                    x.CompanyId
+                })
+                .FirstOrDefaultAsync(ct);
+
+            if (mpo == null)
+                return OperationResult.Fail("Không tìm thấy lệnh sản xuất.");
+
+            var vaCode = mpo.ExternalId?.Trim();
+            if (string.IsNullOrWhiteSpace(vaCode))
+                return OperationResult.Fail("Lệnh sản xuất chưa có mã ExternalId để đồng bộ giữ chỗ.");
+
+            var companyId = mpo.CompanyId;
+            var userId = _currentUser.EmployeeId;
+            var now = DateTime.Now;
+
+            var validItems = formulaItems
+                .Where(x =>
+                    x.IsActive &&
+                    x.Quantity > 0 &&
+                    !string.IsNullOrWhiteSpace(x.MaterialExternalIdSnapshot))
+                .ToList();
+
+            if (validItems.Count == 0)
+                return OperationResult.Fail("Công thức không có nguyên vật liệu hợp lệ để giữ chỗ.");
+
+            // target mới theo công thức
+            var targetMap = validItems
+                .GroupBy(x => Norm(x.MaterialExternalIdSnapshot))
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Sum(x => x.Quantity * totalQuantity)
+                );
+
+            // reserve open hiện tại
+            var existingOpen = await _unitOfWork.WarehouseTempStockRepository
+                .Query(track: true)
+                .Where(x =>
+                    x.CompanyId == companyId &&
+                    x.VaCode == vaCode &&
+                    x.ReserveStatus == "Open")
+                .ToListAsync(ct);
+
+            var existingMap = existingOpen
+                .GroupBy(x => Norm(x.Code))
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            // 1) update / create theo target mới
+            foreach (var kv in targetMap)
+            {
+                var code = kv.Key;
+                var newQtyRequest = kv.Value;
+
+                if (existingMap.TryGetValue(code, out var reserveRows) && reserveRows.Count > 0)
+                {
+                    // hiện tại đang giữ chỗ theo code tổng, ưu tiên 1 dòng LotKey = null
+                    var reserve = reserveRows
+                        .OrderBy(x => x.LotKey == null ? 0 : 1)
+                        .ThenBy(x => x.TempId)
+                        .First();
+
+                    var used = reserve.QtyUsed ?? 0m;
+
+                    if (newQtyRequest < used)
+                    {
+                        return OperationResult.Fail(
+                            $"Nguyên vật liệu '{code}' đã được sử dụng {used}, không thể giảm giữ chỗ xuống {newQtyRequest}.");
+                    }
+
+                    reserve.QtyRequest = newQtyRequest;
+                    reserve.ReserveStatus = "Open";
+                }
+                else
+                {
+                    var entity = new WarehouseTempStock
+                    {
+                        CompanyId = companyId,
+                        VaCode = vaCode,
+                        Code = code,
+                        LotKey = null,
+                        QtyRequest = newQtyRequest,
+                        QtyUsed = 0m,
+                        ReserveStatus = "Open",
+                        CreatedBy = userId,
+                        CreatedDate = now
+                    };
+
+                    await _unitOfWork.WarehouseTempStockRepository.AddAsync(entity, ct);
+                }
+            }
+
+            // 2) cancel những mã cũ không còn trong target
+            foreach (var kv in existingMap)
+            {
+                var code = kv.Key;
+
+                if (targetMap.ContainsKey(code))
+                    continue;
+
+                foreach (var reserve in kv.Value)
+                {
+                    var used = reserve.QtyUsed ?? 0m;
+
+                    if (used > 0)
+                    {
+                        return OperationResult.Fail(
+                            $"Nguyên vật liệu '{code}' đã được sử dụng {used}, không thể xóa khỏi công thức hoặc hủy giữ chỗ.");
+                    }
+
+                    reserve.ReserveStatus = "Cancelled";
+                    reserve.QtyRequest = 0m;
+                }
+            }
+
+            return OperationResult.Ok("Đồng bộ giữ chỗ tồn kho ảo thành công.");
+        }
 
 
+
+        public async Task<OperationResult> ReserveByFormulaMaterialsAsync(
+    Guid mfgProductionOrderId,
+    decimal totalQuantity,
+    IEnumerable<PostManufacturingFormulaMaterial> materials,
+    CancellationToken ct = default)
+        {
+            if (mfgProductionOrderId == Guid.Empty)
+                return OperationResult.Fail("MfgProductionOrderId không hợp lệ.");
+
+            if (totalQuantity <= 0)
+                return OperationResult.Fail("TotalQuantity phải lớn hơn 0.");
+
+            if (materials == null)
+                return OperationResult.Fail("Danh sách nguyên vật liệu không hợp lệ.");
+
+            static string Norm(string? s) => s?.Trim().ToUpperInvariant() ?? string.Empty;
+
+            var validItems = materials
+                .Where(x =>
+                    x.IsActive &&
+                    x.Quantity > 0 &&
+                    !string.IsNullOrWhiteSpace(x.MaterialExternalIdSnapshot))
+                .ToList();
+
+            if (validItems.Count == 0)
+                return OperationResult.Fail("Công thức không có nguyên vật liệu hợp lệ để giữ chỗ.");
+
+            var reserveReq = new CreateVaSnapshotAndReservations
+            {
+                manufacturingId = mfgProductionOrderId,
+                cancelPreviousOpen = true,
+                reservations = validItems
+                    .GroupBy(x => Norm(x.MaterialExternalIdSnapshot))
+                    .Select(g => new MfgFormulaMaterialWarehouse
+                    {
+                        MaterialExternalIdSnapshot = g.Key,
+                        TotalQuantity = g.Sum(x => x.Quantity * totalQuantity)
+                    })
+                    .ToList()
+            };
+
+            return await ReserveAvailabilityAsync(reserveReq, ct);
+        }
     }
 }

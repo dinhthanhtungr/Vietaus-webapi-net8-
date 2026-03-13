@@ -10,7 +10,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProducti
     {
         public Guid ManufacturingFormulaId { get; set; }
         public string? ExternalId { get; set; }
-
+        public string? Note { get; set; }
         public List<GetMfgProductionOrderFormulaItemsInfor> FormulaItems { get; set; } = new List<GetMfgProductionOrderFormulaItemsInfor>();
     }
 }

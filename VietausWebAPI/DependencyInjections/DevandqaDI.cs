@@ -2,6 +2,7 @@
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.Services;
+using VietausWebAPI.Core.Application.Features.DevandqaFeatures.Helpers.QCInputByQCFeatures;
 using VietausWebAPI.Core.Application.Features.DevandqaFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.DevandqaFeatures.RepositoriesContracts.QCInputByQCFeatures;
 using VietausWebAPI.Core.Application.Features.DevandqaFeatures.ServiceContracts;
@@ -34,6 +35,8 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
 
             // QCInputByQCFeatures
             services.AddScoped<IQCInputByQCService, QCInputByQCService>();
+            services.AddScoped<IExportQCInputByQCExcel, ExportQCInputByQCExcel>();
+
 
 
             services.AddScoped<IQCInputByQCReadRepository, QCInputByQCReadRepository>();

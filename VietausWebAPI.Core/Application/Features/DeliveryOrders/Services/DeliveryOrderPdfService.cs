@@ -346,6 +346,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
 
                     HasPrinted = x.HasPrinted,
                     CreateBy = userId,
+                    CreateDate = x.CreatedDate,
 
                     Details = x.Details.Select(d => new PdfPrinterDeliveryOrderDetail
                     {

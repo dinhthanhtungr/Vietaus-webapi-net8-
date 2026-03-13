@@ -20,6 +20,9 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.ServiceContra
 
         Task<OperationResult<GetQCInputByQC>> PatchByVoucherDetailIdAsync(
             PatchQCInputByQC input, long voucherDetailId, CancellationToken ct);
+
+
+        Task<List<QCInputByQCExportRow>> BuildExportRowsAsync(QCInputQuery query, CancellationToken ct);
     }
 
 }

@@ -96,7 +96,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                     AddRow("Địa chỉ (Address):", d.CustomerAddress);
                     AddRow("Hình thức thanh toán (Payment term):", d.PaymentType);
                     AddRow("Mã số thuế (VAT code):", d.TaxNumber);
-                    AddRow("Ngày giao (Delivery date):", $"{DateTime.Now:dd/MM/yyyy}");
+                    AddRow("Ngày giao (Delivery date):", $"{d.CreateDate:dd/MM/yyyy}");
                     AddRow("Người giao (Deliverer):", d.Deliverers != null && d.Deliverers.Any() ? string.Join(", ", d.Deliverers.Select(x => x.Name)) : "-");
                 });
 
@@ -110,7 +110,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                         cd.RelativeColumn(1.2f); // Số lô Batch No.
                         cd.ConstantColumn(45);   // Đơn vị Unit (hẹp)
                         cd.RelativeColumn(1.1f); // Số lượng Quantity
-                        //cd.ConstantColumn(65);   // Số bao Bag number
+                        cd.ConstantColumn(65);   // Số bao Bag number
                         cd.RelativeColumn(1.1f); // Số PO PO No.
                     });
 
@@ -147,7 +147,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                         cellStyle("Số lô", "Batch No")(row.Cell());
                         cellStyle("Đơn vị", "Unit")(row.Cell());
                         cellStyle("Số lượng", "Quantity")(row.Cell());
-                        //cellStyle("Số bao", "Bag number")(row.Cell());
+                        cellStyle("Số bao", "Bag number")(row.Cell());
                         cellStyle("Số PO", "PO No")(row.Cell());
                     });
 
@@ -182,8 +182,8 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                         );
 
                     // Grand total TỪ DeliveryOrderDetails (DO)
-                    //var grandWeight = _DeliveryOrderDetails.Sum(x => (decimal)(x?.Quantity ?? 0m));
-                    //var grandBags = _DeliveryOrderDetails.Sum(x => (int)(x?.NumOfBags ?? 0));
+                    var grandWeight = _DeliveryOrderDetails.Sum(x => (decimal)(x?.Quantity ?? 0m));
+                    var grandBags = _DeliveryOrderDetails.Sum(x => (int)(x?.NumOfBags ?? 0));
 
                     foreach (var g in wrGroups)
                     {
@@ -216,8 +216,8 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                                 .Text($"{(r?.WeightKg ?? 0m):0.00}");
 
                             // (Nếu cần cột BagNumber theo WR thì mở; hiện anh giữ dữ liệu cũ → thường không in cột này ở từng dòng)
-                            // borderStyle(table.Cell()).PaddingVertical(4).PaddingHorizontal(6).AlignRight()
-                            //     .Text($"{(r?.BagNumber ?? 0)}");
+                            borderStyle(table.Cell()).PaddingVertical(4).PaddingHorizontal(6).AlignRight()
+                                .Text($"{(r?.BagNumber ?? 0)}");
 
                             // PO No
                             borderStyle(table.Cell()).PaddingVertical(4).PaddingHorizontal(6).AlignLeft()
@@ -230,19 +230,19 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                         var gw = doGroupTotals.TryGetValue(key, out var t) ? t.Weight : 0m;
                         var gb = doGroupTotals.TryGetValue(key, out t) ? t.Bags : 0;
 
-                        // Gộp 4 cột đầu
-                        borderStyle(table.Cell().ColumnSpan(4))
-                            .PaddingVertical(4).PaddingHorizontal(6).AlignCenter()
-                            .Text(t2 => { t2.Span("Tổng nhóm").Bold(); t2.Span($" {key}").Bold(); });
+                        //// Gộp 4 cột đầu
+                        //borderStyle(table.Cell().ColumnSpan(4))
+                        //    .PaddingVertical(4).PaddingHorizontal(6).AlignCenter()
+                        //    .Text(t2 => { t2.Span("Tổng nhóm").Bold(); t2.Span($" {key}").Bold(); });
 
-                        // 2 cột số (Weight + Bag)
-                        borderStyle(table.Cell().ColumnSpan(2))
-                            .PaddingVertical(4).PaddingHorizontal(6).AlignCenter()
-                            .Text(t2 =>
-                            {
-                                t2.Span($"{gw:0.00} Kg - {gb} Bao").Bold();
-                                t2.Span(" (Subtotal)").Bold();
-                            });
+                        //// 2 cột số (Weight + Bag)
+                        //borderStyle(table.Cell().ColumnSpan(2))
+                        //    .PaddingVertical(4).PaddingHorizontal(6).AlignCenter()
+                        //    .Text(t2 =>
+                        //    {
+                        //        t2.Span($"{gw:0.00} Kg - {gb} Bao").Bold();
+                        //        t2.Span(" (Subtotal)").Bold();
+                        //    });
 
                         // Cột PO trống
                         //borderStyle(table.Cell())
@@ -251,9 +251,9 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                     }
 
                     // ===== GRAND TOTAL – TÍNH THEO DO =====
-                    //borderStyle(table.Cell().ColumnSpan(6))
-                    //    .PaddingVertical(4).PaddingHorizontal(6).AlignRight()
-                    //    .Text(t => { t.Span($"Tổng cộng: {grandWeight:0.00} Kg - {grandBags} Bao").Bold(); t.Span(" (Total)").Bold(); });
+                    borderStyle(table.Cell().ColumnSpan(7))
+                        .PaddingVertical(4).PaddingHorizontal(6).AlignRight()
+                        .Text(t => { t.Span($"Tổng cộng: {grandWeight:0.00} Kg - {grandBags} Bao").Bold(); t.Span(" (Total)").Bold(); });
 
 
                 });

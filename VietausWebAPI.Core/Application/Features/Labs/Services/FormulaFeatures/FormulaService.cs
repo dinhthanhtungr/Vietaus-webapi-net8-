@@ -156,6 +156,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                             .Where(m => m.IsActive == true)
                             .Select(m => new GetMaterialFormula
                             {
+                                FormulaMaterialId = m.FormulaMaterialId,
                                 LineNo = m.LineNo,
                                 ItemId = m.MaterialId ?? m.ProductId ?? Guid.Empty,
                                 itemType = m.itemType,
@@ -446,14 +447,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                     }
                 }
 
-                static (ItemType type, Guid id) KeyOf(FormulaMaterial fm)
-                {
-                    if (fm.MaterialId.HasValue) return (ItemType.Material, fm.MaterialId.Value);
-                    if (fm.ProductId.HasValue) return (ItemType.Product, fm.ProductId.Value);
-                    return (ItemType.Material, Guid.Empty); // tránh crash; ideally never happens
-                }
-
-
                 // Patch các field đơn
                 SetIfRef(req.Note, () => formulaExist.Note, v => formulaExist.Note = v);
                 SetIfRef(req.Name, () => formulaExist.Name, v => formulaExist.Name = v);
@@ -464,16 +457,30 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
 
                 // 2) Cập nhật công thức vật tư - xóa thêm sửa
 
-                var existing = formulaExist.FormulaMaterials
-                    .Where(x => x.IsActive) // hoặc lấy tất cả rồi xử lý IsActive sau
-                    .ToDictionary(KeyOf, fm => fm);
+                var existingById = formulaExist.FormulaMaterials
+                    .Where(x => x.IsActive)
+                    .ToDictionary(x => x.FormulaMaterialId, x => x);
 
-                foreach (var m in req.materialFormulas)
+                var incomingRows = req.materialFormulas
+                    .Where(x => x.ItemId != Guid.Empty)
+                    .ToList();
+
+                for (int i = 0; i < incomingRows.Count; i++)
                 {
-                    var key = (m.itemType, m.ItemId);
-                    if (m.ItemId == Guid.Empty) continue; // bỏ row rác
+                    incomingRows[i].LineNo = i + 1;
+                }
 
-                    if (!existing.TryGetValue(key, out var link))
+                foreach (var m in incomingRows)
+                {
+                    FormulaMaterial? link = null;
+
+                    if (m.FormulaMaterialId.HasValue &&
+                        existingById.TryGetValue(m.FormulaMaterialId.Value, out var existingRow))
+                    {
+                        link = existingRow;
+                    }
+
+                    if (link == null)
                     {
                         link = new FormulaMaterial
                         {
@@ -489,7 +496,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                             MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot,
                             IsActive = true,
 
-                            // ✅ map theo itemType
                             itemType = m.itemType,
                             MaterialId = m.itemType == ItemType.Material ? m.ItemId : (Guid?)null,
                             ProductId = m.itemType == ItemType.Product ? m.ItemId : (Guid?)null,
@@ -499,46 +505,45 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                     }
                     else
                     {
-                        // UPDATE
-                        if (m.LineNo != link.LineNo) link.LineNo = m.LineNo; // thêm
-                        if (m.CategoryId != link.CategoryId) link.CategoryId = m.CategoryId;
-                        if (m.Quantity != link.Quantity) link.Quantity = m.Quantity;
-                        if (m.UnitPrice != link.UnitPrice) link.UnitPrice = m.UnitPrice;
-
-                        var newTotal = decimal.Round(link.Quantity * link.UnitPrice, 2, MidpointRounding.AwayFromZero);
-                        if (newTotal != link.TotalPrice) link.TotalPrice = newTotal;
+                        link.LineNo = m.LineNo;
+                        link.CategoryId = m.CategoryId;
+                        link.Quantity = m.Quantity;
+                        link.UnitPrice = m.UnitPrice;
+                        link.TotalPrice = decimal.Round(m.Quantity * m.UnitPrice, 2, MidpointRounding.AwayFromZero);
 
                         SetIfRef(m.Unit, () => link.Unit, v => link.Unit = v);
                         SetIfRef(m.MaterialNameSnapshot, () => link.MaterialNameSnapshot, v => link.MaterialNameSnapshot = v);
                         SetIfRef(m.MaterialExternalIdSnapshot, () => link.MaterialExternalIdSnapshot, v => link.MaterialExternalIdSnapshot = v);
 
-                        // ✅ đảm bảo đúng type/id (tránh case đổi Material<->Product)
-                        if (link.itemType != m.itemType) link.itemType = m.itemType;
+                        link.itemType = m.itemType;
                         link.MaterialId = m.itemType == ItemType.Material ? m.ItemId : (Guid?)null;
                         link.ProductId = m.itemType == ItemType.Product ? m.ItemId : (Guid?)null;
-
-                        if (link.IsActive == false) link.IsActive = true;
+                        link.IsActive = true;
                     }
                 }
 
 
                 // SOFT-DELETE: những dòng đang active nhưng không còn trong payload
-                var incomingKeys = req.materialFormulas
-                    .Where(x => x.ItemId != Guid.Empty)
-                    .Select(x => (x.itemType, x.ItemId))
+                var incomingIds = incomingRows
+                    .Where(x => x.FormulaMaterialId.HasValue)
+                    .Select(x => x.FormulaMaterialId!.Value)
                     .ToHashSet();
 
                 foreach (var old in formulaExist.FormulaMaterials.Where(x => x.IsActive))
                 {
-                    var oldKey = KeyOf(old);
-                    if (oldKey.id != Guid.Empty && !incomingKeys.Contains(oldKey))
-                        old.IsActive = false;
+                    // dòng cũ nào có id mà không còn xuất hiện trong payload thì tắt
+                    if (!incomingIds.Contains(old.FormulaMaterialId))
+                    {
+                        // chỉ soft delete các dòng cũ
+                        // dòng mới vừa add chưa có trong existingById nên không vào đây
+                        if (existingById.ContainsKey(old.FormulaMaterialId))
+                            old.IsActive = false;
+                    }
                 }
 
                 // Cách an toàn nhất: bỏ qua req.TotalPrice, luôn tính theo dòng còn hiệu lực
-                formulaExist.TotalPrice = formulaExist.FormulaMaterials
-                    .Where(x => x.IsActive)              // nhớ lọc IsActive
-                    .Sum(x => x.TotalPrice);
+                formulaExist.TotalPrice = incomingRows
+                    .Sum(x => decimal.Round(x.Quantity * x.UnitPrice, 2, MidpointRounding.AwayFromZero));
 
 
                 formulaExist.UpdatedDate = now;
@@ -664,8 +669,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                                 ProductCode = sr.Product.Code,
 
                                 materialFormulas = f.FormulaMaterials
-                                    .Where(m => m.IsActive)
-                                    .OrderBy(m => m.LineNo)
+                                    .Where(m => m.IsActive == true)
                                     .Select(m => new GetMaterialFormula
                                     {
                                         LineNo = m.LineNo,
@@ -675,11 +679,11 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                                         Quantity = m.Quantity,
                                         UnitPrice = m.UnitPrice,
                                         TotalPrice = m.TotalPrice,
-
-                                        MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot ?? m.Material.ExternalId,
-                                        MaterialNameSnapshot = m.MaterialNameSnapshot ?? m.Material.Name,
-                                        Unit = m.Unit
+                                        Unit = m.Unit,
+                                        MaterialNameSnapshot = m.MaterialNameSnapshot,
+                                        MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot
                                     })
+                                    .OrderBy(m => m.LineNo)
                                     .ToList()
                             })
                             .ToList()

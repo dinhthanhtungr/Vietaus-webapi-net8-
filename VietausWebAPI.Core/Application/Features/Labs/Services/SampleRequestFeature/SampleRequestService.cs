@@ -706,6 +706,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
 
                 PatchHelper.SetIfGuid(req.BranchId, () => existing.BranchId, v => existing.BranchId = v);
 
+                PatchHelper.SetIfNullable(req.NumberDeliverySampleDate, () => existing.NumberDeliverySampleDate, v => existing.NumberDeliverySampleDate = v);
+
                 // 4) Patch Product (nếu có)
                 var product = existing.Product;
 
@@ -764,11 +766,16 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     PatchHelper.SetIf(req.Product.IsRecycle, () => product.IsRecycle, v => product.IsRecycle = v);
                     PatchHelper.SetIfNullable(req.Product.ReachStandard, () => product.ReachStandard, v => product.ReachStandard = v);
 
+                    PatchHelper.SetIfRef(req.Product.Additive, () => product.Additive, v => product.Additive = v);
+
                     if (!string.IsNullOrWhiteSpace(req.Product?.Name) && !req.CreatedBy.HasValue)
                     {
                         product.CreatedBy = userId;
                     }
                 }
+
+                existing.UpdatedDate = now;
+                existing.UpdatedBy = userId;
 
                 // 5) Lưu thay đổi entity đã track
                 await _unitOfWork.SaveChangesAsync();

@@ -18,6 +18,9 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.Merchadis
         public string CustomerName { get; set; } = string.Empty;
         public string CustomerExternalId { get; set; } = string.Empty;
 
+        public decimal TotalPrice { get; set; }
+        public decimal Vat { get; set; }
+
         public List<GetMerchadiseTimelineDetail> Details { get; set; } = new();
     }
 }

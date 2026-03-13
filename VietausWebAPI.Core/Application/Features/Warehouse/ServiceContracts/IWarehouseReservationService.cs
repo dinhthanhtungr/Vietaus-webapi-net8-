@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas;
+using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOrderRWs.UpsertInformationDtos;
 using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseWriteServices;
 using VietausWebAPI.Core.Application.Features.Warehouse.Queries;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
@@ -19,8 +21,8 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts
         /// <param name="query"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<OperationResult> ReserveAvailabilityAsync(CreateVaSnapshotAndReservations query, CancellationToken ct);
-
+        //Task<OperationResult> ReserveAvailabilityAsync(CreateVaSnapshotAndReservations query, CancellationToken ct);
+        Task<OperationResult> ReserveAvailabilityAsync(CreateVaSnapshotAndReservations req, CancellationToken ct);
 
         // ======================================================================== Helper ========================================================================
 
@@ -67,5 +69,18 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts
                     string ExternalId,
                     CancellationToken ct);
 
+
+        // ===============================================================================
+        Task<OperationResult> SyncReservationsByFormulaItemsAsync(
+                    Guid mfgProductionOrderId,
+                    decimal totalQuantity,
+                    IEnumerable<PatchMfgProductionOrderFormulaItemRequest> formulaItems,
+                    CancellationToken ct = default);
+
+        Task<OperationResult> ReserveByFormulaMaterialsAsync(
+    Guid mfgProductionOrderId,
+    decimal totalQuantity,
+    IEnumerable<PostManufacturingFormulaMaterial> materials,
+    CancellationToken ct = default);
     }
 }

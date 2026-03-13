@@ -125,6 +125,7 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                 {
                     ManufacturingFormulaId = f.ManufacturingFormulaId,
                     ExternalId = f.ExternalId,
+                    Note = f.Note,
                     FormulaItems = f.ManufacturingFormulaMaterials
                         .Where(i => i.IsActive)
                         .OrderBy(i => i.LineNo)
@@ -165,6 +166,7 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                 {
                     ManufacturingFormulaId = f.FormulaId, // giữ tạm property cũ để không vỡ DTO
                     ExternalId = f.ExternalId,
+                    Note = f.Note,
                     FormulaItems = f.FormulaMaterials
                         .Where(i => i.IsActive)
                         .OrderBy(i => i.LineNo)
@@ -266,6 +268,7 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                         {
                             MerchandiseOrderId = link.Detail.MerchandiseOrderId,
                             MerchandiseOrderExternalId = link.Detail.MerchandiseOrder.ExternalId
+
                         })
                         .FirstOrDefault()
                 })
@@ -310,91 +313,46 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                 StepOfProduct = baseData.StepOfProduct
             };
 
-            // Ưu tiên 1: Standard hiện hành
-            var currentStandard = await GetCurrentStandardAsync(baseData.ProductId);
+            // Chỉ lấy formula đang hiệu lực theo chính MPO này
+            var currentFormula = await GetCurrentFormulaByMpoAsync(baseData.MfgProductionOrderId);
 
-            if (currentStandard is not null)
+            if (currentFormula is not null)
             {
-                result.ManufacturingFormulaIdIsSelect = currentStandard.Value.ManufacturingFormulaId;
-                result.ManufacturingFormulaExternalIdIsSelect = currentStandard.Value.ExternalId;
-
-                result.GetMfgFormulaInform = await BuildFormulaInforAsync(currentStandard.Value.ManufacturingFormulaId);
-                return result;
+                result.ManufacturingFormulaIdIsSelect = currentFormula.Value.ManufacturingFormulaId;
+                result.ManufacturingFormulaExternalIdIsSelect = currentFormula.Value.ExternalId;
+                result.GetMfgFormulaInform = await BuildFormulaInforAsync(currentFormula.Value.ManufacturingFormulaId);
             }
-
-            // Ưu tiên 2: Formula đang select gần nhất theo Product
-            var currentSelect = await GetCurrentSelectByProductAsync(baseData.ProductId);
-
-            if (currentSelect is not null)
+            else
             {
-                result.ManufacturingFormulaIdIsSelect = currentSelect.Value.ManufacturingFormulaId;
-                result.ManufacturingFormulaExternalIdIsSelect = currentSelect.Value.ExternalId;
-
-                result.GetMfgFormulaInform = await BuildFormulaInforAsync(currentSelect.Value.ManufacturingFormulaId);
-                return result;
+                result.ManufacturingFormulaIdIsSelect = null;
+                result.ManufacturingFormulaExternalIdIsSelect = string.Empty;
+                result.GetMfgFormulaInform = new GetMfgProductionOrderFormulaInfor();
             }
-
-            // Không có ManufacturingFormula đang chọn
-            result.ManufacturingFormulaIdIsSelect = null;
-            result.ManufacturingFormulaExternalIdIsSelect = string.Empty;
-            result.GetMfgFormulaInform = new GetMfgProductionOrderFormulaInfor();
 
             return result;
         }
-
-        /// <summary>
-        /// Lấy Standard hiện hành của Product.
-        /// </summary>
-        private async Task<(Guid ManufacturingFormulaId, Guid? MfgProductionOrderId, string? ExternalId)?> GetCurrentStandardAsync(Guid productId)
+        private async Task<(Guid ManufacturingFormulaId, string? ExternalId)?> GetCurrentFormulaByMpoAsync(Guid mfgProductionOrderId)
         {
-            var current = await _unitOfWork.ProductStandardFormulaRepository
-                .Query(false)
-                .Where(x =>
-                    x.ProductId == productId &&
-                    x.ManufacturingFormulaId != null &&
-                    x.ValidTo == null)
-                .OrderByDescending(x => x.ValidFrom)
-                .Select(x => new
+            var current = await (
+                from v in _unitOfWork.ProductionSelectVersionRepository.Query(false)
+                join mf in _unitOfWork.ManufacturingFormulaRepository.Query(false)
+                    on v.ManufacturingFormulaId equals mf.ManufacturingFormulaId
+                where v.MfgProductionOrderId == mfgProductionOrderId
+                      && v.ValidTo == null
+                      && v.ManufacturingFormulaId != null
+                      && mf.IsActive
+                orderby v.ValidFrom descending
+                select new
                 {
-                    ManufacturingFormulaId = x.ManufacturingFormulaId!.Value,
-                    ExternalId = x.ManufacturingFormula != null ? x.ManufacturingFormula.ExternalId : null,
-                    MfgProductionOrderId = _unitOfWork.ProductionSelectVersionRepository
-                        .Query(false)
-                        .Where(sv => sv.ManufacturingFormulaId == x.ManufacturingFormulaId)
-                        .OrderByDescending(sv => sv.ValidFrom)
-                        .Select(sv => (Guid?)sv.MfgProductionOrderId)
-                        .FirstOrDefault()
-                })
-                .FirstOrDefaultAsync();
+                    ManufacturingFormulaId = v.ManufacturingFormulaId!.Value,
+                    ExternalId = mf.ExternalId
+                }
+            ).FirstOrDefaultAsync();
 
-            if (current == null) return null;
+            if (current == null)
+                return null;
 
-            return (current.ManufacturingFormulaId, current.MfgProductionOrderId, current.ExternalId);
-        }
-
-        /// <summary>
-        /// Lấy formula select mới nhất theo Product.
-        /// </summary>
-        private async Task<(Guid ManufacturingFormulaId, Guid? MfgProductionOrderId, string? ExternalId)?> GetCurrentSelectByProductAsync(Guid productId)
-        {
-            var current = await _unitOfWork.ProductionSelectVersionRepository
-                .Query(false)
-                .Where(x =>
-                    x.MfgProductionOrder != null &&
-                    x.MfgProductionOrder.ProductId == productId &&
-                    x.ManufacturingFormulaId != null)
-                .OrderByDescending(x => x.ValidFrom)
-                .Select(x => new
-                {
-                    ManufacturingFormulaId = x.ManufacturingFormulaId!.Value,
-                    MfgProductionOrderId = (Guid?)x.MfgProductionOrderId,
-                    ExternalId = x.ManufacturingFormula != null ? x.ManufacturingFormula.ExternalId : null
-                })
-                .FirstOrDefaultAsync();
-
-            if (current == null) return null;
-
-            return (current.ManufacturingFormulaId, current.MfgProductionOrderId, current.ExternalId);
+            return (current.ManufacturingFormulaId, current.ExternalId);
         }
 
         /// <summary>
@@ -408,7 +366,8 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                 .Select(x => new
                 {
                     x.ManufacturingFormulaId,
-                    x.ExternalId
+                    x.ExternalId,
+                    x.Note
                 })
                 .FirstOrDefaultAsync();
 
@@ -446,47 +405,30 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                 .ToListAsync();
 
             // Gắn tồn kho
-            await FillAvailabilityAsync(items);
+            await FillAvailabilityAsync(manufacturingFormulaId, items);
 
             return new GetMfgProductionOrderFormulaInfor
             {
                 ManufacturingFormulaId = formula.ManufacturingFormulaId,
                 ExternalId = formula.ExternalId,
+                Note = formula.Note,
                 FormulaItems = items
             };
         }
 
         /// <summary>
-        /// Gắn dữ liệu tồn kho vào từng item.
-        /// 
-        /// Gợi ý:
-        /// - Nếu itemType = Material thì map theo MaterialExternalIdSnapshot
-        /// - Nếu itemType = Product thì tùy rule nghiệp vụ, có thể để 0 hoặc xử lý riêng
+        /// Gắn dữ liệu tồn kho vào từng item theo manufacturingFormulaId.
+        /// Chỉ áp dụng cho itemType = Material.
         /// </summary>
-        private async Task FillAvailabilityAsync(List<GetMfgProductionOrderFormulaItemsInfor> items)
+        private async Task FillAvailabilityAsync(Guid manufacturingFormulaId, List<GetMfgProductionOrderFormulaItemsInfor> items, CancellationToken ct = default)
         {
             if (items == null || items.Count == 0)
                 return;
 
-            var materialExternalIds = items
-                .Where(x => x.itemType == ItemType.Material && !string.IsNullOrWhiteSpace(x.MaterialExternalIdSnapshot))
-                .Select(x => x.MaterialExternalIdSnapshot!)
-                .Distinct()
-                .ToList();
+            var availabilityDict = await _warehouseReadService.GetVaAvailabilityDictAsync(manufacturingFormulaId, ct);
 
-            if (!materialExternalIds.Any())
+            if (availabilityDict == null || availabilityDict.Count == 0)
                 return;
-
-            // TODO:
-            // Thay đoạn này bằng nguồn tồn kho thực tế của bạn.
-            // Ví dụ:
-            // var availabilityDict = await _warehouseService.GetVaAvailabilityDictAsync(materialExternalIds);
-            //
-            // Dict mẫu:
-            // key   = MaterialExternalIdSnapshot
-            // value = new { OnHandKg, ReservedOpenAllKg, AvailableKg }
-
-            var availabilityDict = await BuildAvailabilityDictAsync(materialExternalIds);
 
             foreach (var item in items)
             {
@@ -496,38 +438,21 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                 if (string.IsNullOrWhiteSpace(item.MaterialExternalIdSnapshot))
                     continue;
 
-                if (availabilityDict.TryGetValue(item.MaterialExternalIdSnapshot, out var stock))
+                var code = item.MaterialExternalIdSnapshot.Trim().ToUpperInvariant();
+
+                if (availabilityDict.TryGetValue(code, out var stock))
                 {
                     item.OnHandKg = stock.OnHandKg;
                     item.ReservedOpenAllKg = stock.ReservedOpenAllKg;
                     item.AvailableKg = stock.AvailableKg;
                 }
-            }
-        }
-
-        /// <summary>
-        /// Hàm mock/tạm để build dict tồn kho.
-        /// Bạn thay bằng query tồn kho thật trong hệ thống.
-        /// </summary>
-        private Task<Dictionary<string, AvailabilityVm>> BuildAvailabilityDictAsync(List<string> materialExternalIds)
-        {
-            var dict = materialExternalIds.ToDictionary(
-                x => x,
-                x => new AvailabilityVm
+                else
                 {
-                    OnHandKg = 0,
-                    ReservedOpenAllKg = 0,
-                    AvailableKg = 0
-                });
-
-            return Task.FromResult(dict);
-        }
-
-        private sealed class AvailabilityVm
-        {
-            public decimal OnHandKg { get; set; }
-            public decimal? ReservedOpenAllKg { get; set; }
-            public decimal? AvailableKg { get; set; }
+                    item.OnHandKg = 0;
+                    item.ReservedOpenAllKg = 0;
+                    item.AvailableKg = 0;
+                }
+            }
         }
     }
 }

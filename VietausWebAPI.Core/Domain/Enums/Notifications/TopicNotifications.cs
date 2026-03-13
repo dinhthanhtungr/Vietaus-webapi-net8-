@@ -27,6 +27,9 @@ namespace VietausWebAPI.Core.Domain.Enums.Notifications
         PriceOverSellCreated,
         WarehouseStockLost,
 
-
+        // ==================== MfgProduction Orders ====================
+        MfgProductionOrderChangeExpectiveDate,
+        MfgProductionOrderUpdated,
+        MfgProductionOrderDeleted
     }
 }

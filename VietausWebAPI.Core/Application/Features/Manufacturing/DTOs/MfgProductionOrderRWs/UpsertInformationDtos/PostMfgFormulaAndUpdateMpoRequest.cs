@@ -31,7 +31,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProducti
         public Guid ProductId { get; set; }
         public FormulaSource? SourceType { get; set; }
         public Guid? FormulaSourceId { get; set; }
-        public string? FormulaSourceNameSnapshot { get; set; }
+        public string? SourceManufacturingExternalIdSnapshot { get; set; }
         public Guid? VUFormulaId { get; set; }
         public string? FormulaExternalIdSnapshot { get; set; }
 

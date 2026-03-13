@@ -24,6 +24,7 @@ using static System.Collections.Specialized.BitVector32;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Formats.Asn1;
 using VietausWebAPI.Core.Domain.Enums.Formulas;
+using VietausWebAPI.Core.Domain.Enums.Products;
 
 namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
 {
@@ -238,6 +239,10 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
 
 
             // -------------------- PRODUCTS base --------------------
+            const string khCategoryCode = "KH";
+            var sampleSentStatus = SampleRequestStatus.SampleSent.ToString();
+            var completedStatus = SampleRequestStatus.Completed.ToString();
+
             var productsBase = _unitOfWork.ProductRepository
                 .Query(track: false)
                 .Where(p => p.IsActive == true && p.Name != null && p.ColourCode != null);
@@ -246,17 +251,13 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
             if (query.MaterialId.HasValue)
                 productsBase = productsBase.Where(p => p.ProductId == query.MaterialId.Value);
 
-
-            const string khCategoryCode = "KH";
-
-            // From/To: nếu Product không có CreatedDate thì bỏ 2 filter này (hoặc dùng field khác)
             if (query.From.HasValue)
                 productsBase = productsBase.Where(p => p.CreatedDate >= query.From.Value);
 
             if (query.To.HasValue)
                 productsBase = productsBase.Where(p => p.CreatedDate <= query.To.Value);
 
-            // SupplierId: product không có supplier -> nếu filter SupplierId thì loại product
+            // Product không có supplier => nếu filter supplier thì loại hết product
             if (query.SupplierId.HasValue)
                 productsBase = productsBase.Where(_ => false);
 
@@ -264,20 +265,28 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
             {
                 var keyword = query.Keyword.Trim();
                 productsBase = productsBase.Where(p =>
-                    EF.Functions.ILike(p.ColourCode, $"%{keyword}%")
-                    || EF.Functions.ILike(p.Name, $"%{keyword}%")
-                    || EF.Functions.ILike(p.Code, $"%{keyword}%"));
+                    EF.Functions.ILike(p.ColourCode!, $"%{keyword}%")
+                    || EF.Functions.ILike(p.Name!, $"%{keyword}%")
+                    || EF.Functions.ILike(p.Code!, $"%{keyword}%"));
             }
 
             // Category text filter: product category = "KH"
             if (!string.IsNullOrWhiteSpace(query.Category))
             {
                 var categoryKeyword = query.Category.Trim();
-                // Nếu user gõ cái gì không giống "KH" thì loại hết product
-                // (cho phép contains để giống material)
                 if (!khCategoryCode.Contains(categoryKeyword, StringComparison.OrdinalIgnoreCase))
                     productsBase = productsBase.Where(_ => false);
             }
+
+            // Chỉ lấy product nào có SampleRequest + Formula status = samplesent
+            productsBase = productsBase.Where(p =>
+                p.SampleRequests.Any(sr =>
+                    sr.IsActive
+                    && (
+                        sr.Status == sampleSentStatus ||
+                        sr.Status == completedStatus
+                    )
+                ));
 
             // Project product -> DTO
             var productsQ = productsBase.Select(p => new
@@ -285,9 +294,19 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                 Dto = new GetMaterialSummary
                 {
                     MaterialId = p.ProductId,
-                    ExternalId = p.ColourCode,
+
+                    ExternalId = p.SampleRequests
+                        .Where(sr =>
+                            sr.IsActive &&
+                            (sr.Status == sampleSentStatus || sr.Status == completedStatus))
+                        .OrderByDescending(sr => sr.CreatedDate)
+                        .Select(sr => sr.ExternalId)
+                        .FirstOrDefault(),
+
                     CustomCode = p.Code,
-                    Name = p.Name,
+
+                    Name = "[" + (p.ColourCode ?? "") + "] " + (p.Name ?? ""),
+
                     ItemType = ItemType.Product,
 
                     CategoryId = null,

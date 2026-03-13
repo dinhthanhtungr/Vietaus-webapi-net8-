@@ -37,6 +37,9 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.DeliverySc
                   .HasDefaultValue(true)
                   .HasColumnName("IsActive");
 
+            entity.Property(e => e.RequiresUnloading)
+                  .HasColumnName("RequiresUnloading");
+
             entity.Property(e => e.HasPrinted)
                   .HasDefaultValue(false)
                   .HasColumnName("HasPrinted");

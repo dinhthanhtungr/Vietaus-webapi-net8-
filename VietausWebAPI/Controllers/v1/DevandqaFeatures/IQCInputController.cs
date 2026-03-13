@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VietausWebAPI.Core.Application.Features.DevandqaFeatures.DTOs.QCInputByQCFeatures;
+using VietausWebAPI.Core.Application.Features.DevandqaFeatures.Helpers.QCInputByQCFeatures;
+using VietausWebAPI.Core.Application.Features.DevandqaFeatures.Queries.QCInputByQCFeatures;
 using VietausWebAPI.Core.Application.Features.DevandqaFeatures.ServiceContracts.QCInputByQCFeatures;
+using VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCInputByQCFeatures;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1.DevandqaFeatures
 {
@@ -11,9 +14,11 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.DevandqaFeatures
     public class IQCInputController : Controller
     {
         private readonly IQCInputByQCService _qCInputByQCService;
-        public IQCInputController(IQCInputByQCService qCInputByQCService)
+        private readonly IExportQCInputByQCExcel _exportQCInputByQCExcel;
+        public IQCInputController(IQCInputByQCService qCInputByQCService, IExportQCInputByQCExcel exportQCInputByQCExcel)
         {
             _qCInputByQCService = qCInputByQCService;
+            _exportQCInputByQCExcel = exportQCInputByQCExcel;
         }
 
         [HttpGet("GetPaged")]
@@ -92,6 +97,20 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.DevandqaFeatures
                 // Log the exception (not shown here for brevity)
                 return StatusCode(500, "An unexpected error occurred.");
             }
+        }
+
+        [HttpGet("export-excel")]
+        public async Task<IActionResult> ExportExcel([FromQuery] QCInputQuery query, CancellationToken ct)
+        {
+            var rows = await _qCInputByQCService.BuildExportRowsAsync(query, ct);
+            var bytes = _exportQCInputByQCExcel.ExportExcel(rows);
+
+            var fileName = $"QCInputByQC_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+            return File(
+                bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                fileName);
         }
     }
 }

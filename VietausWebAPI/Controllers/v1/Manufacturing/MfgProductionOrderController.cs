@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOrderRWs;
+using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOrderRWs.MfgGetInformationInforDtos;
 using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOrderRWs.UpsertInformationDtos;
 using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOrders;
 using VietausWebAPI.Core.Application.Features.Manufacturing.Queries.MfgProductionOrders;
@@ -208,6 +209,8 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Manufacturing
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
+
+
         [HttpGet("{id:guid}/{fid:guid}")]
         public async Task<IActionResult> GetMfgProductionOrderById(Guid id, Guid fid, [FromQuery] FormulaType? formulaType, CancellationToken ct = default)
         {
@@ -269,5 +272,53 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Manufacturing
             return Ok(result);
         }
 
+
+        [HttpGet("inform/{id:guid}")]
+        [ProducesResponseType(typeof(GetMfgProductionOrderInform), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetMfgProductionOrderInformById(Guid id)
+        {
+            if (id == Guid.Empty)
+                return BadRequest("Invalid ID.");
+
+            try
+            {
+                var result = await _mfgGetInformationService.GetByIdAsync(id);
+
+                if (result == null)
+                    return NotFound();
+
+                return Ok(result);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
+        [HttpPatch("inform/{id:guid}")]
+        public async Task<IActionResult> PatchMfgProductionOrderInform(
+            [FromBody] PatchMfgProductionOrderInformRequest req,
+            CancellationToken ct = default)
+        {
+            if (req.MfgProductionOrderId == Guid.Empty)
+                return BadRequest(OperationResult.Fail("Invalid ID."));
+
+            try
+            {
+                var result = await _mfgUpsertInformationService.PatchInformAsync(req, ct);
+
+                if (!result.Success)
+                    return BadRequest(result);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, OperationResult.Fail($"An unexpected error occurred: {ex.Message}"));
+            }
+        }
     }
 }

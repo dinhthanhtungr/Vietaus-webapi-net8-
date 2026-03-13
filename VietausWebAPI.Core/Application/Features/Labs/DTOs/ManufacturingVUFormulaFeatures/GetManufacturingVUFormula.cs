@@ -11,6 +11,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.ManufacturingVUFormu
         public Guid ManufacturingVUFormulaId { get; set; }
         public Guid FormulaId { get; set; }
 
+        public string? SourceVUExternalId { get; set; }
         public string? FormulaExternalId { get; set; }
         public decimal? TotalProductionQuantity { get; set; }
         public int? NumOfBatches { get; set; }

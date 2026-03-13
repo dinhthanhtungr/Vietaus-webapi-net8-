@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContracts.ReadRepositories;
 
 namespace VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts
 {
@@ -13,5 +14,8 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts
         IWarehouseTempStockRepository WarehouseTempStockRepository { get; }
         IWarehouseRequestDetailRepository WarehouseRequestDetailRepository { get; }
         IWarehouseRequestRepository WarehouseRequestRepository { get; }
+
+        IWarehouseVoucherReadRepository WarehouseVoucherReadRepository { get; }
+        IWarehouseVoucherDetailReadRepository WarehouseVoucherDetailReadRepository { get; }
     }
 }

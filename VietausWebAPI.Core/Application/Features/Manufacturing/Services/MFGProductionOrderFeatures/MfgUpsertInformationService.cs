@@ -14,6 +14,7 @@ using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.EventLogDtos;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.Services;
+using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
@@ -39,6 +40,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
         private readonly ITimelineService _timeLineService;
         private readonly INotificationService _notificationService;
         private readonly IPriceProvider _priceProvider;
+        private readonly IWarehouseReservationService _warehouseReservationService;
 
         public MfgUpsertInformationService(
             IUnitOfWork unitOfWork,
@@ -46,7 +48,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
             IExternalIdService externalId,
             ITimelineService timeLineService,
             INotificationService notificationService,
-            IPriceProvider priceProvider)
+            IPriceProvider priceProvider,
+            IWarehouseReservationService warehouseReservationService)
         {
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;
@@ -54,7 +57,10 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
             _timeLineService = timeLineService;
             _notificationService = notificationService;
             _priceProvider = priceProvider;
+            _warehouseReservationService = warehouseReservationService;
         }
+
+        //============================================================ Update New ============================================================
 
         /// <summary>
         /// Xuât tồn kho cho lệnh sản xuất (MPO) - cập nhật thông tin MPO và chuyển trạng thái sang "Stocked".
@@ -279,9 +285,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                 PatchHelper.SetIfNullable(req.ExpectedDate, () => mpo.ExpectedDate, v => mpo.ExpectedDate = v);
                 PatchHelper.SetIfNullable(req.ManufacturingDate, () => mpo.ManufacturingDate, v => mpo.ManufacturingDate = v);
 
-                // Nếu entity có RequiredDate thì mở ra dùng
-                // PatchHelper.SetIfNullable(req.RequiredDate, () => mpo.RequiredDate, v => mpo.RequiredDate = v);
-
                 // =====================================================
                 // 2. CREATE MANUFACTURING FORMULA
                 // =====================================================
@@ -307,6 +310,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                     ManufacturingFormulaId = Guid.CreateVersion7(),
                     ExternalId = await _externalId.NextAsync(DocumentPrefix.VA.ToString(), ct: ct),
                     Name = "F001",
+
                     Status = formulaStatus,
                     TotalPrice = req.ManufacturingFormulaMaterials.Sum(x => x.UnitPrice * x.Quantity),
 
@@ -325,7 +329,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                 {
                     case FormulaSource.FromVA:
                         mf.SourceManufacturingFormulaId = req.FormulaSourceId;
-                        mf.SourceManufacturingExternalIdSnapshot = req.FormulaSourceNameSnapshot;
+                        mf.SourceManufacturingExternalIdSnapshot = req.SourceManufacturingExternalIdSnapshot;
                         mf.SourceVUFormulaId = req.VUFormulaId;
                         mf.SourceVUExternalIdSnapshot = req.FormulaExternalIdSnapshot;
                         break;
@@ -340,7 +344,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
 
                 // =====================================================
                 // 3. CREATE FORMULA MATERIALS
-                // BE tự đánh LineNo theo thứ tự req gửi lên
                 // =====================================================
                 var materialEntities = req.ManufacturingFormulaMaterials
                     .Select((m, index) => new ManufacturingFormulaMaterial
@@ -370,7 +373,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
 
                 // =====================================================
                 // 4. SET STANDARD IF NEEDED
-                // FormulaType.FromVu / Improvement => tự động trở thành công thức chuẩn
                 // =====================================================
                 if (shouldCreateStandard)
                 {
@@ -423,6 +425,26 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                     mpo.UpdatedBy = userId;
 
                     await EnsureScheduleAsync(mpo, now, ct);
+
+                    // =====================================================
+                    // 5.1 RESERVE VIRTUAL STOCK
+                    // chỉ reserve khi formula mới được chọn active để sản xuất
+                    // =====================================================
+                    var totalQty = mpo.TotalQuantity ?? 0m;
+                    if (totalQty > 0)
+                    {
+                        var reserveResult = await _warehouseReservationService.ReserveByFormulaMaterialsAsync(
+                            mpo.MfgProductionOrderId,
+                            totalQty,
+                            req.ManufacturingFormulaMaterials,
+                            ct);
+
+                        if (!reserveResult.Success)
+                        {
+                            await _unitOfWork.RollbackTransactionAsync();
+                            return OperationResult.Fail(reserveResult.Message ?? "Không thể cập nhật tồn kho ảo.");
+                        }
+                    }
                 }
                 else if (waitForQc)
                 {
@@ -491,7 +513,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                 return OperationResult.Fail($"Có lỗi xảy ra trong quá trình lưu và tạo công thức: {ex.Message}");
             }
         }
-
 
         /// <summary>
         /// Tạo mới một bản ghi <see cref="ProductionSelectVersion"/> để liên kết giữa MPO và Manufacturing Formula.
@@ -570,7 +591,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
             CancellationToken ct)
         {
             var scheduleExists = await _unitOfWork.SchedualMfgRepository
-                .Query(track: false)
+                .Query(track: true)
                 .AnyAsync(s => s.MfgProductionOrderId == mpo.MfgProductionOrderId, ct);
 
             if (scheduleExists) return;
@@ -703,6 +724,361 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
             catch
             {
             }
+        }
+
+
+        //============================================================ Update Information ============================================================
+
+        public async Task<OperationResult> PatchInformAsync(PatchMfgProductionOrderInformRequest req, CancellationToken ct = default)
+        {
+            if (req == null || req.MfgProductionOrderId == Guid.Empty)
+                return OperationResult.Fail("Dữ liệu không hợp lệ.");
+
+            await _unitOfWork.BeginTransactionAsync();
+
+            try
+            {
+                var now = DateTime.Now;
+                var userId = _currentUser.EmployeeId;
+
+                var mpo = await _unitOfWork.MfgProductionOrderRepository
+                    .Query(track: true)
+                    .FirstOrDefaultAsync(x => x.MfgProductionOrderId == req.MfgProductionOrderId && x.IsActive, ct);
+
+                if (mpo == null)
+                    return OperationResult.Fail("Không tìm thấy lệnh sản xuất.");
+
+                var oldStatus = mpo.Status;
+
+
+
+                // =====================================================
+                // TIMELINE MPO WHEN STATUS CHANGED
+                // =====================================================
+                if (!string.Equals(oldStatus, mpo.Status, StringComparison.OrdinalIgnoreCase))
+                {
+                    await _timeLineService.AddEventLogAsync(new EventLogModels
+                    {
+                        employeeId = userId,
+                        eventType = EventType.ManufacturingProductOrder,
+                        sourceCode = mpo.ExternalId ?? string.Empty,
+                        sourceId = mpo.MfgProductionOrderId,
+                        status = mpo.Status,
+                        note = $"Cập nhật bởi hệ thống vào {now} bởi {_currentUser.personName}"
+                    }, ct);
+                }
+
+                mpo.UpdatedDate = now;
+                mpo.UpdatedBy = userId;
+
+                var oldExpectedDate = mpo.ExpectedDate;
+
+                PatchHelper.SetIfNullable(req.ManufacturingDate, () => mpo.ManufacturingDate, v => mpo.ManufacturingDate = v);
+                PatchHelper.SetIfNullable(req.ExpectedDate, () => mpo.ExpectedDate, v => mpo.ExpectedDate = v);
+                PatchHelper.SetIfNullable(req.TotalQuantity, () => mpo.TotalQuantity, v => mpo.TotalQuantity = v);
+                PatchHelper.SetIfNullable(req.NumOfBatches, () => mpo.NumOfBatches, v => mpo.NumOfBatches = v);
+
+                PatchHelper.SetIfRef(req.LabNote, () => mpo.LabNote, v => mpo.LabNote = v);
+                PatchHelper.SetIfRef(req.Requirement, () => mpo.Requirement, v => mpo.Requirement = v);
+                PatchHelper.SetIfRef(req.PlpuNote, () => mpo.PlpuNote, v => mpo.PlpuNote = v);
+                PatchHelper.SetIfRef(req.QcCheck, () => mpo.QcCheck, v => mpo.QcCheck = v);
+                PatchHelper.SetIfRef(req.BagType, () => mpo.BagType, v => mpo.BagType = v);
+
+                mpo.StepOfProduct = req.StepOfProduct;
+
+                ManufacturingFormula? formula = null;
+                bool formulaItemsChanged = false;
+                bool formulaSelectionChanged = false;
+
+                var expectedDateChanged =
+                    req.ExpectedDate.HasValue &&
+                    oldExpectedDate?.Date != mpo.ExpectedDate?.Date;
+
+                if (expectedDateChanged
+    && mpo.ExpectedDate.HasValue
+    && mpo.ExpectedDate.Value.Date > req.RequiredDate.Date)
+                {
+                    await TryNotifySaleWhenExpectedDateExceededAsync(req, mpo, oldExpectedDate, now, ct);
+                }
+
+                // dùng để sync reserve
+                List<PatchMfgProductionOrderFormulaItemRequest>? formulaItemsForReserve = null;
+
+                if (req.ManufacturingFormulaIdIsSelect.HasValue && req.ManufacturingFormulaIdIsSelect.Value != Guid.Empty)
+                {
+                    if (req.FormulaItems == null)
+                        return OperationResult.Fail("Thiếu danh sách nguyên vật liệu công thức.");
+
+                    var formulaId = req.ManufacturingFormulaIdIsSelect.Value;
+
+                    var currentSelectedFormulaId = await _unitOfWork.ProductionSelectVersionRepository
+                        .Query(track: false)
+                        .Where(x => x.MfgProductionOrderId == mpo.MfgProductionOrderId && x.ValidTo == null)
+                        .OrderByDescending(x => x.ValidFrom ?? DateTime.MinValue)
+                        .Select(x => (Guid?)x.ManufacturingFormulaId)
+                        .FirstOrDefaultAsync(ct);
+
+                    if (currentSelectedFormulaId == null)
+                        return OperationResult.Fail("Lệnh sản xuất hiện chưa có công thức VA đang chọn.");
+
+                    if (currentSelectedFormulaId.Value != formulaId)
+                        return OperationResult.Fail("Công thức gửi lên không phải công thức đang được select của lệnh sản xuất.");
+
+                    formula = await _unitOfWork.ManufacturingFormulaRepository
+                        .Query(track: true)
+                        .FirstOrDefaultAsync(x => x.ManufacturingFormulaId == formulaId && x.IsActive, ct);
+
+                    if (formula == null)
+                        return OperationResult.Fail("Không tìm thấy công thức VA cần cập nhật.");
+
+                    formula.UpdatedDate = now;
+                    formula.UpdatedBy = userId;
+                    formula.TotalPrice = req.FormulaItems
+                        .Where(x => x.IsActive && x.Quantity > 0)
+                        .Sum(x => x.Quantity * x.UnitPrice);
+
+                    var existingItems = await _unitOfWork.ManufacturingFormulaMaterialRepository
+                        .Query(track: true)
+                        .Where(x => x.ManufacturingFormulaId == formula.ManufacturingFormulaId)
+                        .ToListAsync(ct);
+
+                    var requestIds = req.FormulaItems
+                        .Where(x => x.ManufacturingFormulaMaterialId.HasValue && x.ManufacturingFormulaMaterialId.Value != Guid.Empty)
+                        .Select(x => x.ManufacturingFormulaMaterialId!.Value)
+                        .ToHashSet();
+
+                    foreach (var dbItem in existingItems)
+                    {
+                        if (!requestIds.Contains(dbItem.ManufacturingFormulaMaterialId))
+                        {
+                            // chỉ đánh dấu inactive, chưa reserve ngay ở đây
+                            if (dbItem.IsActive)
+                            {
+                                dbItem.IsActive = false;
+                                formulaItemsChanged = true;
+                            }
+                        }
+                    }
+
+                    foreach (var item in req.FormulaItems.OrderBy(x => x.LineNo))
+                    {
+                        if (item.ItemId == Guid.Empty)
+                            return OperationResult.Fail("Có nguyên vật liệu / bán thành phẩm không hợp lệ.");
+
+                        if (item.Quantity <= 0)
+                            return OperationResult.Fail("Số lượng công thức phải lớn hơn 0.");
+
+                        ManufacturingFormulaMaterial? entity = null;
+
+                        if (item.ManufacturingFormulaMaterialId.HasValue && item.ManufacturingFormulaMaterialId.Value != Guid.Empty)
+                        {
+                            entity = existingItems.FirstOrDefault(x =>
+                                x.ManufacturingFormulaMaterialId == item.ManufacturingFormulaMaterialId.Value);
+                        }
+
+                        if (entity == null)
+                        {
+                            entity = new ManufacturingFormulaMaterial
+                            {
+                                ManufacturingFormulaMaterialId = Guid.CreateVersion7(),
+                                ManufacturingFormulaId = formula.ManufacturingFormulaId
+                            };
+
+                            await _unitOfWork.ManufacturingFormulaMaterialRepository.AddAsync(entity, ct);
+                            formulaItemsChanged = true;
+                        }
+                        else
+                        {
+                            // so sánh trước/sau để chỉ set changed khi thực sự đổi
+                            if (entity.itemType != item.ItemType
+                                || entity.MaterialId != (item.ItemType == ItemType.Material ? item.ItemId : null)
+                                || entity.ProductId != (item.ItemType == ItemType.Product ? item.ItemId : null)
+                                || entity.CategoryId != item.CategoryId
+                                || entity.LineNo != item.LineNo
+                                || entity.Quantity != item.Quantity
+                                || entity.UnitPrice != item.UnitPrice
+                                || entity.MaterialNameSnapshot != item.MaterialNameSnapshot
+                                || entity.MaterialExternalIdSnapshot != item.MaterialExternalIdSnapshot
+                                || entity.Unit != item.Unit
+                                || entity.IsActive != item.IsActive)
+                            {
+                                formulaItemsChanged = true;
+                            }
+                        }
+
+                        entity.itemType = item.ItemType;
+                        entity.MaterialId = item.ItemType == ItemType.Material ? item.ItemId : null;
+                        entity.ProductId = item.ItemType == ItemType.Product ? item.ItemId : null;
+                        entity.CategoryId = item.CategoryId;
+                        entity.LineNo = item.LineNo;
+                        entity.Quantity = item.Quantity;
+                        entity.UnitPrice = item.UnitPrice;
+                        entity.TotalPrice = item.Quantity * item.UnitPrice;
+                        entity.MaterialNameSnapshot = item.MaterialNameSnapshot;
+                        entity.MaterialExternalIdSnapshot = item.MaterialExternalIdSnapshot;
+                        entity.Unit = item.Unit;
+                        entity.IsActive = item.IsActive;
+                    }
+
+                    formulaItemsForReserve = req.FormulaItems
+                        .Where(x => x.IsActive && x.Quantity > 0)
+                        .OrderBy(x => x.LineNo)
+                        .ToList();
+                }
+                else
+                {
+                    // không patch formula items thì không reserve lại
+                    formulaItemsForReserve = null;
+                }
+
+                // Nếu công thức đã thành công thì chuyển sang Scheduling
+                if (mpo.Status == ManufacturingProductOrder.FormulaSuccess.ToString())
+                {
+                    mpo.Status = ManufacturingProductOrder.Scheduling.ToString();
+                }
+
+                // đảm bảo có schedule nếu chưa Stocked
+                if (!string.Equals(mpo.Status, ManufacturingProductOrder.Stocked.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    await EnsureScheduleAsync(mpo, now, ct);
+                }
+
+                var schedule = await _unitOfWork.SchedualMfgRepository
+                    .Query(track: true)
+                    .FirstOrDefaultAsync(x => x.MfgProductionOrderId == mpo.MfgProductionOrderId, ct);
+
+                if (schedule != null)
+                {
+                    schedule.DeliveryPlanDate = mpo.ExpectedDate;
+                    schedule.Note = mpo.LabNote ?? mpo.PlpuNote;
+                    schedule.requirement = mpo.Requirement;
+                    schedule.StepOfProduct = mpo.StepOfProduct;
+                }
+
+                // =====================================================
+                // SYNC RESERVE VIRTUAL STOCK
+                // Chỉ sync khi:
+                // - có FormulaItems request
+                // - và TotalQuantity đổi, hoặc item đổi, hoặc vừa chuyển sang Scheduling
+                // =====================================================
+                var enteredSchedulingNow =
+                    !string.Equals(oldStatus, ManufacturingProductOrder.Scheduling.ToString(), StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(mpo.Status, ManufacturingProductOrder.Scheduling.ToString(), StringComparison.OrdinalIgnoreCase);
+
+                var shouldSyncReservation =
+                    formulaItemsForReserve != null
+                    && formulaItemsForReserve.Count > 0
+                    && (mpo.TotalQuantity ?? 0m) > 0
+                    && (
+                        req.TotalQuantity.HasValue
+                        || formulaItemsChanged
+                        || formulaSelectionChanged
+                        || enteredSchedulingNow
+                    );
+
+                if (shouldSyncReservation)
+                {
+                    var reserveResult = await _warehouseReservationService.SyncReservationsByFormulaItemsAsync(
+                        mpo.MfgProductionOrderId,
+                        mpo.TotalQuantity ?? 0m,
+                        formulaItemsForReserve,
+                        ct);
+
+                    if (!reserveResult.Success)
+                    {
+                        await _unitOfWork.RollbackTransactionAsync();
+                        return OperationResult.Fail(reserveResult.Message ?? "Không thể cập nhật tồn kho ảo.");
+                    }
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
+
+                return OperationResult.Ok("Cập nhật thông tin và công thức VA thành công.");
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return OperationResult.Fail($"Có lỗi xảy ra: {ex.Message}");
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
+        //============================================================== TEST NOTIFICATION =============================================================
+        private async Task TryNotifySaleWhenExpectedDateExceededAsync(
+    PatchMfgProductionOrderInformRequest req,
+    MfgProductionOrder mpo,
+    DateTime? oldExpectedDate,
+    DateTime now,
+    CancellationToken ct)
+        {
+            // 1. Chỉ xử lý khi có truyền ngày mới và ngày request
+            if (!req.ExpectedDate.HasValue)
+                return;
+
+            var newExpectedDate = req.ExpectedDate.Value.Date;
+            var requestDate = req.RequiredDate.Date;
+
+            // 2. Chỉ notify khi ngày hứa giao mới lớn hơn ngày request
+            if (newExpectedDate <= requestDate)
+                return;
+
+            // 3. Tránh spam: chỉ notify khi ngày thật sự đổi
+            if (oldExpectedDate.HasValue && oldExpectedDate.Value.Date == newExpectedDate)
+                return;
+
+            // 4. Resolve sale phụ trách
+            var saleEmployeeId = await ResolveSaleEmployeeIdAsync(mpo.MfgProductionOrderId, ct);
+            if (!saleEmployeeId.HasValue || saleEmployeeId.Value == Guid.Empty)
+                return;
+
+            // 5. Gửi notification
+            await _notificationService.PublishAsync(new PublishNotificationRequest
+            {
+                Topic = TopicNotifications.MfgProductionOrderChangeExpectiveDate,
+                Severity = NotificationSeverity.Warning,
+                Title = $"Ngày hứa giao thay đổi - {mpo.ExternalId}",
+                Message = $"Ngày hứa giao mới ({newExpectedDate:dd/MM/yyyy}) lớn hơn ngày request ({requestDate:dd/MM/yyyy}).",
+                Link = $"/sales/merchandise-orders?EventType=MerchadiseStatus&q={mpo.ProductExternalIdSnapshot}&CreatedScope=Merchandise&page=1&pageSize=15",
+                PayloadJson = JsonSerializer.Serialize(new
+                {
+                    MfgProductionOrderId = mpo.MfgProductionOrderId,
+                    MfgExternalId = mpo.ExternalId,
+                    OldExpectedDate = oldExpectedDate,
+                    NewExpectedDate = req.ExpectedDate,
+                    RequestDate = req.RequiredDate
+                }),
+                TargetUserIds = new List<Guid> { saleEmployeeId.Value }
+            }, ct);
+        }
+
+        private async Task<Guid?> ResolveSaleEmployeeIdAsync(Guid mfgProductionOrderId, CancellationToken ct)
+        {
+            var result = await _unitOfWork.MfgOrderPORepository
+                .Query(track: false)
+                .Where(x => x.MfgProductionOrderId == mfgProductionOrderId && x.IsActive)
+                .Select(x => x.Detail!.MerchandiseOrderId)
+                .FirstOrDefaultAsync(ct);
+
+            if (result == Guid.Empty)
+                return null;
+
+            var saleEmployeeId = await _unitOfWork.MerchandiseOrderRepository
+                .Query(track: false)
+                .Where(x => x.MerchandiseOrderId == result)
+                .Select(x => x.CreatedBy) // đổi thành field thật của bạn
+                .FirstOrDefaultAsync(ct);
+
+            return saleEmployeeId;
         }
     }
 }

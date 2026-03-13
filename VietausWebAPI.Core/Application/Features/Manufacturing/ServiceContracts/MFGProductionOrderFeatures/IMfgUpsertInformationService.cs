@@ -12,5 +12,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts
     {
         Task<OperationResult> ExportFromStockAsync(PatchStockMfgProductionOrderRequest req, CancellationToken ct = default);
         Task<OperationResult> SaveAndCreateFormulaAsync(PostMfgFormulaAndUpdateMpoRequest req, CancellationToken ct = default);
+
+
+        Task<OperationResult> PatchInformAsync(PatchMfgProductionOrderInformRequest req, CancellationToken ct = default);
     }
 }

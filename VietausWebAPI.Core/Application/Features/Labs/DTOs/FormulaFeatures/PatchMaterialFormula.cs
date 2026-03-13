@@ -9,6 +9,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures
 {
     public class PatchMaterialFormula
     {
+        public Guid? FormulaMaterialId { get; set; }
         public Guid ItemId { get; set; }
         public ItemType itemType { get; set; }
 

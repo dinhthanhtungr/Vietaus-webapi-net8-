@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
+using VietausWebAPI.Core.Domain.Enums.Manufacturings;
 
 namespace VietausWebAPI.Core.Domain.Entities;
 
@@ -31,7 +32,7 @@ public partial class SchedualMfg
     public string? Qcstatus { get; set; }
     public int? Area { get; set; }
     public string? BTPStatus { get; set; }
-    public int? StepOfProduct { get; set; }
+    public StepOfProduct? StepOfProduct { get; set; }
 
     public virtual MfgProductionOrder? MfgProductionOrder { get; set; }
     public virtual Product? Product { get; set; }

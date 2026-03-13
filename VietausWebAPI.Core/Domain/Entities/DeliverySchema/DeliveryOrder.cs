@@ -30,6 +30,8 @@ namespace VietausWebAPI.Core.Domain.Entities.DeliverySchema
         public bool IsActive { get; set; } = true;
         public bool HasPrinted { get; set; } = false;
 
+        public bool? RequiresUnloading { get; set; }
+
         public Guid CreatedBy { get; set; }
         public DateTime? CreatedDate { get; set; }
         public Guid? UpdatedBy { get; set; }

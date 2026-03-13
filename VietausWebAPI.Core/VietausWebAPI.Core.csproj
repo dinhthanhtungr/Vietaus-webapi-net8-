@@ -21,7 +21,6 @@
   <ItemGroup>
     <Folder Include="Application\Features\CompanyFeatures\Helpers\" />
     <Folder Include="Application\Features\DevandqaFeatures\DTOs\QCInputDTOs\" />
-    <Folder Include="Application\Features\DevandqaFeatures\Helpers\QCInputByQCFeatures\" />
     <Folder Include="Application\Features\Labs\DTOs\QAQCFeature\ProductStandardFeature\" />
     <Folder Include="Application\Features\Labs\Mappers\" />
     <Folder Include="Domain\Security\Policys\" />
