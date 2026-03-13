@@ -22,7 +22,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.DTOs
 
         public string? Comment { get; set; }
 
-        //public bool IsActive { get; set; }
+        public bool IsActive { get; set; }
 
 
         public DateTime? RequestDeliveryDate { get; set; }

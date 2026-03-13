@@ -190,32 +190,88 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
                 return OperationResult<GetQCInputByQC>.Fail(ex.Message);
             }
         }
-        public async Task<OperationResult<GetQCInputByQC>> PatchByVoucherDetailIdAsync(PatchQCInputByQC input, long voucherDetailId, CancellationToken ct)
+        public async Task<OperationResult<GetQCInputByQC>> PatchByVoucherDetailIdAsync(
+            PatchQCInputByQC input,
+            long voucherDetailId,
+            CancellationToken ct)
         {
-            var entity = await _uow.QCInputByQCWriteRepository.PatchByVoucherDetailIdAsync(voucherDetailId, input, _currentUser.EmployeeId,ct);
-
-            // Map entity -> dto (nhớ trả AttachmentCollectionId)
-            var dto = new GetQCInputByQC
+            try
             {
-                QCInputByQCId = entity.QCInputByQCId,
-                VoucherDetailId = entity.VoucherDetailId,
-                InspectionMethod = entity.InspectionMethod,
-                IsCOAProvided = entity.IsCOAProvided,
-                IsMSDSTDSProvided = entity.IsMSDSTDSProvided,
-                IsMetalDetectionRequired = entity.IsMetalDetectionRequired,
-                IsSuccessQuality = entity.IsSuccessQuality,
-                ImportWarehouseType = entity.ImportWarehouseType,
-                Note = entity.Note,
-                AttachmentCollectionId = entity.AttachmentCollectionId,
-                QCCreatedDate = entity.CreatedDate,
+                if (input == null)
+                    return OperationResult<GetQCInputByQC>.Fail("Input is null.");
 
-                AttachmentStatus = entity.AttachmentStatus,
-                AttachmentLastError = entity.AttachmentLastError,
-            };
+                if (voucherDetailId <= 0)
+                    return OperationResult<GetQCInputByQC>.Fail("VoucherDetailId không hợp lệ.");
 
-            return OperationResult<GetQCInputByQC>.Ok(dto);
+                var userId = _currentUser.EmployeeId;
+                if (userId == Guid.Empty)
+                    return OperationResult<GetQCInputByQC>.Fail("Không lấy được thông tin người dùng hiện tại.");
+
+                // update QCInputByQC
+                var entity = await _uow.QCInputByQCWriteRepository
+                    .PatchByVoucherDetailIdAsync(voucherDetailId, input, userId, ct);
+
+                if (entity == null)
+                    return OperationResult<GetQCInputByQC>.Fail("Không tìm thấy dữ liệu QC để cập nhật.");
+
+                // lấy voucher detail để update stock giống CreateAsync
+                var voucherDetail = await _uow.WarehouseVoucherDetailReadRepository
+                    .GetByIdAsync(voucherDetailId, ct);
+
+                if (voucherDetail == null)
+                    return OperationResult<GetQCInputByQC>.Fail("Không tìm thấy WarehouseVoucherDetail.");
+
+                // ===== cập nhật trạng thái kho =====
+                var targetStockType = MapQcDecisionToStockType(input.ImportWarehouseType);
+                if (targetStockType.HasValue)
+                {
+                    var materialCode = voucherDetail.ProductCode?.Trim();
+                    var lotNumber = voucherDetail.LotNumber?.Trim();
+
+                    if (!string.IsNullOrWhiteSpace(materialCode) &&
+                        !string.IsNullOrWhiteSpace(lotNumber))
+                    {
+                        var now = DateTime.Now;
+
+                        await _uow.WarehouseShelfStockRepository.Query()
+                            .Where(x => x.Code == materialCode
+                                     && x.LotNo == lotNumber
+                                     && x.StockType == (StockType)6)
+                            .ExecuteUpdateAsync(setters => setters
+                                .SetProperty(x => x.StockType, targetStockType.Value)
+                                .SetProperty(x => x.UpdatedBy, userId)
+                                .SetProperty(x => x.UpdatedDate, now), ct);
+                    }
+                }
+
+                await _uow.SaveChangesAsync(ct);
+
+                var dto = new GetQCInputByQC
+                {
+                    QCInputByQCId = entity.QCInputByQCId,
+                    VoucherDetailId = entity.VoucherDetailId,
+                    MaterialName = entity.MaterialName,
+                    MaterialExternalId = entity.MaterialExternalId,
+                    InspectionMethod = entity.InspectionMethod,
+                    IsCOAProvided = entity.IsCOAProvided,
+                    IsMSDSTDSProvided = entity.IsMSDSTDSProvided,
+                    IsMetalDetectionRequired = entity.IsMetalDetectionRequired,
+                    IsSuccessQuality = entity.IsSuccessQuality,
+                    ImportWarehouseType = entity.ImportWarehouseType,
+                    Note = entity.Note,
+                    AttachmentCollectionId = entity.AttachmentCollectionId,
+                    QCCreatedDate = entity.CreatedDate,
+                    AttachmentStatus = entity.AttachmentStatus,
+                    AttachmentLastError = entity.AttachmentLastError,
+                };
+
+                return OperationResult<GetQCInputByQC>.Ok(dto);
+            }
+            catch (Exception ex)
+            {
+                return OperationResult<GetQCInputByQC>.Fail(ex.Message);
+            }
         }
-
 
         // =================================================== Helper ===================================================
         private static StockType? MapQcDecisionToStockType(QcDecision? decision)

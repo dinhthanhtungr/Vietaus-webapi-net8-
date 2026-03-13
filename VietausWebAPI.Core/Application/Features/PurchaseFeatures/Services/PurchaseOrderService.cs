@@ -76,9 +76,8 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                 var skip = (query.PageNumber - 1) * query.PageSize;
 
                 // PHÂN TRANG THEO PURCHASE ORDER (header)
-                var poQ = _unitOfWork.PurchaseOrderRepository.Query()
-                    .AsNoTracking()
-                    .Where(po => po.IsActive == true);
+                var poQ = _unitOfWork.PurchaseOrderRepository.Query();
+                    //.Where(po => po.IsActive == true);
 
                 // ---- Filters ----
                 if (query.SupplierId.HasValue)
@@ -124,6 +123,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                         po.ExternalId,
                         po.Status,
                         po.OrderType,
+                        po.IsActive,
                         po.Comment,
                         po.RequestDeliveryDate,
                         po.RealDeliveryDate,
@@ -164,6 +164,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                     SupplierExternalId = x.SupplierExternalId,
                     TotalAmount = x.TotalAmount,
                     Comment = x.Comment,
+                    IsActive = x.IsActive ?? false,
                     RequestDeliveryDate = x.RequestDeliveryDate,
                     RealDeliveryDate = x.RealDeliveryDate,
                     CreateDate = x.CreateDate,

@@ -80,7 +80,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
         }
 
-        // ======================================================================== Get ======================================================================== 
+        // ======================================================================== Get ============================================================================ 
 
         /// <summary>
         /// Lấy thông tin công thức sản xuất theo Id lấy theo Vu nếu là công thức mới tanh và lấy theo VA nếu đã có công thức chuẩn trước đó. Lấy Id này khi trang ở New hoặc Clone
@@ -962,7 +962,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 new PagedResult<GetCompareFormula>(page, total, query.PageNumber, query.PageSize));
         }
 
-        // ======================================================================== Post ======================================================================== 
+        // ======================================================================== Post ========================================================================== 
 
         /// <summary>
         /// Tạo mới công thức sản xuất nếu đã có công thức chuẩn và đang copy từ công thức đó thì sẽ lưu lại công thức chuẩn cũ vào lịch sử
@@ -1237,7 +1237,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             }
         }
 
-        // ====================================================================== Patch ========================================================================
+        // ====================================================================== Patch ===========================================================================
 
         /// <summary>
         /// Upsert (cập nhật hoặc bổ sung) **Công thức sản xuất** cho một Lệnh sản xuất.
@@ -1936,7 +1936,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             }
         }
 
-        // ====================================================================== Helper ======================================================================
+        // ====================================================================== Helper ==========================================================================
 
         /// <summary>
         /// Gắn LotNo vào DTO để in PDF nếu còn thiếu, đồng thời cập nhật ngược lại vào DB để lần sau không bị thiếu nữa.

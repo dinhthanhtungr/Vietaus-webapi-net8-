@@ -108,6 +108,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         where v.MfgProductionOrderId == po.MfgProductionOrderId && v.ValidTo == null
                         select mf.ExternalId
                     ).Any(x => x != null && EF.Functions.ILike(x, pattern))
+                    || (
+                        from l in links
+                        join d in dets on l.MerchandiseOrderDetailId equals d.MerchandiseOrderDetailId
+                        join mo in mos on d.MerchandiseOrderId equals mo.MerchandiseOrderId
+                        where l.MfgProductionOrderId == po.MfgProductionOrderId
+                        select mo.ExternalId
+                    ).Any(x => x != null && EF.Functions.ILike(x, pattern))
                 );
             }
 

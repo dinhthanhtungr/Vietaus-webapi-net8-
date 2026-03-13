@@ -543,14 +543,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
         /// </param>
         /// <param name="ct">CancellationToken dùng để hủy tác vụ bất đồng bộ nếu cần.</param>
         /// <returns>Task bất đồng bộ hoàn tất khi bản ghi version đã được thêm vào repository.</returns>
-        private async Task CreateNewSelectedFormulaVersionAsync(
-            Guid mpoId,
-            Guid formulaId,
-            Guid companyId,
-            DateTime now,
-            Guid userId,
-            bool isActiveSelect,
-            CancellationToken ct)
+        private async Task CreateNewSelectedFormulaVersionAsync(Guid mpoId, Guid formulaId, Guid companyId, DateTime now, Guid userId, bool isActiveSelect, CancellationToken ct)
         {
             var newPsv = new ProductionSelectVersion
             {
@@ -585,10 +578,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
         /// <param name="now">Thời điểm hiện tại dùng làm CreatedDate cho schedule mới.</param>
         /// <param name="ct">CancellationToken dùng để hủy tác vụ bất đồng bộ nếu cần.</param>
         /// <returns>Task bất đồng bộ hoàn tất khi kiểm tra/tạo schedule xong.</returns>
-        private async Task EnsureScheduleAsync(
-            MfgProductionOrder mpo,
-            DateTime now,
-            CancellationToken ct)
+        private async Task EnsureScheduleAsync(MfgProductionOrder mpo, DateTime now, CancellationToken ct)
         {
             var scheduleExists = await _unitOfWork.SchedualMfgRepository
                 .Query(track: true)
@@ -1004,6 +994,115 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
         }
 
 
+        //============================================================= Copy MFGProductionOrder =============================================================
+
+    //    public async Task<OperationResult<CopyMfgProductionOrderResult>> CopyAsync(
+    //PostCopyMfgProductionOrderRequest req,
+    //CancellationToken ct = default)
+    //    {
+    //        await using var tx = await _unitOfWork.BeginTransactionAsync();
+
+    //        try
+    //        {
+    //            var now = DateTime.Now;
+    //            var userId = _currentUser.EmployeeId;
+
+    //            var source = await _unitOfWork.MfgProductionOrderRepository.Query(track: true)
+    //                .FirstOrDefaultAsync(x => x.MfgProductionOrderId == req.SourceMfgProductionOrderId && x.IsActive, ct);
+
+    //            if (source == null)
+    //                return OperationResult<CopyMfgProductionOrderResult>.Fail("Không tìm thấy lệnh sản xuất nguồn.");
+
+    //            var sourceLink = await _unitOfWork.MfgOrderPORepository.Query(track: true)
+    //                .FirstOrDefaultAsync(x => x.MfgProductionOrderId == source.MfgProductionOrderId && x.IsActive, ct);
+
+    //            if (sourceLink == null)
+    //                return OperationResult<CopyMfgProductionOrderResult>.Fail("Không tìm thấy liên kết đơn hàng của lệnh nguồn.");
+
+    //            var newId = Guid.CreateVersion7();
+    //            var newExternalId = await _externalId.NextAsync(DocumentPrefix.MFG.ToString(), ct: ct);
+
+    //            var clone = new MfgProductionOrder
+    //            {
+    //                MfgProductionOrderId = newId,
+    //                ExternalId = newExternalId,
+
+    //                ProductId = source.ProductId,
+    //                ProductExternalIdSnapshot = source.ProductExternalIdSnapshot,
+    //                ProductNameSnapshot = source.ProductNameSnapshot,
+    //                ColorName = source.ColorName,
+
+    //                CustomerId = source.CustomerId,
+    //                CustomerExternalIdSnapshot = source.CustomerExternalIdSnapshot,
+    //                CustomerNameSnapshot = source.CustomerNameSnapshot,
+
+    //                FormulaId = source.FormulaId,
+    //                FormulaExternalIdSnapshot = source.FormulaExternalIdSnapshot,
+
+    //                ManufacturingDate = null,
+    //                RequiredDate = source.RequiredDate,
+    //                ExpectedDate = req.ExpectedDate ?? source.ExpectedDate,
+
+    //                TotalQuantityRequest = source.TotalQuantityRequest,
+    //                TotalQuantity = req.TotalQuantity ?? source.TotalQuantity,
+    //                NumOfBatches = req.NumOfBatches ?? source.NumOfBatches,
+
+    //                UnitPriceAgreed = source.UnitPriceAgreed,
+    //                Status = ManufacturingProductOrder.New.ToString(),
+
+    //                StepOfProduct = req.StepOfProduct ?? source.StepOfProduct,
+    //                LabNote = req.LabNote ?? source.LabNote,
+    //                Requirement = req.Requirement ?? source.Requirement,
+    //                PlpuNote = req.PlpuNote ?? source.PlpuNote,
+    //                QcCheck = req.QcCheck ?? source.QcCheck,
+
+    //                BagType = source.BagType,
+    //                IsActive = true,
+    //                CompanyId = source.CompanyId,
+    //                CreatedDate = now,
+    //                CreatedBy = userId,
+    //                UpdatedDate = now,
+    //                UpdatedBy = userId
+    //            };
+
+    //            var newLink = new MfgOrderPO
+    //            {
+    //                MfgProductionOrderId = newId,
+    //                MerchandiseOrderDetailId = sourceLink.MerchandiseOrderDetailId,
+    //                IsActive = true
+    //            };
+
+    //            await _unitOfWork.MfgProductionOrderRepository.AddAsync(clone, ct);
+    //            await _unitOfWork.MfgOrderPORepository.AddAsync(newLink, ct);
+
+    //            await _TimelineService.AddEventLogAsync(new EventLogModels
+    //            {
+    //                employeeId = userId,
+    //                eventType = EventType.ManufacturingProductOrder,
+    //                sourceCode = clone.ExternalId,
+    //                sourceId = clone.MfgProductionOrderId,
+    //                status = clone.Status,
+    //                note = $"Copy từ lệnh sản xuất {source.ExternalId}"
+    //            }, ct);
+
+    //            await _unitOfWork.SaveChangesAsync();
+    //            await tx.CommitAsync(ct);
+
+    //            return OperationResult<CopyMfgProductionOrderResult>.Ok(
+    //                new CopyMfgProductionOrderResult
+    //                {
+    //                    MfgProductionOrderId = clone.MfgProductionOrderId,
+    //                    ExternalId = clone.ExternalId
+    //                },
+    //                "Copy lệnh sản xuất thành công.");
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            await tx.RollbackAsync(ct);
+    //            return OperationResult<CopyMfgProductionOrderResult>.Fail($"Copy lệnh sản xuất thất bại: {ex.Message}");
+    //        }
+    //    }
+
 
 
 
@@ -1014,12 +1113,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
 
 
         //============================================================== TEST NOTIFICATION =============================================================
-        private async Task TryNotifySaleWhenExpectedDateExceededAsync(
-    PatchMfgProductionOrderInformRequest req,
-    MfgProductionOrder mpo,
-    DateTime? oldExpectedDate,
-    DateTime now,
-    CancellationToken ct)
+        private async Task TryNotifySaleWhenExpectedDateExceededAsync(PatchMfgProductionOrderInformRequest req, MfgProductionOrder mpo, DateTime? oldExpectedDate, DateTime now, CancellationToken ct)
         {
             // 1. Chỉ xử lý khi có truyền ngày mới và ngày request
             if (!req.ExpectedDate.HasValue)

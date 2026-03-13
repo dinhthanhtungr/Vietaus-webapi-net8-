@@ -721,7 +721,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                         existing.Product = product;
                 }
 
-                if (product != null && req.Product != null)
+                if (product != null && req.Product != null )
                 {
 
                     product.UpdatedBy = userId;
@@ -768,7 +768,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
 
                     PatchHelper.SetIfRef(req.Product.Additive, () => product.Additive, v => product.Additive = v);
 
-                    if (!string.IsNullOrWhiteSpace(req.Product?.Name) && !req.CreatedBy.HasValue)
+                    if (!string.IsNullOrWhiteSpace(req.Product.Name) && !product.CreatedBy.HasValue && !string.IsNullOrWhiteSpace(req.Product.ColourCode))
                     {
                         product.CreatedBy = userId;
                     }

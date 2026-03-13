@@ -86,8 +86,8 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
                 ?? throw new InvalidOperationException($"QCInputByQC not found for VoucherDetailId: {voucherDetailId}");
 
             // Rule: chỉ cho sửa khi đang Waiter (trạng thái HIỆN TẠI)
-            if (entity.ImportWarehouseType != QcDecision.Waiter)
-                throw new InvalidOperationException("QC đã kết luận (không phải Tạm giữ), không được chỉnh sửa.");
+            //if (entity.ImportWarehouseType != QcDecision.Waiter)
+            //    throw new InvalidOperationException("QC đã kết luận (không phải Tạm giữ), không được chỉnh sửa.");
 
             var changed = false;
 
