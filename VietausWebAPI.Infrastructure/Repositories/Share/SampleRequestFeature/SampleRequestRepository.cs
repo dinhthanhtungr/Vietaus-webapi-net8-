@@ -62,6 +62,38 @@ namespace VietausWebAPI.Infrastructure.Repositories.Share.SampleRequestFeature
         }
 
 
+        public async Task<int?> GetMaxRunningNumberByLeftPrefixAsync(
+            IQueryable<string?> query,
+            string leftPrefix,
+            CancellationToken ct = default)
+        {
+            var codes = await query
+                .Where(x => x != null && x.StartsWith(leftPrefix))
+                .ToListAsync(ct);
+
+            int? max = null;
+
+            foreach (var code in codes)
+            {
+                if (string.IsNullOrWhiteSpace(code) || code.Length <= leftPrefix.Length)
+                    continue;
+
+                var tail = code.Substring(leftPrefix.Length);
+                var digits = new string(tail.TakeWhile(char.IsDigit).ToArray());
+
+                if (string.IsNullOrWhiteSpace(digits))
+                    continue;
+
+                if (!int.TryParse(digits, out var number))
+                    continue;
+
+                if (max == null || number > max.Value)
+                    max = number;
+            }
+
+            return max;
+        }
+
         /// <summary>
         /// Tạo lệnh query để truy vấn yêu cầu mẫu từ cơ sở dữ liệu.
         /// </summary>

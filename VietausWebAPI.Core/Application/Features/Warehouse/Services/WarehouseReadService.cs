@@ -102,7 +102,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                     .Distinct()
                     .ToList();
 
-                var materialMap = await _unitOfWork.MaterialRepository.Query()
+                var materialMap = (await _unitOfWork.MaterialRepository.Query()
                     .Where(m => m.ExternalId != null && materialCodes.Contains(m.ExternalId))
                     .Select(m => new
                     {
@@ -110,9 +110,11 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                         Name = m.Name,
                         CategoryName = m.Category != null ? m.Category.Name : ""
                     })
-                    .ToDictionaryAsync(x => x.Code);
+                    .ToListAsync())
+                    .GroupBy(x => x.Code)
+                    .ToDictionary(g => g.Key, g => g.First());
 
-                var productMap = await _unitOfWork.ProductRepository.Query()
+                var productMap = (await _unitOfWork.ProductRepository.Query()
                     .Where(p => p.Code != null && productCodes.Contains(p.Code))
                     .Select(p => new
                     {
@@ -120,7 +122,9 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                         Name = p.Name,
                         CategoryName = p.Category != null ? p.Category.Name : ""
                     })
-                    .ToDictionaryAsync(x => x.Code);
+                    .ToListAsync())
+                    .GroupBy(x => x.Code)
+                    .ToDictionary(g => g.Key, g => g.First());
 
                 var codes = items.Select(x => x.Code).Distinct().ToList();
 
@@ -451,6 +455,153 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 );
 
             return map;
+        }
+
+
+        public async Task<OperationResult<List<StockAvailableExportRow>>> GetStockAvailableExportAsync(WarehouseReadServiceQuery query)
+        {
+            try
+            {
+                var shelfQuery = _unitOfWork.WarehouseShelfStockRepository.Query()
+                    .Where(s => !string.IsNullOrWhiteSpace(s.Code));
+
+                if (!string.IsNullOrWhiteSpace(query.KeyWord))
+                {
+                    var kw = query.KeyWord.Trim();
+                    shelfQuery = shelfQuery.Where(x => (x.Code ?? "").Contains(kw));
+                }
+
+                if (query.StockTypes.HasValue)
+                {
+                    shelfQuery = shelfQuery.Where(x => x.StockType == query.StockTypes.Value);
+                }
+
+                // 1) Tổng tồn theo Code + StockType
+                var headerRows = await (
+                    from s in shelfQuery
+                    group s by new { s.Code, s.StockType } into g
+                    select new
+                    {
+                        Code = g.Key.Code!,
+                        StockType = g.Key.StockType,
+                        TotalOnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m
+                    }
+                ).ToListAsync();
+
+                if (headerRows.Count == 0)
+                    return OperationResult<List<StockAvailableExportRow>>.Ok(new List<StockAvailableExportRow>());
+
+                var materialCodes = headerRows
+                    .Where(x => x.StockType == StockType.RawMaterial || x.StockType == StockType.DefectiveRawMaterial)
+                    .Select(x => x.Code)
+                    .Distinct()
+                    .ToList();
+
+                var productCodes = headerRows
+                    .Where(x => x.StockType == StockType.FinishedGood || x.StockType == StockType.DefectiveFinishedGood)
+                    .Select(x => x.Code)
+                    .Distinct()
+                    .ToList();
+
+                var materialMap = (await _unitOfWork.MaterialRepository.Query()
+                    .Where(m => m.ExternalId != null && materialCodes.Contains(m.ExternalId))
+                    .Select(m => new
+                    {
+                        Code = m.ExternalId!,
+                        Name = m.Name,
+                        CategoryName = m.Category != null ? m.Category.Name : ""
+                    })
+                    .ToListAsync())
+                    .GroupBy(x => x.Code)
+                    .ToDictionary(g => g.Key, g => g.First());
+
+                var productMap = (await _unitOfWork.ProductRepository.Query()
+                    .Where(p => p.Code != null && productCodes.Contains(p.Code))
+                    .Select(p => new
+                    {
+                        Code = p.Code!,
+                        Name = p.Name,
+                        CategoryName = p.Category != null ? p.Category.Name : ""
+                    })
+                    .ToListAsync())
+                    .GroupBy(x => x.Code)
+                    .ToDictionary(g => g.Key, g => g.First());
+
+                var codes = headerRows.Select(x => x.Code).Distinct().ToList();
+
+                // 2) Lấy detail tồn kho
+                var detailRows = await (
+                    from s in _unitOfWork.WarehouseShelfStockRepository.Query()
+                    where codes.Contains(s.Code)
+                    group s by new
+                    {
+                        s.Code,
+                        s.StockType,
+                        s.ShelfStockCode,
+                        CompanyName = s.Company != null ? s.Company.Name : "",
+                        s.LotNo
+                    }
+                    into g
+                    select new
+                    {
+                        Code = g.Key.Code,
+                        StockType = g.Key.StockType,
+                        ShelfStockCode = g.Key.ShelfStockCode,
+                        CompanyName = g.Key.CompanyName ?? "",
+                        LotNo = g.Key.LotNo,
+                        OnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m
+                    }
+                ).ToListAsync();
+
+                var totalMap = headerRows.ToDictionary(
+                    x => (x.Code, x.StockType),
+                    x => x.TotalOnHandKg
+                );
+
+                var result = new List<StockAvailableExportRow>();
+
+                foreach (var d in detailRows.OrderBy(x => x.Code).ThenBy(x => x.ShelfStockCode).ThenBy(x => x.LotNo))
+                {
+                    string codeName = string.Empty;
+                    string categoryName = string.Empty;
+
+                    if ((d.StockType == StockType.RawMaterial || d.StockType == StockType.DefectiveRawMaterial)
+                        && materialMap.TryGetValue(d.Code, out var m))
+                    {
+                        codeName = m.Name ?? string.Empty;
+                        categoryName = m.CategoryName ?? string.Empty;
+                    }
+                    else if ((d.StockType == StockType.FinishedGood || d.StockType == StockType.DefectiveFinishedGood)
+                        && productMap.TryGetValue(d.Code, out var p))
+                    {
+                        codeName = p.Name ?? string.Empty;
+                        categoryName = p.CategoryName ?? string.Empty;
+                    }
+
+                    var shelfStockCode = d.ShelfStockCode == "CT.0.1"
+                        ? "CT.0.1 - KHO CÂN TRỘN"
+                        : d.ShelfStockCode ?? string.Empty;
+
+                    result.Add(new StockAvailableExportRow
+                    {
+                        Code = d.Code ?? string.Empty,
+                        CodeName = codeName,
+                        CategoryName = categoryName,
+                        StockType = d.StockType.ToString(),
+                        TotalOnHandKg = totalMap.TryGetValue((d.Code, d.StockType), out var total) ? total : 0m,
+                        ShelfStockCode = shelfStockCode,
+                        CompanyName = d.CompanyName ?? string.Empty,
+                        LotNo = d.LotNo,
+                        OnHandKg = d.OnHandKg
+                    });
+                }
+
+                return OperationResult<List<StockAvailableExportRow>>.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return OperationResult<List<StockAvailableExportRow>>.Fail(ex.Message);
+            }
         }
 
     }

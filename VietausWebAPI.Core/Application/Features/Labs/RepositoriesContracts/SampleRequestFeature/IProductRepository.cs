@@ -36,7 +36,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.Sam
         /// </summary>
         /// <param name="prefix"></param>
         /// <returns></returns>
-        Task<string?> GetLatestProductStartsWithAsync(
-                        IQueryable<string> codes, string left, string right, CancellationToken ct = default);
+        Task<string?> GetLatestProductStartsWithAsync(IQueryable<string> codes, string left, string right, CancellationToken ct = default);
+    
+    
     }
 }

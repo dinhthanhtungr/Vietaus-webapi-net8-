@@ -8,6 +8,8 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs;
+using VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs.Deliverers;
+using VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs.ExcelBuilds;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.Queries;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
@@ -76,10 +78,16 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                     baseQ = baseQ.Where(po => po.Id == query.DeliveryOrderId);
 
                 if (query.From.HasValue)
-                    baseQ = baseQ.Where(po => po.CreatedDate >= query.From.Value);
+                {
+                    var fromDate = query.From.Value.Date;
+                    baseQ = baseQ.Where(po => po.CreatedDate >= fromDate);
+                }
 
                 if (query.To.HasValue)
-                    baseQ = baseQ.Where(po => po.CreatedDate <= query.To.Value);
+                {
+                    var toDateExclusive = query.To.Value.Date.AddDays(1);
+                    baseQ = baseQ.Where(po => po.CreatedDate < toDateExclusive);
+                }
 
                 if (!string.IsNullOrWhiteSpace(query.Keyword))
                 {
@@ -233,11 +241,31 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
             if (!string.IsNullOrWhiteSpace(query.Keyword))
             {
                 var kw = query.Keyword.Trim();
+
                 baseQ = baseQ.Where(mo =>
                     (mo.ExternalId != null && mo.ExternalId.Contains(kw)) ||
                     (mo.PONo != null && mo.PONo.Contains(kw)) ||
                     (mo.CustomerNameSnapshot != null && mo.CustomerNameSnapshot.Contains(kw)) ||
-                    (mo.PhoneSnapshot != null && mo.PhoneSnapshot.Contains(kw)));
+                    (mo.PhoneSnapshot != null && mo.PhoneSnapshot.Contains(kw)) ||
+
+                    // tìm theo detail
+                    mo.MerchandiseOrderDetails.Any(d =>
+                        d.IsActive &&
+                        (
+                            (d.ProductExternalIdSnapshot != null && d.ProductExternalIdSnapshot.Contains(kw)) ||
+                            (d.ProductNameSnapshot != null && d.ProductNameSnapshot.Contains(kw)) ||
+
+                            // tìm theo Product
+                            (d.Product.Code != null && d.Product.Code.Contains(kw)) ||
+                            (d.Product.ColourCode != null && d.Product.ColourCode.Contains(kw)) ||
+
+                            // tìm theo SampleRequest.ExternalId của Product đó
+                            d.Product.SampleRequests.Any(sr =>
+                                sr.IsActive &&
+                                sr.ExternalId != null &&
+                                sr.ExternalId.Contains(kw))
+                        ))
+                );
             }
 
             // Tìm tồn kho của sản phẩm
@@ -540,6 +568,26 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
             var dto = await GetAsync(deliveryOrder.Id, ct);
 
             return OperationResult<GetDeliveryOrder>.Ok(dto, "Tạo phiếu giao hàng thành công");
+        }
+
+        public async Task<OperationResult> CreateDelivererAsync(PostDelivererDTO request, CancellationToken ct = default)
+        {
+            if (request == null)
+                return OperationResult.Fail("Request is null");
+            if (string.IsNullOrWhiteSpace(request.Name))
+                return OperationResult.Fail("Tên người giao hàng không được để trống");
+            var entity = new DelivererInfor
+            {
+                Id = Guid.CreateVersion7(),
+                Name = request.Name,
+                DelivererType = request.DelivererType,
+                Phone = request.Phone,
+                Note = request.Note,
+                IsActive = true
+            };
+            await _unitOfWork.DelivererInforRepository.AddAsync(entity, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+            return OperationResult.Ok("Tạo người giao hàng thành công");    
         }
 
         // ======================================================================== Patch ======================================================================== 
@@ -1110,6 +1158,131 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
             return rows;
         }
 
+
+        public async Task<DeliveryTransportWorkbookData> BuildTransportWorkbookDataAsync(
+    DateTime fromDate,
+    DateTime toDate,
+    CancellationToken ct)
+        {
+            var from = fromDate.Date;
+            var to = toDate.Date.AddDays(1); // [from, to)
+
+            var orders = await _unitOfWork.DeliveryOrderRepository.Query()
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .Where(x => x.CreatedDate >= from && x.CreatedDate < to)
+                .Include(x => x.Customer)
+                .Include(x => x.Details)
+                .Include(x => x.Deliverers)
+                    .ThenInclude(x => x.DelivererInfor)
+                .ToListAsync(ct);
+
+            var detailRows = new List<DeliveryTransportReportRow>();
+
+            foreach (var order in orders)
+            {
+                var activeDetails = order.Details
+                    .Where(x => x.IsActive)
+                    .ToList();
+
+                if (!activeDetails.Any())
+                    continue;
+
+                var delivererNames = order.Deliverers?
+                    .Where(x => x.DelivererInfor != null && x.DelivererInfor.IsActive)
+                    .Select(x => x.DelivererInfor.Name)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList()
+                    ?? new List<string>();
+
+                if (!delivererNames.Any())
+                    delivererNames.Add("Chưa phân người giao");
+
+                var totalQuantity = activeDetails.Sum(x => x.Quantity);
+                var totalBags = activeDetails.Sum(x => x.NumOfBags);
+
+                var productDisplay = string.Join("; ",
+                    activeDetails
+                        .Select(x =>
+                            $"{(x.ProductExternalIdSnapShot ?? "").Trim()} - {(x.ProductNameSnapShot ?? "").Trim()}".Trim(' ', '-'))
+                        .Where(x => !string.IsNullOrWhiteSpace(x) && x != "-")
+                        .Distinct());
+
+                var lotNoDisplay = string.Join(", ",
+                    activeDetails
+                        .Select(x => x.LotNoList)
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .Distinct());
+
+                var poNoDisplay = string.Join(", ",
+                    activeDetails
+                        .Select(x => x.PONo)
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .Distinct());
+
+                var splitPrice = delivererNames.Count > 0
+                    ? (order.DeliveryPrice ?? 0m) / delivererNames.Count
+                    : (order.DeliveryPrice ?? 0m);
+
+                foreach (var delivererName in delivererNames)
+                {
+                    detailRows.Add(new DeliveryTransportReportRow
+                    {
+                        DeliveryOrderId = order.Id,
+                        DeliveryExternalId = order.ExternalId,
+                        DeliveryDate = order.CreatedDate,
+
+                        DelivererName = delivererName,
+
+                        CustomerCode = order.CustomerExternalIdSnapShot,
+                        CustomerName = order.Customer?.CustomerName ?? order.CustomerExternalIdSnapShot,
+                        Address = order.DeliveryAddress,
+                        Receiver = order.Receiver,
+                        Phone = order.PhoneSnapshot,
+
+                        ProductDisplay = productDisplay,
+                        LotNoDisplay = lotNoDisplay,
+                        PoNoDisplay = poNoDisplay,
+
+                        TotalQuantity = totalQuantity,
+                        TotalBags = totalBags,
+                        DeliveryPrice = splitPrice,
+
+                        Note = order.Note
+                    });
+                }
+            }
+
+            var grouped = detailRows
+                .GroupBy(x => x.DelivererName.Trim(), StringComparer.OrdinalIgnoreCase)
+                .OrderBy(g => g.Key)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.OrderBy(x => x.DeliveryDate)
+                          .ThenBy(x => x.DeliveryExternalId)
+                          .ToList(),
+                    StringComparer.OrdinalIgnoreCase);
+
+            var summaryRows = grouped
+                .Select((g, index) => new DeliveryTransportSummaryRow
+                {
+                    Stt = index + 1,
+                    DelivererName = g.Key,
+                    TotalTrips = g.Value.Count,
+                    TotalQuantity = g.Value.Sum(x => x.TotalQuantity),
+                    TotalAmount = g.Value.Sum(x => x.DeliveryPrice),
+                    AdvanceAmount = 0,
+                    Note = null
+                })
+                .ToList();
+
+            return new DeliveryTransportWorkbookData
+            {
+                SummaryRows = summaryRows,
+                DetailByDeliverer = grouped
+            };
+        }
     }
 
 }

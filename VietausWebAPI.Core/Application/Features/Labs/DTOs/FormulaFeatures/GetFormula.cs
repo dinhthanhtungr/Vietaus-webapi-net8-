@@ -17,7 +17,11 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures
 
         // Trạng thái hiện tại của công thức
         public string Status { get; set; }
+
         public decimal? TotalPrice { get; set; }
+        public DateTime? EffectiveDate { get; set; }
+        public decimal? ProductionPrice { get; set; }
+        public decimal? PresidentPrice { get; set; }
 
         public DateTime? CheckDate { get; set; }       // DATETIME
         public string? CheckNameSnapshot { get; set; }  // NVARCHAR

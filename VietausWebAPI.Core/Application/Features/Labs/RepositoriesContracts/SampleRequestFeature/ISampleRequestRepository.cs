@@ -45,5 +45,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.Sam
         /// <param name="ct"></param>
         /// <returns></returns>
         //Task<int> UpdateSampleRequestAsync(UpdateSampleRequest sampleRequest, CancellationToken ct = default);
+
+        Task<int?> GetMaxRunningNumberByLeftPrefixAsync(
+            IQueryable<string?> query,
+            string leftPrefix,
+            CancellationToken ct = default);
     }
 }

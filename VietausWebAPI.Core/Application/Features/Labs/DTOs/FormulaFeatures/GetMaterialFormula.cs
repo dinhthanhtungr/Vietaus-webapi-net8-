@@ -18,8 +18,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures
 
         public Guid CategoryId { get; set; }
         public decimal Quantity { get; set; }            // DECIMAL(18,6)
-        public decimal UnitPrice { get; set; }           // DECIMAL(16,2)
+        public decimal? UnitPrice { get; set; }           // DECIMAL(16,2)
         public decimal TotalPrice { get; set; }          // DECIMAL(16,2)
+
+        public DateTime? ExpiryDate { get; set; }       // DATETIME
 
 
         public string? MaterialNameSnapshot { get; set; }   // NVARCHAR

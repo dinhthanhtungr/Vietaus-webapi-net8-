@@ -197,7 +197,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                     });
 
                     if (!string.IsNullOrWhiteSpace(s.LabNote))
-                        AddRow("Yêu cầu ca SX và QC thực hiện:", $"{d.BagType} : Theo công thức {s.SourceVUExternalId} {s.LabNote}");
+                        AddRow("Yêu cầu ca SX và QC thực hiện:", $"{d.BagType} :{s.LabNote}");
+                        //AddRow("Yêu cầu ca SX và QC thực hiện:", $"{d.BagType} : Theo công thức {s.SourceVUExternalId} {s.LabNote}");
 
                     var req = s.Requirement;
                     var note = s.PlpuNote;

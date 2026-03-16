@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadServices;
+using VietausWebAPI.Core.Application.Features.Warehouse.Helpers;
 using VietausWebAPI.Core.Application.Features.Warehouse.Queries;
 using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 
@@ -14,14 +15,15 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Warehouses
         private readonly IWarehouseReadService _warehouseReadService;
         private readonly IWarehouseSnapshotService _warehouseSnapshotService;
         private readonly IWarehouseReservationService _warehouseReservationService; 
+        private readonly IStockAvailableExcel _stockAvailableExcel;
 
-        public WarehouseController(IWarehouseReadService warehouseReadService, IWarehouseSnapshotService warehouseSnapshotService, IWarehouseReservationService warehouseReservationService)
+        public WarehouseController(IWarehouseReadService warehouseReadService, IWarehouseSnapshotService warehouseSnapshotService, IWarehouseReservationService warehouseReservationService, IStockAvailableExcel stockAvailableExcel)
         {
             _warehouseReadService = warehouseReadService;
             _warehouseSnapshotService = warehouseSnapshotService;
             _warehouseReservationService = warehouseReservationService;
+            _stockAvailableExcel = stockAvailableExcel;
         }
-
 
         // Theo ID công thức
         [HttpGet("{formulaId:guid}/materials/availability")]
@@ -51,5 +53,21 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Warehouses
         }
 
 
+        [HttpGet("export-stock-available")]
+        public async Task<IActionResult> ExportStockAvailable([FromQuery] WarehouseReadServiceQuery query)
+        {
+            var dataResult = await _warehouseReadService.GetStockAvailableExportAsync(query);
+            if (!dataResult.Success || dataResult.Data == null)
+                return BadRequest(dataResult.Message);
+
+            var bytes = _stockAvailableExcel.Render(dataResult.Data);
+
+            var fileName = $"TonKho_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+            return File(
+                bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                fileName);
+        }
     }
 }

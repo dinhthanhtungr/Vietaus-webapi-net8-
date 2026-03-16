@@ -100,7 +100,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     || (po.CustomerExternalIdSnapshot != null && EF.Functions.ILike(po.CustomerExternalIdSnapshot, pattern))
                     || (po.CustomerNameSnapshot != null && EF.Functions.ILike(po.CustomerNameSnapshot, pattern))
                     || (po.FormulaExternalIdSnapshot != null && EF.Functions.ILike(po.FormulaExternalIdSnapshot, pattern))
-
+                    || po.Product.SampleRequests.Any(sr =>
+                            sr.IsActive && EF.Functions.ILike(sr.ExternalId, pattern))
                     // ✅ thêm search theo ManufacturingFormula.ExternalId (version hiện hành)
                     || (
                         from v in vers

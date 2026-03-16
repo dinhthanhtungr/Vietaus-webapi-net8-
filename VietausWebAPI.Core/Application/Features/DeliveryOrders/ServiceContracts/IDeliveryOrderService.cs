@@ -4,7 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs;
+using VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs.Deliverers;
+using VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs.ExcelBuilds;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.Queries;
+using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 
 namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.ServiceContracts
@@ -24,6 +27,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.ServiceContract
         // ======================================================================== Post ======================================================================== 
         //Task<OperationResult> CreateAsync(PostDeliveryOrder postDeliveryOrder, CancellationToken ct = default);
         Task<OperationResult<GetDeliveryOrder>> CreateAsync(PostDeliveryOrder request, CancellationToken ct = default);
+        Task<OperationResult> CreateDelivererAsync(PostDelivererDTO request, CancellationToken ct = default);
 
         // ======================================================================== Patch ======================================================================== 
         Task<OperationResult> UpdateAsync(PatchDeliveryOrder putDeliveryOrder, CancellationToken ct = default);
@@ -38,6 +42,9 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.ServiceContract
             DateTime toDate,
             CancellationToken ct);
 
-
+        Task<DeliveryTransportWorkbookData> BuildTransportWorkbookDataAsync(
+            DateTime fromDate,
+            DateTime toDate,
+            CancellationToken ct);
     }
 }

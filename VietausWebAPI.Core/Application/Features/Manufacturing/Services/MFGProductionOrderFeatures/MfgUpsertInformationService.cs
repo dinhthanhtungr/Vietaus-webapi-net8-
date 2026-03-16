@@ -927,8 +927,11 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                     mpo.Status = ManufacturingProductOrder.Scheduling.ToString();
                 }
 
-                // đảm bảo có schedule nếu chưa Stocked
-                if (!string.Equals(mpo.Status, ManufacturingProductOrder.Stocked.ToString(), StringComparison.OrdinalIgnoreCase))
+                // đảm bảo có schedule nếu chưa Stocked và formula đang ở trạng thái chờ công thức
+                if (
+                    !string.Equals(mpo.Status, ManufacturingProductOrder.FormulaRequested.ToString(), StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(mpo.Status, ManufacturingProductOrder.Stocked.ToString(), StringComparison.OrdinalIgnoreCase)
+                   )
                 {
                     await EnsureScheduleAsync(mpo, now, ct);
                 }

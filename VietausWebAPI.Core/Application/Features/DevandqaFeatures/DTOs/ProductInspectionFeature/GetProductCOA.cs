@@ -8,16 +8,21 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.DTOs.ProductI
 {
     public class GetProductCOA
     {
-        // Data lấy từ productTest
-        public Guid? id { get; set; }
+        public Guid id { get; set; }
         public string? externalId { get; set; }
+
         public DateTime? manufacturingDate { get; set; }
-        public DateTime? expiryDate { get; set; }  
-        public string? productPackage { get; set; } // Mã loại bao bì của sản phẩm
-        public float? ProductWeight { get; set; } // Trọng lượng sản phẩm tiêu chuẩn
+        public DateTime? expiryDate { get; set; }
+
+        public string? productPackage { get; set; }
+        public float? ProductWeight { get; set; }
 
         public Guid? ProductId { get; set; }
-        public string? productExternalId { get; set; } // color code
-        public string? productName { get; set; } // Tên sản phẩm
+        public string? productExternalId { get; set; }
+        public string? productName { get; set; }
+
+        public decimal? TotalQuantityRequest { get; set; }
+
+        public string? ColourCode { get; set; }
     }
 }

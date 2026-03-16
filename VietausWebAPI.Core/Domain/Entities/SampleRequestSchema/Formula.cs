@@ -23,7 +23,12 @@ public partial class Formula
     public Guid? SentBy { get; set; }          // UNIQUEIDENTIFIER
     public DateTime? SentDate { get; set; }       // DATETIME
 
-    public decimal TotalPrice { get; set; } 
+    public decimal TotalPrice { get; set; }
+
+    public DateTime? EffectiveDate { get; set; }
+    public decimal? ProductionPrice { get; set; }
+    public decimal? PresidentPrice { get; set; }
+
     public bool IsSelect { get; set; } = false;
     public bool IsActive { get; set; } = true;
     //public bool? IsCustomerSelect { get; set; }

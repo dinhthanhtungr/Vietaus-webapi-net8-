@@ -19,6 +19,11 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures
         public string Status { get; set; } = "Draft";
         public decimal? TotalPrice { get; set; }
         public string? CreatedByName { get; set; }
+
+        public DateTime? EffectiveDate { get; set; }
+        public decimal? ProductionPrice { get; set; }
+        public decimal? PresidentPrice { get; set; }
+
         public bool? IsSelect { get; set; }
         public Guid? UpdatedBy { get; set; }
         public List<PatchMaterialFormula> materialFormulas { get; set; } = new List<PatchMaterialFormula>();

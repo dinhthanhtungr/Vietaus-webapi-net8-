@@ -61,5 +61,8 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<Dictionary<string, string>> GetLotNoMapByCodesAsync(IEnumerable<string> codes, CancellationToken ct = default);
+
+
+        Task<OperationResult<List<StockAvailableExportRow>>> GetStockAvailableExportAsync(WarehouseReadServiceQuery query);
     }
 }

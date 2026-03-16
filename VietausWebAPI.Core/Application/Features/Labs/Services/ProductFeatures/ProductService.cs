@@ -112,8 +112,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.ProductFeatures
                         (x.ColourCode ?? string.Empty).Contains(keyword));
                 }
 
+
+
                 // 3) Filter khác
-                if (query.CompanyId is Guid companyId && companyId != Guid.Empty)
+                if (query.CompanyId is Guid companyId && companyId != Guid.Empty && query.CompanyId != Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75"))
                     q = q.Where(p => p.CompanyId == companyId);
 
                 if (query.ProductId is Guid productId && productId != Guid.Empty)
@@ -178,7 +180,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.ProductFeatures
                                 FormulaId = f.FormulaId,
                                 ExternalId = f.ExternalId,
                                 Name = f.Name,
-                                Status = f.Status
+                                Status = f.Status,
+                                TotalPrice = f.TotalPrice,
+                                ProductionPrice = f.ProductionPrice,
+                                PresidentPrice = f.PresidentPrice,
                             })
                             .ToList()
                     })

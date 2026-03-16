@@ -13,6 +13,7 @@ using VietausWebAPI.Core.Application.Features.Labs.Queries.FormulaFeature;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Notifications.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Service.StaticCurrentPriceHelpers;
 using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
@@ -68,113 +69,167 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                 if (query.PageNumber <= 0) query.PageNumber = 1;
                 if (query.PageSize <= 0) query.PageSize = 10;
 
-                var q = _unitOfWork.FormulaRepository.Query().AsNoTracking();
+                var baseQ = _unitOfWork.FormulaRepository.Query()
+                    .AsNoTracking()
+                    .Where(f => f.FormulaMaterials.Any(m => m.IsActive == true));
 
                 if (!string.IsNullOrWhiteSpace(query.Keyword))
                 {
                     var keyword = query.Keyword.Trim();
-                    q = q.Where(x =>
+                    baseQ = baseQ.Where(x =>
                         (x.Name ?? "").Contains(keyword) ||
                         (x.Product.ColourCode ?? "").Contains(keyword) ||
-                        (x.Product.Name ?? "").Contains(keyword)
-                    );
+                        (x.Product.Name ?? "").Contains(keyword));
                 }
 
                 if (query.CompanyId is Guid cid && cid != Guid.Empty)
-                    q = q.Where(p => p.CompanyId == cid);
+                    baseQ = baseQ.Where(p => p.CompanyId == cid);
 
                 if (query.FormulaId is Guid fid && fid != Guid.Empty)
-                    q = q.Where(p => p.FormulaId == fid);
+                    baseQ = baseQ.Where(p => p.FormulaId == fid);
 
                 if (query.ProductId is Guid pid && pid != Guid.Empty)
-                    q = q.Where(p => p.ProductId == pid);
+                    baseQ = baseQ.Where(p => p.ProductId == pid);
 
-                if(!string.IsNullOrWhiteSpace(query.status))
-                {
-                    q = q.Where(p => p.Status == query.status);
-                }
+                if (!string.IsNullOrWhiteSpace(query.status))
+                    baseQ = baseQ.Where(p => p.Status == query.status);
 
-                // Đếm trước
-                var totalCount = await q.CountAsync(ct);
+                var totalCount = await baseQ.CountAsync(ct);
 
-                // Sort + Paging trên ENTITY
-                q = q.Where(f => f.FormulaMaterials.Any(a => a.IsActive == true))
-                     .OrderByDescending(c => c.Name.Substring(1).PadLeft(10, '0'))
-                     .Skip((query.PageNumber - 1) * query.PageSize)
-                     .Take(query.PageSize);
-
-                // 👉 Projection tay để tính TotalPrice bằng giá gần nhất
-                var ms = _unitOfWork.MaterialsSupplierRepository.Query();
-
-
-                var formulaIds = await q.Where(f => f.FormulaMaterials.Any(a => a.IsActive == true))
-                                        .Select(f => f.FormulaId)
-                                        .ToListAsync(ct);
-                var baseQ = q
-                    .Where(f => f.FormulaMaterials.Any(a => a.IsActive == true)); // vẫn giữ rule active
-
-                //if (query.IsMerchadiseOrder == true)
-                //{
-                //    baseQ = baseQ.Where(f => f.Status != "Draft" && f.Status != "Inprocess");
-                //}
-
-                var items = await baseQ
-                    .OrderByDescending(c => c.Name.Substring(1).PadLeft(10, '0'))
+                // 1) Lấy page formula trước
+                var formulaPage = await baseQ
+                    .OrderByDescending(f => f.CreatedDate)
                     .Skip((query.PageNumber - 1) * query.PageSize)
                     .Take(query.PageSize)
-                    .Select(f => new GetFormula
+                    .Select(f => new
+                    {
+                        f.FormulaId,
+                        f.ExternalId,
+                        f.Name,
+                        ProductCode = f.Product.ColourCode,
+                        f.Status,
+                        f.CreatedDate,
+                        f.IsSelect,
+                        f.CheckDate,
+                        f.EffectiveDate,
+                        f.ProductionPrice,
+                        f.PresidentPrice,
+
+                        CheckNameSnapshot = f.CheckByNavigation != null ? f.CheckByNavigation.FullName : null,
+                        f.SentDate,
+                        SentByNameSnapshot = f.SentByNavigation != null ? f.SentByNavigation.FullName : null,
+                        CreatedByName = f.CreatedByNavigation != null ? f.CreatedByNavigation.FullName.Trim() : null,
+                        f.Note
+                    })
+                    .ToListAsync(ct);
+
+                var formulaIds = formulaPage.Select(x => x.FormulaId).ToList();
+
+                if (formulaIds.Count == 0)
+                    return new PagedResult<GetFormula>(new List<GetFormula>(), totalCount, query.PageNumber, query.PageSize);
+
+                // 2) Lấy toàn bộ material của page hiện tại
+                var materialRows = await _unitOfWork.FormulaMaterialRepository.Query()
+                    .AsNoTracking()
+                    .Where(m => m.IsActive == true && formulaIds.Contains(m.FormulaId))
+                    .Select(m => new
+                    {
+                        m.FormulaId,
+                        m.FormulaMaterialId,
+                        m.LineNo,
+                        m.MaterialId,
+                        m.ProductId,
+                        m.itemType,
+                        m.CategoryId,
+                        m.Quantity,
+                        m.Unit,
+                        m.MaterialNameSnapshot,
+                        m.MaterialExternalIdSnapshot
+                    })
+                    .ToListAsync(ct);
+
+                var materialIds = materialRows
+                    .Where(x => x.MaterialId.HasValue && x.MaterialId.Value != Guid.Empty)
+                    .Select(x => x.MaterialId!.Value)
+                    .Distinct()
+                    .ToList();
+
+                // 3) Lấy giá mới nhất cho toàn bộ material cần dùng
+                var priceInfoDict = await MaterialPriceQueryHelper.LoadLatestMaterialPriceInfoDictAsync(
+                    _unitOfWork.PurchaseOrderDetailRepository.Query(),
+                    _unitOfWork.MaterialsSupplierRepository.Query(),
+                    materialIds.Cast<Guid?>(),
+                    ct);
+
+                // 4) Group materials theo FormulaId rồi map trong memory
+                var materialLookup = materialRows
+                    .GroupBy(x => x.FormulaId)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.OrderBy(x => x.LineNo).Select(x =>
+                        {
+                            var unitPrice = 0m;
+                            DateTime? expiryDate = null;
+
+                            if (x.MaterialId.HasValue && x.MaterialId.Value != Guid.Empty)
+                            {
+                                unitPrice = MaterialPriceQueryHelper.ResolveLatestPrice(
+                                    priceInfoDict,
+                                    x.MaterialId,
+                                    0m);
+
+                                expiryDate = MaterialPriceQueryHelper.ResolveLatestPriceDate(
+                                    priceInfoDict,
+                                    x.MaterialId);
+                            }
+
+                            return new GetMaterialFormula
+                            {
+                                FormulaMaterialId = x.FormulaMaterialId,
+                                LineNo = x.LineNo,
+                                ItemId = x.MaterialId ?? x.ProductId ?? Guid.Empty,
+                                itemType = x.itemType,
+                                CategoryId = x.CategoryId,
+                                Quantity = x.Quantity,
+                                UnitPrice = unitPrice,
+                                TotalPrice = x.Quantity * unitPrice,
+                                ExpiryDate = expiryDate,
+                                Unit = x.Unit,
+                                MaterialNameSnapshot = x.MaterialNameSnapshot,
+                                MaterialExternalIdSnapshot = x.MaterialExternalIdSnapshot
+                            };
+                        }).ToList()
+                    );
+
+                var items = formulaPage.Select(f =>
+                {
+                    materialLookup.TryGetValue(f.FormulaId, out var mats);
+                    mats ??= new List<GetMaterialFormula>();
+
+                    return new GetFormula
                     {
                         FormulaId = f.FormulaId,
                         ExternalId = f.ExternalId,
                         Name = f.Name,
-                        ProductCode = f.Product.ColourCode,
+                        ProductCode = f.ProductCode,
                         Status = f.Status,
                         CreatedDate = f.CreatedDate,
                         IsSelect = f.IsSelect,
-
                         CheckDate = f.CheckDate,
-                        CheckNameSnapshot = f.CheckByNavigation != null ? f.CheckByNavigation.FullName : null,
+                        CheckNameSnapshot = f.CheckNameSnapshot,
                         SentDate = f.SentDate,
-                        SentByNameSnapshot = f.SentByNavigation != null ? f.SentByNavigation.FullName : null,
+                        SentByNameSnapshot = f.SentByNameSnapshot,
 
-                        CreatedByName = f.CreatedByNavigation != null ? f.CreatedByNavigation.FullName.Trim() : null,
+                        EffectiveDate = f.EffectiveDate,
+                        ProductionPrice = f.ProductionPrice,
+                        PresidentPrice = f.PresidentPrice,
+
+                        CreatedByName = f.CreatedByName,
                         Note = f.Note,
-
-                        TotalPrice = (decimal?)f.FormulaMaterials.Where(m => m.IsActive == true)
-                            .Select(m =>
-                                (m.Quantity) *
-                                (
-                                    ms.Where(s => s.MaterialId == m.MaterialId && (s.IsActive ?? true))
-                                      .OrderByDescending(s => (DateTime?)(s.UpdatedDate ?? s.CreateDate))
-                                      .ThenByDescending(s => (s.IsPreferred ?? false))
-                                      .Select(s => (decimal?)s.CurrentPrice)
-                                      .FirstOrDefault() ?? 0m
-                                )
-                            ).Sum(),
-
-                        materialFormulas = f.FormulaMaterials
-                            .Where(m => m.IsActive == true)
-                            .Select(m => new GetMaterialFormula
-                            {
-                                FormulaMaterialId = m.FormulaMaterialId,
-                                LineNo = m.LineNo,
-                                ItemId = m.MaterialId ?? m.ProductId ?? Guid.Empty,
-                                itemType = m.itemType,
-                                CategoryId = m.CategoryId,
-                                Quantity = m.Quantity,
-                                UnitPrice = m.UnitPrice,
-                                TotalPrice = m.TotalPrice,
-                                Unit = m.Unit,
-                                MaterialNameSnapshot = m.MaterialNameSnapshot,
-                                MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot
-                            })
-                            .OrderBy(m => m.LineNo)
-                            .ToList()
-                    })
-                    .ToListAsync(ct);
-
-
-
+                        materialFormulas = mats,
+                        TotalPrice = mats.Sum(x => x.TotalPrice)
+                    };
+                }).ToList();
 
                 return new PagedResult<GetFormula>(items, totalCount, query.PageNumber, query.PageSize);
             }
@@ -455,6 +510,21 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                 SetIf(req.IsSelect, () => formulaExist.IsSelect, v => formulaExist.IsSelect = v);
 
 
+                var productionPriceChanged =
+                    req.ProductionPrice.HasValue &&
+                    req.ProductionPrice.Value != formulaExist.ProductionPrice.GetValueOrDefault();
+
+                var presidentPriceChanged =
+                    req.PresidentPrice.HasValue &&
+                    req.PresidentPrice.Value != formulaExist.PresidentPrice.GetValueOrDefault();
+
+                SetIf(req.ProductionPrice, () => formulaExist.ProductionPrice.GetValueOrDefault(), v => formulaExist.ProductionPrice = v);
+                SetIf(req.PresidentPrice, () => formulaExist.PresidentPrice.GetValueOrDefault(), v => formulaExist.PresidentPrice = v);
+
+                if (productionPriceChanged || presidentPriceChanged)
+                {
+                    formulaExist.EffectiveDate = DateTime.Now;
+                }
                 // 2) Cập nhật công thức vật tư - xóa thêm sửa
 
                 var existingById = formulaExist.FormulaMaterials

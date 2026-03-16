@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
@@ -11,9 +12,11 @@ using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
 namespace VietausWebAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260314065116_updatePrecidentPriceIntoFormula")]
+    partial class updatePrecidentPriceIntoFormula
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -6454,10 +6457,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Property<DateTime?>("CreatedDate")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<DateTime?>("EffectiveDate")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("EffectiveDate");
-
                     b.Property<string>("ExternalId")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -6486,7 +6485,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("Note");
 
-                    b.Property<decimal?>("PresidentPrice")
+                    b.Property<decimal>("PresidentPrice")
                         .HasPrecision(16, 2)
                         .HasColumnType("numeric(16,2)")
                         .HasColumnName("PresidentPrice");
@@ -6495,7 +6494,7 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("ProductId");
 
-                    b.Property<decimal?>("ProductionPrice")
+                    b.Property<decimal>("ProductionPrice")
                         .HasPrecision(16, 2)
                         .HasColumnType("numeric(16,2)")
                         .HasColumnName("ProductionPrice");

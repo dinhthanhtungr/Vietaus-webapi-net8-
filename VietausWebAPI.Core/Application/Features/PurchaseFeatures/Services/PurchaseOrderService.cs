@@ -98,14 +98,18 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                 if (!string.IsNullOrWhiteSpace(query.Keyword))
                 {
                     var kw = query.Keyword.Trim();
+
                     poQ = poQ.Where(po =>
                         ((po.Supplier.SupplierName ?? "").Contains(kw)) ||
                         ((po.Supplier.ExternalId ?? "").Contains(kw)) ||
                         ((po.ExternalId ?? "").Contains(kw)) ||
-                        // tìm theo MerchandiseOrder.ExternalId qua bảng link
-                        po.PurchaseOrderLinks.Any(l => (l.MerchandiseOrder.ExternalId ?? "").Contains(kw)) ||
-                        // tìm theo chi tiết
-                        po.PurchaseOrderDetails.Any(d => (d.MaterialExternalIDSnapshot ?? "").Contains(kw))
+
+                        po.PurchaseOrderLinks.Any(l =>
+                            (l.MerchandiseOrder.ExternalId ?? "").Contains(kw)) ||
+
+                        po.PurchaseOrderDetails.Any(d =>
+                            (d.MaterialExternalIDSnapshot ?? "").Contains(kw) ||
+                            (d.MaterialNameSnapshot ?? "").Contains(kw))
                     );
                 }
 
@@ -182,7 +186,6 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                     $"Lỗi khi lấy danh sách đơn mua hàng. {ex.Message}");
             }
         }
-
 
         /// <summary>
         /// Lấy đơn mua hàng theo ID

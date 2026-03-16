@@ -9,5 +9,6 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContract
 {
     public interface IWarehouseVoucherReadRepository
     {
+        Task<WarehouseVoucher?> GetByIdAsync(long voucherId, CancellationToken ct);
     }
 }

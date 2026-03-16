@@ -44,40 +44,34 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
 
         // ======================================================================== Get ========================================================================
 
-        public async Task<OperationResult<PagedResult<GetProductCOA>>> GetProductCOAService(ProductInspectionQuery query, CancellationToken ct)
+        public async Task<OperationResult<PagedResult<GetProductCOA>>> GetProductCOAService(
+       ProductInspectionQuery query,
+       CancellationToken ct)
         {
-            // mặc định paging (vì method không nhận page/pageSize)
             const int page = 1;
             const int pageSize = 20;
             var skip = (page - 1) * pageSize;
 
-            var q = _unitOfWork.ProductTestRepository.Query();
-            var mos = _unitOfWork.MerchandiseOrderRepository.Query();        // header
-            var dets = _unitOfWork.MerchandiseOrderRepository.QueryDetail();  // detail
-            // ✅ hiểu id là ProductId => list COA của 1 sản phẩm
+            var productTests = _unitOfWork.ProductTestRepository.Query().AsNoTracking();
+            var formulas = _unitOfWork.ManufacturingFormulaRepository.Query().AsNoTracking();
+            var versions = _unitOfWork.ProductionSelectVersionRepository.Query().AsNoTracking();
+            var mfgOrders = _unitOfWork.MfgProductionOrderRepository.Query().AsNoTracking();
+            var products = _unitOfWork.ProductRepository.Query().AsNoTracking();
 
-            // ===== FILTERS =====
+            // ===== 1) QUERY CHÍNH: ProductTest =====
             if (!string.IsNullOrWhiteSpace(query.keyword))
             {
                 var kw = query.keyword.Trim();
                 var like = $"%{kw}%";
 
-                q = q.Where(x =>
-                    (x.ExternalId != null && EF.Functions.ILike(x.ExternalId, like))
-                    || (x.ProductExternalId != null && EF.Functions.ILike(x.ProductExternalId, like))
+                productTests = productTests.Where(x =>
+                    (x.ExternalId != null && EF.Functions.ILike(x.ExternalId, like)) ||
+                    (x.ProductExternalId != null && EF.Functions.ILike(x.ProductExternalId, like)) ||
+                    (x.ProductName != null && EF.Functions.ILike(x.ProductName, like))
                 );
             }
 
-
-
-            // sort mới nhất trước
-            q = q.OrderByDescending(x => x.ManufacturingDate).ThenByDescending(x => x.ExpiryDate);
-
-            var total = await q.CountAsync(ct);
-
-            var items = await q
-                .Skip(skip)
-                .Take(pageSize)
+            var productTestQuery = productTests
                 .Select(x => new GetProductCOA
                 {
                     id = x.Id,
@@ -90,15 +84,86 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
 
                     ProductId = x.ProductId,
                     productExternalId = x.ProductExternalId,
-                    productName = x.ProductName
-                })
+                    productName = x.ProductName,
+
+                    TotalQuantityRequest = null, // ProductTest không có
+                    ColourCode = null            // ProductTest không có
+                });
+
+            // ===== 2) QUERY PHỤ: ManufacturingFormula -> PSV -> MPO -> Product =====
+            var formulaBase =
+                from mf in formulas
+                where mf.IsActive
+                join psv in versions on mf.ManufacturingFormulaId equals psv.ManufacturingFormulaId
+                join mpo in mfgOrders on psv.MfgProductionOrderId equals mpo.MfgProductionOrderId
+                join p in products on mpo.ProductId equals p.ProductId
+                select new
+                {
+                    mf.ExternalId,
+                    MfgProductionOrderId = mpo.MfgProductionOrderId,
+                    mpo.ManufacturingDate,
+                    mpo.ExpectedDate,
+                    mpo.TotalQuantityRequest,
+                    mpo.ProductId,
+                    mpo.ProductExternalIdSnapshot,
+                    ProductName = p.Name,
+                    p.ColourCode,
+                    ProductWeight = p.Weight,
+                    ProductPackage = mpo.BagType
+                };
+
+            if (!string.IsNullOrWhiteSpace(query.keyword))
+            {
+                var kw = query.keyword.Trim();
+                var like = $"%{kw}%";
+
+                formulaBase = formulaBase.Where(x =>
+                    (x.ExternalId != null && EF.Functions.ILike(x.ExternalId, like)) ||
+                    (x.ProductExternalIdSnapshot != null && EF.Functions.ILike(x.ProductExternalIdSnapshot, like)) ||
+                    (x.ProductName != null && EF.Functions.ILike(x.ProductName, like)) ||
+                    (x.ColourCode != null && EF.Functions.ILike(x.ColourCode, like))
+                );
+            }
+
+            // Chỉ lấy các mã CHƯA có trong ProductTest
+            var formulaFallbackQuery =
+                from x in formulaBase
+                where !productTests.Any(pt => pt.ExternalId == x.ExternalId)
+                select new GetProductCOA
+                {
+                    id = x.MfgProductionOrderId,
+                    externalId = x.ExternalId,
+
+                    manufacturingDate = x.ManufacturingDate,
+                    expiryDate = x.ExpectedDate, // tạm fallback, nếu bạn có field expiry đúng thì thay lại
+                    productPackage = x.ProductPackage,
+                    ProductWeight = x.ProductWeight.HasValue ? (float?)x.ProductWeight.Value : null,
+
+                    ProductId = x.ProductId,
+                    productExternalId = x.ProductExternalIdSnapshot,
+                    productName = x.ProductName,
+
+                    TotalQuantityRequest = x.TotalQuantityRequest,
+                    ColourCode = x.ColourCode
+                };
+
+            // ===== 3) GỘP 2 NGUỒN =====
+            var finalQuery = productTestQuery.Concat(formulaFallbackQuery);
+
+            finalQuery = finalQuery
+                .OrderByDescending(x => x.manufacturingDate)
+                .ThenByDescending(x => x.expiryDate);
+
+            var total = await finalQuery.CountAsync(ct);
+
+            var items = await finalQuery
+                .Skip(skip)
+                .Take(pageSize)
                 .ToListAsync(ct);
 
             var result = new PagedResult<GetProductCOA>(items, total, page, pageSize);
-
             return OperationResult<PagedResult<GetProductCOA>>.Ok(result);
         }
-
         public async Task<OperationResult<ProductInspectionInformation>> GetProductInspectionByIdAsync(Guid id, CancellationToken ct)
         {
             if (id == Guid.Empty)

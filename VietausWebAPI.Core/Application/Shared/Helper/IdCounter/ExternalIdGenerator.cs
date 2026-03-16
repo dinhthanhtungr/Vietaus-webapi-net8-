@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -110,28 +111,63 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.IdCounter
             return $"{basePrefix}{nextNumber.ToString($"D{3}")}";
         }
 
+        //public static async Task<string> GenerateCodeFromTemplateAsync(
+        //                                    string template,
+        //                                    IQueryable<string> existingCodes,
+        //                                    Func<IQueryable<string>, string, string, CancellationToken, Task<string?>> getLatestCodeFunc,
+        //                                    int padWidth = 0,
+        //                                    CancellationToken ct = default)
+        //{
+        //    var (left, right) = SplitTemplate(template);
+        //    var maxTail = await getLatestCodeFunc(existingCodes, left, right, ct); // giờ mới đúng chữ ký
+
+        //    var next = string.IsNullOrEmpty(maxTail) ? 1 : int.Parse(maxTail) + 1;
+        //    var numberPart = padWidth > 0 ? next.ToString($"D{padWidth}") : next.ToString();
+        //    return $"{left}{numberPart}{right}";
+        //}
+
         public static async Task<string> GenerateCodeFromTemplateAsync(
-                                            string template,
-                                            IQueryable<string> existingCodes,
-                                            Func<IQueryable<string>, string, string, CancellationToken, Task<string?>> getLatestCodeFunc,
-                                            int padWidth = 0,
-                                            CancellationToken ct = default)
+            string template,
+            IQueryable<string?> existingCodes,
+            Func<IQueryable<string?>, string, CancellationToken, Task<int?>> getMaxNumberFunc,
+            int padWidth = 0,
+            CancellationToken ct = default)
         {
             var (left, right) = SplitTemplate(template);
-            var maxTail = await getLatestCodeFunc(existingCodes, left, right, ct); // giờ mới đúng chữ ký
 
-            var next = string.IsNullOrEmpty(maxTail) ? 1 : int.Parse(maxTail) + 1;
-            var numberPart = padWidth > 0 ? next.ToString($"D{padWidth}") : next.ToString();
-            return $"{left}{numberPart}{right}";
+            var maxNumber = await getMaxNumberFunc(existingCodes, left, ct);
+            var next = (maxNumber ?? 0) + 1;
+
+            const int maxAttempts = 10;
+
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                var currentNumber = next + attempt;
+
+                var numberPart = padWidth > 0
+                    ? currentNumber.ToString($"D{padWidth}")
+                    : currentNumber.ToString();
+
+                var candidate = $"{left}{numberPart}{right}";
+
+                var isExists = await existingCodes.AnyAsync(x => x == candidate, ct);
+                if (!isExists)
+                    return candidate;
+            }
+
+            throw new InvalidOperationException($"Không thể sinh mã duy nhất sau {maxAttempts} lần thử từ template '{template}'.");
         }
-
 
         private static (string Left, string Right) SplitTemplate(string template)
         {
-            if (string.IsNullOrWhiteSpace(template)) throw new ArgumentException("Template rỗng");
+            if (string.IsNullOrWhiteSpace(template))
+                throw new ArgumentException("Template rỗng");
+
             var i = template.IndexOf('_');
-            if (i < 0) throw new ArgumentException("Template phải chứa '_' làm chỗ số");
-            return (template[..i], template[(i + 1)..]); // ("LL71", "C")
+            if (i < 0)
+                throw new ArgumentException("Template phải chứa '_' làm chỗ số");
+
+            return (template[..i], template[(i + 1)..]);// ("LL71", "C")
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs;
+using VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs.Deliverers;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers.Excels;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.Queries;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.ServiceContracts;
@@ -185,10 +186,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.DeliveryOrders
         }
 
         [HttpGet("export-delivery-finish")]
-        public async Task<IActionResult> ExportDeliveryFinish(
-            [FromQuery] DateTime from,
-            [FromQuery] DateTime to,
-            CancellationToken ct)
+        public async Task<IActionResult> ExportDeliveryFinish([FromQuery] DateTime from, [FromQuery] DateTime to, CancellationToken ct)
         {
             // guard nhẹ giống style bạn
             if (from == default || to == default)
@@ -205,6 +203,48 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.DeliveryOrders
             return File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 fileName);
+        }
+
+        [HttpGet("export-transport-summary")]
+        public async Task<IActionResult> ExportTransportSummary(
+    [FromQuery] DateTime from,
+    [FromQuery] DateTime to,
+    CancellationToken ct)
+        {
+            if (from == default || to == default)
+                return BadRequest("from/to is required.");
+
+            if (to.Date < from.Date)
+                return BadRequest("to must be >= from.");
+
+            var data = await _deliveryOrderService.BuildTransportWorkbookDataAsync(from, to, ct);
+
+            var bytes = _exportDeliveryPlan.ExportTransportWorkbook(data, from, to);
+
+            var fileName = $"TongHopVanChuyen_{from:yyyyMMdd}_{to:yyyyMMdd}.xlsx";
+
+            return File(
+                bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                fileName);
+        }
+
+        [HttpPost("CreateDeliverer")]
+        public async Task<IActionResult> CreateDeliverer([FromBody] PostDelivererDTO request, CancellationToken ct = default)
+        {
+            if (request == null)
+            {
+                return BadRequest("PostDelivererDTO data is required.");
+            }
+            var result = await _deliveryOrderService.CreateDelivererAsync(request, ct);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            else
+            {
+                return BadRequest(result.Message);
+            }
         }
     }
 }

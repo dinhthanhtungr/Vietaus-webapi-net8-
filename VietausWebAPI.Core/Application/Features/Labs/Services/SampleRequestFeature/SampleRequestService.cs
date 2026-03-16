@@ -105,7 +105,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                         x.BranchId,
                         x.Status,
                         x.Package,
-
+                        x.Formula,
 
                         // Product
                         Product = new
@@ -172,12 +172,19 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     InfoType = dto.InfoType,
                     //FormulaId = dto.FormulaId,
                     // FormulaPrice sẽ set ở dưới nếu có FormulaId
-                    Formula = dto.FormulaId.HasValue
-                        ? new GetSampleFormula 
-                            { 
-                                FormulaId = dto.FormulaId.Value,
-                                IsSelect = true,
-                                Status = dto.Status,
+                    Formula = dto.Formula != null
+                        ? new GetSampleFormula
+                        {
+                            FormulaId = dto.Formula.FormulaId,
+                            ExternalId = dto.Formula.ExternalId,
+                            TotalPrice = dto.Formula.TotalPrice,
+                            Status = dto.Formula.Status,
+                            Note = dto.Formula.Note,
+                            Name = dto.Formula.Name,
+                            PresidentPrice = dto.Formula.PresidentPrice,
+                            ProductionPrice = dto.Formula.ProductionPrice,
+                            EffectiveDate = dto.Formula.EffectiveDate,
+                            IsSelect = true
                         }
                         : null,
                     SaleComment = dto.SaleComment,
@@ -225,12 +232,12 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 };
 
                 // Tính FormulaPrice nếu có FormulaId (tái sử dụng CalcFromVU)
-                if (sample.Formula != null && sample.Formula.FormulaId != Guid.Empty)
-                { 
-                    // Lưu ý: CalcFromVU trả về decimal (đã round 2). Có thể mất ~vài ms do query BOM + giá
-                    var price = await _priceProvider.CalculatePriceAsync(sample.Formula.FormulaId, FormulaSource.FromVU, ct);
-                    sample.Formula.TotalPrice = price;
-                }
+                //if (sample.Formula != null && sample.Formula.FormulaId != Guid.Empty)
+                //{ 
+                //    // Lưu ý: CalcFromVU trả về decimal (đã round 2). Có thể mất ~vài ms do query BOM + giá
+                //    var price = await _priceProvider.CalculatePriceAsync(sample.Formula.FormulaId, FormulaSource.FromVU, ct);
+                //    sample.Formula.TotalPrice = price;
+                //}
                 //else
                 //{
                 //    sample.FormulaPrice = null;
@@ -670,12 +677,21 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 existing.UpdatedDate = now;
 
                 // 2) Nếu ColourCode là template thì phát sinh mã mới trước khi patch vào Product
+                //if (req.Product?.ColourCode?.Contains('_') == true)
+                //{
+                //    req.Product.ColourCode = await ExternalIdGenerator.GenerateCodeFromTemplateAsync(
+                //        template: req.Product.ColourCode,
+                //        existingCodes: _unitOfWork.ProductRepository.Query().Select(p => p.ColourCode),
+                //        getLatestCodeFunc: _unitOfWork.ProductRepository.GetLatestProductStartsWithAsync,
+                //        padWidth: 3,
+                //        ct: ct);
+                //}
                 if (req.Product?.ColourCode?.Contains('_') == true)
                 {
                     req.Product.ColourCode = await ExternalIdGenerator.GenerateCodeFromTemplateAsync(
                         template: req.Product.ColourCode,
                         existingCodes: _unitOfWork.ProductRepository.Query().Select(p => p.ColourCode),
-                        getLatestCodeFunc: _unitOfWork.ProductRepository.GetLatestProductStartsWithAsync,
+                        getMaxNumberFunc: _unitOfWork.SampleRequestRepository.GetMaxRunningNumberByLeftPrefixAsync,
                         padWidth: 3,
                         ct: ct);
                 }
@@ -776,6 +792,18 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
 
                 existing.UpdatedDate = now;
                 existing.UpdatedBy = userId;
+
+
+                if (!string.IsNullOrWhiteSpace(req.Product?.ColourCode))
+                {
+                    var duplicated = await _unitOfWork.ProductRepository.Query()
+                        .AnyAsync(p =>
+                            p.ProductId != existing.ProductId &&
+                            p.ColourCode == req.Product.ColourCode, ct);
+
+                    if (duplicated)
+                        return OperationResult.Fail("Mã ColourCode vừa sinh đã tồn tại. Vui lòng nhấn Lưu lại lần nữa.");
+                }
 
                 // 5) Lưu thay đổi entity đã track
                 await _unitOfWork.SaveChangesAsync();

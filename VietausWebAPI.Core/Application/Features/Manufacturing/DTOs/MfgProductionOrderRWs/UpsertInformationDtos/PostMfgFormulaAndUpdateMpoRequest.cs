@@ -18,7 +18,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProducti
         public DateTime? ExpectedDate { get; set; }
         public DateTime? RequiredDate { get; set; }
 
-        public int? TotalQuantity { get; set; }
+        public decimal? TotalQuantity { get; set; }
         public int? NumOfBatches { get; set; }
 
         public string? LabNote { get; set; }

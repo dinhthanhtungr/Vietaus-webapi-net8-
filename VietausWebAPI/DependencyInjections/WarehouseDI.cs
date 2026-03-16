@@ -1,4 +1,5 @@
-﻿using VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContracts;
+﻿using VietausWebAPI.Core.Application.Features.Warehouse.Helpers;
+using VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContracts.ReadRepositories;
 using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Warehouse.Services;
@@ -20,6 +21,8 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
 
             services.AddScoped<IWarehouseVoucherReadRepository, WarehouseVoucherReadRepository>();
             services.AddScoped<IWarehouseVoucherDetailReadRepository, WarehouseVoucherDetailReadRepository>();
+
+            services.AddScoped<IStockAvailableExcel, StockAvailableExcel>();    
 
             // Services
             services.AddScoped<IWarehouseReadService, WarehouseReadService>();
