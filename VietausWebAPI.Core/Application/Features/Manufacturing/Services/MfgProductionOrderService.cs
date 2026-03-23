@@ -106,7 +106,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     || (
                         from v in vers
                         join mf in mfs on v.ManufacturingFormulaId equals mf.ManufacturingFormulaId
-                        where v.MfgProductionOrderId == po.MfgProductionOrderId && v.ValidTo == null
+                        where v.MfgProductionOrderId == po.MfgProductionOrderId 
                         select mf.ExternalId
                     ).Any(x => x != null && EF.Functions.ILike(x, pattern))
                     || (
