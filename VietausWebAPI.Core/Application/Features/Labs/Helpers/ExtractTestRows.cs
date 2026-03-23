@@ -6,10 +6,20 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
 {
     public static class ExtractTestRowsHelper
     {
-        public static List<PDFColumn> ExtractTestRows(PDFResultValue result, PDFSpecificationsValue? specs)
+        public static List<PDFColumn> ExtractTestRows(
+            PDFResultValue result,
+            PDFSpecificationsValue? specs,
+            bool isLongGiang = false)
         {
             var list = new List<PDFColumn>();
 
+            string NormalizeMethod(string method)
+            {
+                if (isLongGiang && string.Equals(method, "Vietaus std", StringComparison.OrdinalIgnoreCase))
+                    return ""; // hoặc "-" nếu bạn muốn hiện dấu gạch
+
+                return method;
+            }
 
             void Add(string label, string? value, string? specDefault, string? specOverride, string method, string unit)
             {
@@ -19,23 +29,19 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                     {
                         TestItem = label,
                         Specification = !string.IsNullOrWhiteSpace(specOverride) ? specOverride : specDefault,
-                        Method = method,
+                        Method = NormalizeMethod(method),
                         Unit = unit,
                         Result = value
                     });
                 }
             }
 
-
             Add("Appearance/Hình dạng", result.Shape, "Granule/Hạt hình trụ", specs?.Shape, "Vietaus std", "mm");
             Add("Pellet Size/Kích thước hạt", result.ParticleSize, "≤ 3.5", specs?.PelletSize, "Vietaus std", "mm");
             Add("Moisture/Độ ẩm", result.Moisture, "0 - 0.3", specs?.Moisture, "Vietaus std", "%");
             Add("Packing/Quy cách đóng gói", result.PackingSpec, "25", null, "Vietaus std", "Kg");
             Add("Storage temperature (Nhiệt độ bảo quản)", result.StorageCondition, "Room temperature \nNhiệt độ bảo quản", null, "Vietaus std", "°C");
-            // Trường hợp dòng trống, gán "Yes" cứng luôn:
             Add("Storing condition (Điều kiện bảo quản)", "Yes", "Put on Pallet \nĐặt trên Pallet", null, "Vietaus std", "-");
-            //Add("Shelf-life/Hạn sử dụng", result.DwellTime == true ? "YES" : null, "Còn > 1/2 thời gian sử dụng", specs?.DwellTime, "Vietaus std", "-");
-            // Trường hợp dòng trống, gán "Yes" cứng luôn:
             Add("Shelf-life/Hạn sử dụng", "Yes", "Còn > 1/2 thời gian sử dụng", null, "Vietaus std", "-");
             Add("Colour Tolerance (Delta E)", result.ColorDeltaE, "< 1.0", specs?.DeltaE, "Vietaus std", "-");
 

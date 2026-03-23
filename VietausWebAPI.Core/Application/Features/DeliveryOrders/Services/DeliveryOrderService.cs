@@ -67,88 +67,103 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                 if (query.PageNumber <= 0) query.PageNumber = 1;
                 if (query.PageSize <= 0) query.PageSize = 15;
 
-
                 var baseQ = _unitOfWork.DeliveryOrderRepository.Query()
-                    .Where(po => po.IsActive == true);
+                    .AsNoTracking()
+                    .Where(x => x.IsActive);
 
                 if (query.CompanyId.HasValue && query.CompanyId.Value != Guid.Empty)
-                    baseQ = baseQ.Where(po => po.CompanyId == query.CompanyId);
+                    baseQ = baseQ.Where(x => x.CompanyId == query.CompanyId.Value);
 
                 if (query.DeliveryOrderId.HasValue && query.DeliveryOrderId.Value != Guid.Empty)
-                    baseQ = baseQ.Where(po => po.Id == query.DeliveryOrderId);
+                    baseQ = baseQ.Where(x => x.Id == query.DeliveryOrderId.Value);
 
                 if (query.From.HasValue)
                 {
                     var fromDate = query.From.Value.Date;
-                    baseQ = baseQ.Where(po => po.CreatedDate >= fromDate);
+                    baseQ = baseQ.Where(x => x.CreatedDate >= fromDate);
                 }
 
                 if (query.To.HasValue)
                 {
                     var toDateExclusive = query.To.Value.Date.AddDays(1);
-                    baseQ = baseQ.Where(po => po.CreatedDate < toDateExclusive);
+                    baseQ = baseQ.Where(x => x.CreatedDate < toDateExclusive);
                 }
 
                 if (!string.IsNullOrWhiteSpace(query.Keyword))
                 {
                     var kw = query.Keyword.Trim();
-                    baseQ = baseQ.Where(po =>
-                        (po.Customer.CustomerName ?? "").Contains(kw) ||
-                        (po.Customer.ExternalId ?? "").Contains(kw) ||
-                        (po.ExternalId ?? "").Contains(kw) 
-                        //||
-                        //po.Details.Any(p => (p.MerchandiseOrderExternalIdSnapShot ?? "").Contains(kw))
 
+                    baseQ = baseQ.Where(x =>
+                        (x.Customer.CustomerName ?? "").Contains(kw) ||
+                        (x.Customer.ExternalId ?? "").Contains(kw) ||
+                        (x.ExternalId ?? "").Contains(kw) ||
+
+                        x.DeliveryOrderPOs.Any(l =>
+                            (l.MerchandiseOrder.ExternalId ?? "").Contains(kw)) ||
+
+                        x.Details.Any(d =>
+                            d.IsActive &&
+                            (
+                                (d.ProductExternalIdSnapShot ?? "").Contains(kw) ||
+                                (d.ProductNameSnapShot ?? "").Contains(kw) ||
+                                (d.PONo ?? "").Contains(kw) ||
+                                (d.LotNoList ?? "").Contains(kw)
+                            ))
                     );
                 }
 
-                // Đếm tổng
                 var totalCount = await baseQ.CountAsync(ct);
 
-                // Trang hiện tại: chỉ lấy field cần thiết của header
-                var headers = await baseQ
-                    .OrderByDescending(po => po.CreatedDate)
+                var items = await baseQ
+                    .OrderByDescending(x => x.CreatedDate)
                     .Skip((query.PageNumber - 1) * query.PageSize)
                     .Take(query.PageSize)
-                    .Select(po => new GetSampleDelivery
+                    .Select(x => new GetSampleDelivery
                     {
-                        Id = po.Id,
-                        ExternalId = po.ExternalId,
-                        CustomerExternalIdSnapShot = po.CustomerExternalIdSnapShot,
-                        CustomerName = po.Customer.CustomerName,
-                        CreatedDate = po.CreatedDate,
-                        Note = po.Note,
+                        Id = x.Id,
+                        ExternalId = x.ExternalId,
+                        CustomerExternalIdSnapShot = x.CustomerExternalIdSnapShot,
+                        CustomerName = x.Customer.CustomerName,
+                        CreatedDate = x.CreatedDate,
+                        Note = x.Note,
 
-                        // Gom chuỗi ExtternalId các PO đã link
                         MerchandiseOrderExternalIdList = string.Join(", ",
-                            po.DeliveryOrderPOs
-                              .Where(dop => dop.MerchandiseOrder != null)
-                              .Select(dop => dop.MerchandiseOrder!.ExternalId)
-                              .Distinct()
+                            x.DeliveryOrderPOs
+                                .Where(dop => dop.MerchandiseOrder != null)
+                                .Select(dop => dop.MerchandiseOrder!.ExternalId)
+                                .Where(v => !string.IsNullOrWhiteSpace(v))
+                                .Distinct()
                         ),
-
-                        // Gom chuỗi tên các Deliverer
 
                         DelivererList = string.Join(", ",
-                            po.Deliverers
-                              .Where(d => !string.IsNullOrEmpty(d.DelivererInfor.Name))
-                              .Select(d => d.DelivererInfor.Name)
-                              .Distinct()
+                            x.Deliverers
+                                .Where(d => d.DelivererInfor != null && !string.IsNullOrWhiteSpace(d.DelivererInfor.Name))
+                                .Select(d => d.DelivererInfor.Name)
+                                .Distinct()
                         ),
 
-                        // Deadline thanh toán có thể lấy từ PO nếu cần
-                        PaymentDeadline = po.DeliveryOrderPOs
-                            .Select(dop => dop.MerchandiseOrder.PaymentType)
-                            .FirstOrDefault()
+                        PaymentDeadline = x.PaymentDeadline,
+
+                        Details = x.Details
+                            .Where(d => d.IsActive)
+                            .Select(d => new GetSampleDeliveryDetail
+                            {
+                                Id = d.Id,
+                                MerchandiseOrderDetailId = d.MerchandiseOrderDetailId,
+                                ProductId = d.ProductId,
+                                ProductExternalIdSnapShot = d.ProductExternalIdSnapShot,
+                                ProductNameSnapShot = d.ProductNameSnapShot,
+                                LotNoList = d.LotNoList,
+                                PONo = d.PONo,
+                                Quantity = d.Quantity,
+                                NumOfBags = d.NumOfBags,
+                                IsAttach = d.IsAttach
+                            })
+                            .ToList()
                     })
                     .ToListAsync(ct);
 
-                if (headers.Count == 0)
-                    return new PagedResult<GetSampleDelivery>(headers, totalCount, query.PageNumber, query.PageSize);
-
-
-                return new PagedResult<GetSampleDelivery>(headers, totalCount, query.PageNumber, query.PageSize);
-
+                return new PagedResult<GetSampleDelivery>(items, totalCount, query.PageNumber, query.PageSize);
             }
             catch (Exception ex)
             {
@@ -1039,7 +1054,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                 var prod = it.Prod;
 
                 var pending = prod.TotalQuantity == null;
-                var qtyText = pending ? $"{prod.TotalQuantityRequest}*" : prod.TotalQuantity.Value.ToString();
+                var qtyText = pending ? $"{prod.TotalQuantityRequest}*" : prod.TotalQuantityRequest.ToString();
 
                 // join list VA externalId -> chuỗi
                 var vaList = (it.VAExternalIds ?? new List<string>())

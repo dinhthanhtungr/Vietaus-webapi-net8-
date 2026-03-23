@@ -107,6 +107,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     IsRecycle = x.ProductionOrder.Product.IsRecycle,
                     x.ProductionOrder.CustomerNameSnapshot,
                     x.ProductionOrder.TotalQuantityRequest,
+                    x.ProductionOrder.TotalQuantity,
 
                     VuChosenId = x.ProductionOrder.FormulaId,
                     VuChosenExternalIdSnapshot = x.ProductionOrder.FormulaExternalIdSnapshot,
@@ -263,6 +264,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
                     SaleTotalPrice = mpo.TotalPriceAgreed,
                     TotalQuantityRequest = mpo.TotalQuantityRequest,
+                    TotalQuantityProduced = mpo.TotalQuantity,
 
                     VUFormulaId = vaSourceVuId,
                     FormulaExternalIdSnapshot = vaSourceVuCode,
@@ -373,6 +375,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
                     SaleTotalPrice = mpo.TotalPriceAgreed,
                     TotalQuantityRequest = mpo.TotalQuantityRequest,
+                    TotalQuantityProduced = mpo.TotalQuantity,
 
                     VUFormulaId = mpo.VuChosenId,
                     FormulaExternalIdSnapshot = vuInfo?.ExternalId ?? mpo.VuChosenExternalIdSnapshot,
@@ -419,6 +422,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     x.ProductionOrder.CustomerNameSnapshot,
                     MerchadiseOrderExternalId = x.Detail.MerchandiseOrder.ExternalId,
                     x.ProductionOrder.TotalQuantityRequest,
+                    x.ProductionOrder.TotalQuantity,
                     x.ProductionOrder.Status,
 
                     VuChosenId = x.ProductionOrder.FormulaId,
@@ -548,6 +552,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
                 SaleTotalPrice = mpo.UnitPriceAgreed,
                 TotalQuantityRequest = mpo.TotalQuantityRequest,
+                TotalQuantityProduced = mpo.TotalQuantity,
 
                 VUFormulaId = mpo.VuChosenId,
                 VUFormulaName = string.Empty,
@@ -2165,7 +2170,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     materials = materials
                 };
 
-                var pdfBytes = _FormulaPDF.Render(dto);
+                //var pdfBytes = _FormulaPDF.RenderTemplate();
+                var pdfBytes = _FormulaPDF.Render(dto, false);
 
                 await tx.CommitAsync(ct);
                 return pdfBytes;

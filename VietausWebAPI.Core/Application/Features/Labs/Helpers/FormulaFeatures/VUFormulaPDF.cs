@@ -32,7 +32,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
 
                     //page.Header().Component(new HeaderComponent());
                     page.Content().Element(x => BuildContent(x, data));
-                    //page.Footer().Component(new FooterComponent());
+                    page.Footer().Component(new FooterComponent());
                 });
             });
 

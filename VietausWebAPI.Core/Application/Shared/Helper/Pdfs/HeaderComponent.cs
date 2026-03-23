@@ -59,7 +59,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs
                              {
                                  row.RelativeItem(1).Text("Tel:")
                                      .FontFamily("Open Sans").FontSize(7);
-                                 row.RelativeItem(3).Text("(84). 28. 730 99 369        Fax: (84) 274 3 800 037")
+                                 row.RelativeItem(3).Text("(84). 28. 730 93 969")
                                      .FontFamily("Open Sans").FontSize(7);
                              });
 
@@ -67,6 +67,13 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs
                              col.Item().Text("Website: https://vietaus.com")
                                  .FontFamily("Open Sans").FontSize(7)
                                  .FontColor(Colors.Blue.Medium);
+                             col.Item().Row(row =>
+                             {
+                                 row.RelativeItem(1).Text("Website: ")
+                                     .FontFamily("Open Sans").FontSize(7).FontColor(Colors.Blue.Medium);
+                                 row.RelativeItem(3).Text("https://vietaus.com")
+                                     .FontFamily("Open Sans").FontSize(7).FontColor(Colors.Blue.Medium);
+                             });
                          });
                     });
 

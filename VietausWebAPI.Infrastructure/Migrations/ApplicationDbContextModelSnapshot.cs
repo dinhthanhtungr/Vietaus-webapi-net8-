@@ -6500,6 +6500,11 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("numeric(16,2)")
                         .HasColumnName("ProductionPrice");
 
+                    b.Property<decimal?>("ProfitMarginPrice")
+                        .HasPrecision(16, 2)
+                        .HasColumnType("numeric(16,2)")
+                        .HasColumnName("ProfitMarginPrice");
+
                     b.Property<Guid?>("SentBy")
                         .HasColumnType("uuid")
                         .HasColumnName("SentBy");

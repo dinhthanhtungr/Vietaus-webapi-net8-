@@ -494,14 +494,23 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 
         //=============================================================== PRIVATE - PUBLIC =================================================================
 
-        public async Task<OperationResult> SyncReservationsByFormulaItemsAsync(
-            Guid mfgProductionOrderId,
+        private async Task<OperationResult> SyncReservationsCoreAsync(
+            ReservationSyncContext ctx,
             decimal totalQuantity,
             IEnumerable<PatchMfgProductionOrderFormulaItemRequest> formulaItems,
             CancellationToken ct = default)
         {
-            if (mfgProductionOrderId == Guid.Empty)
+            if (ctx == null)
+                return OperationResult.Fail("Context giữ chỗ không hợp lệ.");
+
+            if (ctx.MfgProductionOrderId == Guid.Empty)
                 return OperationResult.Fail("MfgProductionOrderId không hợp lệ.");
+
+            if (string.IsNullOrWhiteSpace(ctx.VaCode))
+                return OperationResult.Fail("VaCode không hợp lệ.");
+
+            if (ctx.CompanyId == Guid.Empty)
+                return OperationResult.Fail("CompanyId không hợp lệ.");
 
             if (totalQuantity <= 0)
                 return OperationResult.Fail("TotalQuantity phải lớn hơn 0.");
@@ -511,25 +520,6 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 
             static string Norm(string? s) => s?.Trim().ToUpperInvariant() ?? string.Empty;
 
-            var mpo = await _unitOfWork.MfgProductionOrderRepository
-                .Query(track: false)
-                .Where(x => x.MfgProductionOrderId == mfgProductionOrderId && x.IsActive)
-                .Select(x => new
-                {
-                    x.MfgProductionOrderId,
-                    x.ExternalId,
-                    x.CompanyId
-                })
-                .FirstOrDefaultAsync(ct);
-
-            if (mpo == null)
-                return OperationResult.Fail("Không tìm thấy lệnh sản xuất.");
-
-            var vaCode = mpo.ExternalId?.Trim();
-            if (string.IsNullOrWhiteSpace(vaCode))
-                return OperationResult.Fail("Lệnh sản xuất chưa có mã ExternalId để đồng bộ giữ chỗ.");
-
-            var companyId = mpo.CompanyId;
             var userId = _currentUser.EmployeeId;
             var now = DateTime.Now;
 
@@ -543,7 +533,6 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             if (validItems.Count == 0)
                 return OperationResult.Fail("Công thức không có nguyên vật liệu hợp lệ để giữ chỗ.");
 
-            // target mới theo công thức
             var targetMap = validItems
                 .GroupBy(x => Norm(x.MaterialExternalIdSnapshot))
                 .ToDictionary(
@@ -551,12 +540,11 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                     g => g.Sum(x => x.Quantity * totalQuantity)
                 );
 
-            // reserve open hiện tại
             var existingOpen = await _unitOfWork.WarehouseTempStockRepository
                 .Query(track: true)
                 .Where(x =>
-                    x.CompanyId == companyId &&
-                    x.VaCode == vaCode &&
+                    x.CompanyId == ctx.CompanyId &&
+                    x.VaCode == ctx.VaCode &&
                     x.ReserveStatus == "Open")
                 .ToListAsync(ct);
 
@@ -564,7 +552,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 .GroupBy(x => Norm(x.Code))
                 .ToDictionary(g => g.Key, g => g.ToList());
 
-            // 1) update / create theo target mới
+            // 1) update/create theo target mới
             foreach (var kv in targetMap)
             {
                 var code = kv.Key;
@@ -572,7 +560,6 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 
                 if (existingMap.TryGetValue(code, out var reserveRows) && reserveRows.Count > 0)
                 {
-                    // hiện tại đang giữ chỗ theo code tổng, ưu tiên 1 dòng LotKey = null
                     var reserve = reserveRows
                         .OrderBy(x => x.LotKey == null ? 0 : 1)
                         .ThenBy(x => x.TempId)
@@ -593,8 +580,8 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 {
                     var entity = new WarehouseTempStock
                     {
-                        CompanyId = companyId,
-                        VaCode = vaCode,
+                        CompanyId = ctx.CompanyId,
+                        VaCode = ctx.VaCode,
                         Code = code,
                         LotKey = null,
                         QtyRequest = newQtyRequest,
@@ -634,50 +621,86 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             return OperationResult.Ok("Đồng bộ giữ chỗ tồn kho ảo thành công.");
         }
 
+        public async Task<OperationResult> SyncReservationsByFormulaItemsAsync(
+            Guid mfgProductionOrderId,
+            decimal totalQuantity,
+            IEnumerable<PatchMfgProductionOrderFormulaItemRequest> formulaItems,
+            CancellationToken ct = default)
+                {
+                    if (mfgProductionOrderId == Guid.Empty)
+                        return OperationResult.Fail("MfgProductionOrderId không hợp lệ.");
 
+                    var mpo = await _unitOfWork.MfgProductionOrderRepository
+                        .Query(track: false)
+                        .Where(x => x.MfgProductionOrderId == mfgProductionOrderId && x.IsActive)
+                        .Select(x => new ReservationSyncContext
+                        {
+                            MfgProductionOrderId = x.MfgProductionOrderId,
+                            VaCode = x.ExternalId ?? string.Empty,
+                            CompanyId = x.CompanyId
+                        })
+                        .FirstOrDefaultAsync(ct);
+
+                    if (mpo == null)
+                        return OperationResult.Fail("Không tìm thấy lệnh sản xuất.");
+
+                    if (string.IsNullOrWhiteSpace(mpo.VaCode))
+                        return OperationResult.Fail("Lệnh sản xuất chưa có mã ExternalId để đồng bộ giữ chỗ.");
+
+                    return await SyncReservationsCoreAsync(mpo, totalQuantity, formulaItems, ct);
+                }
+
+        public async Task<OperationResult> SyncReservationsByFormulaItemsAsync(
+            ReservationSyncContext ctx,
+            decimal totalQuantity,
+            IEnumerable<PatchMfgProductionOrderFormulaItemRequest> formulaItems,
+            CancellationToken ct = default)
+        {
+            return await SyncReservationsCoreAsync(ctx, totalQuantity, formulaItems, ct);
+        }
 
         public async Task<OperationResult> ReserveByFormulaMaterialsAsync(
-    Guid mfgProductionOrderId,
-    decimal totalQuantity,
-    IEnumerable<PostManufacturingFormulaMaterial> materials,
-    CancellationToken ct = default)
-        {
-            if (mfgProductionOrderId == Guid.Empty)
-                return OperationResult.Fail("MfgProductionOrderId không hợp lệ.");
+            Guid mfgProductionOrderId,
+            decimal totalQuantity,
+            IEnumerable<PostManufacturingFormulaMaterial> materials,
+            CancellationToken ct = default)
+                {
+                    if (mfgProductionOrderId == Guid.Empty)
+                        return OperationResult.Fail("MfgProductionOrderId không hợp lệ.");
 
-            if (totalQuantity <= 0)
-                return OperationResult.Fail("TotalQuantity phải lớn hơn 0.");
+                    if (totalQuantity <= 0)
+                        return OperationResult.Fail("TotalQuantity phải lớn hơn 0.");
 
-            if (materials == null)
-                return OperationResult.Fail("Danh sách nguyên vật liệu không hợp lệ.");
+                    if (materials == null)
+                        return OperationResult.Fail("Danh sách nguyên vật liệu không hợp lệ.");
 
-            static string Norm(string? s) => s?.Trim().ToUpperInvariant() ?? string.Empty;
+                    static string Norm(string? s) => s?.Trim().ToUpperInvariant() ?? string.Empty;
 
-            var validItems = materials
-                .Where(x =>
-                    x.IsActive &&
-                    x.Quantity > 0 &&
-                    !string.IsNullOrWhiteSpace(x.MaterialExternalIdSnapshot))
-                .ToList();
+                    var validItems = materials
+                        .Where(x =>
+                            x.IsActive &&
+                            x.Quantity > 0 &&
+                            !string.IsNullOrWhiteSpace(x.MaterialExternalIdSnapshot))
+                        .ToList();
 
-            if (validItems.Count == 0)
-                return OperationResult.Fail("Công thức không có nguyên vật liệu hợp lệ để giữ chỗ.");
+                    if (validItems.Count == 0)
+                        return OperationResult.Fail("Công thức không có nguyên vật liệu hợp lệ để giữ chỗ.");
 
-            var reserveReq = new CreateVaSnapshotAndReservations
-            {
-                manufacturingId = mfgProductionOrderId,
-                cancelPreviousOpen = true,
-                reservations = validItems
-                    .GroupBy(x => Norm(x.MaterialExternalIdSnapshot))
-                    .Select(g => new MfgFormulaMaterialWarehouse
+                    var reserveReq = new CreateVaSnapshotAndReservations
                     {
-                        MaterialExternalIdSnapshot = g.Key,
-                        TotalQuantity = g.Sum(x => x.Quantity * totalQuantity)
-                    })
-                    .ToList()
-            };
+                        manufacturingId = mfgProductionOrderId,
+                        cancelPreviousOpen = true,
+                        reservations = validItems
+                            .GroupBy(x => Norm(x.MaterialExternalIdSnapshot))
+                            .Select(g => new MfgFormulaMaterialWarehouse
+                            {
+                                MaterialExternalIdSnapshot = g.Key,
+                                TotalQuantity = g.Sum(x => x.Quantity * totalQuantity)
+                            })
+                            .ToList()
+                    };
 
-            return await ReserveAvailabilityAsync(reserveReq, ct);
-        }
+                    return await ReserveAvailabilityAsync(reserveReq, ct);
+                }
     }
 }

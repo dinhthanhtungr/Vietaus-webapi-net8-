@@ -380,6 +380,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
                 entity.Property(e => e.EffectiveDate).HasColumnName("EffectiveDate");
                 entity.Property(e => e.ProductionPrice).HasColumnName("ProductionPrice").HasPrecision(16, 2);
                 entity.Property(e => e.PresidentPrice).HasColumnName("PresidentPrice").HasPrecision(16, 2);
+                entity.Property(e => e.ProfitMarginPrice).HasColumnName("ProfitMarginPrice").HasPrecision(16, 2);
 
                 entity.Property(e => e.IsSelect).HasColumnName("IsSelect").HasDefaultValue(false);
                 entity.Property(e => e.IsActive).HasColumnName("IsActive").HasDefaultValue(true);

@@ -19,7 +19,13 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
         private static readonly Guid POLYMER_ID = Guid.Parse("04fbe69b-dbd1-45ee-9361-50031955681b");
         private static readonly Guid ADDITIVE_ID = Guid.Parse("dacb8f0f-0152-474b-b719-761f784d6c78");
         private static readonly Guid OTHER_ID = Guid.Parse("da05ebd0-5cb2-4b23-993a-e11407b6734a");
-        public byte[] Render(ManufacturingVUPDF data)
+
+        public byte[] RenderTemplate()
+        {
+            return Render(new ManufacturingVUPDF(), true);
+        }
+
+        public byte[] Render(ManufacturingVUPDF data, bool templateOnly = false)
         {
             data ??= new ManufacturingVUPDF();
 
@@ -31,19 +37,18 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                     page.Margin(10);
                     page.DefaultTextStyle(t => t.FontFamily("Open Sans").FontSize(9));
 
-                    //page.Header().Component(new HeaderComponent());
-                    page.Content().Element(x => BuildContent(x, data));
-                    //page.Footer().Component(new FooterComponent());
+                    page.Content().Element(x => BuildContent(x, data, templateOnly));
+                    page.Footer().Component(new MFGFooterComponent());
                 });
             });
 
             return doc.GeneratePdf();
         }
 
-        private void BuildContent(IContainer c, ManufacturingVUPDF d)
+        private void BuildContent(IContainer c, ManufacturingVUPDF d, bool templateOnly)
         {
-            var s = d.getManufacturingVUFormula ?? new GetManufacturingVUFormula();
-            
+            var s = templateOnly ? new GetManufacturingVUFormula() : (d.getManufacturingVUFormula ?? new GetManufacturingVUFormula());
+
             c.Column(col =>
             {
                 col.Item().AlignCenter().PaddingTop(5)
@@ -52,17 +57,17 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                 col.Item().PaddingTop(5).AlignRight().Row(row =>
                 {
                     row.Spacing(25);
-                    var batchNo = d.BatchNo ?? "";
+                    var batchNo = templateOnly ? "" : (d.BatchNo ?? "");
                     var isVU = batchNo.StartsWith("VU", StringComparison.OrdinalIgnoreCase);
                     var prefix = isVU ? "VU" : "MFG";
 
                     row.AutoItem().Text(tx =>
                     {
                         tx.Span($"{prefix} No: ").FontSize(9);
-                        tx.Span($"{batchNo}").FontSize(11).Black();   // đậm + to hơn
+                        tx.Span($"{batchNo}").FontSize(11).Black();
 
                         tx.Span(" - Batch#: ").FontSize(9);
-                        tx.Span($"{d.getManufacturingVUFormula?.FormulaExternalId ?? "-"}")
+                        tx.Span(templateOnly ? "" : $"{d.getManufacturingVUFormula?.FormulaExternalId ?? "-"}")
                           .FontSize(11).Black();
                     });
 
@@ -73,7 +78,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                         //  .FontSize(9).Black();
 
                         tx.Span("Ngày kế hoạch tạo phiếu: ").FontSize(9);
-                        tx.Span($"{d.CreatedDate:dd/MM/yyyy}")
+                        tx.Span(templateOnly ? "....../....../......" : $"{d.CreatedDate:dd/MM/yyyy}")
                           .FontSize(11).Black();
                     });
 
@@ -124,14 +129,14 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                             t.Cell().Element(GridCell).Text(tx =>
                             {
                                 tx.Span("Khách hàng: ").FontSize(labelSize);
-                                tx.Span($"{($"{s.CustomerCode} ".Trim(' ', '-'))}")/* - { s.CustomerName}*/
+                                tx.Span(templateOnly ? "" : $"{($"{s.CustomerCode} ".Trim(' ', '-'))}")
                                   .FontSize(valueSize).Black();
                             });
 
                             t.Cell().Element(GridCell).Text(tx =>
                             {
                                 tx.Span("Colour Code: ").FontSize(labelSize);
-                                tx.Span($"{s.ColourCode ?? ""}")
+                                tx.Span(templateOnly ? "" : $"{s.ColourCode ?? ""}")
                                   .FontSize(valueSize).Black();
                             });
 
@@ -139,7 +144,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                             t.Cell().Element(GridCell).Text(tx =>
                             {
                                 tx.Span("Khối lượng/mẻ (Kg): ").FontSize(labelSize);
-                                tx.Span(kgPerBatch.HasValue ? $"{FormatKgPretty(kgPerBatch, 2)}" : "-")
+                                tx.Span(templateOnly ? "" : (kgPerBatch.HasValue ? $"{FormatKgPretty(kgPerBatch, 2)}" : "-"))
                                   .FontSize(valueSize).Black();
                             });
 
@@ -148,14 +153,14 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                             t.Cell().Element(GridCell).Text(tx =>
                             {
                                 tx.Span("Tên sp: ").FontSize(labelSize);
-                                tx.Span($"{s.Name ?? ""}")
+                                tx.Span(templateOnly ? "" : $"{s.Name ?? ""}")
                                   .FontSize(valueSize).Black();
                             });
 
                             t.Cell().Element(GridCell).Text(tx =>
                             {
                                 tx.Span("Kiểm tra: ").FontSize(labelSize);
-                                tx.Span($"{s.QcCheck ?? ""}")
+                                tx.Span(templateOnly ? "" : $"{s.QcCheck ?? ""}")
                                   .FontSize(valueSize).Black();
                             });
 
@@ -164,7 +169,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                             t.Cell().Element(GridCell).Text(tx =>
                             {
                                 tx.Span("Số mẻ: ").FontSize(labelSize);
-                                tx.Span($"{s.NumOfBatches?.ToString() ?? ""}")
+                                tx.Span(templateOnly ? "" : $"{s.NumOfBatches?.ToString() ?? ""}")
                                   .FontSize(valueSize).Black();
                             });
 
@@ -172,19 +177,19 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                             t.Cell().Element(GridCell).Text(tx =>
                             {
                                 tx.Span("Ngày yêu cầu: ").FontSize(labelSize);
-                                tx.Span($"{d.RequestDate:dd/MM/yyyy}")
+                                tx.Span(templateOnly ? "....../....../......" : $"{d.RequestDate:dd/MM/yyyy}")
                                   .FontSize(valueSize).Black();
                             });
                             t.Cell().Element(GridCell).Text(tx =>
                             {
                                 tx.Span("Tỷ lệ sử dụng: ").FontSize(labelSize);
-                                tx.Span($"{s.userRate?.ToString() ?? ""} %")
+                                tx.Span(templateOnly ? "" : $"{s.userRate?.ToString() ?? ""} %")
                                   .FontSize(valueSize).Black();
                             });
                             t.Cell().Element(GridCell).Text(tx =>
                             {
                                 tx.Span("Tổng khối lượng (kg): ").FontSize(labelSize);
-                                tx.Span($"{FormatKgPretty(s.TotalProductionQuantity, 2)}")
+                                tx.Span(templateOnly ? "" : $"{FormatKgPretty(s.TotalProductionQuantity, 2)}")
                                   .FontSize(valueSize).Black();
                             });
 
@@ -196,25 +201,24 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                              .AlignMiddle();
                     });
 
-                    if (!string.IsNullOrWhiteSpace(s.LabNote))
-                        AddRow("Yêu cầu ca SX và QC thực hiện:", $"{d.BagType} :{s.LabNote}");
-                        //AddRow("Yêu cầu ca SX và QC thực hiện:", $"{d.BagType} : Theo công thức {s.SourceVUExternalId} {s.LabNote}");
 
-                    var req = s.Requirement;
-                    var note = s.PlpuNote;
+                    AddRow(
+                        "Yêu cầu ca SX và QC thực hiện:",
+                        templateOnly ? "" : $"{d.BagType} :{s.LabNote}"
+                    );
 
-                    if (!string.IsNullOrWhiteSpace(req) || !string.IsNullOrWhiteSpace(note))
-                    {
-                        table.Cell().ColumnSpan(2)
-                            .PaddingTop(6)
-                            .Element(x => BuildNoteRequirementBox(x, note, req));
-                    }
+                    var req = templateOnly ? "" : s.Requirement;
+                    var note = templateOnly ? "" : s.PlpuNote;
+
+                    table.Cell().ColumnSpan(2)
+                        .PaddingTop(6)
+                        .Element(x => BuildNoteRequirementBox(x, note, req));
 
                 });
 
-                col.Item().PaddingTop(10).Element(x => BuildMaterialsTable(x, d));
+                col.Item().PaddingTop(10).Element(x => BuildMaterialsTable(x, d, templateOnly));
 
-                col.Item().PaddingTop(10).Element(x => BuildMachineSetupSection(x, d));
+                col.Item().PaddingTop(10).Element(x => BuildMachineSetupSection(x, d, templateOnly));
             });
         }
 
@@ -233,8 +237,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                 t.Cell().Element(BoxHeaderCell).Text("Phản hồi trước của khách hàng").SemiBold();
 
                 // Content row
-                t.Cell().Element(BoxBodyCell).Text(string.IsNullOrWhiteSpace(note) ? "-" : note).FontSize(9);
-                t.Cell().Element(BoxBodyCell).Text(string.IsNullOrWhiteSpace(requirement) ? "-" : requirement).FontSize(9);
+                t.Cell().Element(BoxBodyCell).Text(string.IsNullOrWhiteSpace(note) ? "" : note).FontSize(9);
+                t.Cell().Element(BoxBodyCell).Text(string.IsNullOrWhiteSpace(requirement) ? "" : requirement).FontSize(9);
             });
 
             static IContainer BoxHeaderCell(IContainer x) =>
@@ -249,42 +253,28 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                  .AlignTop();
         }
 
-        private void BuildMaterialsTable(IContainer c, ManufacturingVUPDF d)
+        private void BuildMaterialsTable(IContainer c, ManufacturingVUPDF d, bool templateOnly)
         {
-            var batchNo = d.BatchNo ?? "";
-            var isVU = batchNo.StartsWith("VU", StringComparison.OrdinalIgnoreCase);
+            var items = templateOnly
+                ? new List<FormulaPDFMaterialDTOs>()
+                : (d.materials ?? new List<FormulaPDFMaterialDTOs>())
+                    .Where(x => x != null && x.Quantity > 0)
+                    .ToList();
 
-            var items = (d.materials ?? new List<FormulaPDFMaterialDTOs>())
-                .Where(x => x != null && x.Quantity > 0)
-                .ToList();
+            var s = templateOnly
+                ? new GetManufacturingVUFormula()
+                : (d.getManufacturingVUFormula ?? new GetManufacturingVUFormula());
 
-
-            var s = d.getManufacturingVUFormula ?? new GetManufacturingVUFormula();
-
-            var batchQty = s.TotalProductionQuantity ?? 0m; // 6 (kg) như ảnh UI
-            var batches = s.NumOfBatches ?? 1;             // nếu null thì coi như 1
+            var batchQty = s.TotalProductionQuantity ?? 0m;
+            var batches = s.NumOfBatches ?? 1;
             if (batches < 1) batches = 1;
-
-
-            if (!items.Any())
-            {
-                c.Text("Không có nguyên vật liệu.").Italic();
-                return;
-            }
-
-            decimal unitQtyKg = 1.000000000m;
-
-            var groups = items
-                .GroupBy(x => x.CategoryId)
-                .OrderBy(g => CategorySortKey(g.Key))
-                .ToList();
 
             c.Table(table =>
             {
                 table.ColumnsDefinition(cols =>
                 {
                     cols.RelativeColumn(1.50f); // Code
-                    cols.RelativeColumn(3.40f); // Name (rộng hơn)
+                    cols.RelativeColumn(3.40f); // Name
                     cols.RelativeColumn(1.10f); // Lot #
                     cols.RelativeColumn(1.20f); // Std (kg)
                     cols.RelativeColumn(1.35f); // SL / mẻ (kg)
@@ -298,60 +288,79 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                     h.Cell().Element(HeaderCell).Text("Name").FontSize(9).Bold();
                     h.Cell().Element(HeaderCell).Text("Lot #").FontSize(9).Bold();
                     h.Cell().Element(HeaderCell).AlignMiddle().Text("Std").FontSize(9).Bold();
-
                     h.Cell().Element(HeaderCell).AlignMiddle().Text("SL / mẻ (kg)").FontSize(9).Bold();
                     h.Cell().Element(HeaderCell).AlignMiddle().Text("SL / mẻ (g)").FontSize(9).Bold();
-
                     h.Cell().Element(HeaderCell).AlignMiddle().Text("SL tổng (kg)").FontSize(9).Bold();
                 });
 
-                decimal sumStd = 0m;
-                decimal sumPerBatch = 0m;
-                decimal sumTotal = 0m;
-
-                foreach (var g in groups)
+                if (templateOnly)
                 {
-                    // ✅ ColumnSpan đúng = 7
                     table.Cell().ColumnSpan(7).Element(GroupTitleCell)
-                        .AlignCenter().Text(CategoryTitle(g.Key)).SemiBold();
+                        .AlignCenter().Text("Nguyên vật liệu / Materials").SemiBold();
 
-                    foreach (var m in g.OrderBy(x => x.ExternalId))
+                    for (int i = 0; i < 10; i++)
                     {
-                        var std = m.Quantity;
-
-                        decimal perBatchKg = 0m;
-                        decimal totalKg = 0m;
-
-                        perBatchKg = std * (batchQty / batches);
-                        totalKg = perBatchKg * batches; // = std * batchQty
-
-                        sumStd += std;
-                        sumTotal += totalKg;
-                        sumPerBatch += perBatchKg;
-
-                        table.Cell().Element(BodyCell).Text(m.ExternalId).FontSize(10).Bold();
-                        table.Cell().Element(BodyCell).Text(m.MaterialName).FontSize(10).ClampLines(2).Bold();
-                        table.Cell().Element(BodyCell)
-                            .Text(string.IsNullOrWhiteSpace(m.LotNo) ? "-" : m.LotNo)
-                            .FontSize(8)
-                            .Bold();
-
-                        table.Cell().Element(BodyCell).AlignRight().Text(FormatKgPretty(std, 7)).FontSize(10).Bold();
-
-                        table.Cell().Element(BodyCell).AlignRight().Text(FormatKgPretty(perBatchKg, 5)).FontSize(10).Bold();
-                        table.Cell().Element(BodyCell).AlignRight().Text(FormatGPretty(perBatchKg, 2)).FontSize(10).Bold();
-
-                        table.Cell().Element(BodyCell).AlignRight().Text(FormatKgPretty(totalKg, 5)).FontSize(10).Bold();
+                        table.Cell().Element(BodyCell).Text("");
+                        table.Cell().Element(BodyCell).Text("");
+                        table.Cell().Element(BodyCell).Text("");
+                        table.Cell().Element(BodyCell).Text("");
+                        table.Cell().Element(BodyCell).Text("");
+                        table.Cell().Element(BodyCell).Text("");
+                        table.Cell().Element(BodyCell).Text("");
                     }
+
+                    table.Cell().ColumnSpan(3).Element(TotalLabelCell)
+                        .AlignCenter().Text("Tổng").SemiBold();
+
+                    table.Cell().Element(TotalCell).Text("");
+                    table.Cell().Element(TotalCell).Text("");
+                    table.Cell().Element(TotalCell).Text("");
+                    table.Cell().Element(TotalCell).Text("");
                 }
-                table.Cell().ColumnSpan(3).Element(TotalLabelCell)
-                    .AlignCenter().Text("Tổng").SemiBold();
+                else
+                {
+                    var groups = items
+                        .GroupBy(x => x.CategoryId)
+                        .OrderBy(g => CategorySortKey(g.Key))
+                        .ToList();
 
-                table.Cell().Element(TotalCell).AlignRight().Text(FormatKgPretty(sumStd, 6)).FontSize(10).Bold();
-                table.Cell().Element(TotalCell).AlignRight().Text(FormatKgPretty(sumPerBatch, 6)).FontSize(10).Bold();
-                table.Cell().Element(TotalCell).AlignRight().Text(FormatGPretty(sumPerBatch, 2)).FontSize(10).Bold();
-                table.Cell().Element(TotalCell).AlignRight().Text(FormatKgPretty(sumTotal, 6)).FontSize(10).Bold();
+                    decimal sumStd = 0m;
+                    decimal sumPerBatch = 0m;
+                    decimal sumTotal = 0m;
 
+                    foreach (var g in groups)
+                    {
+                        table.Cell().ColumnSpan(7).Element(GroupTitleCell)
+                            .AlignCenter().Text(CategoryTitle(g.Key)).SemiBold();
+
+                        foreach (var m in g.OrderBy(x => x.ExternalId))
+                        {
+                            var std = m.Quantity;
+                            var perBatchKg = std * (batchQty / batches);
+                            var totalKg = perBatchKg * batches;
+
+                            sumStd += std;
+                            sumPerBatch += perBatchKg;
+                            sumTotal += totalKg;
+
+                            table.Cell().Element(BodyCell).Text(m.ExternalId).FontSize(10).Bold();
+                            table.Cell().Element(BodyCell).Text(m.MaterialName).FontSize(10).ClampLines(2).Bold();
+                            table.Cell().Element(BodyCell).Text(string.IsNullOrWhiteSpace(m.LotNo) ? "" : m.LotNo).FontSize(8).Bold();
+                            table.Cell().Element(BodyCell).AlignRight().Text(FormatKgPretty(std, 7)).FontSize(10).Bold();
+                            table.Cell().Element(BodyCell).AlignRight().Text(FormatKgPretty(perBatchKg, 5)).FontSize(10).Bold();
+                            table.Cell().Element(BodyCell).AlignRight().Text(FormatGPretty(perBatchKg, 2)).FontSize(10).Bold();
+                            table.Cell().Element(BodyCell).AlignRight().Text(FormatKgPretty(totalKg, 5)).FontSize(10).Bold();
+                        }
+                    }
+
+                    table.Cell().ColumnSpan(3).Element(TotalLabelCell)
+                        .AlignCenter().Text("Tổng").SemiBold();
+
+                    table.Cell().Element(TotalCell).AlignRight().Text(FormatKgPretty(sumStd, 6)).FontSize(10).Bold();
+                    table.Cell().Element(TotalCell).AlignRight().Text(FormatKgPretty(sumPerBatch, 6)).FontSize(10).Bold();
+                    table.Cell().Element(TotalCell).AlignRight().Text(FormatGPretty(sumPerBatch, 2)).FontSize(10).Bold();
+                    table.Cell().Element(TotalCell).AlignRight().Text(FormatKgPretty(sumTotal, 6)).FontSize(10).Bold();
+                }
             });
 
             static IContainer HeaderCell(IContainer x) =>
@@ -367,7 +376,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
             static IContainer BodyCell(IContainer x) =>
                 x.BorderLeft(0.5f).BorderRight(0.5f).BorderBottom(0.5f)
                  .BorderColor(Colors.Black)
-                 .PaddingVertical(2).PaddingHorizontal(4); // tăng ngang
+                 .PaddingVertical(2).PaddingHorizontal(4);
 
             static IContainer TotalCell(IContainer x) =>
                 x.BorderLeft(0.5f).BorderRight(0.5f).BorderBottom(0.5f)
@@ -378,9 +387,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                 x.BorderLeft(0.5f).BorderRight(0.5f).BorderBottom(0.5f)
                     .BorderColor(Colors.Black)
                     .PaddingVertical(2).PaddingHorizontal(2);
-
         }
-
         private static readonly CultureInfo _inv = CultureInfo.InvariantCulture;
 
         // Không scientific notation (E), giữ tối đa N chữ số thập phân (mặc định 50)
@@ -434,7 +441,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
 
 
 
-        private void BuildMachineSetupSection(IContainer c, ManufacturingVUPDF d)
+        private void BuildMachineSetupSection(IContainer c, ManufacturingVUPDF d, bool templateOnly)
         {
             c.Table(t =>
             {
@@ -468,7 +475,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                 t.Cell().Element(CellBody).Text("");
                 t.Cell().Element(CellBody).Text("");
                 t.Cell().Element(CellBody).Text("");
-                t.Cell().Element(CellBody).Text(d.getManufacturingVUFormula?.FormulaExternalId);
+                t.Cell().Element(CellBody).Text(templateOnly ? "" : d.getManufacturingVUFormula?.FormulaExternalId);
                 t.Cell().Element(CellBody).Text("");
                 t.Cell().Element(CellBody).Text("");
                 t.Cell().Element(CellBody).Text("");
@@ -564,7 +571,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                     r.RelativeItem().Element(BodyBox).Column(c1 =>
                     {
                         c1.Item().Text("Hàng đạt / Không đạt / Hao hụt").FontSize(8);
-                        c1.Item().PaddingTop(6).Text("☐ Hàng đạt    ☐ Hàng không đạt    ☐ Hao hụt").FontSize(8);
+
+                        c1.Item().PaddingTop(6).Text("Hàng đạt").FontSize(8);
+                        c1.Item().PaddingTop(2).Text("Hàng không đạt").FontSize(8);
+                        c1.Item().PaddingTop(2).Text("Hao hụt").FontSize(8);
                     });
 
                     r.RelativeItem().Element(BodyBox).AlignCenter().AlignTop().Text("Ký & ghi rõ họ tên");
@@ -575,7 +585,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                 // date row (nhỏ thôi)
                 col.Item().Row(r =>
                 {
-                    r.RelativeItem().Element(DateBox).Text("Ngày hoàn thành: .......... / .......... / ..........").FontSize(8);
+                    r.RelativeItem().Element(DateBox).Text("").FontSize(8);
                     r.RelativeItem().Element(DateBox).Text("Date: ....../....../......").FontSize(8);
                     r.RelativeItem().Element(DateBox).Text("Date: ....../....../......").FontSize(8);
                     r.RelativeItem().Element(DateBox).Text("Date: ....../....../......").FontSize(8);

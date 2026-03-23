@@ -14,6 +14,7 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.ServiceContra
 
         // ======================================================================== Get ======================================================================== 
         Task<OperationResult<GetProductStandard>> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+        Task<OperationResult<GetProductStandard>> GetByProductIdAsync(Guid productId, CancellationToken cancellationToken);
         Task<OperationResult<PagedResult<ProductStandardSummaryDTO>>> GetPagedListAsync(ProductStandardQuery query, CancellationToken cancellationToken);
 
         // ======================================================================== Post ========================================================================

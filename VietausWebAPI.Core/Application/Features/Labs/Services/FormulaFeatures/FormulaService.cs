@@ -111,9 +111,11 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                         f.CreatedDate,
                         f.IsSelect,
                         f.CheckDate,
+
                         f.EffectiveDate,
                         f.ProductionPrice,
                         f.PresidentPrice,
+                        f.ProfitMarginPrice,
 
                         CheckNameSnapshot = f.CheckByNavigation != null ? f.CheckByNavigation.FullName : null,
                         f.SentDate,
@@ -223,6 +225,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                         EffectiveDate = f.EffectiveDate,
                         ProductionPrice = f.ProductionPrice,
                         PresidentPrice = f.PresidentPrice,
+                        ProfitMarginPrice = f.ProfitMarginPrice,
 
                         CreatedByName = f.CreatedByName,
                         Note = f.Note,
@@ -506,7 +509,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                 SetIfRef(req.Note, () => formulaExist.Note, v => formulaExist.Note = v);
                 SetIfRef(req.Name, () => formulaExist.Name, v => formulaExist.Name = v);
                 SetIfRef(req.Status, () => formulaExist.Status, v => formulaExist.Status = v ?? "Draft");
-                //SetIf(req.TotalPrice, () => formulaExist.TotalPrice.GetValueOrDefault(), v => formulaExist.TotalPrice = v);
                 SetIf(req.IsSelect, () => formulaExist.IsSelect, v => formulaExist.IsSelect = v);
 
 
@@ -518,10 +520,15 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                     req.PresidentPrice.HasValue &&
                     req.PresidentPrice.Value != formulaExist.PresidentPrice.GetValueOrDefault();
 
+                var profitMarginPriceChanged =
+                    req.ProfitMarginPrice.HasValue &&
+                    req.ProfitMarginPrice.Value != formulaExist.ProfitMarginPrice.GetValueOrDefault();
+                        
                 SetIf(req.ProductionPrice, () => formulaExist.ProductionPrice.GetValueOrDefault(), v => formulaExist.ProductionPrice = v);
                 SetIf(req.PresidentPrice, () => formulaExist.PresidentPrice.GetValueOrDefault(), v => formulaExist.PresidentPrice = v);
+                SetIf(req.ProfitMarginPrice, () => formulaExist.ProfitMarginPrice.GetValueOrDefault(), v => formulaExist.ProfitMarginPrice = v);
 
-                if (productionPriceChanged || presidentPriceChanged)
+                if (productionPriceChanged || presidentPriceChanged || profitMarginPriceChanged)
                 {
                     formulaExist.EffectiveDate = DateTime.Now;
                 }

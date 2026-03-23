@@ -10,6 +10,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Helpers
 {
     public interface IPurchaseOrderPdfRenderHelper
     {
-        byte[] Render(PdfPrinterPurchaseOrder data);
+        byte[] RenderTemplate();
+        byte[] Render(PdfPrinterPurchaseOrder data, bool templateOnly = false);
     }
 }

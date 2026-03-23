@@ -11,6 +11,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
 {
     public interface IFormulaPDF
     {
-        byte[] Render(ManufacturingVUPDF data);
+        byte[] Render(ManufacturingVUPDF data, bool templateOnly = true);
+        byte[] RenderTemplate();
     }
 }

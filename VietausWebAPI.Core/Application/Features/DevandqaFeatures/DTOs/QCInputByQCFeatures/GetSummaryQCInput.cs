@@ -18,6 +18,8 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.DTOs.QCInputB
         public decimal QtyKg { get; set; }
         public string Unit { get; set; } = "kg";
 
+        public string CategoryName { get; set; } = string.Empty; // dùng để hiển thị, lấy từ WarehouseVoucherDetail.ProductCode -> map sang category name
+
         public VoucherDetailType VoucherType { get; set; }
         public string RequestCode { get; set; } = string.Empty;
 

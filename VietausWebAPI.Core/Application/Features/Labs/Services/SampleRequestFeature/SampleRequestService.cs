@@ -183,6 +183,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                             Name = dto.Formula.Name,
                             PresidentPrice = dto.Formula.PresidentPrice,
                             ProductionPrice = dto.Formula.ProductionPrice,
+                            ProfitMarginPrice = dto.Formula.ProfitMarginPrice,
                             EffectiveDate = dto.Formula.EffectiveDate,
                             IsSelect = true
                         }
@@ -591,23 +592,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 var affected = await _unitOfWork.SaveChangesAsync();
                 await tx.CommitAsync(ct);
 
-                // ====== 6. Gửi notification ======
-                //await _notificationService.PublishAsync(new PublishNotificationRequest
-                //{
-                //    Topic = TopicNotifications.ProductSampleCreated,
-                //    Severity = NotificationSeverity.Info,
-                //    Title = $"Yêu cầu phối mẫu mới: {sample.ExternalId}",
-                //    Message = $"Khách hàng {customerName}",
-                //    Link = $"/labs/product-orders/{sample.SampleRequestId}",
-                //    PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
-                //    {
-                //        ProductOrderId = sample.ProductId,
-                //        CustomerId = sample.CustomerId,
-                //        CreatedBy = sample.CreatedBy,
-                //        CreatedDate = sample.CreatedDate
-                //    }),
-                //    TargetRoles = new() { RoleSets.Lab_Group }
-                //}, ct);
+                // ====== 6. Gửi response ======
 
                 // mình nghĩ trả về SampleRequestId hợp lý hơn kết dính bucket
                 return affected > 0
@@ -835,6 +820,69 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             {
                 await _unitOfWork.RollbackTransactionAsync();
                 return OperationResult.Fail($"Lỗi khi cập nhật: {ex.Message}");
+            }
+        }
+
+        public async Task<OperationResult<string>> UpdateColourCodeName(
+            Guid ProductId,
+            string newLastPrefix,
+            CancellationToken ct = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(newLastPrefix))
+                    return OperationResult<string>.Fail("Hậu tố mới không được để trống.");
+
+                newLastPrefix = newLastPrefix.Trim().ToUpper();
+
+                var sampleRequest = await _unitOfWork.SampleRequestRepository.Query(track: true)
+                    .Include(sr => sr.Product)
+                    .Where(sr => sr.ProductId == ProductId)
+                    .SingleOrDefaultAsync(ct);
+
+                if (sampleRequest == null)
+                    return OperationResult<string>.Fail("Yêu cầu mẫu không tồn tại.");
+
+                if (sampleRequest.Product == null)
+                    return OperationResult<string>.Fail("SampleRequest chưa có sản phẩm.");
+
+                if (sampleRequest.Status != SampleRequestStatus.InProgress.ToString())
+                    return OperationResult<string>.Fail("Chỉ được đổi ColourCode khi SampleRequest đang InProgress.");
+
+                var oldColourCode = sampleRequest.Product.ColourCode?.Trim().ToUpper();
+                if (string.IsNullOrWhiteSpace(oldColourCode))
+                    return OperationResult<string>.Fail("Product chưa có ColourCode.");
+
+                // Bỏ hậu tố cũ ở cuối, giữ lại phần gốc
+                // Ví dụ: LL71A -> baseCode = LL71
+                var baseCode = oldColourCode[..^1];
+
+                // Template để helper sinh số chen vào trước hậu tố
+                // Ví dụ: LL71_C
+                var template = $"{baseCode}_{newLastPrefix}";
+
+                var existingCodes = _unitOfWork.ProductRepository.Query()
+                    .Where(p => p.ProductId != sampleRequest.Product.ProductId) // loại trừ chính nó
+                    .Select(p => p.ColourCode);
+
+                var newColourCode = await ExternalIdGenerator.GenerateCodeFromTemplateAsync(
+                    template: template,
+                    existingCodes: existingCodes,
+                    getMaxNumberFunc: _unitOfWork.SampleRequestRepository.GetMaxRunningNumberByLeftPrefixAsync,
+                    padWidth: 0,
+                    ct: ct);
+
+
+
+                sampleRequest.Product.ColourCode = newColourCode;
+
+                await _unitOfWork.SaveChangesAsync();
+
+                return OperationResult<string>.Ok(newColourCode);
+            }
+            catch (Exception ex)
+            {
+                return OperationResult<string>.Fail($"Lỗi khi cập nhật: {ex.Message}");
             }
         }
     }

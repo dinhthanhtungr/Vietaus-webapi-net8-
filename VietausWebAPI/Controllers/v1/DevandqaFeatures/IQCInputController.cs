@@ -102,8 +102,8 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.DevandqaFeatures
         [HttpGet("export-excel")]
         public async Task<IActionResult> ExportExcel([FromQuery] QCInputQuery query, CancellationToken ct)
         {
-            var rows = await _qCInputByQCService.BuildExportRowsAsync(query, ct);
-            var bytes = _exportQCInputByQCExcel.ExportExcel(rows);
+            var exportData = await _qCInputByQCService.BuildExcelExportDataAsync(query, ct);
+            var bytes = _exportQCInputByQCExcel.ExportExcel(exportData);
 
             var fileName = $"QCInputByQC_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
 

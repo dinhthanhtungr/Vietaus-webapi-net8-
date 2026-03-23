@@ -10,6 +10,7 @@ using VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts.MFGProductionOrderFeatures;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
+using VietausWebAPI.Core.Domain.Entities.OrderSchema;
 using VietausWebAPI.Core.Domain.Enums.Formulas;
 
 namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
@@ -266,6 +267,7 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                         .Where(link => link.MfgProductionOrderId == x.MfgProductionOrderId && link.IsActive)
                         .Select(link => new
                         {
+                            MerchandiseOrderDetailId = link.MerchandiseOrderDetailId,
                             MerchandiseOrderId = link.Detail.MerchandiseOrderId,
                             MerchandiseOrderExternalId = link.Detail.MerchandiseOrder.ExternalId
 
@@ -283,6 +285,7 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                 ExternalId = baseData.ExternalId,
 
                 MerchandiseOrderId = baseData.OrderLink?.MerchandiseOrderId ?? Guid.Empty,
+                MerchandiseOrderDetailId = baseData.OrderLink?.MerchandiseOrderDetailId ?? Guid.Empty,
                 MerchandiseOrderExternalId = baseData.OrderLink?.MerchandiseOrderExternalId,
 
                 CustomerNameSnapshot = baseData.CustomerNameSnapshot,

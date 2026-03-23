@@ -327,6 +327,8 @@ namespace Shared.Enums
         PNK,    // Phiếu nhập kho
         PCK,    // Phiếu chuyển kho / chuyển kho nội bộ
 
+        KSP,
+
         MFG,    // Lệnh sản xuất
         VA,     // Công thức sản xuất (VA - formula)
         VU,     // Công thức phối màu (Vụ / Masterbatch color formula)

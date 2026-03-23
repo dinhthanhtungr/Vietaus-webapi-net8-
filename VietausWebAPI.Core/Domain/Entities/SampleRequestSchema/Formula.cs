@@ -28,6 +28,7 @@ public partial class Formula
     public DateTime? EffectiveDate { get; set; }
     public decimal? ProductionPrice { get; set; }
     public decimal? PresidentPrice { get; set; }
+    public decimal? ProfitMarginPrice { get; set; }
 
     public bool IsSelect { get; set; } = false;
     public bool IsActive { get; set; } = true;

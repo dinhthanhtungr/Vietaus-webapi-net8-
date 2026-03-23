@@ -374,36 +374,36 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                 // =====================================================
                 // 4. SET STANDARD IF NEEDED
                 // =====================================================
-                if (shouldCreateStandard)
-                {
-                    var currentStd = await _unitOfWork.ProductStandardFormulaRepository.Query(track: true)
-                        .Where(x => x.CompanyId == companyId
-                                    && x.ProductId == req.ProductId
-                                    && x.ValidTo == null)
-                        .FirstOrDefaultAsync(ct);
+                //if (shouldCreateStandard)
+                //{
+                //    var currentStd = await _unitOfWork.ProductStandardFormulaRepository.Query(track: true)
+                //        .Where(x => x.CompanyId == companyId
+                //                    && x.ProductId == req.ProductId
+                //                    && x.ValidTo == null)
+                //        .FirstOrDefaultAsync(ct);
 
-                    if (currentStd != null)
-                    {
-                        currentStd.ValidTo = now;
-                        currentStd.ClosedBy = userId;
-                        _unitOfWork.ProductStandardFormulaRepository.UpdateAsync(currentStd, ct);
-                    }
+                //    if (currentStd != null)
+                //    {
+                //        currentStd.ValidTo = now;
+                //        currentStd.ClosedBy = userId;
+                //        _unitOfWork.ProductStandardFormulaRepository.UpdateAsync(currentStd, ct);
+                //    }
 
-                    var newStd = new ProductStandardFormula
-                    {
-                        ProductStandardFormulaId = Guid.CreateVersion7(),
-                        ProductId = req.ProductId,
-                        ManufacturingFormulaId = mf.ManufacturingFormulaId,
-                        ValidFrom = now,
-                        ValidTo = null,
-                        CreatedBy = userId,
-                        ClosedBy = null,
-                        CompanyId = companyId,
-                        Note = req.Note
-                    };
+                //    var newStd = new ProductStandardFormula
+                //    {
+                //        ProductStandardFormulaId = Guid.CreateVersion7(),
+                //        ProductId = req.ProductId,
+                //        ManufacturingFormulaId = mf.ManufacturingFormulaId,
+                //        ValidFrom = now,
+                //        ValidTo = null,
+                //        CreatedBy = userId,
+                //        ClosedBy = null,
+                //        CompanyId = companyId,
+                //        Note = req.Note
+                //    };
 
-                    await _unitOfWork.ProductStandardFormulaRepository.AddAsync(newStd, ct);
-                }
+                //    await _unitOfWork.ProductStandardFormulaRepository.AddAsync(newStd, ct);
+                //}
 
                 // =====================================================
                 // 5. APPLY FLOW BY FORMULA TYPE

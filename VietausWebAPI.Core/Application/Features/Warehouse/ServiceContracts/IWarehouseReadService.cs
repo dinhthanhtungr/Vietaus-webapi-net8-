@@ -41,8 +41,8 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<List<ProductAvailabilityVm>> GetProductAvailabilityVmsAsync(
-                        List<string> productExternalIds,
-                        CancellationToken ct = default);
+                                List<string> productExternalIds,
+                                CancellationToken ct = default);
 
         /// <summary>
         /// Lấy dictionary thông tin tồn kho VA của các NVL trong công thức sản xuất
@@ -51,8 +51,8 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<Dictionary<string, VaAvailabilityVm>> GetVaAvailabilityDictAsync(
-            Guid manufacturingFormulaId,
-            CancellationToken ct = default);
+                                Guid manufacturingFormulaId,
+                                CancellationToken ct = default);
 
         /// <summary>
         /// Lấy dictionary mapping giữa code của NVL trong công thức sản xuất và lotNo của NVL đó trong kho
@@ -61,6 +61,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<Dictionary<string, string>> GetLotNoMapByCodesAsync(IEnumerable<string> codes, CancellationToken ct = default);
+
 
 
         Task<OperationResult<List<StockAvailableExportRow>>> GetStockAvailableExportAsync(WarehouseReadServiceQuery query);

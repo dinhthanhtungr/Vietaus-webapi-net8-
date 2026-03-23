@@ -32,6 +32,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas
 
         public decimal? SaleTotalPrice { get; set; } // từ MerchandiseOrder.TotalPrice qua MfgProductionOrder giá sale lên
         public decimal TotalQuantityRequest { get; set; }
+        public decimal? TotalQuantityProduced { get; set; }
 
         public Guid? VUFormulaId { get; set; } // ID công thức từ VU nếu có sales chọn trên đơn hàng
         public string? VUFormulaName { get; set; }

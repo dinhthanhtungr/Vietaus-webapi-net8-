@@ -43,13 +43,12 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
 
 
         // ======================================================================== Get ========================================================================
-
         public async Task<OperationResult<PagedResult<GetProductCOA>>> GetProductCOAService(
-       ProductInspectionQuery query,
-       CancellationToken ct)
+            ProductInspectionQuery query,
+            CancellationToken ct)
         {
-            const int page = 1;
-            const int pageSize = 20;
+            var page = query.PageNumber <= 0 ? 1 : query.PageNumber;
+            var pageSize = query.PageSize <= 0 ? 20 : query.PageSize;
             var skip = (page - 1) * pageSize;
 
             var productTests = _unitOfWork.ProductTestRepository.Query().AsNoTracking();
@@ -58,39 +57,7 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
             var mfgOrders = _unitOfWork.MfgProductionOrderRepository.Query().AsNoTracking();
             var products = _unitOfWork.ProductRepository.Query().AsNoTracking();
 
-            // ===== 1) QUERY CHÍNH: ProductTest =====
-            if (!string.IsNullOrWhiteSpace(query.keyword))
-            {
-                var kw = query.keyword.Trim();
-                var like = $"%{kw}%";
-
-                productTests = productTests.Where(x =>
-                    (x.ExternalId != null && EF.Functions.ILike(x.ExternalId, like)) ||
-                    (x.ProductExternalId != null && EF.Functions.ILike(x.ProductExternalId, like)) ||
-                    (x.ProductName != null && EF.Functions.ILike(x.ProductName, like))
-                );
-            }
-
-            var productTestQuery = productTests
-                .Select(x => new GetProductCOA
-                {
-                    id = x.Id,
-                    externalId = x.ExternalId,
-
-                    manufacturingDate = x.ManufacturingDate,
-                    expiryDate = x.ExpiryDate,
-                    productPackage = x.ProductPackage,
-                    ProductWeight = (float?)x.ProductWeight,
-
-                    ProductId = x.ProductId,
-                    productExternalId = x.ProductExternalId,
-                    productName = x.ProductName,
-
-                    TotalQuantityRequest = null, // ProductTest không có
-                    ColourCode = null            // ProductTest không có
-                });
-
-            // ===== 2) QUERY PHỤ: ManufacturingFormula -> PSV -> MPO -> Product =====
+            // ===== NGUỒN CHÍNH: ManufacturingFormula -> PSV -> MPO -> Product =====
             var formulaBase =
                 from mf in formulas
                 where mf.IsActive
@@ -101,14 +68,11 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                 {
                     mf.ExternalId,
                     MfgProductionOrderId = mpo.MfgProductionOrderId,
-                    mpo.ManufacturingDate,
-                    mpo.ExpectedDate,
                     mpo.TotalQuantityRequest,
                     mpo.ProductId,
                     mpo.ProductExternalIdSnapshot,
                     ProductName = p.Name,
                     p.ColourCode,
-                    ProductWeight = p.Weight,
                     ProductPackage = mpo.BagType
                 };
 
@@ -125,30 +89,35 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                 );
             }
 
-            // Chỉ lấy các mã CHƯA có trong ProductTest
-            var formulaFallbackQuery =
+            // ===== PRODUCT TEST CHỈ DÙNG ĐỂ BỔ SUNG THÔNG TIN NẾU CÓ =====
+            var finalQuery =
                 from x in formulaBase
-                where !productTests.Any(pt => pt.ExternalId == x.ExternalId)
+                let pt = productTests
+                    .Where(t => t.ExternalId == x.ExternalId)
+                    .OrderByDescending(t => t.ExternalId) // hoặc UpdatedDate nếu bạn có field phù hợp hơn
+                    .FirstOrDefault()
                 select new GetProductCOA
                 {
                     id = x.MfgProductionOrderId,
                     externalId = x.ExternalId,
 
-                    manufacturingDate = x.ManufacturingDate,
-                    expiryDate = x.ExpectedDate, // tạm fallback, nếu bạn có field expiry đúng thì thay lại
-                    productPackage = x.ProductPackage,
-                    ProductWeight = x.ProductWeight.HasValue ? (float?)x.ProductWeight.Value : null,
+                    // chỉ lấy từ ProductTest nếu có
+                    manufacturingDate = pt != null ? pt.ManufacturingDate : null,
+                    expiryDate = pt != null ? pt.ExpiryDate : null,
 
-                    ProductId = x.ProductId,
-                    productExternalId = x.ProductExternalIdSnapshot,
-                    productName = x.ProductName,
+                    productPackage = x.ProductPackage,
+
+                    // giữ đúng theo ý bạn, không đổi FE
+                    ProductWeight = (float?)x.TotalQuantityRequest,
+
+                    // ưu tiên ProductTest nếu có, không có thì fallback về data của formula/mpo
+                    ProductId = pt != null ? pt.ProductId : x.ProductId,
+                    productExternalId = pt != null ? pt.ProductExternalId : x.ProductExternalIdSnapshot,
+                    productName = pt != null ? pt.ProductName : x.ProductName,
 
                     TotalQuantityRequest = x.TotalQuantityRequest,
                     ColourCode = x.ColourCode
                 };
-
-            // ===== 3) GỘP 2 NGUỒN =====
-            var finalQuery = productTestQuery.Concat(formulaFallbackQuery);
 
             finalQuery = finalQuery
                 .OrderByDescending(x => x.manufacturingDate)
@@ -512,10 +481,6 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                 }
                 else if (!string.IsNullOrWhiteSpace(inspection.ProductCode))
                 {
-                    // ⚠️ bạn cần chọn field đúng trong ProductStandard:
-                    // - Nếu bảng standard lưu theo ProductCode => dùng s.ProductCode
-                    // - Nếu lưu theo ExternalId kiểu "BB11001A" => dùng s.ProductExternalId
-                    // Mình để 2 nhánh OR để “ăn chắc”:
                     var code = inspection.ProductCode.Trim();
                     standardQ = standardQ.Where(s =>
                         (s.ProductExternalId != null && s.ProductExternalId == code)
@@ -563,10 +528,6 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
             throw new NotImplementedException();
         }
         
-
-
-
-
 
 
     }

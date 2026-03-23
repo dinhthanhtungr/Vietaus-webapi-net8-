@@ -760,7 +760,8 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
 
                 // Here you would implement the PDF generation logic using a library like iTextSharp, PdfSharp, etc.
 
-                return _pdfRenderHelper.Render(vm);
+                return _pdfRenderHelper.Render(vm, false);
+                //return _pdfRenderHelper.RenderTemplate();
             }
             catch (Exception ex)
             {

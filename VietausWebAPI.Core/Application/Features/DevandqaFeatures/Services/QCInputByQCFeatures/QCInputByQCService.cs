@@ -9,6 +9,7 @@ using VietausWebAPI.Core.Application.Features.DevandqaFeatures.Queries.QCInputBy
 using VietausWebAPI.Core.Application.Features.DevandqaFeatures.ServiceContracts.QCInputByQCFeatures;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
+using VietausWebAPI.Core.Application.Shared.Helper.Repository;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
 using VietausWebAPI.Core.Domain.Entities.DevandqaSchema;
@@ -82,12 +83,19 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
                 if (userId == Guid.Empty)
                     return OperationResult<GetQCInputByQC>.Fail("Không lấy được thông tin người dùng hiện tại.");
 
-                // chặn tạo trùng
                 var existed = await _uow.QCInputByQCReadRepository
                     .GetLatestByVoucherDetailIdAsync(input.VoucherDetailId, ct);
 
+                var voucherDetail = await GetVoucherDetailAsync(input.VoucherDetailId, ct);
+
                 if (existed != null)
                 {
+                    if (voucherDetail != null)
+                    {
+                        await SyncAfterQcChangedAsync(voucherDetail, existed.ImportWarehouseType, userId, ct);
+                        await _uow.SaveChangesAsync(ct);
+                    }
+
                     var existedDto = new GetQCInputByQC
                     {
                         QCInputByQCId = existed.QCInputByQCId,
@@ -101,15 +109,13 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
                         IsSuccessQuality = existed.IsSuccessQuality,
                         ImportWarehouseType = existed.ImportWarehouseType,
                         Note = existed.Note,
-                        AttachmentCollectionId = existed.AttachmentCollectionId
+                        AttachmentCollectionId = existed.AttachmentCollectionId,
+                        AttachmentStatus = existed.AttachmentStatus,
+                        AttachmentLastError = existed.AttachmentLastError
                     };
 
                     return OperationResult<GetQCInputByQC>.Ok(existedDto);
                 }
-
-                // lấy voucher detail để đọc mã NVL + số lot
-                var voucherDetail = await _uow.WarehouseVoucherDetailReadRepository
-                    .GetByIdAsync(input.VoucherDetailId, ct);
 
                 if (voucherDetail == null)
                     return OperationResult<GetQCInputByQC>.Fail("Không tìm thấy WarehouseVoucherDetail.");
@@ -134,7 +140,7 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
                     Note = input.Note,
 
                     AttachmentCollectionId = input.AttachmentCollectionId,
-                    AttachmentStatus = (input.HasNewAttachments == true)
+                    AttachmentStatus = input.HasNewAttachments == true
                         ? AttachmentUploadStatus.Pending
                         : AttachmentUploadStatus.None,
                     AttachmentLastError = null,
@@ -144,27 +150,8 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
 
                 await _uow.QCInputByQCWriteRepository.AddAsync(entity, ct);
 
-                // ===== cập nhật trạng thái kho =====
-                var targetStockType = MapQcDecisionToStockType(input.ImportWarehouseType);
-                if (targetStockType.HasValue)
-                {
-                    var materialCode = voucherDetail.ProductCode?.Trim();
-                    var lotNumber = voucherDetail.LotNumber?.Trim();
-
-                    if (!string.IsNullOrWhiteSpace(materialCode) && !string.IsNullOrWhiteSpace(lotNumber))
-                    {
-                        var now = DateTime.Now;
-
-                        var affected = await _uow.WarehouseShelfStockRepository.Query()
-                            .Where(x => x.Code == materialCode
-                                     && x.LotNo == lotNumber
-                                     && x.StockType == (StockType)6)
-                            .ExecuteUpdateAsync(setters => setters
-                                .SetProperty(x => x.StockType, targetStockType.Value)
-                                .SetProperty(x => x.UpdatedBy, userId)
-                                .SetProperty(x => x.UpdatedDate, now), ct);
-                    }
-                }
+                // dùng entity.ImportWarehouseType cho đồng nhất
+                await SyncAfterQcChangedAsync(voucherDetail, entity.ImportWarehouseType, userId, ct);
 
                 await _uow.SaveChangesAsync(ct);
 
@@ -193,6 +180,8 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
                 return OperationResult<GetQCInputByQC>.Fail(ex.Message);
             }
         }
+
+
         public async Task<OperationResult<GetQCInputByQC>> PatchByVoucherDetailIdAsync(PatchQCInputByQC input, long voucherDetailId, CancellationToken ct)
         {
             try
@@ -207,42 +196,18 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
                 if (userId == Guid.Empty)
                     return OperationResult<GetQCInputByQC>.Fail("Không lấy được thông tin người dùng hiện tại.");
 
-                // update QCInputByQC
                 var entity = await _uow.QCInputByQCWriteRepository
                     .PatchByVoucherDetailIdAsync(voucherDetailId, input, userId, ct);
 
                 if (entity == null)
                     return OperationResult<GetQCInputByQC>.Fail("Không tìm thấy dữ liệu QC để cập nhật.");
 
-                // lấy voucher detail để update stock giống CreateAsync
-                var voucherDetail = await _uow.WarehouseVoucherDetailReadRepository
-                    .GetByIdAsync(voucherDetailId, ct);
-
+                var voucherDetail = await GetVoucherDetailAsync(voucherDetailId, ct);
                 if (voucherDetail == null)
                     return OperationResult<GetQCInputByQC>.Fail("Không tìm thấy WarehouseVoucherDetail.");
 
-                // ===== cập nhật trạng thái kho =====
-                var targetStockType = MapQcDecisionToStockType(input.ImportWarehouseType);
-                if (targetStockType.HasValue)
-                {
-                    var materialCode = voucherDetail.ProductCode?.Trim();
-                    var lotNumber = voucherDetail.LotNumber?.Trim();
-
-                    if (!string.IsNullOrWhiteSpace(materialCode) &&
-                        !string.IsNullOrWhiteSpace(lotNumber))
-                    {
-                        var now = DateTime.Now;
-
-                        await _uow.WarehouseShelfStockRepository.Query()
-                            .Where(x => x.Code == materialCode
-                                     && x.LotNo == lotNumber
-                                     && x.StockType == (StockType)6)
-                            .ExecuteUpdateAsync(setters => setters
-                                .SetProperty(x => x.StockType, targetStockType.Value)
-                                .SetProperty(x => x.UpdatedBy, userId)
-                                .SetProperty(x => x.UpdatedDate, now), ct);
-                    }
-                }
+                // dùng entity.ImportWarehouseType
+                await SyncAfterQcChangedAsync(voucherDetail, entity.ImportWarehouseType, userId, ct);
 
                 await _uow.SaveChangesAsync(ct);
 
@@ -273,6 +238,8 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
             }
         }
 
+
+
         // =================================================== Helper ===================================================
         private static StockType? MapQcDecisionToStockType(QcDecision? decision)
         {
@@ -288,6 +255,18 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
         public async Task<List<QCInputByQCExportRow>> BuildExportRowsAsync(QCInputQuery query, CancellationToken ct)
         {
             return await _uow.QCInputByQCReadRepository.GetExportRowsAsync(query, ct);
+        }
+
+        public async Task<QCInputByQCExcelExportData> BuildExcelExportDataAsync(QCInputQuery query, CancellationToken ct)
+        {
+            var detailRows = await _uow.QCInputByQCReadRepository.GetExportRowsAsync(query, ct);
+            var reportRows = await _uow.QCInputByQCReadRepository.GetSummaryRowsForExportAsync(query, ct);
+
+            return new QCInputByQCExcelExportData
+            {
+                DetailRows = detailRows,
+                ReportRows = reportRows
+            };
         }
 
 
@@ -319,7 +298,11 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
         /// - có đủ <c>ProductCode</c> và <c>LotNumber</c>
         /// - bản ghi tồn kho hiện tại đang ở loại tồn kho chờ QC (StockType = 6).
         /// </remarks>
-        private async Task SyncWarehouseStockByQcAsync(WarehouseVoucherDetail voucherDetail, QcDecision? importWarehouseType, Guid userId, CancellationToken ct)
+        private async Task SyncWarehouseStockByQcAsync(
+            WarehouseVoucherDetail voucherDetail,
+            QcDecision? importWarehouseType,
+            Guid userId,
+            CancellationToken ct)
         {
             var targetStockType = MapQcDecisionToStockType(importWarehouseType);
             if (!targetStockType.HasValue)
@@ -328,19 +311,26 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
             var materialCode = voucherDetail.ProductCode?.Trim();
             var lotNumber = voucherDetail.LotNumber?.Trim();
 
-            if (string.IsNullOrWhiteSpace(materialCode) || string.IsNullOrWhiteSpace(lotNumber))
+            // Chỉ bắt buộc materialCode
+            if (string.IsNullOrWhiteSpace(materialCode))
                 return;
 
             var now = DateTime.Now;
 
-            await _uow.WarehouseShelfStockRepository.Query()
+            var query = _uow.WarehouseShelfStockRepository.Query(track: true)
                 .Where(x => x.Code == materialCode
-                         && x.LotNo == lotNumber
-                         && x.StockType == (StockType)6)
-                .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(x => x.StockType, targetStockType.Value)
-                    .SetProperty(x => x.UpdatedBy, userId)
-                    .SetProperty(x => x.UpdatedDate, now), ct);
+                         && x.StockType == (StockType)6);
+
+            // Chỉ lọc LotNo khi lotNumber có giá trị
+            if (!string.IsNullOrWhiteSpace(lotNumber))
+            {
+                query = query.Where(x => x.LotNo == lotNumber);
+            }
+
+            await query.ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.StockType, targetStockType.Value)
+                .SetProperty(x => x.UpdatedBy, userId)
+                .SetProperty(x => x.UpdatedDate, now), ct);
         }
 
         /// <summary>
@@ -361,8 +351,7 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
         /// 3. Từ request lấy <c>codeFromRequest</c> để đối chiếu với <c>PurchaseOrder.ExternalId</c>
         /// 4. Tìm detail của PO theo <c>MaterialExternalIDSnapshot</c>, ưu tiên dòng có cùng <c>LineNo</c>.
         /// </remarks>
-        private async Task<(PurchaseOrder? po, PurchaseOrderDetail? pod, WarehouseRequest? request)>
-            ResolvePurchaseOrderAsync(WarehouseVoucherDetail voucherDetail, CancellationToken ct)
+        private async Task<(PurchaseOrder? po, PurchaseOrderDetail? pod, WarehouseRequest? request)> ResolvePurchaseOrderAsync(WarehouseVoucherDetail voucherDetail, CancellationToken ct)
         {
             var voucher = await _uow.WarehouseVoucherReadRepository.GetByIdAsync(voucherDetail.VoucherId, ct);
 
@@ -410,7 +399,12 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
         /// - <see cref="QcDecision.QCPass"/>
         /// - <see cref="QcDecision.Special"/>
         /// </remarks>
-        private async Task RecalculatePurchaseOrderDetailRealQuantityAsync( PurchaseOrder po, PurchaseOrderDetail pod, CancellationToken ct)
+        private async Task RecalculatePurchaseOrderDetailRealQuantityAsync(
+            PurchaseOrder po,
+            PurchaseOrderDetail pod,
+            CancellationToken ct,
+            long? currentVoucherDetailId = null,
+            QcDecision? currentDecision = null)
         {
             var poCode = po.ExternalId?.Trim();
             var materialCode = pod.MaterialExternalIDSnapshot?.Trim();
@@ -420,16 +414,18 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
 
             var acceptedTypes = new[]
             {
-        QcDecision.QCPass,
-        QcDecision.Special
-    };
+                QcDecision.QCPass,
+                QcDecision.Special
+            };
 
             var totalAcceptedQty = await _uow.WarehouseVoucherDetailReadRepository
                 .SumAcceptedQtyByPoCodeAndMaterialCodeAsync(
                     poCode,
                     materialCode,
                     acceptedTypes,
-                    ct);
+                    ct,
+                    currentVoucherDetailId,
+                    currentDecision);
 
             pod.RealQuantity = totalAcceptedQty;
         }
@@ -492,15 +488,24 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
         /// Luôn recalculate kể cả khi QC đổi giữa các trạng thái như:
         /// Pass -> Reject, Reject -> Pass, Pass -> Special...
         /// </remarks>
-        private async Task SyncPurchaseOrderByQcAsync( WarehouseVoucherDetail voucherDetail, QcDecision? importWarehouseType, Guid userId, CancellationToken ct)
+        private async Task SyncPurchaseOrderByQcAsync(
+            WarehouseVoucherDetail voucherDetail,
+            QcDecision? importWarehouseType,
+            Guid userId,
+            CancellationToken ct)
         {
             var (po, pod, _) = await ResolvePurchaseOrderAsync(voucherDetail, ct);
 
             if (po == null || pod == null)
                 return;
 
-            // luôn recalculate, kể cả patch từ Pass -> Reject hay Reject -> Pass
-            await RecalculatePurchaseOrderDetailRealQuantityAsync(po, pod, ct);
+            await RecalculatePurchaseOrderDetailRealQuantityAsync(
+                po,
+                pod,
+                ct,
+                voucherDetail.VoucherDetailId,
+                importWarehouseType);
+
             await RecalculatePurchaseOrderStatusAsync(po.PurchaseOrderId, userId, ct);
         }
 

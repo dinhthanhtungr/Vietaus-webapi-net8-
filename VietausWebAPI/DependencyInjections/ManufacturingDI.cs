@@ -18,6 +18,7 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
 
             services.AddScoped<IMfgProductionOrderRWService, MfgProductionOrderRWService>();
             services.AddScoped<IMfgGetInformationService, MfgGetInformationService>();
+            services.AddScoped<IMfgPostInformationService, MfgPostInformationService>();
             services.AddScoped<IMfgUpsertInformationService, MfgUpsertInformationService>();
 
 

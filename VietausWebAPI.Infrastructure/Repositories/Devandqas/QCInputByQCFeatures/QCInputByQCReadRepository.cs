@@ -167,7 +167,18 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
                 from vd in _context.WarehouseVoucherDetails.AsNoTracking()
                 join v in _context.WarehouseVouchers.AsNoTracking()
                     on vd.VoucherId equals v.VoucherId
-                where v.VoucherType == requiredHeaderType     // ✅ filter theo header (bắt buộc)
+
+                // LEFT JOIN Material theo ProductCode -> ExternalId
+                join m in _context.Materials.AsNoTracking()
+                    on vd.ProductCode equals m.ExternalId into mJoin
+                from m in mJoin.DefaultIfEmpty()
+
+                    // LEFT JOIN Category theo Material.CategoryId
+                join c in _context.Categories.AsNoTracking()
+                    on m.CategoryId equals c.CategoryId into cJoin
+                from c in cJoin.DefaultIfEmpty()
+
+                where v.VoucherType == requiredHeaderType
                     && allowedDetailTypes.Contains(vd.VoucherType)
                     && pageIds.Contains(vd.VoucherDetailId)
 
@@ -193,8 +204,10 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
                     Name = vd.ProductName,
                     LotNumber = vd.LotNumber ?? "",
                     QtyKg = vd.QtyKg,
-                    Unit = "-", // bạn đang set "-"
-                    VoucherType = vd.VoucherType, // ✅ theo model mới: lấy từ detail
+                    Unit = "",
+                    VoucherType = vd.VoucherType,
+
+                    CategoryName = c != null ? (c.Name ?? "") : "",
 
                     HasQC = qcLatest != null,
                     QCInputByQCId = qcLatest != null ? qcLatest.QCInputByQCId : null,
@@ -302,7 +315,6 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
 
             return await q.FirstOrDefaultAsync(ct);
         }
-
         public async Task<List<QCInputByQCExportRow>> GetExportRowsAsync(QCInputQuery query, CancellationToken ct)
         {
             query ??= new QCInputQuery();
@@ -314,11 +326,11 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
 
             var allowedDetailTypes = new[]
             {
-        VoucherDetailType.Waiter,
-        VoucherDetailType.QCPass,
-        VoucherDetailType.QCFail,
-        VoucherDetailType.Special
-    };
+                VoucherDetailType.Waiter,   // Chờ QC
+                VoucherDetailType.QCPass,   // Hàng đạt
+                VoucherDetailType.QCFail,   // Hàng lỗi
+                VoucherDetailType.Special   // Chấp nhận đặc biệt
+            };
 
             var q =
                 from vd in _context.WarehouseVoucherDetails.AsNoTracking()
@@ -448,18 +460,21 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
                     SupplierName = x.SupplierName,
 
                     ImportWarehouseText = x.qcLatest == null
-                        ? ""
-                        : x.qcLatest.ImportWarehouseType == QcDecision.QCPass ? "Đạt - nhập kho"
-                        : x.qcLatest.ImportWarehouseType == QcDecision.Special ? "Đặc cách - nhập kho"
-                        : x.qcLatest.ImportWarehouseType == QcDecision.QCFail ? "Không đạt - chờ xử lý"
-                        : "",
+                    ? ""
+                    : x.qcLatest.ImportWarehouseType == QcDecision.QCPass ? "Đạt - nhập kho"
+                    : x.qcLatest.ImportWarehouseType == QcDecision.Special ? "Chấp nhận đặc biệt - nhập kho"
+                    : x.qcLatest.ImportWarehouseType == QcDecision.QCFail ? "Không đạt - chờ xử lý"
+                    : "",
 
                     ResultText = x.qcLatest == null
-                        ? ""
-                        : x.qcLatest.ImportWarehouseType == QcDecision.Special ? "Đặc cách"
-                        : x.qcLatest.IsSuccessQuality == true ? "Đạt"
-                        : x.qcLatest.IsSuccessQuality == false ? "Không đạt"
-                        : "",
+                    ? ""
+                    : x.qcLatest.ImportWarehouseType == QcDecision.Special ? "Chấp nhận đặc biệt"
+                    : x.qcLatest.ImportWarehouseType == QcDecision.QCPass ? "Đạt"
+                    : x.qcLatest.ImportWarehouseType == QcDecision.QCFail ? "Không đạt"
+                    : x.qcLatest.ImportWarehouseType == QcDecision.Waiter ? "Chờ QC"
+                    : x.qcLatest.IsSuccessQuality == true ? "Đạt"
+                    : x.qcLatest.IsSuccessQuality == false ? "Không đạt"
+                    : "",
 
                     InspectorName = x.QCEmployeeName,
                     InspectionDate = x.qcLatest != null ? x.qcLatest.CreatedDate : null,
@@ -470,7 +485,182 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
 
             return rows;
         }
+        public async Task<List<GetSummaryQCInput>> GetSummaryRowsForExportAsync(QCInputQuery query, CancellationToken ct)
+        {
+            query ??= new QCInputQuery();
 
+            var hasKeyword = !string.IsNullOrWhiteSpace(query.Keyword);
+            var kw = hasKeyword ? query.Keyword!.Trim() : "";
 
+            var keywordIncludesQcFields = false;
+
+            var needQcForFilter =
+                query.QCInputByQCId.HasValue ||
+                query.HasQC.HasValue ||
+                (hasKeyword && keywordIncludesQcFields);
+
+            var requiredHeaderType = (int)RequestType.ImportOther;
+
+            var allowedDetailTypes = new[]
+            {
+        VoucherDetailType.Waiter,
+        VoucherDetailType.QCPass,
+        VoucherDetailType.QCFail,
+        VoucherDetailType.Special
+    };
+
+            var q1 =
+                from vd in _context.WarehouseVoucherDetails.AsNoTracking()
+                join v in _context.WarehouseVouchers.AsNoTracking()
+                    on vd.VoucherId equals v.VoucherId
+                where v.VoucherType == requiredHeaderType
+                      && allowedDetailTypes.Contains(vd.VoucherType)
+                select new { vd, v };
+
+            if (query.VoucherDetailId > 0)
+                q1 = q1.Where(x => x.vd.VoucherDetailId == query.VoucherDetailId);
+
+            if (query.VoucherDetailType.HasValue)
+            {
+                var t = query.VoucherDetailType.Value;
+                if (!allowedDetailTypes.Contains(t))
+                    return new List<GetSummaryQCInput>();
+
+                q1 = q1.Where(x => x.vd.VoucherType == t);
+            }
+
+            if (query.FromDate.HasValue)
+                q1 = q1.Where(x => x.v.CreatedDate >= query.FromDate.Value);
+
+            if (query.ToDate.HasValue)
+                q1 = q1.Where(x => x.v.CreatedDate <= query.ToDate.Value);
+
+            if (hasKeyword)
+            {
+                q1 = q1.Where(x =>
+                    x.vd.ProductCode.Contains(kw) ||
+                    x.vd.ProductName.Contains(kw) ||
+                    (x.vd.LotNumber ?? "").Contains(kw)
+                );
+            }
+
+            IQueryable<long> idsQuery;
+
+            if (!needQcForFilter)
+            {
+                idsQuery = q1
+                    .OrderByDescending(x => x.vd.VoucherDetailId)
+                    .Select(x => x.vd.VoucherDetailId);
+            }
+            else
+            {
+                var q1WithQc =
+                    from x in q1
+                    let qcLatest = _context.QCInputByQCs.AsNoTracking()
+                        .Where(qc => qc.VoucherDetailId == x.vd.VoucherDetailId)
+                        .OrderByDescending(qc => qc.CreatedDate)
+                        .Select(qc => new
+                        {
+                            qc.QCInputByQCId,
+                            qc.CSName,
+                            qc.CSExternalId,
+                            qc.CreatedDate,
+                            qc.CreatedBy
+                        })
+                        .FirstOrDefault()
+                    join eQc in _context.Employees.AsNoTracking()
+                        on qcLatest.CreatedBy equals eQc.EmployeeId into eJoin
+                    from eQc in eJoin.DefaultIfEmpty()
+                    select new
+                    {
+                        x.vd,
+                        x.v,
+                        qc = qcLatest,
+                        QCEmployeeName = eQc != null ? eQc.FullName : null
+                    };
+
+                if (query.QCInputByQCId.HasValue)
+                    q1WithQc = q1WithQc.Where(x => x.qc != null && x.qc.QCInputByQCId == query.QCInputByQCId.Value);
+
+                if (query.HasQC.HasValue)
+                    q1WithQc = query.HasQC.Value
+                        ? q1WithQc.Where(x => x.qc != null)
+                        : q1WithQc.Where(x => x.qc == null);
+
+                if (hasKeyword && keywordIncludesQcFields)
+                {
+                    q1WithQc = q1WithQc.Where(x =>
+                        x.qc != null && (
+                            (x.qc.CSName ?? "").Contains(kw) ||
+                            (x.qc.CSExternalId ?? "").Contains(kw) ||
+                            (x.QCEmployeeName ?? "").Contains(kw)
+                        )
+                    );
+                }
+
+                idsQuery = q1WithQc
+                    .OrderByDescending(x => x.vd.VoucherDetailId)
+                    .Select(x => x.vd.VoucherDetailId);
+            }
+
+            var allIds = await idsQuery.ToListAsync(ct);
+
+            if (allIds.Count == 0)
+                return new List<GetSummaryQCInput>();
+
+            var itemsQuery =
+                from vd in _context.WarehouseVoucherDetails.AsNoTracking()
+                join v in _context.WarehouseVouchers.AsNoTracking()
+                    on vd.VoucherId equals v.VoucherId
+
+                join m in _context.Materials.AsNoTracking()
+                    on vd.ProductCode equals m.ExternalId into mJoin
+                from m in mJoin.DefaultIfEmpty()
+
+                join c in _context.Categories.AsNoTracking()
+                    on m.CategoryId equals c.CategoryId into cJoin
+                from c in cJoin.DefaultIfEmpty()
+
+                where v.VoucherType == requiredHeaderType
+                      && allowedDetailTypes.Contains(vd.VoucherType)
+                      && allIds.Contains(vd.VoucherDetailId)
+
+                let qcLatest = _context.QCInputByQCs.AsNoTracking()
+                    .Where(qc => qc.VoucherDetailId == vd.VoucherDetailId)
+                    .OrderByDescending(qc => qc.CreatedDate)
+                    .Select(qc => new
+                    {
+                        qc.QCInputByQCId,
+                        qc.CreatedDate,
+                        qc.CreatedBy
+                    })
+                    .FirstOrDefault()
+
+                join eQc in _context.Employees.AsNoTracking()
+                    on qcLatest.CreatedBy equals eQc.EmployeeId into eJoin
+                from eQc in eJoin.DefaultIfEmpty()
+
+                select new GetSummaryQCInput
+                {
+                    VoucherDetailId = vd.VoucherDetailId,
+                    ExternalId = vd.ProductCode,
+                    Name = vd.ProductName,
+                    LotNumber = vd.LotNumber ?? "",
+                    QtyKg = vd.QtyKg,
+                    Unit = "kg",
+                    VoucherType = vd.VoucherType,
+                    CategoryName = c != null ? (c.Name ?? "") : "",
+                    HasQC = qcLatest != null,
+                    QCInputByQCId = qcLatest != null ? qcLatest.QCInputByQCId : null,
+                    QCCreatedDate = qcLatest != null ? qcLatest.CreatedDate : null,
+                    QCEmployeeName = (qcLatest != null && eQc != null) ? (eQc.FullName ?? "") : ""
+                };
+
+            var items = await itemsQuery
+                .OrderByDescending(x => x.VoucherDetailId)
+                .ToListAsync(ct);
+
+            return items;
+        }
     }
 }

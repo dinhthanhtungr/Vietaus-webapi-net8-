@@ -9,6 +9,8 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Helpers.QCInp
 {
     public interface IExportQCInputByQCExcel
     {
-        byte[] ExportExcel(List<QCInputByQCExportRow> rows);
+        //byte[] ExportExcel(List<QCInputByQCExportRow> rows);
+
+        byte[] ExportExcel(QCInputByQCExcelExportData data);
     }
 }

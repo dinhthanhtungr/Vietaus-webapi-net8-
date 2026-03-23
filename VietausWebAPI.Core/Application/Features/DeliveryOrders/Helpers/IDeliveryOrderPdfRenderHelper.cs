@@ -9,6 +9,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
 {
     public  interface IDeliveryOrderPdfRenderHelper
     {
-        byte[] Render(PdfPrinterDeliveryOrder data);
+        byte[] RenderTemplate();
+        byte[] Render(PdfPrinterDeliveryOrder data, bool templateOnly = false);
     }
 }

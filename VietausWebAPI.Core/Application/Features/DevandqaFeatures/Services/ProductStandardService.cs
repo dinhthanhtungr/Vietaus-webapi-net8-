@@ -91,6 +91,59 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
             }
         }
 
+        public async Task<OperationResult<GetProductStandard>> GetByProductIdAsync(Guid productId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var dto = await _unitOfWork.ProductStandardRepository.Query()
+                    .Where(ps => ps.ProductId == productId)
+                    .OrderByDescending(ps => ps.CreatedDate) // lấy bản mới nhất
+                    .Select(ps => new GetProductStandard
+                    {
+                        Id = ps.Id,
+                        ProductId = ps.ProductId,
+
+                        ExternalId = ps.externalId,
+                        ProductExternalId = ps.ProductExternalId,
+                        ProductName = ps.Product != null ? ps.Product.Name : null,
+
+                        Status = ps.Status,
+                        DeltaE = ps.DeltaE,
+                        PelletSize = ps.PelletSize,
+                        Moisture = ps.Moisture,
+                        Density = ps.Density,
+                        MeltIndex = ps.MeltIndex,
+                        TensileStrength = ps.TensileStrength,
+                        ElongationAtBreak = ps.ElongationAtBreak,
+                        FlexuralStrength = ps.FlexuralStrength,
+                        FlexuralModulus = ps.FlexuralModulus,
+                        IzodImpactStrength = ps.IzodImpactStrength,
+                        Hardness = ps.Hardness,
+                        DwellTime = ps.DwellTime,
+                        BlackDots = ps.BlackDots,
+                        MigrationTest = ps.MigrationTest,
+
+                        packed = ps.packed,
+                        Weight = ps.Weight,
+                        Shape = ps.Shape,
+
+                        CompanyId = ps.CompanyId,
+                        CreatedBy = ps.CreatedBy,
+                        CreatedDate = ps.CreatedDate
+                    })
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (dto == null)
+                    return OperationResult<GetProductStandard>.Fail("Không tìm thấy ProductStandard.");
+
+                return OperationResult<GetProductStandard>.Ok(dto);
+            }
+            catch (Exception ex)
+            {
+                return OperationResult<GetProductStandard>.Fail($"Lỗi khi lấy ProductStandard: {ex.Message}");
+            }
+        }
+
         public async Task<OperationResult<PagedResult<ProductStandardSummaryDTO>>> GetPagedListAsync(ProductStandardQuery query, CancellationToken cancellationToken)
         {
             try
@@ -109,7 +162,9 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                     var kw = query.Keyword.Trim();
                     // PostgreSQL (Npgsql): ILIKE để tìm chứa không phân biệt hoa/thường
                     baseQ = baseQ.Where(ps =>
-                        EF.Functions.ILike(ps.ProductExternalId ?? string.Empty, $"%{kw}%") 
+                        EF.Functions.ILike(ps.ProductExternalId ?? string.Empty, $"%{kw}%") ||
+                        EF.Functions.ILike(ps.Status ?? string.Empty, $"%{kw}%") ||
+                        EF.Functions.ILike(ps.Product != null ? ps.Product.ColourCode ?? string.Empty : string.Empty, $"%{kw}%") 
                     );
                 }
 
@@ -123,7 +178,7 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                     .Take(query.PageSize)
                     .Select(ps => new ProductStandardSummaryDTO
                     {
-                        ColourCode = ps.ProductExternalId ?? string.Empty,
+                        ColourCode = ps.Product != null ? ps.Product.ColourCode ?? string.Empty : string.Empty,
                         Status = ps.Status ?? string.Empty,
                         Density = ps.Density ?? string.Empty,
                         MeltIndex = ps.MeltIndex ?? string.Empty,

@@ -45,6 +45,11 @@ namespace VietausWebAPI.Core.Domain.Enums.Category
         ARADJ,      // AR Adjust: Điều chỉnh công nợ KH (doc_kind=ADJUST)
         ARRCPT,     // AR Receipt: Phiếu thu khách hàng (sales.ar_receipts)
 
+        // ===== Warehouse Audit / Adjust UI =====
+        WAD,    // Warehouse Adjustment (điều chỉnh tồn)
+        WIN,    // Warehouse In (thêm/nhập bổ sung)
+        WMV,    // Warehouse Move (chuyển kệ)
+
         // ===== Kế toán: Sổ cái (GL / Journal) =====
         JE,         // Journal Entry: Bút toán tổng hợp (nếu/ khi có bảng acct.gl_journal)
         GLPOST,     // Batch post / Workbench posting batch (nếu cần gom theo đợt)

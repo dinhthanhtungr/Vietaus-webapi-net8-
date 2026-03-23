@@ -21,16 +21,19 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Manufacturing
         private readonly IMfgProductionOrderService _mfgProductionOrderService;
         private readonly IMfgProductionOrderRWService _mfgProductionOrderRWService;
         private readonly IMfgGetInformationService _mfgGetInformationService;    
+        private readonly IMfgPostInformationService _mfgPostInformationService;
         private readonly IMfgUpsertInformationService _mfgUpsertInformationService;
 
         public MfgProductionOrderController(IMfgProductionOrderService mfgProductionOrderService
             , IMfgProductionOrderRWService mfgProductionOrderRWService
             , IMfgGetInformationService mfgGetInformationService
+            , IMfgPostInformationService mfgPostInformationService
             , IMfgUpsertInformationService mfgUpsertInformationService)
         {
             _mfgProductionOrderService = mfgProductionOrderService;
             _mfgProductionOrderRWService = mfgProductionOrderRWService;
             _mfgGetInformationService = mfgGetInformationService;
+            _mfgPostInformationService = mfgPostInformationService;
             _mfgUpsertInformationService = mfgUpsertInformationService;
         }
 
@@ -318,6 +321,44 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Manufacturing
             catch (Exception ex)
             {
                 return StatusCode(500, OperationResult.Fail($"An unexpected error occurred: {ex.Message}"));
+            }
+        }
+
+        [HttpPost("inform/create")]
+        [ProducesResponseType(typeof(OperationResult<CreateMfgProductionOrderInformResult>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(OperationResult<CreateMfgProductionOrderInformResult>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(OperationResult<CreateMfgProductionOrderInformResult>), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> CreateMfgProductionOrderInform(
+            [FromBody] CreateMfgProductionOrderInformRequest req,
+            CancellationToken ct = default)
+        {
+            if (req == null)
+                return BadRequest(OperationResult<CreateMfgProductionOrderInformResult>.Fail("Dữ liệu gửi lên không hợp lệ."));
+
+            if (req.MerchandiseOrderId == Guid.Empty)
+                return BadRequest(OperationResult<CreateMfgProductionOrderInformResult>.Fail("MerchandiseOrderId không hợp lệ."));
+
+            if (req.MerchandiseOrderDetailId == Guid.Empty)
+                return BadRequest(OperationResult<CreateMfgProductionOrderInformResult>.Fail("MerchandiseOrderDetailId không hợp lệ."));
+
+            if (!req.ProductId.HasValue || req.ProductId.Value == Guid.Empty)
+                return BadRequest(OperationResult<CreateMfgProductionOrderInformResult>.Fail("ProductId không hợp lệ."));
+
+            try
+            {
+                var result = await _mfgPostInformationService.CreateInformAsync(req, ct);
+
+                if (!result.Success)
+                    return BadRequest(result);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(
+                    500,
+                    OperationResult<CreateMfgProductionOrderInformResult>.Fail(
+                        $"An unexpected error occurred: {ex.Message}"));
             }
         }
     }

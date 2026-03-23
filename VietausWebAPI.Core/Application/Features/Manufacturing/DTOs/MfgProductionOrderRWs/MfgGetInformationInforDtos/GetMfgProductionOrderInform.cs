@@ -14,6 +14,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProducti
         public string? ExternalId { get; set; }
 
         public Guid MerchandiseOrderId { get; set; }
+        public Guid MerchandiseOrderDetailId { get; set; }
+
         public string? MerchandiseOrderExternalId { get; set; }
         public string? CustomerNameSnapshot { get; set; }
         public string? CustomerExternalIdSnapshot { get; set; }

@@ -275,7 +275,215 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
         /// <param name="query"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<OperationResult<PagedResult<GetMerchadiseTimelineInforDetail>>> GetMerchadiseTimelineDetailAsync(TimelineQuery query, CancellationToken ct = default)
+        //public async Task<OperationResult<PagedResult<GetMerchadiseTimelineInforDetail>>> GetMerchadiseTimelineDetailAsync(TimelineQuery query, CancellationToken ct = default)
+        //{
+        //    if (query.PageNumber <= 0) query.PageNumber = 1;
+        //    if (query.PageSize <= 0) query.PageSize = 15;
+
+        //    if (query.id == Guid.Empty)
+        //        throw new Exception("Id đơn hàng không hợp lệ.");
+
+        //    var page = Math.Max(1, query.PageNumber);
+        //    var size = Math.Max(1, query.PageSize);
+
+        //    // ----------------------------------------------------
+        //    // 1) Base query MFG link theo đơn hàng
+        //    // ----------------------------------------------------
+        //    var mfgBaseQ = _unitOfWork.MfgOrderPORepository.Query(false)
+        //        .AsNoTracking()
+        //        .Where(link =>
+        //            link.IsActive &&
+        //            link.Detail.MerchandiseOrderId == query.id &&
+        //            link.ProductionOrder.IsActive);
+
+        //    // Distinct theo MfgProductionOrderId ngay từ DB
+        //    var mfgPageQ = mfgBaseQ
+        //        .GroupBy(link => new
+        //        {
+        //            link.MfgProductionOrderId,
+        //            link.ProductionOrder.ExternalId,
+        //            link.ProductionOrder.ProductExternalIdSnapshot,
+        //            link.ProductionOrder.ProductNameSnapshot,
+        //            link.ProductionOrder.ProductId,
+        //            link.ProductionOrder.ExpectedDate
+        //        })
+        //        .Select(g => new
+        //        {
+        //            MfgProductionOrderId = g.Key.MfgProductionOrderId,
+        //            ExternalId = g.Key.ExternalId,
+        //            ColourCode = g.Key.ProductExternalIdSnapshot,
+        //            ProductName = g.Key.ProductNameSnapshot,
+        //            ProductId = g.Key.ProductId,
+        //            ExpectedCompletionDate = g.Key.ExpectedDate
+        //        });
+
+        //    var totalMfg = await mfgPageQ.CountAsync(ct);
+
+        //    if (totalMfg == 0)
+        //    {
+        //        return OperationResult<PagedResult<GetMerchadiseTimelineInforDetail>>.Ok(
+        //            new PagedResult<GetMerchadiseTimelineInforDetail>(
+        //                new List<GetMerchadiseTimelineInforDetail>(),
+        //                0,
+        //                page,
+        //                size
+        //            )
+        //        );
+        //    }
+
+        //    var pageMfg = await mfgPageQ
+        //        .OrderBy(x => x.ExternalId)
+        //        .Skip((page - 1) * size)
+        //        .Take(size)
+        //        .ToListAsync(ct);
+
+        //    var pageMfgIds = pageMfg.Select(x => x.MfgProductionOrderId).ToList();
+        //    var productIdsInPage = pageMfg.Select(x => x.ProductId).Distinct().ToList();
+
+        //    // ----------------------------------------------------
+        //    // 2) Delivery list theo ProductId của đơn hàng này
+        //    // Tối ưu: không cần query doIds trước rồi Contains
+        //    // ----------------------------------------------------
+        //    var doByProduct = await _unitOfWork.DeliveryOrderPORepository.Query()
+        //        .AsNoTracking()
+        //        .Where(dop => dop.IsActive && dop.MerchandiseOrderId == query.id)
+        //        .SelectMany(dop => dop.DeliveryOrder.Details
+        //            .Where(dod => dod.IsActive)
+        //            .Select(dod => new
+        //            {
+        //                dod.ProductId,
+        //                DOExternalId = dop.DeliveryOrder.ExternalId,
+        //                dod.LotNoList
+        //            }))
+        //        .Where(x => !string.IsNullOrWhiteSpace(x.DOExternalId))
+        //        .GroupBy(x => x.ProductId)
+        //        .Select(g => new
+        //        {
+        //            ProductId = g.Key,
+        //            DOList = g
+        //                .GroupBy(x => new { x.DOExternalId, x.LotNoList })
+        //                .Select(x => new DeliveryInfoDto
+        //                {
+        //                    DOExternalId = x.Key.DOExternalId!,
+        //                    LotNoList = x.Key.LotNoList
+        //                })
+        //                .ToList()
+        //        })
+        //        .ToListAsync(ct);
+
+        //    var deliveryDict = doByProduct.ToDictionary(
+        //        x => x.ProductId,
+        //        x => x.DOList
+        //    );
+
+        //    // ----------------------------------------------------
+        //    // 3) MerchandiseOrderDetail aggregate theo ProductId
+        //    // Tránh ToDictionary lỗi duplicate key
+        //    // ----------------------------------------------------
+        //    var merchDetails = await _unitOfWork.MerchandiseOrderRepository.QueryDetail(false)
+        //        .AsNoTracking()
+        //        .Where(d =>
+        //            d.MerchandiseOrderId == query.id &&
+        //            d.IsActive &&
+        //            productIdsInPage.Contains(d.ProductId))
+        //        .GroupBy(d => d.ProductId)
+        //        .Select(g => new
+        //        {
+        //            ProductId = g.Key,
+        //            RequestQuantity = g.Sum(x => (decimal?)x.ExpectedQuantity) ?? 0m,
+        //            RealQuantity = g.SelectMany(x => x.DeliveryOrderDetails.Where(dd => dd.IsActive))
+        //                            .Sum(dd => (decimal?)dd.Quantity) ?? 0m,
+        //            RequestDate = g.Min(x => x.DeliveryRequestDate),
+        //            UnitPrice = g.Average(x => (decimal)x.UnitPriceAgreed)
+        //        })
+        //        .ToDictionaryAsync(x => x.ProductId, x => x, ct);
+
+        //    // ----------------------------------------------------
+        //    // 4) Logs của các MFG trong trang hiện tại
+        //    // Tối ưu: lấy thẳng CreatedByName + CompanyName trong query
+        //    // ----------------------------------------------------
+        //    var logsQ = _unitOfWork.EventLogRepository.Query()
+        //        .AsNoTracking()
+        //        .Where(e => e.IsActive && pageMfgIds.Contains(e.SourceId));
+
+        //    if (!string.IsNullOrWhiteSpace(query.Status))
+        //        logsQ = logsQ.Where(e => e.Status == query.Status);
+
+        //    var logRows = await logsQ
+        //        .OrderBy(e => e.SourceId)
+        //        .ThenBy(e => e.CreatedDate)
+        //        .Select(e => new
+        //        {
+        //            e.SourceId,
+        //            e.Status,
+        //            e.CreatedDate,
+        //            CreatedByName = e.CreatedByNavigation != null
+        //                ? (e.CreatedByNavigation.FullName ?? string.Empty)
+        //                : string.Empty,
+        //            CompanyName = e.Company != null
+        //                ? (e.Company.Name ?? string.Empty)
+        //                : string.Empty,
+        //            e.Note
+        //        })
+        //        .ToListAsync(ct);
+
+        //    var detailsByMfg = logRows
+        //        .GroupBy(l => l.SourceId)
+        //        .ToDictionary(
+        //            g => g.Key,
+        //            g => g.Select(l => new GetMerchadiseTimelineDetail
+        //            {
+        //                Status = l.Status ?? string.Empty,
+        //                CreatedDate = l.CreatedDate,
+        //                CreatedByName = l.CreatedByName,
+        //                CompanyName = l.CompanyName,
+        //                Note = l.Note
+        //            }).ToList()
+        //        );
+
+        //    // ----------------------------------------------------
+        //    // 5) Build items
+        //    // ----------------------------------------------------
+        //    var items = pageMfg.Select(m =>
+        //    {
+        //        var deliveries = deliveryDict.TryGetValue(m.ProductId, out var list)
+        //            ? list
+        //            : new List<DeliveryInfoDto>();
+
+        //        var hasDetail = merchDetails.TryGetValue(m.ProductId, out var md);
+
+        //        return new GetMerchadiseTimelineInforDetail
+        //        {
+        //            ExternalId = m.ExternalId,
+        //            ColourCode = m.ColourCode,
+        //            ProductName = m.ProductName,
+
+        //            Deliveries = deliveries,
+
+        //            RequestQuantity = hasDetail ? md!.RequestQuantity : null,
+        //            RealQuantity = hasDetail ? md!.RealQuantity : null,
+        //            RequestDate = hasDetail ? md!.RequestDate : default,
+        //            ExpectedDate = m.ExpectedCompletionDate,
+        //            UnitPrice = hasDetail ? md!.UnitPrice : 0m,
+
+        //            Details = detailsByMfg.TryGetValue(m.MfgProductionOrderId, out var ds)
+        //                ? ds
+        //                : new List<GetMerchadiseTimelineDetail>()
+        //        };
+        //    }).ToList();
+
+        //    // ----------------------------------------------------
+        //    // 6) Return
+        //    // ----------------------------------------------------
+        //    return OperationResult<PagedResult<GetMerchadiseTimelineInforDetail>>.Ok(
+        //        new PagedResult<GetMerchadiseTimelineInforDetail>(items, totalMfg, page, size)
+        //    );
+        //}
+
+
+        public async Task<OperationResult<PagedResult<GetMerchadiseTimelineInforDetail>>> GetMerchadiseTimelineDetailAsync(
+         TimelineQuery query,
+         CancellationToken ct = default)
         {
             if (query.PageNumber <= 0) query.PageNumber = 1;
             if (query.PageSize <= 0) query.PageSize = 15;
@@ -287,39 +495,35 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
             var size = Math.Max(1, query.PageSize);
 
             // ----------------------------------------------------
-            // 1) Base query MFG link theo đơn hàng
+            // 1) Base query
             // ----------------------------------------------------
             var mfgBaseQ = _unitOfWork.MfgOrderPORepository.Query(false)
                 .AsNoTracking()
                 .Where(link =>
                     link.IsActive &&
+                    link.Detail.IsActive &&
                     link.Detail.MerchandiseOrderId == query.id &&
                     link.ProductionOrder.IsActive);
 
-            // Distinct theo MfgProductionOrderId ngay từ DB
-            var mfgPageQ = mfgBaseQ
+            // ----------------------------------------------------
+            // 2) Page theo MerchandiseOrderDetailId ngay tại DB
+            //    Mỗi detail = 1 row timeline
+            // ----------------------------------------------------
+            var detailPageQ = mfgBaseQ
                 .GroupBy(link => new
                 {
-                    link.MfgProductionOrderId,
-                    link.ProductionOrder.ExternalId,
-                    link.ProductionOrder.ProductExternalIdSnapshot,
-                    link.ProductionOrder.ProductNameSnapshot,
-                    link.ProductionOrder.ProductId,
-                    link.ProductionOrder.ExpectedDate
+                    link.MerchandiseOrderDetailId,
+                    ProductId = link.Detail.ProductId
                 })
                 .Select(g => new
                 {
-                    MfgProductionOrderId = g.Key.MfgProductionOrderId,
-                    ExternalId = g.Key.ExternalId,
-                    ColourCode = g.Key.ProductExternalIdSnapshot,
-                    ProductName = g.Key.ProductNameSnapshot,
-                    ProductId = g.Key.ProductId,
-                    ExpectedCompletionDate = g.Key.ExpectedDate
+                    g.Key.MerchandiseOrderDetailId,
+                    g.Key.ProductId
                 });
 
-            var totalMfg = await mfgPageQ.CountAsync(ct);
+            var totalRows = await detailPageQ.CountAsync(ct);
 
-            if (totalMfg == 0)
+            if (totalRows == 0)
             {
                 return OperationResult<PagedResult<GetMerchadiseTimelineInforDetail>>.Ok(
                     new PagedResult<GetMerchadiseTimelineInforDetail>(
@@ -331,29 +535,101 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                 );
             }
 
-            var pageMfg = await mfgPageQ
-                .OrderBy(x => x.ExternalId)
+            var pageDetails = await detailPageQ
+                .OrderBy(x => x.MerchandiseOrderDetailId)
                 .Skip((page - 1) * size)
                 .Take(size)
                 .ToListAsync(ct);
 
-            var pageMfgIds = pageMfg.Select(x => x.MfgProductionOrderId).ToList();
-            var productIdsInPage = pageMfg.Select(x => x.ProductId).Distinct().ToList();
+            var pageDetailIds = pageDetails
+                .Select(x => x.MerchandiseOrderDetailId)
+                .ToList();
+
+            var productIdsInPage = pageDetails
+                .Select(x => x.ProductId)
+                .Distinct()
+                .ToList();
 
             // ----------------------------------------------------
-            // 2) Delivery list theo ProductId của đơn hàng này
-            // Tối ưu: không cần query doIds trước rồi Contains
+            // 3) Chỉ lấy links của page hiện tại
+            // ----------------------------------------------------
+            var pageLinks = await mfgBaseQ
+                .Where(link => pageDetailIds.Contains(link.MerchandiseOrderDetailId))
+                .Select(link => new
+                {
+                    link.MerchandiseOrderDetailId,
+                    link.MfgProductionOrderId,
+                    ProductId = link.Detail.ProductId,
+
+                    ExternalId = link.ProductionOrder.ExternalId,
+                    ColourCode = link.ProductionOrder.ProductExternalIdSnapshot,
+                    ProductName = link.ProductionOrder.ProductNameSnapshot,
+                    ExpectedDate = link.ProductionOrder.ExpectedDate,
+
+                    ProductionCreatedDate = link.ProductionOrder.CreatedDate,
+                    ProductionUpdatedDate = link.ProductionOrder.UpdatedDate
+                })
+                .ToListAsync(ct);
+
+            var pageRows = pageLinks
+                .GroupBy(x => new
+                {
+                    x.MerchandiseOrderDetailId,
+                    x.ProductId
+                })
+                .Select(g =>
+                {
+                    var orderedMfgs = g
+                        .OrderBy(x => x.ProductionCreatedDate)
+                        .ThenBy(x => x.ProductionUpdatedDate)
+                        .ThenBy(x => x.ExternalId)
+                        .ToList();
+
+                    var latest = orderedMfgs.Last();
+
+                    return new
+                    {
+                        MerchandiseOrderDetailId = g.Key.MerchandiseOrderDetailId,
+                        ProductId = g.Key.ProductId,
+
+                        ExternalIds = orderedMfgs
+                            .Select(x => x.ExternalId)
+                            .Where(x => !string.IsNullOrWhiteSpace(x))
+                            .Distinct()
+                            .ToList(),
+
+                        LatestMfgProductionOrderId = latest.MfgProductionOrderId,
+                        ColourCode = latest.ColourCode,
+                        ProductName = latest.ProductName,
+
+                        // đang lấy ngày lớn nhất như bản bạn đang dùng
+                        ExpectedCompletionDate = g.Max(x => x.ExpectedDate)
+                    };
+                })
+                .OrderBy(x => pageDetailIds.IndexOf(x.MerchandiseOrderDetailId))
+                .ToList();
+
+            var pageLatestMfgIds = pageRows
+                .Select(x => x.LatestMfgProductionOrderId)
+                .Distinct()
+                .ToList();
+
+            // ----------------------------------------------------
+            // 4) Delivery list theo ProductId của page
             // ----------------------------------------------------
             var doByProduct = await _unitOfWork.DeliveryOrderPORepository.Query()
                 .AsNoTracking()
                 .Where(dop => dop.IsActive && dop.MerchandiseOrderId == query.id)
                 .SelectMany(dop => dop.DeliveryOrder.Details
-                    .Where(dod => dod.IsActive)
+                    .Where(dod => dod.IsActive
+                               && dod.ProductId.HasValue
+                               && productIdsInPage.Contains(dod.ProductId.Value))
                     .Select(dod => new
                     {
-                        dod.ProductId,
+                        ProductId = dod.ProductId!.Value,
                         DOExternalId = dop.DeliveryOrder.ExternalId,
-                        dod.LotNoList
+                        dod.LotNoList,
+                        CreatedDate = dop.DeliveryOrder.CreatedDate
                     }))
                 .Where(x => !string.IsNullOrWhiteSpace(x.DOExternalId))
                 .GroupBy(x => x.ProductId)
@@ -361,12 +637,19 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                 {
                     ProductId = g.Key,
                     DOList = g
-                        .GroupBy(x => new { x.DOExternalId, x.LotNoList })
+                        .GroupBy(x => new
+                        {
+                            x.DOExternalId,
+                            x.LotNoList,
+                            x.CreatedDate
+                        })
                         .Select(x => new DeliveryInfoDto
                         {
                             DOExternalId = x.Key.DOExternalId!,
-                            LotNoList = x.Key.LotNoList
+                            LotNoList = x.Key.LotNoList,
+                            CreatedDate = x.Key.CreatedDate
                         })
+                        .OrderBy(x => x.CreatedDate)
                         .ToList()
                 })
                 .ToListAsync(ct);
@@ -377,34 +660,33 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
             );
 
             // ----------------------------------------------------
-            // 3) MerchandiseOrderDetail aggregate theo ProductId
-            // Tránh ToDictionary lỗi duplicate key
+            // 5) MerchandiseOrderDetail theo detail id của page
             // ----------------------------------------------------
             var merchDetails = await _unitOfWork.MerchandiseOrderRepository.QueryDetail(false)
                 .AsNoTracking()
                 .Where(d =>
                     d.MerchandiseOrderId == query.id &&
                     d.IsActive &&
-                    productIdsInPage.Contains(d.ProductId))
-                .GroupBy(d => d.ProductId)
-                .Select(g => new
+                    pageDetailIds.Contains(d.MerchandiseOrderDetailId))
+                .Select(d => new
                 {
-                    ProductId = g.Key,
-                    RequestQuantity = g.Sum(x => (decimal?)x.ExpectedQuantity) ?? 0m,
-                    RealQuantity = g.SelectMany(x => x.DeliveryOrderDetails.Where(dd => dd.IsActive))
-                                    .Sum(dd => (decimal?)dd.Quantity) ?? 0m,
-                    RequestDate = g.Min(x => x.DeliveryRequestDate),
-                    UnitPrice = g.Average(x => (decimal)x.UnitPriceAgreed)
+                    d.MerchandiseOrderDetailId,
+                    d.ProductId,
+                    RequestQuantity = (decimal?)d.ExpectedQuantity ?? 0m,
+                    RealQuantity = d.DeliveryOrderDetails
+                        .Where(dd => dd.IsActive)
+                        .Sum(dd => (decimal?)dd.Quantity) ?? 0m,
+                    RequestDate = d.DeliveryRequestDate,
+                    UnitPrice = (decimal)d.UnitPriceAgreed
                 })
-                .ToDictionaryAsync(x => x.ProductId, x => x, ct);
+                .ToDictionaryAsync(x => x.MerchandiseOrderDetailId, x => x, ct);
 
             // ----------------------------------------------------
-            // 4) Logs của các MFG trong trang hiện tại
-            // Tối ưu: lấy thẳng CreatedByName + CompanyName trong query
+            // 6) Logs chỉ của latest MFG trong page
             // ----------------------------------------------------
             var logsQ = _unitOfWork.EventLogRepository.Query()
                 .AsNoTracking()
-                .Where(e => e.IsActive && pageMfgIds.Contains(e.SourceId));
+                .Where(e => e.IsActive && pageLatestMfgIds.Contains(e.SourceId));
 
             if (!string.IsNullOrWhiteSpace(query.Status))
                 logsQ = logsQ.Where(e => e.Status == query.Status);
@@ -442,43 +724,42 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                 );
 
             // ----------------------------------------------------
-            // 5) Build items
+            // 7) Build items
             // ----------------------------------------------------
-            var items = pageMfg.Select(m =>
+            var items = pageRows.Select(row =>
             {
-                var deliveries = deliveryDict.TryGetValue(m.ProductId, out var list)
+                var deliveries = deliveryDict.TryGetValue(row.ProductId, out var list)
                     ? list
                     : new List<DeliveryInfoDto>();
 
-                var hasDetail = merchDetails.TryGetValue(m.ProductId, out var md);
+                var hasDetail = merchDetails.TryGetValue(row.MerchandiseOrderDetailId, out var md);
+
+                var details = detailsByMfg.TryGetValue(row.LatestMfgProductionOrderId, out var ds)
+                    ? ds
+                    : new List<GetMerchadiseTimelineDetail>();
 
                 return new GetMerchadiseTimelineInforDetail
                 {
-                    ExternalId = m.ExternalId,
-                    ColourCode = m.ColourCode,
-                    ProductName = m.ProductName,
-
+                    ExternalId = string.Join(", ", row.ExternalIds),
+                    ColourCode = row.ColourCode,
+                    ProductName = row.ProductName,
                     Deliveries = deliveries,
 
                     RequestQuantity = hasDetail ? md!.RequestQuantity : null,
                     RealQuantity = hasDetail ? md!.RealQuantity : null,
                     RequestDate = hasDetail ? md!.RequestDate : default,
-                    ExpectedDate = m.ExpectedCompletionDate,
+                    ExpectedDate = row.ExpectedCompletionDate,
                     UnitPrice = hasDetail ? md!.UnitPrice : 0m,
 
-                    Details = detailsByMfg.TryGetValue(m.MfgProductionOrderId, out var ds)
-                        ? ds
-                        : new List<GetMerchadiseTimelineDetail>()
+                    Details = details
                 };
             }).ToList();
 
-            // ----------------------------------------------------
-            // 6) Return
-            // ----------------------------------------------------
             return OperationResult<PagedResult<GetMerchadiseTimelineInforDetail>>.Ok(
-                new PagedResult<GetMerchadiseTimelineInforDetail>(items, totalMfg, page, size)
+                new PagedResult<GetMerchadiseTimelineInforDetail>(items, totalRows, page, size)
             );
         }
+
 
         // ======================================================================== Post ======================================================================== 
 

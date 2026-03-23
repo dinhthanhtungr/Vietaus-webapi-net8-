@@ -166,6 +166,33 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.SampleRequest
             }
         }
 
+        [HttpPatch("update-colour-code-name/{id}")]
+        public async Task<IActionResult> UpdateColourCodeName(Guid id, [FromQuery] string newColourCode, CancellationToken ct = default)
+        {
+            if (id == Guid.Empty)
+            {
+                return BadRequest("Invalid ID.");
+            }
+            if (string.IsNullOrWhiteSpace(newColourCode))
+            {
+                return BadRequest("New colour code cannot be empty.");
+            }
+            try
+            {
+                var result = await _sampleRequestService.UpdateColourCodeName(id, newColourCode, ct);
+                if (!result.Success)
+                {
+                    return BadRequest(result.Message);
+                }
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
         //[HttpPost("UploadImage/{sampleRequestId}")]
         //[RequestSizeLimit(50 * 1024 * 1024)] // Giới hạn kích thước upload tối đa 10MB
 

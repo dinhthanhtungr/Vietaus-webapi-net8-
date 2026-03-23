@@ -77,10 +77,12 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts
                     IEnumerable<PatchMfgProductionOrderFormulaItemRequest> formulaItems,
                     CancellationToken ct = default);
 
-        Task<OperationResult> ReserveByFormulaMaterialsAsync(
-    Guid mfgProductionOrderId,
-    decimal totalQuantity,
-    IEnumerable<PostManufacturingFormulaMaterial> materials,
-    CancellationToken ct = default);
+        Task<OperationResult> SyncReservationsByFormulaItemsAsync(
+                    ReservationSyncContext ctx,
+                    decimal totalQuantity,
+                    IEnumerable<PatchMfgProductionOrderFormulaItemRequest> formulaItems,
+                    CancellationToken ct = default);
+
+        Task<OperationResult> ReserveByFormulaMaterialsAsync(Guid mfgProductionOrderId, decimal totalQuantity, IEnumerable<PostManufacturingFormulaMaterial> materials, CancellationToken ct = default);
     }
 }

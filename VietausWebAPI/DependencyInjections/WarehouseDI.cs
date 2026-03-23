@@ -26,6 +26,7 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
 
             // Services
             services.AddScoped<IWarehouseReadService, WarehouseReadService>();
+            services.AddScoped<IWarehouseVoucherReadService, WarehouseVoucherReadService>();
             services.AddScoped<IWarehouseReservationService, WarehouseReservationService>();
             services.AddScoped<IWarehouseSnapshotService, WarehouseSnapshotService>();
             return services;

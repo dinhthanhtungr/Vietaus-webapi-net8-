@@ -116,7 +116,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                     throw new Exception("Purchase Order not found.");
 
                 await tx.CommitAsync();
-                return _pdfRenderHelper.Render(vm);
+                return _pdfRenderHelper.Render(vm, false);
             }
             catch
             {

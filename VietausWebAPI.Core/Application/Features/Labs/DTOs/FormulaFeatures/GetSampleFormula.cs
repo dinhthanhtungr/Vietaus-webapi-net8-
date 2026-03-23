@@ -23,5 +23,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures
         public DateTime? EffectiveDate { get; set; }
         public decimal? ProductionPrice { get; set; }
         public decimal? PresidentPrice { get; set; }
+        public decimal? ProfitMarginPrice { get; set; }
     }
 }

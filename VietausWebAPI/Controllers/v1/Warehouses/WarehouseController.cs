@@ -17,12 +17,19 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Warehouses
         private readonly IWarehouseReservationService _warehouseReservationService; 
         private readonly IStockAvailableExcel _stockAvailableExcel;
 
-        public WarehouseController(IWarehouseReadService warehouseReadService, IWarehouseSnapshotService warehouseSnapshotService, IWarehouseReservationService warehouseReservationService, IStockAvailableExcel stockAvailableExcel)
+        private readonly IWarehouseVoucherReadService _service;
+
+        public WarehouseController(IWarehouseReadService warehouseReadService
+            , IWarehouseSnapshotService warehouseSnapshotService
+            , IWarehouseReservationService warehouseReservationService
+            , IStockAvailableExcel stockAvailableExcel
+            , IWarehouseVoucherReadService readService)
         {
             _warehouseReadService = warehouseReadService;
             _warehouseSnapshotService = warehouseSnapshotService;
             _warehouseReservationService = warehouseReservationService;
             _stockAvailableExcel = stockAvailableExcel;
+            _service = readService;
         }
 
         // Theo ID công thức
@@ -68,6 +75,27 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Warehouses
                 bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 fileName);
+        }
+
+
+        [HttpGet("voucher-list")]
+        public async Task<IActionResult> GetList([FromQuery] WarehouseVoucherReadQuery query)
+        {
+            var result = await _service.GetWarehouseVouchersAsync(query);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+        [HttpGet("{voucherId:long}")]
+        public async Task<IActionResult> GetById(long voucherId)
+        {
+            var result = await _service.GetWarehouseVoucherByIdAsync(voucherId);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
     }
 }
