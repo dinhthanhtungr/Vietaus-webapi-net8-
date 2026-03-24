@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.GetDtos;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.PatchDtos;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.PostDtos;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.Querys.Material;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 

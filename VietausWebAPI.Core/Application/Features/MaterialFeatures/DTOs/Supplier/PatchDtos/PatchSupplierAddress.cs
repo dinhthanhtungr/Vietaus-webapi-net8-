@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier
+namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier.PatchDtos
 {
-    public class PostSupplierAddress
+    public class PatchSupplierAddress
     {
+        public Guid AddressId { get; set; }
         public string? AddressLine { get; set; }
 
         public string? City { get; set; }
@@ -21,5 +22,6 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier
         public bool? IsPrimary { get; set; } = false;
 
         public string? PostalCode { get; set; }
+        public bool? IsActive { get; set; }
     }
 }

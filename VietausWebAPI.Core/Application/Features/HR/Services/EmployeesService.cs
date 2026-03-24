@@ -134,7 +134,7 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
             query ??= new GroupQuery();
 
             var pageIndex = query.PageNumber > 0 ? query.PageNumber : 1;
-            var pageSize = query.PageSize > 0 ? query.PageSize : 10;
+            var pageSize = query.PageSize > 0 ? 30 : 10;
             var keyword = query.keyword?.Trim();
 
             IQueryable<Group> q = _unitOfWork.GroupRepository.Query();

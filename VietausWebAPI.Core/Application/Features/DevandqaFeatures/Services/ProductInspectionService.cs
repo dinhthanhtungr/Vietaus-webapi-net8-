@@ -425,6 +425,8 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                     .Query()
                     .Where(x => x.Id == id)
                     .FirstOrDefaultAsync(ct);
+                var productTests = _unitOfWork.ProductTestRepository.Query().AsNoTracking();
+
 
                 if (inspection is null)
                     return OperationResult<byte[]>.Fail("Không tìm thấy ProductInspection để in COA.");
@@ -464,7 +466,10 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                     MigrationTest = inspection.MigrationTest,
 
                     // cái này bạn đang đặt bagType = MeshType, mình vẫn giữ theo DB hiện có
-                    bagType = inspection.MeshType,
+                    bagType = productTests
+                        .Where(x => x.ProductExternalId == inspection.ProductCode)
+                        .Select(x => x.ProductPackage)
+                        .FirstOrDefault(),
 
                     CreateDate = inspection.CreateDate ?? DateTime.Now
                 };

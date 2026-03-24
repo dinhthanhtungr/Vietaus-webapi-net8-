@@ -1089,42 +1089,69 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
 
 
 
-        public async Task<List<DeliveryFinishRow>> BuildDeliveryFinishRowsAsync(DateTime fromDate, DateTime toDate, CancellationToken ct)
+        public async Task<List<DeliveryFinishRow>> BuildDeliveryFinishRowsAsync(
+            DateTime fromDate,
+            DateTime toDate,
+            CancellationToken ct)
         {
             var from = fromDate.Date;
             var to = toDate.Date.AddDays(1); // [from, to)
 
-            var q = _unitOfWork.DeliveryOrderRepository.Query()
+            var deliveryData = await _unitOfWork.DeliveryOrderRepository.Query()
                 .Where(d => d.IsActive == true)
                 .Where(d => d.CreatedDate >= from && d.CreatedDate < to)
-                .SelectMany(d => d.Details.Where(det => det.IsActive),
+                .SelectMany(
+                    d => d.Details.Where(det => det.IsActive),
                     (d, det) => new
                     {
                         Delivery = d,
                         Det = det,
 
-                        // link qua MO Detail (optional)
+                        // MO Detail (optional)
                         MODetail = det.MerchandiseOrderDetail,
 
-                        // link qua MO (optional)
+                        // MO (optional)
                         MO = det.MerchandiseOrderDetail != null
                             ? det.MerchandiseOrderDetail.MerchandiseOrder
                             : null,
 
-                        // Lấy tên người giao (lấy 1 người đầu tiên)
+                        // người giao đầu tiên
                         DelivererNames = d.Deliverers
                             .Select(x => x.DelivererInfor.Name)
                             .Where(n => n != null && n != "")
                             .Distinct()
                             .ToList()
-                    });
+                    })
+                .ToListAsync(ct);
 
-            var data = await q.ToListAsync(ct);
+            // Lấy các MerchandiseOrderDetailId hợp lệ để query MfgOrderPO
+            var moDetailIds = deliveryData
+                .Where(x => x.MODetail != null)
+                .Select(x => x.MODetail!.MerchandiseOrderDetailId)
+                .Distinct()
+                .ToList();
 
-            var rows = new List<DeliveryFinishRow>(capacity: data.Count);
-            var stt = 1;
+            // Lookup: MerchandiseOrderDetailId -> Max(ExpectedDate)
+            var maxExpectedDateByDetailId = moDetailIds.Count == 0
+                ? new Dictionary<Guid, DateTime?>()
+                : await _unitOfWork.MfgOrderPORepository.Query()
+                    .Where(x => x.IsActive)
+                    .Where(x => moDetailIds.Contains(x.MerchandiseOrderDetailId))
+                    .Where(x => x.ProductionOrder != null && x.ProductionOrder.IsActive)
+                    .GroupBy(x => x.MerchandiseOrderDetailId)
+                    .Select(g => new
+                    {
+                        MerchandiseOrderDetailId = g.Key,
+                        ExpectedDeliveryDate = g.Max(x => x.ProductionOrder.ExpectedDate)
+                    })
+                    .ToDictionaryAsync(
+                        x => x.MerchandiseOrderDetailId,
+                        x => x.ExpectedDeliveryDate,
+                        ct);
 
-            foreach (var it in data)
+            var rows = new List<DeliveryFinishRow>(capacity: deliveryData.Count);
+
+            foreach (var it in deliveryData)
             {
                 var mo = it.MO;
                 var md = it.MODetail;
@@ -1133,17 +1160,25 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                     ? it.DelivererNames[0]
                     : "";
 
+                DateTime? expectedDeliveryDate = null;
+
+                if (md != null &&
+                    maxExpectedDateByDetailId.TryGetValue(md.MerchandiseOrderDetailId, out var maxExpected))
+                {
+                    expectedDeliveryDate = maxExpected;
+                }
+
                 rows.Add(new DeliveryFinishRow
                 {
-                    // nếu bạn muốn có STT trong excel thì thêm property Stt vào DTO,
-                    // hoặc bạn map STT ở lúc export excel cũng được.
-                    // Stt = stt++,
-
                     DeliveryExternalId = it.Delivery.ExternalId,
                     OrderExternalId = mo?.ExternalId,
 
                     OrderCreatedDate = mo != null ? mo.CreateDate : (DateTime?)null,
                     DeliveryRequestDate = md != null ? md.DeliveryRequestDate : (DateTime?)null,
+
+                    // lấy từ MfgProductionOrder.ExpectedDate lớn nhất
+                    ExpectedDeliveryDate = expectedDeliveryDate,
+
                     DeliveryActualDate = it.Delivery.CreatedDate,
 
                     CustomerName = mo != null
@@ -1157,8 +1192,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                         + " - "
                         + (it.Det.ProductNameSnapShot ?? ""),
 
-                    WarehouseDisplay = "", // bạn có kho thì map vô đây
-
+                    WarehouseDisplay = "",
                     LotNoOrBatch = it.Det.LotNoList,
                     QuantityKg = it.Det.Quantity,
                     NumOfBags = it.Det.NumOfBags,
@@ -1166,8 +1200,6 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
 
                     Note = it.Delivery.Note
                 });
-
-                stt++;
             }
 
             return rows;

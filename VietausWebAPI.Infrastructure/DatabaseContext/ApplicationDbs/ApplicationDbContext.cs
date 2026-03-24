@@ -586,6 +586,9 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
                 entity.HasIndex(e => e.UpdatedBy).HasDatabaseName("IX_Products_UpdatedBy");
 
 
+                entity.HasIndex(e => new { e.ColourCode }, "UX_Products_ColourCode")
+                    .IsUnique();
+
                 // List/paging mặc định trong tenant (khớp CreatedDate desc)
                 entity.HasIndex(e => new { e.CompanyId, e.IsActive, e.CreatedDate, e.ProductId })
                       .IsDescending(false, false, true, true)

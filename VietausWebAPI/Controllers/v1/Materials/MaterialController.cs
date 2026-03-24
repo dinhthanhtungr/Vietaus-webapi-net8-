@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.GetDtos;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.PatchDtos;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.PostDtos;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.Querys.Material;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.Querys.Supplier;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContracts;

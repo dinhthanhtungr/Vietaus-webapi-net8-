@@ -59,6 +59,9 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.DeliverySc
             entity.HasIndex(e => e.UpdatedBy, "IX_DeliveryOrders_UpdatedBy");
             entity.HasIndex(e => e.CustomerId, "IX_DeliveryOrders_CustomerId");
 
+            entity.HasIndex(e => e.ExternalId, "UX_DeliveryOrders_ExternalId")
+                .IsUnique();
+
             entity.HasOne(d => d.Customer)
                   .WithMany()
                   .HasForeignKey(d => d.CustomerId)

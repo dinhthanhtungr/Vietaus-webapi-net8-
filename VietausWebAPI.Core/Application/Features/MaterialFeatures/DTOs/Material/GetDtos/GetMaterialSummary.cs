@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Enums.Formulas;
 
-namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
+namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.GetDtos
 {
     public class GetMaterialSummary
     {

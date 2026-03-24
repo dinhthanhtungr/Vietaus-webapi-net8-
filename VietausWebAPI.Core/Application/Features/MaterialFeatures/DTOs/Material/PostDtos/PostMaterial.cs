@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Entities;
 
-namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
+namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.PostDtos
 {
-    public class GetMaterial
+    public class PostMaterial
     {
-        public Guid MaterialId { get; set; }
-
         public string? ExternalId { get; set; }
 
         public string? CustomCode { get; set; }
@@ -28,11 +27,10 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
 
         public double? MinQuantity { get; set; }
 
-        public Guid CompanyId { get; set; }
+        public string? Barcode { get; set; }
 
-        public bool? IsActive { get; set; }
 
-        public string? Barcode { get; set; } //mã “master” để quét ra sản phẩm/vật tư (thường là GTIN/EAN-13).
-        public List<GetMaterialSupplier> materialSuppliers { get; set; } = new List<GetMaterialSupplier>();
+        public List<PostMaterialSupplier>? Suppliers { get; set; } // nhiều NCC
+
     }
 }

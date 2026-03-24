@@ -64,9 +64,6 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs
                              });
 
                              // Website
-                             col.Item().Text("Website: https://vietaus.com")
-                                 .FontFamily("Open Sans").FontSize(7)
-                                 .FontColor(Colors.Blue.Medium);
                              col.Item().Row(row =>
                              {
                                  row.RelativeItem(1).Text("Website: ")

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier.GetDtos;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.Querys.Supplier;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 

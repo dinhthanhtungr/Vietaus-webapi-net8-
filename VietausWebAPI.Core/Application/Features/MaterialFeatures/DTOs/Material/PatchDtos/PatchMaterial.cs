@@ -3,14 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using VietausWebAPI.Core.Domain.Entities;
 
-namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
+namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.PatchDtos
 {
-    public class PostMaterial
+    public class PatchMaterial
     {
-        public string? ExternalId { get; set; }
-
+        public Guid MaterialId { get; set; }
         public string? CustomCode { get; set; }
 
         public string? Name { get; set; }
@@ -29,8 +27,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
 
         public string? Barcode { get; set; }
 
-
-        public List<PostMaterialSupplier>? Suppliers { get; set; } // nhiều NCC
+        public List<PatchMaterialSupplier>? Suppliers { get; set; } // nhiều NCC
 
     }
 }

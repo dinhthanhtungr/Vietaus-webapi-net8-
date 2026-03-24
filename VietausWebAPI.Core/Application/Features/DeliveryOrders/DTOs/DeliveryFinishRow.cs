@@ -14,6 +14,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs
         public DateTime? OrderCreatedDate { get; set; }        // Ngày nhận đơn hàng
         public DateTime? DeliveryRequestDate { get; set; }     // Ngày yêu cầu giao hàng
         public DateTime? DeliveryActualDate { get; set; }      // Ngày thực tế giao hàng
+        public DateTime? ExpectedDeliveryDate { get; set; }     // Ngày dự kiến giao hàng
 
         public string? CustomerName { get; set; }              // Khách hàng
         public string? DelivererName { get; set; }             // Người giao

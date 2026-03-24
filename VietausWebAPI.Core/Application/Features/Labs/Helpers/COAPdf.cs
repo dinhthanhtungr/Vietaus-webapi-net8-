@@ -13,6 +13,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
     {
         private readonly PDFResultValue _result;
         private readonly PDFSpecificationsValue? _specs;
+        private bool _isLongGiangBag;
 
         // Constructor 1: chỉ có kết quả kiểm tra
         public COAPdf(PDFResultValue result)
@@ -37,10 +38,12 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                 page.Size(PageSizes.A4);
                 page.Margin(20);
 
+                _isLongGiangBag = (_result.bagType ?? "")
+                    .Replace("_", " ")
+                    .Contains("long giang", StringComparison.OrdinalIgnoreCase);
 
-                
 
-                if (_result.bagType?.ToLower().Replace("_", " ").Contains("long giang") == true)
+                if (_isLongGiangBag)
                 {
                     page.Header().Component(new LGHeaderComponent());
                 }
@@ -154,7 +157,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                     });
 
 
-                    var rows = ExtractTestRowsHelper.ExtractTestRows(_result, _specs);
+                    var rows = ExtractTestRowsHelper.ExtractTestRows(_result, _specs, _isLongGiangBag);
 
                     column.Item().PaddingTop(10).PaddingBottom(10).Table(table =>
                     {
@@ -231,7 +234,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                 });
 
                 // Footer
-                if (_result.bagType?.ToLower().Replace("_", " ").Contains("long giang") == true)
+                if (_isLongGiangBag)
                 {
                     page.Footer().Component(new LGFooterComponent());
                 }

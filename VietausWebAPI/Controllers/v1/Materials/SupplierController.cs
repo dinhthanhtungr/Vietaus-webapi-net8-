@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PuppeteerSharp;
-using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier.GetDtos;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier.PatchDtos;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier.PostDtos;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.Querys.Supplier;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContracts.SupplierFeatures;
 

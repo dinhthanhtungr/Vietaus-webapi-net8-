@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier
+namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier.GetDtos
 {
     public class GetSupplierSummary
     {
@@ -21,5 +21,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier
         public string? FirstName { get; set; }
 
         public string? LastName { get; set; }
+
+        public IEnumerable<GetSummaryMaterialSupplierHas>? Materials { get; set; }  
     }
 }

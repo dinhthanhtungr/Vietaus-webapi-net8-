@@ -33,13 +33,25 @@ namespace VietausWebAPI.Infrastructure.Repositories.Materials
 
         public async Task<string?> GetLatestExternalIdStartsWithAsync(string prefix)
         {
-            return await _context.Materials
+            var items = await _context.Materials
                 .AsNoTracking()
-                .Where(e => e.ExternalId != null && e.ExternalId.StartsWith(prefix))
-                .OrderByDescending(e => e.ExternalId!.Length)  // số chữ số dài hơn ⇒ lớn hơn
-                .ThenByDescending(e => e.ExternalId)           // cùng độ dài ⇒ so chuỗi
-                .Select(e => e.ExternalId)
-                .FirstOrDefaultAsync();
+                .Where(x => x.ExternalId != null && x.ExternalId.StartsWith(prefix))
+                .Select(x => x.ExternalId!)
+                .ToListAsync();
+
+            var latest = items
+                .Select(id =>
+                {
+                    var suffix = id.Substring(prefix.Length);
+                    return int.TryParse(suffix, out var num)
+                        ? new { Id = id, Num = num }
+                        : null;
+                })
+                .Where(x => x != null)
+                .OrderByDescending(x => x!.Num)
+                .FirstOrDefault();
+
+            return latest?.Id;
         }
 
         public async Task<bool> DeleteMaterialAsync(Guid Id, CancellationToken ct = default)

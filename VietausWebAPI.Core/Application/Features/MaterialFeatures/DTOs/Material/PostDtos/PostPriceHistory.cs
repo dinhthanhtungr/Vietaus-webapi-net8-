@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
+namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.PostDtos
 {
     public class PostPriceHistory
     {

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier.GetDtos;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.Querys.Supplier;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts.SupplierFeatures;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
@@ -157,9 +157,25 @@ namespace VietausWebAPI.Infrastructure.Repositories.Materials.SupplierFeatures
                     SupplierName = e.SupplierName,
                     RegistrationNumber = e.RegistrationNumber,
                     RegistrationAddress = e.RegistrationAddress,
-                    Phone = e.SupplierContacts.Where(c => c.IsPrimary == true).Select(c => c.FirstName).FirstOrDefault(),
+                    Phone = e.SupplierContacts.Where(c => c.IsPrimary == true).Select(c => c.Phone).FirstOrDefault(),
                     FirstName = e.SupplierContacts.Where(c => c.IsPrimary == true).Select(c => c.FirstName).FirstOrDefault(),
                     LastName = e.SupplierContacts.Where(c => c.IsPrimary == true).Select(c => c.LastName).FirstOrDefault(),
+
+                    Materials = e.MaterialsSuppliers
+                        .Where(ms => ms.IsActive == true)
+                        .OrderBy(ms => ms.Material.ExternalId)
+                        .Select(ms => new GetSummaryMaterialSupplierHas
+                        {
+                            MaterialId = ms.MaterialId,
+                            MaterialName = ms.Material.Name ?? string.Empty,
+                            MaterialCode = ms.Material.ExternalId,
+                            CategoryName = ms.Material.Category.Name,
+                            Notes = ms.Material.Comment
+                        })
+
+                        .ToList()
+
+
                 })
                 .ToListAsync(ct);
 
@@ -169,6 +185,24 @@ namespace VietausWebAPI.Infrastructure.Repositories.Materials.SupplierFeatures
                 query.PageNumber,
                 query.PageSize
             );
+        }
+
+        // ======================================================================== Helpers ======================================================================== 
+
+        /// <summary>
+        /// Helper sort ExternalId có số ở cuối
+        /// </summary>
+        /// <param name="code"></param>
+        /// <returns></returns>
+        private static int ExtractTrailingNumber(string? code)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+                return int.MaxValue;
+
+            var match = System.Text.RegularExpressions.Regex.Match(code, @"(\d+)$");
+            return match.Success && int.TryParse(match.Value, out var number)
+                ? number
+                : int.MaxValue;
         }
     }
 }

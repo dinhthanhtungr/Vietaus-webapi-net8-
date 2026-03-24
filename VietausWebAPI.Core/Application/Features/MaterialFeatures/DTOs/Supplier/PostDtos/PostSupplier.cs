@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs;
 
-namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier
+namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier.PostDtos
 {
     public class PostSupplier
     {

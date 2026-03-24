@@ -4,11 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier
+namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier.PostDtos
 {
-    public class GetSupplierAddress
+    public class PostSupplierAddress
     {
-        public Guid AddressId { get; set; }
         public string? AddressLine { get; set; }
 
         public string? City { get; set; }
