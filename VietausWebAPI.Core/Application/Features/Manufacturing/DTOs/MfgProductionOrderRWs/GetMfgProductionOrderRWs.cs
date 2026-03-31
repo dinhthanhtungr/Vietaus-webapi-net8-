@@ -49,6 +49,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProducti
         public string? QcCheck { get; set; }
         public StepOfProduct? StepOfProduct { get; set; }
 
+        //public string? FormulaSelectList { get; set; }  
+
         public List<GetMfgProductionOrderRWSummary> MfgProductionOrderRWSummaries { get; set; } = new List<GetMfgProductionOrderRWSummary>();
     }
 }

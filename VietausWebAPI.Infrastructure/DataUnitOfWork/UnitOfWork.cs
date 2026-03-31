@@ -10,15 +10,19 @@ using VietausWebAPI.Core.Application.Features.HR.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Identity.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
+using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature.ColorChipRecordFeatures;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts.SupplierFeatures;
 using VietausWebAPI.Core.Application.Features.Notifications.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.ReportFeatures.RepositoriesContracts.PLPUReports;
+using VietausWebAPI.Core.Application.Features.ReportFeatures.RepositoriesContracts.SaleReports;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.MerchandiseOrderFeatures;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.ShiftReportFeatures.RepositoriesContracts.ExtruderOperationHistoryRepositories;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContracts.ReadRepositories;
@@ -36,6 +40,12 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
 
         public UnitOfWork(
             ApplicationDbContext context,
+            // ==== Report ====
+
+            IFinishPLPUReportRepository finishPLPUReportRepository,
+
+            IMerchandiseOrderReportRepositorys merchandiseOrderReportRepositorys,
+
 
             // ==== Attachments ====
             IAttachmentCollectionRepository attachmentCollectionRepository,
@@ -72,6 +82,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             ISampleRequestRepository sampleRequestRepository,
             IManufacturingVUFormulaRepository manufacturingVUFormulaRepository,
             IFormulaMaterialSnapshotRepository formulaMaterialSnapshotRepository,
+
+            IColorChipRecordReadRepositories colorChipRecordReadRepositories,
+            IColorChipRecordWriteRepositories colorChipRecordWriteRepositories,
 
             // ==== Planning ====
             IScheduealRepository scheduealRepository,
@@ -126,6 +139,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             IDelivererInforRepository delivererInforRepository,
             IDeliveryOrderPORepository deliveryOrderPORepository,
 
+            // ==== ExtruderOperationHistory ====
+            IExtruderOperationHistoryReadRepositories extruderOperationHistoryReadRepositories,
+
             // ==== Purchase ====
             IPurchaseOrderRepository purchaseOrderRepository,
             IPurchaseOrderDetailRepository purchaseOrderDetailRepository,
@@ -145,6 +161,10 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         )
         {
             _context = context;
+            // ===== Report =====
+            FinishPLPUReportRepository = finishPLPUReportRepository;
+
+            MerchandiseOrderReportRepositorys = merchandiseOrderReportRepositorys;
 
             // ===== Attachments =====
             AttachmentCollectionRepository = attachmentCollectionRepository;
@@ -184,6 +204,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             FormulaMaterialRepository = formulaMaterialRepository;
             SampleRequestRepository = sampleRequestRepository;
             ManufacturingVUFormulaRepository = manufacturingVUFormulaRepository;
+
+            ColorChipRecordReadRepositories = colorChipRecordReadRepositories;
+            ColorChipRecordWriteRepositories = colorChipRecordWriteRepositories;    
 
             // ===== Planning =====
             ScheduealRepository = scheduealRepository;
@@ -235,6 +258,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             DelivererRepository = delivererRepository;
             DelivererInforRepository = delivererInforRepository;
             DeliveryOrderPORepository = deliveryOrderPORepository;
+
+            // ==== ExtruderOperationHistory ====
+            ExtruderOperationHistoryReadRepositories = extruderOperationHistoryReadRepositories;
 
             // ===== Purchase =====
             PurchaseOrderRepository = purchaseOrderRepository;

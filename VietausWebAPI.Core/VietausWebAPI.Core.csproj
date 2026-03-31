@@ -22,7 +22,9 @@
     <Folder Include="Application\Features\CompanyFeatures\Helpers\" />
     <Folder Include="Application\Features\DevandqaFeatures\DTOs\QCInputDTOs\" />
     <Folder Include="Application\Features\Labs\DTOs\QAQCFeature\ProductStandardFeature\" />
+    <Folder Include="Application\Features\Labs\DTOs\SampleRequestFeature\ColorChipRecordFeatures\GetDtos\" />
     <Folder Include="Application\Features\Labs\Mappers\" />
+    <Folder Include="Application\Features\ShiftReportFeatures\Helpers\" />
     <Folder Include="Domain\Security\Policys\" />
   </ItemGroup>
 

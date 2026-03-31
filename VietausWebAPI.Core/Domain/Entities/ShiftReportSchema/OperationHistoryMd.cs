@@ -42,5 +42,7 @@ namespace VietausWebAPI.Core.Domain.Entities.ShiftReportSchema
         public int? ScrewSpeed { get; set; }
         public int? ScrewCurrent { get; set; }
         public int? FeederSpeed { get; set; }
+
+        public string? MachineId { get; set; }
     }
 }

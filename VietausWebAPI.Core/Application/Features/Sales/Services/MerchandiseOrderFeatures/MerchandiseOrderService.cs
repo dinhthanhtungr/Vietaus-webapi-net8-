@@ -496,22 +496,28 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrde
                     .SetProperty(x => x.Status, _ => "Cancelled")
                 , ct);
 
-            // 5) Bulk updates: deactivate link table MfgOrderPO (theo Detail.MerchandiseOrderId)
-            await _unitOfWork.MfgOrderPORepository.Query(true)
-                .Where(x => x.IsActive && x.Detail.MerchandiseOrderId == query.MerchandiseOrderId)
-                .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsActive, _ => false), ct);
 
-            // 6) Bulk updates: deactivate MfgProductionOrder theo ids (nếu có)
-            if (mfgIds.Count > 0)
+            if(mo.Status == MerchadiseStatus.New.ToString()|| mo.Status == MerchadiseStatus.Approved.ToString())
             {
-                await _unitOfWork.MfgProductionOrderRepository.Query(true)
-                    .Where(m => m.IsActive && mfgIds.Contains(m.MfgProductionOrderId))
-                    .ExecuteUpdateAsync(s => s
-                        .SetProperty(x => x.IsActive, _ => false)
-                        .SetProperty(x => x.Status, _ => ManufacturingProductOrder.Canceled.ToString())
-                        .SetProperty(x => x.UpdatedBy, _ => query.UpdatedBy)
-                        .SetProperty(x => x.UpdatedDate, _ => now)
-                    , ct);
+                // 5) Bulk updates: deactivate link table MfgOrderPO (theo Detail.MerchandiseOrderId)
+
+                await _unitOfWork.MfgOrderPORepository.Query(true)
+                    .Where(x => x.IsActive && x.Detail.MerchandiseOrderId == query.MerchandiseOrderId)
+                    .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsActive, _ => false), ct);
+
+                // 6) Bulk updates: deactivate MfgProductionOrder theo ids (nếu có)
+                if (mfgIds.Count > 0)
+                {
+                    await _unitOfWork.MfgProductionOrderRepository.Query(true)
+                        .Where(m => m.IsActive && mfgIds.Contains(m.MfgProductionOrderId))
+                        .ExecuteUpdateAsync(s => s
+                            .SetProperty(x => x.IsActive, _ => false)
+                            .SetProperty(x => x.Status, _ => ManufacturingProductOrder.Canceled.ToString())
+                            .SetProperty(x => x.UpdatedBy, _ => query.UpdatedBy)
+                            .SetProperty(x => x.UpdatedDate, _ => now)
+                        , ct);
+                }
+
             }
 
             // 7) Update MerchandiseOrder (tracked entity)

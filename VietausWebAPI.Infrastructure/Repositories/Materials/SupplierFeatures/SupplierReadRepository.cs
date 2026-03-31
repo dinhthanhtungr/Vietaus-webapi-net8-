@@ -135,12 +135,21 @@ namespace VietausWebAPI.Infrastructure.Repositories.Materials.SupplierFeatures
                 q = q.Where(e => e.CreatedDate <= query.To.Value);
             }
 
-            if(!string.IsNullOrWhiteSpace(query.Keyword))
+            if (!string.IsNullOrWhiteSpace(query.Keyword))
             {
                 var keyword = query.Keyword.Trim().ToLower();
-                q = q.Where(e => e.SupplierName!.ToLower().Contains(keyword)
-                             || e.RegistrationNumber!.ToLower().Contains(keyword)
-                             || e.ExternalId!.ToLower().Contains(keyword)
+
+                q = q.Where(e =>
+                    (e.SupplierName != null && e.SupplierName.ToLower().Contains(keyword)) ||
+                    (e.RegistrationNumber != null && e.RegistrationNumber.ToLower().Contains(keyword)) ||
+                    (e.ExternalId != null && e.ExternalId.ToLower().Contains(keyword)) ||
+                    e.MaterialsSuppliers.Any(ms =>
+                        ms.IsActive == true &&
+                        ms.Material != null &&
+                        (
+                            (ms.Material.ExternalId != null && ms.Material.ExternalId.ToLower().Contains(keyword)) ||
+                            (ms.Material.Name != null && ms.Material.Name.ToLower().Contains(keyword))
+                        ))
                 );
             }
 

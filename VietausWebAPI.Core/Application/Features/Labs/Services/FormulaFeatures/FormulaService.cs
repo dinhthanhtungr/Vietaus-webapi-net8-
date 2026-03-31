@@ -97,8 +97,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                 var totalCount = await baseQ.CountAsync(ct);
 
                 // 1) Lấy page formula trước
-                var formulaPage = await baseQ
+                var formulaPageTemp = baseQ
                     .OrderByDescending(f => f.CreatedDate)
+
                     .Skip((query.PageNumber - 1) * query.PageSize)
                     .Take(query.PageSize)
                     .Select(f => new
@@ -122,7 +123,14 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                         SentByNameSnapshot = f.SentByNavigation != null ? f.SentByNavigation.FullName : null,
                         CreatedByName = f.CreatedByNavigation != null ? f.CreatedByNavigation.FullName.Trim() : null,
                         f.Note
-                    })
+                    });
+
+                if(query.IsMerchadiseOrder)
+                {
+                    formulaPageTemp = formulaPageTemp.Where(f => f.Status != "Draft" && f.Status != "Inprocess");
+                }
+
+                var formulaPage = await formulaPageTemp
                     .ToListAsync(ct);
 
                 var formulaIds = formulaPage.Select(x => x.FormulaId).ToList();
@@ -157,10 +165,17 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                     .ToList();
 
                 // 3) Lấy giá mới nhất cho toàn bộ material cần dùng
-                var priceInfoDict = await MaterialPriceQueryHelper.LoadLatestMaterialPriceInfoDictAsync(
+                //var priceInfoDict = await MaterialPriceQueryHelper.LoadLatestMaterialPriceInfoDictAsync(
+                //    _unitOfWork.PurchaseOrderDetailRepository.Query(),
+                //    _unitOfWork.MaterialsSupplierRepository.Query(),
+                //    materialIds.Cast<Guid?>(),
+                //    ct);
+
+                var priceInfoDict  = await MaterialPriceQueryHelper.LoadLatestItemPriceInfoDictAsync(
                     _unitOfWork.PurchaseOrderDetailRepository.Query(),
                     _unitOfWork.MaterialsSupplierRepository.Query(),
-                    materialIds.Cast<Guid?>(),
+                    _unitOfWork.MerchandiseOrderRepository.QueryDetail(),
+                    materialRows.Select(x => (x.itemType, x.MaterialId, x.ProductId)),
                     ct);
 
                 // 4) Group materials theo FormulaId rồi map trong memory
@@ -173,16 +188,45 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                             var unitPrice = 0m;
                             DateTime? expiryDate = null;
 
-                            if (x.MaterialId.HasValue && x.MaterialId.Value != Guid.Empty)
+                            //if (x.MaterialId.HasValue && x.MaterialId.Value != Guid.Empty)
+                            //{
+                            //    //unitPrice = MaterialPriceQueryHelper.ResolveLatestPrice(
+                            //    //    priceInfoDict,
+                            //    //    x.MaterialId,
+                            //    //    0m);
+
+                            //    //expiryDate = MaterialPriceQueryHelper.ResolveLatestPriceDate(
+                            //    //    priceInfoDict,
+                            //    //    x.MaterialId);
+
+                            //    Guid? itemId = x.itemType == ItemType.Material ? x.MaterialId : x.ProductId;
+
+                            //    unitPrice = MaterialPriceQueryHelper.ResolveLatestItemPrice(
+                            //        priceInfoDict,
+                            //        x.itemType,
+                            //        itemId,
+                            //        0m);
+
+                            //    expiryDate = MaterialPriceQueryHelper.ResolveLatestItemPriceDate(
+                            //        priceInfoDict,
+                            //        x.itemType,
+                            //        itemId);
+                            //}
+
+                            var itemId = x.itemType == ItemType.Material ? x.MaterialId : x.ProductId;
+
+                            if (itemId.HasValue && itemId.Value != Guid.Empty)
                             {
-                                unitPrice = MaterialPriceQueryHelper.ResolveLatestPrice(
+                                unitPrice = MaterialPriceQueryHelper.ResolveLatestItemPrice(
                                     priceInfoDict,
-                                    x.MaterialId,
+                                    x.itemType,
+                                    itemId,
                                     0m);
 
-                                expiryDate = MaterialPriceQueryHelper.ResolveLatestPriceDate(
+                                expiryDate = MaterialPriceQueryHelper.ResolveLatestItemPriceDate(
                                     priceInfoDict,
-                                    x.MaterialId);
+                                    x.itemType,
+                                    itemId);
                             }
 
                             return new GetMaterialFormula

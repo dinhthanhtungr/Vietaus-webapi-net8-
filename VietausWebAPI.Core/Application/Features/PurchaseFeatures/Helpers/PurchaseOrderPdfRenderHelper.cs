@@ -182,9 +182,12 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Helpers
                         }
 
                         var subTotal = details.Sum(x => x.TotalUnitPriceAgreed ?? ((x.RequestQuantity ?? 0m) * (x.UnitPriceAgreed ?? 0m)));
+                        subTotal = decimal.Round(subTotal, 4, MidpointRounding.AwayFromZero);
+
                         var vatRate = (d.Vat ?? 0) / 100m;
-                        var vatAmt = decimal.Round(subTotal * vatRate, 2, MidpointRounding.AwayFromZero);
-                        var grand = d.TotalPrice ?? (subTotal + vatAmt);
+                        var vatAmt = decimal.Round(subTotal * vatRate, 4, MidpointRounding.AwayFromZero);
+
+                        var grand = d.TotalPrice ?? decimal.Round(subTotal + vatAmt, 4, MidpointRounding.AwayFromZero);
 
                         Td(table.Cell().ColumnSpan(4)).AlignCenter().Text(t =>
                         {

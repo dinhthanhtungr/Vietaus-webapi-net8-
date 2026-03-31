@@ -17,13 +17,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts
 {
     public interface IMfgProductionOrderService
     {
-        /// <summary>
-        /// Tạo đơn hàng mới
-        /// </summary>
-        /// <param name="req"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        //Task<OperationResult> CreateWithMerchadiseOrderAsync(MerchandiseOrder req, CancellationToken ct = default);
+        // ======================================================================== Get ========================================================================
 
         /// <summary>
         /// Lấy danh sách đơn hàng với phân trang và lọc
@@ -57,7 +51,11 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts
         /// <returns></returns>
         Task<OperationResult<GetMfgProductionOrder>> GetByIdAsync( Guid id, CancellationToken ct = default);
 
+        // ======================================================================== Post ========================================================================
+
         Task<OperationResult<Guid>> CreateInternalAsync(CreateMfgProductionOrderInternal req, CancellationToken ct = default);
+
+        // ======================================================================== Update ========================================================================
 
         /// <summary>
         /// Cập nhật thông tin theo đơn hàng mới
@@ -68,12 +66,23 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts
         Task<OperationResult> UpdateInformationAsync(PatchMfgProductionOrderInformation req, CancellationToken ct = default);
 
         /// <summary>
+        /// Cập nhật trạng thái lệnh sản xuất khi lệnh sản xuất hoàn thành, nằm ở service merchadiseOrder
+        /// </summary>
+        /// <param name="mfgProductionOrderId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<OperationResult> FinishMfgProductionOrderAsync(Guid mfgProductionOrderId, CancellationToken ct = default);
+
+        // ======================================================================== Helper ======================================================================== 
+
+        /// <summary>
         /// Phương thưc tạo lệnh sản xuất khi đơn hàng được duyệt, nằm ở service merchadiseOrder
         /// </summary>
         /// <param name="mo"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<MfgContext> BuildMfgContextAsync(OrderSlim mo, CancellationToken ct = default);
+       
         /// <summary>
         /// Gom toàn bộ dữ liệu <b>read-only</b> cần thiết để tạo <b>nhiều</b> lệnh sản xuất cho một đơn hàng,
         /// nhằm tránh N+1 queries và đảm bảo nhất quán trong cùng transaction.
@@ -85,9 +94,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts
         /// <param name="now"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<(MfgProductionOrder order,
-              MfgOrderPO link)>
-                             CreateOneMfgBundleAsync(
+        Task<(MfgProductionOrder order, MfgOrderPO link)> CreateOneMfgBundleAsync(
                  OrderSlim mo,
                  OrderDetailSlim detail,
                  MfgContext ctx,

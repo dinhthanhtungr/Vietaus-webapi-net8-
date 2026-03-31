@@ -850,6 +850,100 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             }
         }
 
+        /// <summary>
+        /// Cập nhật trạng thái lệnh sản xuất khi lệnh sản xuất hoàn thành, nằm ở service merchadiseOrder
+        /// </summary>
+        /// <param name="mfgProductionOrderId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<OperationResult> FinishMfgProductionOrderAsync(Guid mfgProductionOrderId, CancellationToken ct = default)
+        {
+            await _unitOfWork.BeginTransactionAsync();
+
+            try
+            {
+                var now = DateTime.Now;
+                var userId = _currentUser.EmployeeId;
+                var companyId = _currentUser.CompanyId;
+                var finishedStatus = ManufacturingProductOrder.Finished.ToString();
+
+                var existingMfgOrderPO = await _unitOfWork.MfgOrderPORepository.Query(track: true)
+                    .Where(p => p.MfgProductionOrderId == mfgProductionOrderId && p.IsActive == true)
+                    .Include(p => p.ProductionOrder)
+                    .Include(p => p.Detail)
+                    .FirstOrDefaultAsync(ct);
+
+                if (existingMfgOrderPO == null || existingMfgOrderPO.ProductionOrder == null)
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
+                    return OperationResult.Fail($"Không tìm thấy lệnh sản xuất với ID {mfgProductionOrderId}");
+                }
+
+                var mpo = existingMfgOrderPO.ProductionOrder;
+
+                if (mpo.CompanyId != companyId)
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
+                    return OperationResult.Fail("Bạn không có quyền cập nhật lệnh sản xuất này.");
+                }
+
+                // Nếu đã Finished rồi thì không cần update nữa
+                if (string.Equals(mpo.Status, finishedStatus, StringComparison.OrdinalIgnoreCase))
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
+                    return OperationResult.Ok("Lệnh sản xuất đã ở trạng thái Finished.");
+                }
+
+                var oldStatus = mpo.Status;
+
+                // 1) Update MPO
+                mpo.Status = finishedStatus;
+                mpo.UpdatedDate = now;
+                mpo.UpdatedBy = userId;
+
+                // 2) Update SchedualMfg nếu có
+                var schedule = await _unitOfWork.SchedualMfgRepository.Query(track: true)
+                    .FirstOrDefaultAsync(s => s.MfgProductionOrderId == mpo.MfgProductionOrderId, ct);
+
+                if (schedule != null && !string.Equals(schedule.Status, finishedStatus, StringComparison.OrdinalIgnoreCase))
+                {
+                    schedule.Status = finishedStatus;
+                }
+
+                // 3) Ghi EventLog
+                // nếu bạn muốn chống log trùng giống SQL thì check trước
+                var existedLog = await _unitOfWork.EventLogRepository.Query(track: false)
+                    .AnyAsync(e =>
+                        e.SourceId == mpo.MfgProductionOrderId &&
+                        e.EventType == EventType.ManufacturingProductOrder &&
+                        e.Status == finishedStatus &&
+                        e.Note == "Kết thúc lệnh sản xuất automation 25/03/2026", ct);
+
+                if (!existedLog)
+                {
+                    await _timeLineService.AddEventLogAsync(new EventLogModels
+                    {
+                        employeeId = userId,
+                        eventType = EventType.ManufacturingProductOrder,
+                        sourceCode = mpo.ExternalId ?? string.Empty,
+                        sourceId = mpo.MfgProductionOrderId,
+                        status = finishedStatus,
+                        note = $"Kết thúc lệnh sản xuất automation vào {now:dd/MM/yyyy HH:mm:ss} bởi {_currentUser.personName}"
+                    }, ct);
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
+
+                return OperationResult.Ok("Cập nhật trạng thái Finished thành công.");
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return OperationResult.Fail("Có lỗi xảy ra trong quá trình kết thúc lệnh sản xuất.");
+            }
+        }
+
         // ======================================================================== Helper ======================================================================== 
 
         /// <summary>
@@ -1030,12 +1124,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
         /// <param name="now"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<(MfgProductionOrder order,
-                           MfgOrderPO link)>
-                     CreateOneMfgBundleAsync(
-                 OrderSlim mo,
-                 OrderDetailSlim detail,
-                 MfgContext ctx,
+        public async Task<(MfgProductionOrder order, MfgOrderPO link)> CreateOneMfgBundleAsync(OrderSlim mo, OrderDetailSlim detail, MfgContext ctx,
                  Guid actorId, DateTime now, CancellationToken ct)
         {
 

@@ -114,7 +114,7 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service
         //    );
         //}
 
-            public IQueryable<Customer> ApplyCustomer(IQueryable<Customer> q, ViewerScope v)
+        public IQueryable<Customer> ApplyCustomer(IQueryable<Customer> q, ViewerScope v)
             {
                 q = q.Where(c => c.IsActive == true);
 

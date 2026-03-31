@@ -201,9 +201,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
         /// 6. Tạo các dòng <see cref="ManufacturingFormulaMaterial"/> và tự đánh <c>LineNo</c>
         ///    theo đúng thứ tự FE gửi lên.
         /// 7. Tạo liên kết <see cref="ProductionSelectVersion"/> giữa MPO và Formula:
-        ///    - Nếu FormulaType là FromVu / Standard / Improvement:
+        ///    - Nếu FormulaType là FromVu / Standard
         ///      tạo select ở trạng thái active (<c>ValidFrom = now</c>) và chuyển MPO sang <c>Scheduling</c>.
-        ///    - Nếu FormulaType là ProductionOld / Production:
+        ///    - Nếu FormulaType là ProductionOld / Production  / Improvement:
         ///      vẫn tạo select nhưng ở trạng thái chờ QC (<c>ValidFrom = null</c>, <c>ValidTo = null</c>)
         ///      và chuyển MPO sang <c>Waiting</c>.
         /// 8. Nếu MPO đã có schedule thì cập nhật lại thông tin schedule.
@@ -290,12 +290,17 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                 // =====================================================
                 var autoSelectAndScheduling =
                     req.FormulaType == FormulaType.FromVu ||
-                    req.FormulaType == FormulaType.Standard ||
-                    req.FormulaType == FormulaType.Improvement;
+                    req.FormulaType == FormulaType.Standard;
+                    
+                    
+                    
 
                 var waitForQc =
                     req.FormulaType == FormulaType.ProductionOld ||
-                    req.FormulaType == FormulaType.Production;
+                    req.FormulaType == FormulaType.Production ||
+                    req.FormulaType == FormulaType.Improvement; // Improvement cũng chờ QC vì có thể là công thức đang sản xuất nhưng muốn cải tiến,
+                                                                // không thể active ngay được mà phải chờ QC duyệt trước khi cho sản xuất
+                                                                // tiếp theo công thức mới. Nếu để autoSelect thì sẽ có rủi ro công thức mới chưa kịp QC đã được chọn
 
                 var shouldCreateStandard =
                     req.FormulaType == FormulaType.FromVu ||

@@ -19,7 +19,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs
 
         public DateTime? CreatedDate { get; set; }
         public string? Note { get; set; }
-
+        public bool IsActive { get; set; }
         // Bổ sung
         public List<GetSampleDeliveryDetail> Details { get; set; } = new();
     }

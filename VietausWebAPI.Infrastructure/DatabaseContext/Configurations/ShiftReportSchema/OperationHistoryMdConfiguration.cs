@@ -27,7 +27,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.ShiftRepor
                   .HasColumnType("text");
 
             entity.Property(x => x.ExternalId)
-                  .HasColumnName("externalId")
+                  .HasColumnName("externalid")
                   .HasColumnType("text");
 
             // các trường set/act
@@ -62,6 +62,12 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.ShiftRepor
             entity.Property(x => x.ScrewSpeed).HasColumnName("screwspeed");
             entity.Property(x => x.ScrewCurrent).HasColumnName("screwcurrent");
             entity.Property(x => x.FeederSpeed).HasColumnName("feederspeed");
+
+            entity.Property(x => x.MachineId)
+                .HasColumnName("machine_id");
+
+            entity.HasIndex(x => x.ExternalId)
+                .HasDatabaseName("ix_op_history_externalid");
         }
     }
 }

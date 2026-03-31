@@ -218,7 +218,11 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
 
                 col.Item().PaddingTop(10).Element(x => BuildMaterialsTable(x, d, templateOnly));
 
+                col.Item().PaddingTop(6).Element(x => BuildFormulaHistorySection(x, d, templateOnly));
+
                 col.Item().PaddingTop(10).Element(x => BuildMachineSetupSection(x, d, templateOnly));
+
+
             });
         }
 
@@ -251,6 +255,49 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                  .MinHeight(35)              // tăng/giảm tuỳ bạn, giống khung ảnh
                  .PaddingVertical(4).PaddingHorizontal(6)
                  .AlignTop();
+        }
+
+        private void BuildFormulaHistorySection(IContainer c, ManufacturingVUPDF d, bool templateOnly)
+        {
+            var formulaHistoryText = templateOnly
+                ? ""
+                : (d.FormulaSelectList ?? "");
+
+            c.Column(col =>
+            {
+                col.Item().Element(HeaderCell)
+                    .Text("Lịch sử công thức đã chọn")
+                    .FontSize(9)
+                    .SemiBold();
+
+                col.Item().Element(BodyCell).Text(text =>
+                {
+                    if (templateOnly || string.IsNullOrWhiteSpace(formulaHistoryText))
+                    {
+                        text.Span("-").FontSize(9);
+                        return;
+                    }
+
+                    text.Span(formulaHistoryText).FontSize(9);
+                });
+            });
+
+            static IContainer HeaderCell(IContainer x) =>
+                x.Border(1)
+                 .BorderColor(Colors.Black)
+                 .Background(Colors.Grey.Lighten2)
+                 .PaddingVertical(4)
+                 .PaddingHorizontal(6);
+
+            static IContainer BodyCell(IContainer x) =>
+                x.BorderLeft(1)
+                 .BorderRight(1)
+                 .BorderBottom(1)
+                 .BorderColor(Colors.Black)
+                 .PaddingVertical(4)
+                 .PaddingHorizontal(6)
+                 .MinHeight(24)
+                 .AlignMiddle();
         }
 
         private void BuildMaterialsTable(IContainer c, ManufacturingVUPDF d, bool templateOnly)

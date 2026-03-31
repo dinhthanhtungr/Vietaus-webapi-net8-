@@ -15,6 +15,8 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
                 .AddAttachmentsModule()
                 .AddCompanyModule()
                 .AddDevandqaModule()
+                .AddExtruderOperationHistoryModule()
+                .AddFinishReportModule()
                 .AddHRModule()
                 .AddIdentityModel()
                 .AddSalesModule()

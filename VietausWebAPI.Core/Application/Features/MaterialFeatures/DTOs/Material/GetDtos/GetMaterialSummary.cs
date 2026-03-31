@@ -23,5 +23,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
         public double? Weight { get; set; }
         public string? Package { get; set; }
         public string? Unit { get; set; }
+
+        public List<GetDetailMaterials> DetailMaterials { get; set; } = new List<GetDetailMaterials>();
     }
 }

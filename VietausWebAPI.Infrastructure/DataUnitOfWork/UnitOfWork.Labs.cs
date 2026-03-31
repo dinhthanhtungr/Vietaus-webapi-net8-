@@ -7,6 +7,7 @@ using VietausWebAPI.Core.Application.Features.DevandqaFeatures.RepositoriesContr
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.FormulaFeatures;
 //using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.QAQCFeature;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
+using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature.ColorChipRecordFeatures;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 
 namespace VietausWebAPI.Infrastructure.DataUnitOfWork
@@ -21,5 +22,8 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IProductRepository ProductRepository { get; }
         public ISampleRequestRepository SampleRequestRepository { get; }
         public IManufacturingVUFormulaRepository ManufacturingVUFormulaRepository { get; }
+
+        public IColorChipRecordReadRepositories ColorChipRecordReadRepositories { get; }
+        public IColorChipRecordWriteRepositories ColorChipRecordWriteRepositories { get; }
     }
 }

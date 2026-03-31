@@ -3,6 +3,7 @@ using VietausWebAPI.Core.Application.Features.Shared.DTO.PriceDTOs;
 using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
 using VietausWebAPI.Core.Domain.Enums;
+using VietausWebAPI.Core.Domain.Enums.Formulas;
 
 namespace VietausWebAPI.Core.Application.Features.Shared.Service.StaticCurrentPriceHelpers
 {
@@ -12,6 +13,10 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service.StaticCurrentPr
     /// </summary>
     public static class MaterialPriceQueryHelper
     {
+        //Item keys để truy vấn giá chung cho nhiều loại item khác nhau.
+        public readonly record struct PriceItemKey(ItemType ItemType, Guid ItemId);
+
+
         /// <summary>
         /// Tải dictionary thông tin giá vật tư theo danh sách MaterialId.
         /// </summary>
@@ -378,6 +383,131 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service.StaticCurrentPr
                     PriceDate = null,
                     PriceSource = MaterialPriceSource.Unknown
                 };
+            }
+
+            return result;
+        }
+
+        // =========================================================== New item query =================================================================
+        public static decimal ResolveLatestItemPrice(
+            IReadOnlyDictionary<PriceItemKey, LatestItemPriceDto> priceDict,
+            ItemType itemType,
+            Guid? itemId,
+            decimal fallback = 0m)
+        {
+            if (!itemId.HasValue || itemId.Value == Guid.Empty)
+                return fallback;
+
+            return priceDict.TryGetValue(new PriceItemKey(itemType, itemId.Value), out var info)
+                ? info.CurrentPrice
+                : fallback;
+        }
+
+        public static DateTime? ResolveLatestItemPriceDate(
+            IReadOnlyDictionary<PriceItemKey, LatestItemPriceDto> priceDict,
+            ItemType itemType,
+            Guid? itemId)
+        {
+            if (!itemId.HasValue || itemId.Value == Guid.Empty)
+                return null;
+
+            return priceDict.TryGetValue(new PriceItemKey(itemType, itemId.Value), out var info)
+                ? info.PriceDate
+                : null;
+        }
+
+        public static async Task<Dictionary<PriceItemKey, LatestItemPriceDto>> LoadLatestItemPriceInfoDictAsync(
+                IQueryable<PurchaseOrderDetail> purchaseOrderSource,
+                IQueryable<MaterialsSupplier> materialSupplierSource,
+                IQueryable<MerchandiseOrderDetail> merchandiseOrderDetailSource,
+                IEnumerable<(ItemType ItemType, Guid? MaterialId, Guid? ProductId)> items,
+                CancellationToken ct = default)
+        {
+            var materialIds = items
+                .Where(x => x.ItemType == ItemType.Material &&
+                            x.MaterialId.HasValue &&
+                            x.MaterialId.Value != Guid.Empty)
+                .Select(x => x.MaterialId!.Value)
+                .Distinct()
+                .ToList();
+
+            var productIds = items
+                .Where(x => x.ItemType == ItemType.Product &&
+                            x.ProductId.HasValue &&
+                            x.ProductId.Value != Guid.Empty)
+                .Select(x => x.ProductId!.Value)
+                .Distinct()
+                .ToList();
+
+            var result = new Dictionary<PriceItemKey, LatestItemPriceDto>();
+
+            // 1) Material: tái sử dụng helper cũ
+            var materialDict = await LoadLatestMaterialPriceInfoDictAsync(
+                purchaseOrderSource,
+                materialSupplierSource,
+                materialIds.Select(x => (Guid?)x),
+                ct);
+
+            foreach (var kv in materialDict)
+            {
+                result[new PriceItemKey(ItemType.Material, kv.Key)] = new LatestItemPriceDto
+                {
+                    ItemType = ItemType.Material,
+                    ItemId = kv.Key,
+                    CurrentPrice = kv.Value.CurrentPrice,
+                    PriceDate = kv.Value.PriceDate,
+                    PriceSource = kv.Value.PriceSource.ToString()
+                };
+            }
+
+            // 2) Product: lấy giá bán gần nhất từ MerchandiseOrderDetail
+            if (productIds.Count > 0)
+            {
+                var latestProductRows = await merchandiseOrderDetailSource
+                    .AsNoTracking()
+                    .Where(x => x.IsActive)
+                    .Where(x => productIds.Contains(x.ProductId))
+                    .Where(x => x.MerchandiseOrder != null && x.MerchandiseOrder.IsActive)
+                    .GroupBy(x => x.ProductId)
+                    .Select(g => g
+                        .OrderByDescending(x => x.MerchandiseOrder.CreateDate)
+                        .Select(x => new
+                        {
+                            x.ProductId,
+                            Price = x.UnitPriceAgreed,
+                            PriceDate = (DateTime?)x.MerchandiseOrder.CreateDate
+                        })
+                        .FirstOrDefault()!)
+                    .ToListAsync(ct);
+
+                foreach (var x in latestProductRows)
+                {
+                    result[new PriceItemKey(ItemType.Product, x.ProductId)] = new LatestItemPriceDto
+                    {
+                        ItemType = ItemType.Product,
+                        ItemId = x.ProductId,
+                        CurrentPrice = x.Price,
+                        PriceDate = x.PriceDate,
+                        PriceSource = "MerchandiseOrder"
+                    };
+                }
+
+                // fill thiếu
+                foreach (var id in productIds)
+                {
+                    var key = new PriceItemKey(ItemType.Product, id);
+                    if (!result.ContainsKey(key))
+                    {
+                        result[key] = new LatestItemPriceDto
+                        {
+                            ItemType = ItemType.Product,
+                            ItemId = id,
+                            CurrentPrice = 0m,
+                            PriceDate = null,
+                            PriceSource = "Unknown"
+                        };
+                    }
+                }
             }
 
             return result;

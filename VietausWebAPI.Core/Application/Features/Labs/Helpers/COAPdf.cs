@@ -116,6 +116,12 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                                     e.Text("Logo").FontSize(10);
                             });
                         });
+
+                        column.Item().PaddingTop(5).AlignCenter().AlignMiddle().Text(text =>
+                        {
+                            text.Span("It is hereby certified that the product described below is manufactured by ");
+                            text.Span("Long giang chemical").Bold();
+                        });
                     }
 
                     else
@@ -148,13 +154,15 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                             AddRow("Company (Tên công ty):", "VIETAUS POLYMER CO.,LTD");
                         });
 
+                        column.Item().PaddingTop(5).AlignCenter().AlignMiddle().Text(text =>
+                        {
+                            text.Span("It is hereby certified that the product described below is manufactured by ");
+                            text.Span("Vietaus Polymer Co.,Ltd").Bold();
+                        });
+
                     }
 
-                    column.Item().PaddingTop(5).AlignCenter().AlignMiddle().Text(text =>
-                    {
-                        text.Span("It is hereby certified that the product described below is manufactured by ");
-                        text.Span("Vietaus Polymer Co.,Ltd").Bold();
-                    });
+
 
 
                     var rows = ExtractTestRowsHelper.ExtractTestRows(_result, _specs, _isLongGiangBag);

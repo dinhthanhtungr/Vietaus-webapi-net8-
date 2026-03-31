@@ -101,7 +101,7 @@ public partial class Product
     public virtual ICollection<Formula> Formulas { get; set; } = new List<Formula>();
 
     public virtual ICollection<MerchandiseOrderDetail> MerchandiseOrderDetails { get; set; } = new List<MerchandiseOrderDetail>();
-
+    public virtual ICollection<ColorChipRecord> ColorChipRecords { get; set; } = new List<ColorChipRecord>();
     public virtual ICollection<MfgProductionOrder> MfgProductionOrders { get; set; } = new List<MfgProductionOrder>();
     public virtual ICollection<SchedualMfg> SchedualMfgs { get; set; } = new List<SchedualMfg>();
     public virtual ICollection<ProductStandardFormula> ProductStandardFormulas { get; set; } = new List<ProductStandardFormula>();

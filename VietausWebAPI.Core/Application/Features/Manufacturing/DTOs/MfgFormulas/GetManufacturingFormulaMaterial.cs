@@ -19,6 +19,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas
         public decimal Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }
+        public DateTime? ExpiryDate { get; set; }       // DATETIME
 
         public string? MaterialNameSnapshot { get; set; }
         public string? MaterialExternalIdSnapshot { get; set; }

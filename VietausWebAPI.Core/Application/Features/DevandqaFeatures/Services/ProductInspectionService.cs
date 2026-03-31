@@ -57,7 +57,6 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
             var mfgOrders = _unitOfWork.MfgProductionOrderRepository.Query().AsNoTracking();
             var products = _unitOfWork.ProductRepository.Query().AsNoTracking();
 
-            // ===== NGUỒN CHÍNH: ManufacturingFormula -> PSV -> MPO -> Product =====
             var formulaBase =
                 from mf in formulas
                 where mf.IsActive
@@ -89,46 +88,70 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                 );
             }
 
-            // ===== PRODUCT TEST CHỈ DÙNG ĐỂ BỔ SUNG THÔNG TIN NẾU CÓ =====
-            var finalQuery =
-                from x in formulaBase
-                let pt = productTests
-                    .Where(t => t.ExternalId == x.ExternalId)
-                    .OrderByDescending(t => t.ExternalId) // hoặc UpdatedDate nếu bạn có field phù hợp hơn
-                    .FirstOrDefault()
-                select new GetProductCOA
+            // Nếu bị duplicate do join thì nên Distinct theo MPO
+            var total = await formulaBase.CountAsync(ct);
+
+            var pageItems = await formulaBase
+                .OrderByDescending(x => x.ExternalId)
+                .Skip(skip)
+                .Take(pageSize)
+                .ToListAsync(ct);
+
+            var extIds = pageItems
+                .Where(x => !string.IsNullOrWhiteSpace(x.ExternalId))
+                .Select(x => x.ExternalId!)
+                .Distinct()
+                .ToList();
+
+            var normalizedExtIds = extIds
+                .Select(x => x.StartsWith("VA") ? x.Substring(2) : x)
+                .Distinct()
+                .ToList();
+
+            var allLookupIds = extIds
+                .Concat(normalizedExtIds)
+                .Distinct()
+                .ToList();
+
+            var ptList = await productTests
+                .Where(t => t.ExternalId != null && allLookupIds.Contains(t.ExternalId))
+                .ToListAsync(ct);
+
+            var ptDict = ptList
+                .GroupBy(t => t.ExternalId)
+                .ToDictionary(g => g.Key!, g => g.First());
+
+            var items = pageItems.Select(x =>
+            {
+                var normalizedExternalId = x.ExternalId != null && x.ExternalId.StartsWith("VA")
+                    ? x.ExternalId.Substring(2)
+                    : x.ExternalId;
+
+                ptDict.TryGetValue(x.ExternalId ?? "", out var pt);
+                pt ??= normalizedExternalId != null && ptDict.TryGetValue(normalizedExternalId, out var pt2) ? pt2 : null;
+
+                return new GetProductCOA
                 {
                     id = x.MfgProductionOrderId,
-                    externalId = x.ExternalId,
+                    externalId = pt?.ExternalId ?? x.ExternalId,
 
-                    // chỉ lấy từ ProductTest nếu có
-                    manufacturingDate = pt != null ? pt.ManufacturingDate : null,
-                    expiryDate = pt != null ? pt.ExpiryDate : null,
+                    manufacturingDate = pt?.ManufacturingDate,
+                    expiryDate = pt?.ExpiryDate,
 
                     productPackage = x.ProductPackage,
-
-                    // giữ đúng theo ý bạn, không đổi FE
                     ProductWeight = (float?)x.TotalQuantityRequest,
 
-                    // ưu tiên ProductTest nếu có, không có thì fallback về data của formula/mpo
-                    ProductId = pt != null ? pt.ProductId : x.ProductId,
-                    productExternalId = pt != null ? pt.ProductExternalId : x.ProductExternalIdSnapshot,
-                    productName = pt != null ? pt.ProductName : x.ProductName,
+                    ProductId = pt?.ProductId ?? x.ProductId,
+                    productExternalId = pt?.ProductExternalId ?? x.ProductExternalIdSnapshot,
+                    productName = pt?.ProductName ?? x.ProductName,
 
                     TotalQuantityRequest = x.TotalQuantityRequest,
                     ColourCode = x.ColourCode
                 };
-
-            finalQuery = finalQuery
-                .OrderByDescending(x => x.manufacturingDate)
-                .ThenByDescending(x => x.expiryDate);
-
-            var total = await finalQuery.CountAsync(ct);
-
-            var items = await finalQuery
-                .Skip(skip)
-                .Take(pageSize)
-                .ToListAsync(ct);
+            })
+            .OrderByDescending(x => x.manufacturingDate)
+            .ThenByDescending(x => x.expiryDate)
+            .ToList();
 
             var result = new PagedResult<GetProductCOA>(items, total, page, pageSize);
             return OperationResult<PagedResult<GetProductCOA>>.Ok(result);

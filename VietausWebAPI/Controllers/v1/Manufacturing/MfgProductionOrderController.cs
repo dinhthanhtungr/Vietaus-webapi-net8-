@@ -37,6 +37,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Manufacturing
             _mfgUpsertInformationService = mfgUpsertInformationService;
         }
 
+        //====================================================================================== Use old code from service MfgProductionOrder =========================================================================================
         [HttpPatch]
         public async Task<IActionResult> UpdateMfgProductionOrder([FromBody] PatchMfgProductionOrderInformation request)
         {
@@ -47,6 +48,33 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Manufacturing
             try
             {
                 var result = await _mfgProductionOrderService.UpdateInformationAsync(request);
+                if (!result.Success)
+                {
+                    return BadRequest(result.Message);
+                }
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
+        [HttpPatch("finish")]
+        public async Task<IActionResult> FinishMfgProductionOrderAsync([FromBody] Guid id, CancellationToken cancellationToken)
+        {
+            if (id == Guid.Empty)
+            {
+                return BadRequest("Invalid ID.");
+            }
+            try
+            {
+                var result = await _mfgProductionOrderService.FinishMfgProductionOrderAsync(id, cancellationToken);
                 if (!result.Success)
                 {
                     return BadRequest(result.Message);
@@ -90,33 +118,6 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Manufacturing
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
-        //[HttpPost]
-        //public async Task<IActionResult> CreateMfgProductionOrder([FromBody] PostMfgProductionOrder request)
-        //{
-        //    if (request == null)
-        //    {
-        //        return BadRequest("Request cannot be null.");
-        //    }
-
-        //    try
-        //    {
-        //        var result = await _mfgProductionOrderService.CreateAsync(request);
-        //        if (!result.Success)
-        //        {
-        //            return BadRequest(result.Message);
-        //        }
-        //        return Ok(result);
-        //    }
-        //    catch (ArgumentException ex)
-        //    {
-        //        return BadRequest(ex.Message);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        // Log the exception (not shown here for brevity)
-        //        return StatusCode(500, "An unexpected error occurred.");
-        //    }
-        //}
 
         [HttpGet]
         public async Task<IActionResult> GetMfgProductionOrders([FromQuery] MfgProductionOrderQuery query)
@@ -361,5 +362,8 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Manufacturing
                         $"An unexpected error occurred: {ex.Message}"));
             }
         }
+
+
+        //====================================================================================== RW =========================================================================================
     }
 }

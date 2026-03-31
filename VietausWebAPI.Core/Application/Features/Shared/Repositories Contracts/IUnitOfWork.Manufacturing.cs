@@ -22,6 +22,7 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts
 
         // Planning
         IScheduealRepository ScheduealRepository { get; }
-        //IMfgProductionOrdersPlanRepository IMfgProductionOrdersPlanRepository { get; }
+
+
     }
 }

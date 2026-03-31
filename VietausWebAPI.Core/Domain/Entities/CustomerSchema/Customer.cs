@@ -56,6 +56,7 @@ public partial class Customer
     public virtual ICollection<CustomerClaim> CustomerClaims { get; set; } = new List<CustomerClaim>();
     public virtual ICollection<Contact> Contacts { get; set; } = new List<Contact>();
     public virtual ICollection<CustomerAssignment> CustomerAssignments { get; set; } = new List<CustomerAssignment>();
+    public virtual ICollection<ColorChipRecord> ColorChipRecords { get; set; } = new List<ColorChipRecord>();
     public virtual ICollection<DetailCustomerTransfer> DetailCustomerTransfers { get; set; } = new List<DetailCustomerTransfer>();
     public virtual ICollection<MerchandiseOrder> MerchandiseOrders { get; set; } = new List<MerchandiseOrder>();
     public virtual ICollection<MfgProductionOrder> MfgProductionOrders { get; set; } = new List<MfgProductionOrder>();

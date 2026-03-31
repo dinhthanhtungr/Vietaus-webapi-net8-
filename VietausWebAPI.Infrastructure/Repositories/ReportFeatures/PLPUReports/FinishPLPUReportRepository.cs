@@ -15,10 +15,10 @@ namespace VietausWebAPI.Infrastructure.Repositories.ReportFeatures.PLPUReports
             _context = context;
         }
 
-        public async Task<List<FinishRow>> GetFinishReportAsync(FinishReportQuery query, CancellationToken ct)
+        public async Task<List<FinishRow>> GetFinishReportAsync(DateTime from, DateTime to, CancellationToken ct)
         {
-            var fromDate = query.From;
-            var toDate = query.To?.AddDays(1);
+            var fromDate = from;
+            var toDate = to.AddDays(1);
 
             var rawData =
                 from dod in _context.DeliveryOrderDetails.AsNoTracking()
@@ -38,7 +38,6 @@ namespace VietausWebAPI.Infrastructure.Repositories.ReportFeatures.PLPUReports
                       && d.IsActive
                       && mod.IsActive
                       && mo.IsActive
-                      && d.CreatedDate != null
                       && d.CreatedDate >= fromDate
                       && d.CreatedDate < toDate
                 select new

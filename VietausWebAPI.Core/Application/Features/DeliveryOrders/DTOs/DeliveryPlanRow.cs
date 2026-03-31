@@ -20,5 +20,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs
         public string Note { get; set; } = "";
         public string Address { get; set; } = "";
         public string ManufacturingFormulaExternalIds { get; set; } = ""; // ví dụ: "VA001, VA002"
+
+        public DateTime? ExpectedDeliveryDate { get; set; }
     }
 }

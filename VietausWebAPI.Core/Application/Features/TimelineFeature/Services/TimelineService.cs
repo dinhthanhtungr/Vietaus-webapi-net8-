@@ -79,6 +79,10 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                     (mo.ExternalId != null && EF.Functions.ILike(mo.ExternalId, likeKw)) ||
                     EF.Functions.ILike(mo.CustomerNameSnapshot, likeKw) ||
                     EF.Functions.ILike(mo.CustomerExternalIdSnapshot, likeKw) ||
+                    (
+                        mo.CreatedByNavigation != null &&
+                        EF.Functions.ILike(mo.CreatedByNavigation.FullName, likeKw)
+                    ) ||
                     _unitOfWork.MerchandiseOrderRepository.QueryDetail(false)
                         .Any(md =>
                             md.MerchandiseOrderId == mo.MerchandiseOrderId &&

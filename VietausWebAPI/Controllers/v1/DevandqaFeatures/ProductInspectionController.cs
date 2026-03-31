@@ -20,12 +20,12 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.DevandqaFeatures
         }
 
         [HttpGet("GetPaged")]
-        public async Task<IActionResult> GetProductInspections([FromQuery] ProductInspectionQuery query)
+        public async Task<IActionResult> GetProductInspections([FromQuery] ProductInspectionQuery query, CancellationToken ct)
         {
 
             try
             {
-                var result = await _productInspectionService.GetProductInspectionPagedAsync(query, CancellationToken.None);
+                var result = await _productInspectionService.GetProductInspectionPagedAsync(query, ct);
                 return Ok(result);
             }
             catch (ArgumentException ex)
@@ -45,7 +45,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.DevandqaFeatures
 
             try
             {
-                var result = await _productInspectionService.GetProductCOAService(id, CancellationToken.None);
+                var result = await _productInspectionService.GetProductCOAService(id, HttpContext.RequestAborted);
                 return Ok(result);
             }
             catch (ArgumentException ex)
@@ -54,8 +54,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.DevandqaFeatures
             }
             catch (Exception ex)
             {
-                // Log the exception (not shown here for brevity)
-                return StatusCode(500, "An unexpected error occurred.");
+                return StatusCode(500, ex.ToString());
             }
         }
 

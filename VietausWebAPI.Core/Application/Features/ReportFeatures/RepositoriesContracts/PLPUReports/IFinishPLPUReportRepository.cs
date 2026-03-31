@@ -10,6 +10,6 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.RepositoriesCon
 {
     public interface IFinishPLPUReportRepository
     {
-        Task<List<FinishRow>> GetFinishReportAsync(FinishReportQuery query, CancellationToken ct);
+        Task<List<FinishRow>> GetFinishReportAsync(DateTime from, DateTime to, CancellationToken ct);
     }
 }

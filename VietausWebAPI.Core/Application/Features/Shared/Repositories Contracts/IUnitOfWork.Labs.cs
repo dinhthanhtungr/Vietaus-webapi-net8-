@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.FormulaFeatures;
 //using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.QAQCFeature;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
+using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature.ColorChipRecordFeatures;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 
 namespace VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts
@@ -29,5 +30,9 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts
         ISampleRequestRepository SampleRequestRepository { get; }
         IManufacturingVUFormulaRepository ManufacturingVUFormulaRepository { get; } 
         IFormulaMaterialSnapshotRepository FormulaMaterialSnapshotRepository { get; }
+
+        // Color Chip Record
+        IColorChipRecordReadRepositories ColorChipRecordReadRepositories { get; }
+        IColorChipRecordWriteRepositories ColorChipRecordWriteRepositories { get; }
     }
 }

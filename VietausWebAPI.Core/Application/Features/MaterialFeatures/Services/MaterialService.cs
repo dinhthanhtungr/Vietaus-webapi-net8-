@@ -57,7 +57,6 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
 
                 var skip = (query.PageNumber - 1) * query.PageSize;
 
-                // Base query: chỉ lấy active luôn cho thống nhất với total
                 IQueryable<Material> result = _unitOfWork.MaterialRepository
                     .Query(track: false)
                     .Where(x => x.IsActive == true);
@@ -67,7 +66,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                     result = result.Where(x => x.MaterialId == query.MaterialId.Value);
 
                 if (query.CategoryId.HasValue)
-                    result = result.Where(x => x.Category.CategoryId == query.CategoryId.Value);
+                    result = result.Where(x => x.CategoryId == query.CategoryId.Value);
 
                 if (query.From.HasValue)
                     result = result.Where(x => x.CreatedDate >= query.From.Value);
@@ -79,7 +78,8 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                 {
                     result = result.Where(x =>
                         x.MaterialsSuppliers.Any(ms =>
-                            ms.SupplierId == query.SupplierId.Value
+                            ms.SupplierId == query.SupplierId.Value &&
+                            ms.IsActive == true
                         )
                     );
                 }
@@ -88,8 +88,9 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                 {
                     var keyword = query.Keyword.Trim();
                     result = result.Where(x =>
-                        EF.Functions.ILike(x.ExternalId, $"%{keyword}%")
-                        || EF.Functions.ILike(x.Name, $"%{keyword}%") // nếu có tên vật tư
+                        EF.Functions.ILike(x.ExternalId!, $"%{keyword}%")
+                        || EF.Functions.ILike(x.Name!, $"%{keyword}%")
+                        || EF.Functions.ILike(x.CustomCode!, $"%{keyword}%")
                     );
                 }
 
@@ -97,44 +98,38 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                 {
                     var categoryKeyword = query.Category.Trim();
                     result = result.Where(x =>
-                        EF.Functions.ILike(x.Category.ExternalId, $"%{categoryKeyword}%")
-                        || EF.Functions.ILike(x.Category.Name, $"%{categoryKeyword}%") // nếu có
+                        EF.Functions.ILike(x.Category.ExternalId!, $"%{categoryKeyword}%")
+                        || EF.Functions.ILike(x.Category.Name!, $"%{categoryKeyword}%")
                     );
                 }
-                // Query lấy list + map sang DTO, có lấy Price từ MaterialsSupplier
-                var supplierFilter = query.SupplierId; // capture để EF translate
 
-                // Đếm total sau khi filter
+                var supplierFilter = query.SupplierId;
+
                 var total = await result.CountAsync(ct);
 
-                // Sắp xếp + phân trang + map sang DTO
+                // B1. Lấy page material chính
                 var items = await result
                     .OrderByDescending(x => x.CreatedDate)
                     .Skip(skip)
                     .Take(query.PageSize)
                     .Select(x => new GetMaterialSummary
                     {
-                        // TODO: map đúng field theo DTO của anh
                         MaterialId = x.MaterialId,
                         ExternalId = x.ExternalId,
+                        CustomCode = x.CustomCode,
                         Name = x.Name,
                         CategoryId = x.CategoryId,
                         Category = x.Category.ExternalId,
-
                         Unit = x.Unit,
-
                         Weight = x.Weight,
-                        Package =
-    string.IsNullOrWhiteSpace(x.Package)
-        ? ""
-        : x.Weight != null
-            ? $"{x.Package} {x.Weight}{(string.IsNullOrWhiteSpace(x.Unit) ? "" : $" ({x.Unit})")}"
-            : x.Package,
+                        Package = string.IsNullOrWhiteSpace(x.Package)
+                            ? ""
+                            : x.Weight != null
+                                ? $"{x.Package} {x.Weight}{(string.IsNullOrWhiteSpace(x.Unit) ? "" : $" ({x.Unit})")}"
+                                : x.Package,
                         ItemType = ItemType.Material,
 
-                        // Lấy Price từ MaterialsSupplier
-                        // Nếu có SupplierId trong query -> lấy giá của supplier đó
-                        // Nếu không -> lấy giá của supplier active mới nhất
+                        // Giá summary vẫn giữ logic cũ
                         Price = supplierFilter.HasValue
                             ? x.MaterialsSuppliers
                                 .Where(ms => ms.SupplierId == supplierFilter.Value && ms.IsActive == true)
@@ -145,15 +140,95 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                                 .Where(ms => ms.IsActive == true)
                                 .OrderByDescending(ms => ms.UpdatedDate ?? ms.CreateDate)
                                 .Select(ms => ms.CurrentPrice)
-                                .FirstOrDefault()
+                                .FirstOrDefault(),
+
+                        DetailMaterials = new List<GetDetailMaterials>()
                     })
                     .ToListAsync(ct);
+
+                if (!items.Any())
+                    return new PagedResult<GetMaterialSummary>(items, total, query.PageNumber, query.PageSize);
+
+                var materialIds = items.Select(x => x.MaterialId).ToList();
+
+                // B2. Lấy supplier detail của các material trong page
+                var supplierRows = await _unitOfWork.MaterialsSupplierRepository
+                    .Query(track: false)
+                    .Where(ms =>
+                        materialIds.Contains(ms.MaterialId) &&
+                        ms.IsActive == true &&
+                        ms.Supplier.IsActive == true &&
+                        (!supplierFilter.HasValue || ms.SupplierId == supplierFilter.Value))
+                    .Select(ms => new
+                    {
+                        ms.MaterialsSuppliersId,
+                        ms.MaterialId,
+                        SupplierExternalId = ms.Supplier.ExternalId,
+                        SupplierName = ms.Supplier.SupplierName,
+                        LastPrice = ms.CurrentPrice,
+                        LastPriceDate = ms.UpdatedDate ?? ms.CreateDate
+                    })
+                    .ToListAsync(ct);
+
+                var materialSupplierIds = supplierRows
+                    .Select(x => x.MaterialsSuppliersId)
+                    .Distinct()
+                    .ToList();
+
+                // B3. Lấy price histories cho tất cả supplier ở page hiện tại
+                var priceHistoryRows = await _unitOfWork.PriceHistorieRepository
+                    .Query(track: false)
+                    .Where(ph => materialSupplierIds.Contains(ph.MaterialsSuppliersId))
+                    .OrderByDescending(ph => ph.CreateDate ?? DateTime.MinValue)
+                    .Select(ph => new
+                    {
+                        ph.MaterialsSuppliersId,
+                        OldPrice = ph.OldPrice ?? 0m,
+                        UpdatedDate = ph.CreateDate ?? DateTime.MinValue
+                    })
+                    .ToListAsync(ct);
+
+                // B4. Group price history theo MaterialsSuppliersId
+                var priceHistoryLookup = priceHistoryRows
+                    .GroupBy(x => x.MaterialsSuppliersId)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(x => new GetPriceHistory
+                        {
+                            OldPrice = x.OldPrice,
+                            UpdatedDate = x.UpdatedDate
+                        }).ToList()
+                    );
+
+                // B5. Group supplier detail theo MaterialId
+                var detailLookup = supplierRows
+                    .GroupBy(x => x.MaterialId)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(x => new GetDetailMaterials
+                        {
+                            SupplierExternalId = x.SupplierExternalId ?? string.Empty,
+                            SupplierName = x.SupplierName ?? string.Empty,
+                            LastPrice = x.LastPrice,
+                            LastPriceDate = x.LastPriceDate,
+                            PriceHistories = priceHistoryLookup.TryGetValue(x.MaterialsSuppliersId, out var histories)
+                                ? histories
+                                : new List<GetPriceHistory>()
+                        }).ToList()
+                    );
+
+                // B6. Gán lại vào DTO chính
+                foreach (var item in items)
+                {
+                    item.DetailMaterials = detailLookup.TryGetValue(item.MaterialId, out var details)
+                        ? details
+                        : new List<GetDetailMaterials>();
+                }
 
                 return new PagedResult<GetMaterialSummary>(items, total, query.PageNumber, query.PageSize);
             }
             catch (Exception ex)
             {
-                // nếu muốn giữ stack trace thì log rồi throw; còn nếu trả message cho client thì dùng OperationResult thay vì throw Exception
                 throw new Exception($"Lỗi khi lấy danh sách vật tư: {ex.Message}", ex);
             }
         }
@@ -399,6 +474,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                         MinDeliveryDays = s.MinDeliveryDays,
                         IsPreferred = s.IsPreferred,
                         isActive = s.IsActive,
+                        UpdatedDate = s.UpdatedDate
                     })
                     .ToList();
 

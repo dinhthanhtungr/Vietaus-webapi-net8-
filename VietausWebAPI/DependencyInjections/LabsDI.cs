@@ -3,14 +3,17 @@ using VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.FormulaFeatures;
 //using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.QAQCFeature;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
+using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature.ColorChipRecordFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.ProductFeatures;
 //using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.QAQCFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRequestFeature;
+using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRequestFeature.ColorChipRecordFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.Services.ProductFeatures;
 //using VietausWebAPI.Core.Application.Features.Labs.Services.QAQCFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFeature;
+using VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFeature.ColorChipRecordFeatures;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Infrastructure.Repositories.Devandqas;
 using VietausWebAPI.Infrastructure.Repositories.Labs.FormulaFeatures;
@@ -18,6 +21,7 @@ using VietausWebAPI.Infrastructure.Repositories.Labs.FormulaFeatures;
 //using VietausWebAPI.Infrastructure.Repositories.Labs.QAQCFeature;
 using VietausWebAPI.Infrastructure.Repositories.Manufacturing;
 using VietausWebAPI.Infrastructure.Repositories.Share.SampleRequestFeature;
+using VietausWebAPI.Infrastructure.Repositories.Share.SampleRequestFeature.ColorChipRecordFeatures;
 
 namespace VietausWebAPI.WebAPI.DependencyInjections
 {
@@ -36,6 +40,9 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
             services.AddScoped<IManufacturingVUFormulaRepository, ManufacturingVUFormulaRepository>();
             services.AddScoped<IFormulaMaterialSnapshotRepository, FormulaMaterialSnapshotRepository>();
 
+            services.AddScoped<IColorChipRecordReadRepositories, ColorChipRecordReadRepositories>();
+            services.AddScoped<IColorChipRecordWriteRepositories, ColorChipRecordWriteRepositories>();
+
             // Services
             //services.AddScoped<IProductStandardService, ProductStandardService>();
             //services.AddScoped<IProductInspectionService, ProductInspectionService>();
@@ -45,6 +52,8 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
             services.AddScoped<ISampleRequestService, SampleRequestService>();
             services.AddScoped<IManufacturingVUFormulaService, ManufacturingVUFormulaService>();
             //services.AddScoped<IQCOutputService, QCOutputService>();
+
+            services.AddScoped<IColorChipRecordWriteServices, ColorChipRecordWriteServices>();  
 
             //Helpers
             services.AddScoped<IFormulaPDF, FormulaPDF>();
