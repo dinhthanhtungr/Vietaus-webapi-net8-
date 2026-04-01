@@ -64,6 +64,7 @@ public partial class MerchandiseOrder
     public virtual AttachmentCollection AttachmentCollection { get; set; } = null!;
     public virtual ICollection<DeliveryOrderPO> DeliveryOrderPOs { get; set; } = new List<DeliveryOrderPO>();
     public virtual ICollection<PurchaseOrderLink> PurchaseOrderLinks { get; set; } = new List<PurchaseOrderLink>();
+    //public virtual ICollection<DeliveryOrderDetail> DeliveryOrderDetails { get; set; } = new List<DeliveryOrderDetail>();
     public virtual ICollection<MerchandiseOrderDetail> MerchandiseOrderDetails { get; set; } = new List<MerchandiseOrderDetail>();
 
     public virtual Employee? UpdatedByNavigation { get; set; }

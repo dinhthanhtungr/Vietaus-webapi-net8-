@@ -102,7 +102,6 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                             (l.MerchandiseOrder.ExternalId ?? "").Contains(kw)) ||
 
                         x.Details.Any(d =>
-                            d.IsActive &&
                             (
                                 (d.ProductExternalIdSnapShot ?? "").Contains(kw) ||
                                 (d.ProductNameSnapShot ?? "").Contains(kw) ||
@@ -145,7 +144,6 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                         PaymentDeadline = x.PaymentDeadline,
                         IsActive = x.IsActive,
                         Details = x.Details
-                            .Where(d => d.IsActive)
                             .Select(d => new GetSampleDeliveryDetail
                             {
                                 Id = d.Id,

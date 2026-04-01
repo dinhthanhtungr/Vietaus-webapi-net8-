@@ -22,5 +22,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProducti
         public string? Status { get; set; }
         public DateTime? CreatedDate { get; set; }
         public string? BagType { get; set; }
+
+        public List<GetMFGFormulaHistories> MFGFormulaHistories { get; set; } = new List<GetMFGFormulaHistories>();
     }
 }
