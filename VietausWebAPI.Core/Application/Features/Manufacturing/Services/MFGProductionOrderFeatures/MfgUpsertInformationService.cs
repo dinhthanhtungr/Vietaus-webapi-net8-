@@ -695,25 +695,57 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                     ct: ct
                 );
 
-                if (!targetPrice.HasValue || mf.TotalPrice <= targetPrice.Value)
+                var ignoreCustomerId = Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75");
+
+                var isIgnoreCustomer =
+                    mpo?.CustomerId.HasValue == true &&
+                    mpo.CustomerId.Value == ignoreCustomerId;
+
+                var productColourCode = mpo?.ProductExternalIdSnapshot;
+
+                var totalCost = mf.TotalPrice;
+
+                var shouldPublishPriceWarning =
+                    !isIgnoreCustomer &&
+                    targetPrice.HasValue &&
+                    totalCost > targetPrice.Value;
+
+                if (!shouldPublishPriceWarning)
                     return;
+
+                var title = !string.IsNullOrWhiteSpace(productColourCode)
+                    ? $"Cảnh báo giá: {productColourCode}"
+                    : $"Cảnh báo giá: {mf.ExternalId}";
+
+                var message = !string.IsNullOrWhiteSpace(productColourCode)
+                    ? $"SP {productColourCode}: Tổng chi phí {totalCost:N0} > Giá bán {targetPrice.Value:N0}"
+                    : $"Tổng chi phí {totalCost:N0} > Giá bán {targetPrice.Value:N0}";
 
                 await _notificationService.PublishAsync(new PublishNotificationRequest
                 {
                     Topic = TopicNotifications.PriceOverSellCreated,
                     Severity = NotificationSeverity.Warning,
-                    Title = $"Cảnh báo giá: {mf.ExternalId}",
-                    Message = $"Tổng chi phí {mf.TotalPrice:N0} > Giá bán {targetPrice.Value:N0}",
+                    Title = title,
+                    Message = message,
                     Link = $"/labs/mfgformula/{mpo.MfgProductionOrderId}/{mf.ManufacturingFormulaId}",
                     PayloadJson = JsonSerializer.Serialize(new
                     {
                         FormulaId = mf.ManufacturingFormulaId,
                         ExternalId = mf.ExternalId,
-                        TotalCost = mf.TotalPrice,
+                        ProductColourCode = mpo?.Product?.ColourCode,
+                        ProductCode = mpo?.Product?.Code,
+                        ProductName = mpo?.Product?.Name,
+                        TotalCost = totalCost,
                         TargetPrice = targetPrice.Value,
-                        MpoId = req.MfgProductionOrderId
+                        MpoId = req.MfgProductionOrderId,
+                        CustomerId = mpo?.CustomerId
                     }),
-                    TargetRoles = new() { AppRoles.PLPUNotify, AppRoles.President }
+                    TargetRoles = new()
+                    {
+                        AppRoles.PLPUNotify,
+                        AppRoles.President,
+                        AppRoles.Developer
+                    }
                 }, ct);
             }
             catch
@@ -790,8 +822,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                     oldExpectedDate?.Date != mpo.ExpectedDate?.Date;
 
                 if (expectedDateChanged
-    && mpo.ExpectedDate.HasValue
-    && mpo.ExpectedDate.Value.Date > req.RequiredDate.Date)
+                    && mpo.ExpectedDate.HasValue
+                    && mpo.ExpectedDate.Value.Date > req.RequiredDate.Date)
                 {
                     await TryNotifySaleWhenExpectedDateExceededAsync(req, mpo, oldExpectedDate, now, ct);
                 }
@@ -1004,146 +1036,34 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
 
         //============================================================= Copy MFGProductionOrder =============================================================
 
-    //    public async Task<OperationResult<CopyMfgProductionOrderResult>> CopyAsync(
-    //PostCopyMfgProductionOrderRequest req,
-    //CancellationToken ct = default)
-    //    {
-    //        await using var tx = await _unitOfWork.BeginTransactionAsync();
-
-    //        try
-    //        {
-    //            var now = DateTime.Now;
-    //            var userId = _currentUser.EmployeeId;
-
-    //            var source = await _unitOfWork.MfgProductionOrderRepository.Query(track: true)
-    //                .FirstOrDefaultAsync(x => x.MfgProductionOrderId == req.SourceMfgProductionOrderId && x.IsActive, ct);
-
-    //            if (source == null)
-    //                return OperationResult<CopyMfgProductionOrderResult>.Fail("Không tìm thấy lệnh sản xuất nguồn.");
-
-    //            var sourceLink = await _unitOfWork.MfgOrderPORepository.Query(track: true)
-    //                .FirstOrDefaultAsync(x => x.MfgProductionOrderId == source.MfgProductionOrderId && x.IsActive, ct);
-
-    //            if (sourceLink == null)
-    //                return OperationResult<CopyMfgProductionOrderResult>.Fail("Không tìm thấy liên kết đơn hàng của lệnh nguồn.");
-
-    //            var newId = Guid.CreateVersion7();
-    //            var newExternalId = await _externalId.NextAsync(DocumentPrefix.MFG.ToString(), ct: ct);
-
-    //            var clone = new MfgProductionOrder
-    //            {
-    //                MfgProductionOrderId = newId,
-    //                ExternalId = newExternalId,
-
-    //                ProductId = source.ProductId,
-    //                ProductExternalIdSnapshot = source.ProductExternalIdSnapshot,
-    //                ProductNameSnapshot = source.ProductNameSnapshot,
-    //                ColorName = source.ColorName,
-
-    //                CustomerId = source.CustomerId,
-    //                CustomerExternalIdSnapshot = source.CustomerExternalIdSnapshot,
-    //                CustomerNameSnapshot = source.CustomerNameSnapshot,
-
-    //                FormulaId = source.FormulaId,
-    //                FormulaExternalIdSnapshot = source.FormulaExternalIdSnapshot,
-
-    //                ManufacturingDate = null,
-    //                RequiredDate = source.RequiredDate,
-    //                ExpectedDate = req.ExpectedDate ?? source.ExpectedDate,
-
-    //                TotalQuantityRequest = source.TotalQuantityRequest,
-    //                TotalQuantity = req.TotalQuantity ?? source.TotalQuantity,
-    //                NumOfBatches = req.NumOfBatches ?? source.NumOfBatches,
-
-    //                UnitPriceAgreed = source.UnitPriceAgreed,
-    //                Status = ManufacturingProductOrder.New.ToString(),
-
-    //                StepOfProduct = req.StepOfProduct ?? source.StepOfProduct,
-    //                LabNote = req.LabNote ?? source.LabNote,
-    //                Requirement = req.Requirement ?? source.Requirement,
-    //                PlpuNote = req.PlpuNote ?? source.PlpuNote,
-    //                QcCheck = req.QcCheck ?? source.QcCheck,
-
-    //                BagType = source.BagType,
-    //                IsActive = true,
-    //                CompanyId = source.CompanyId,
-    //                CreatedDate = now,
-    //                CreatedBy = userId,
-    //                UpdatedDate = now,
-    //                UpdatedBy = userId
-    //            };
-
-    //            var newLink = new MfgOrderPO
-    //            {
-    //                MfgProductionOrderId = newId,
-    //                MerchandiseOrderDetailId = sourceLink.MerchandiseOrderDetailId,
-    //                IsActive = true
-    //            };
-
-    //            await _unitOfWork.MfgProductionOrderRepository.AddAsync(clone, ct);
-    //            await _unitOfWork.MfgOrderPORepository.AddAsync(newLink, ct);
-
-    //            await _TimelineService.AddEventLogAsync(new EventLogModels
-    //            {
-    //                employeeId = userId,
-    //                eventType = EventType.ManufacturingProductOrder,
-    //                sourceCode = clone.ExternalId,
-    //                sourceId = clone.MfgProductionOrderId,
-    //                status = clone.Status,
-    //                note = $"Copy từ lệnh sản xuất {source.ExternalId}"
-    //            }, ct);
-
-    //            await _unitOfWork.SaveChangesAsync();
-    //            await tx.CommitAsync(ct);
-
-    //            return OperationResult<CopyMfgProductionOrderResult>.Ok(
-    //                new CopyMfgProductionOrderResult
-    //                {
-    //                    MfgProductionOrderId = clone.MfgProductionOrderId,
-    //                    ExternalId = clone.ExternalId
-    //                },
-    //                "Copy lệnh sản xuất thành công.");
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            await tx.RollbackAsync(ct);
-    //            return OperationResult<CopyMfgProductionOrderResult>.Fail($"Copy lệnh sản xuất thất bại: {ex.Message}");
-    //        }
-    //    }
-
-
-
-
-
-
-
-
-
 
         //============================================================== TEST NOTIFICATION =============================================================
-        private async Task TryNotifySaleWhenExpectedDateExceededAsync(PatchMfgProductionOrderInformRequest req, MfgProductionOrder mpo, DateTime? oldExpectedDate, DateTime now, CancellationToken ct)
+        private async Task TryNotifySaleWhenExpectedDateExceededAsync(
+        PatchMfgProductionOrderInformRequest req,
+        MfgProductionOrder mpo,
+        DateTime? oldExpectedDate,
+        DateTime now,
+        CancellationToken ct)
         {
-            // 1. Chỉ xử lý khi có truyền ngày mới và ngày request
             if (!req.ExpectedDate.HasValue)
                 return;
 
             var newExpectedDate = req.ExpectedDate.Value.Date;
             var requestDate = req.RequiredDate.Date;
 
-            // 2. Chỉ notify khi ngày hứa giao mới lớn hơn ngày request
             if (newExpectedDate <= requestDate)
                 return;
 
-            // 3. Tránh spam: chỉ notify khi ngày thật sự đổi
             if (oldExpectedDate.HasValue && oldExpectedDate.Value.Date == newExpectedDate)
                 return;
 
-            // 4. Resolve sale phụ trách
+            if (oldExpectedDate.HasValue && newExpectedDate <= oldExpectedDate.Value.Date)
+                return;
+
             var saleEmployeeId = await ResolveSaleEmployeeIdAsync(mpo.MfgProductionOrderId, ct);
             if (!saleEmployeeId.HasValue || saleEmployeeId.Value == Guid.Empty)
                 return;
 
-            // 5. Gửi notification
             await _notificationService.PublishAsync(new PublishNotificationRequest
             {
                 Topic = TopicNotifications.MfgProductionOrderChangeExpectiveDate,
@@ -1155,9 +1075,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                 {
                     MfgProductionOrderId = mpo.MfgProductionOrderId,
                     MfgExternalId = mpo.ExternalId,
-                    OldExpectedDate = oldExpectedDate,
-                    NewExpectedDate = req.ExpectedDate,
-                    RequestDate = req.RequiredDate
+                    OldExpectedDate = oldExpectedDate?.Date,
+                    NewExpectedDate = newExpectedDate,
+                    RequestDate = requestDate
                 }),
                 TargetUserIds = new List<Guid> { saleEmployeeId.Value }
             }, ct);

@@ -1408,48 +1408,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     // không chặn flow nếu provider lỗi
                 }
 
-                //var ignoreCustomerId = Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75");
-                //var isIgnoreCustomer = mpo.CustomerId == ignoreCustomerId;
-
-                //// Chỉ lấy đúng ColourCode để hiển thị title
-                //var productColourCode = mpo.Product?.ColourCode?.Trim() ?? string.Empty;
-
-                //// Chỉ publish khi:
-                //// - không phải customer bị ignore
-                //// - có target price
-                //// - total cost > target price
-                //if (!isIgnoreCustomer && targetPrice.HasValue && (mf.TotalPrice ?? 0m) > targetPrice.Value)
-                //{
-                //    var title = !string.IsNullOrWhiteSpace(productColourCode)
-                //        ? $"Cảnh báo giá: {productColourCode}"
-                //        : $"Cảnh báo giá: {mf.ExternalId}";
-
-                //    var message = !string.IsNullOrWhiteSpace(productColourCode)
-                //        ? $"SP {productColourCode}: Tổng chi phí {(mf.TotalPrice ?? 0m):N0} > Giá bán {targetPrice.Value:N0}"
-                //        : $"Tổng chi phí {(mf.TotalPrice ?? 0m):N0} > Giá bán {targetPrice.Value:N0}";
-
-                //    await _notificationService.PublishAsync(new PublishNotificationRequest
-                //    {
-                //        Topic = TopicNotifications.PriceOverSellCreated,
-                //        Severity = NotificationSeverity.Warning,
-                //        Title = title,
-                //        Message = message,
-                //        Link = $"/labs/mfgformula/{mpo.MfgProductionOrderId}/{mf.ManufacturingFormulaId}",
-                //        PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
-                //        {
-                //            FormulaId = mf.ManufacturingFormulaId,
-                //            ExternalId = mf.ExternalId,
-                //            ProductColourCode = mpo.Product?.ColourCode,
-                //            ProductCode = mpo.Product?.Code,
-                //            ProductName = mpo.Product?.Name,
-                //            TotalCost = mf.TotalPrice,
-                //            TargetPrice = targetPrice.Value,
-                //            MpoId = mpoId,
-                //            CustomerId = mpo.CustomerId
-                //        }),
-                //        TargetRoles = new() { AppRoles.PLPUNotify, AppRoles.President }
-                //    }, ct);
-                //}
 
                 var ignoreCustomerId = Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75");
                 var isIgnoreCustomer = mpo.CustomerId.HasValue && mpo.CustomerId.Value == ignoreCustomerId;

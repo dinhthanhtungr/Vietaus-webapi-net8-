@@ -567,11 +567,11 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 
                     var used = reserve.QtyUsed ?? 0m;
 
-                    if (newQtyRequest < used)
-                    {
-                        return OperationResult.Fail(
-                            $"Nguyên vật liệu '{code}' đã được sử dụng {used}, không thể giảm giữ chỗ xuống {newQtyRequest}.");
-                    }
+                    //if (newQtyRequest < used)
+                    //{
+                    //    return OperationResult.Fail(
+                    //        $"Nguyên vật liệu '{code}' đã được sử dụng {used}, không thể giảm giữ chỗ xuống {newQtyRequest}.");
+                    //}
 
                     reserve.QtyRequest = newQtyRequest;
                     reserve.ReserveStatus = "Open";
@@ -607,11 +607,11 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 {
                     var used = reserve.QtyUsed ?? 0m;
 
-                    if (used > 0)
-                    {
-                        return OperationResult.Fail(
-                            $"Nguyên vật liệu '{code}' đã được sử dụng {used}, không thể xóa khỏi công thức hoặc hủy giữ chỗ.");
-                    }
+                    //if (used > 0)
+                    //{
+                    //    return OperationResult.Fail(
+                    //        $"Nguyên vật liệu '{code}' đã được sử dụng {used}, không thể xóa khỏi công thức hoặc hủy giữ chỗ.");
+                    //}
 
                     reserve.ReserveStatus = "Cancelled";
                     reserve.QtyRequest = 0m;
