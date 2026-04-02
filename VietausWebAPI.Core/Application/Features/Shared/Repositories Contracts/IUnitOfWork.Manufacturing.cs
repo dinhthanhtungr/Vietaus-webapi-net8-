@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts.GetRepositories;
 using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.MerchandiseOrderFeatures;
@@ -17,6 +18,7 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts
         IManufacturingFormulaRepository ManufacturingFormulaRepository { get; }
         IProductStandardFormulaRepository ProductStandardFormulaRepository { get; }
         IProductionSelectVersionRepository ProductionSelectVersionRepository { get; }
+        IProductionSelectVersionReadRepository ProductionSelectVersionReadRepository { get; }
         IMfgOrderPORepository MfgOrderPORepository { get; }
         ISchedualMfgRepository SchedualMfgRepository { get; }
 

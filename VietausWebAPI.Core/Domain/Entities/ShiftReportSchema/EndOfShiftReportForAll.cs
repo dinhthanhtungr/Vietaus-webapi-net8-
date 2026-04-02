@@ -17,5 +17,7 @@ namespace VietausWebAPI.Core.Domain.Entities.ShiftReportSchema
         public string? ExternalId { get; set; }           // text/citext
         public string? Note { get; set; }                 // text
         public string? ProductStatus { get; set; }        // text
+
+        public virtual ICollection<EndOfShiftReportDetailForAll> ShiftReportDetails { get; set; } = new List<EndOfShiftReportDetailForAll>(); // Navigation property
     }
 }

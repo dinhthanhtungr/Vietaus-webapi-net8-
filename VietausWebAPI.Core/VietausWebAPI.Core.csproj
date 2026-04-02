@@ -25,6 +25,7 @@
     <Folder Include="Application\Features\Labs\DTOs\SampleRequestFeature\ColorChipRecordFeatures\GetDtos\" />
     <Folder Include="Application\Features\Labs\Mappers\" />
     <Folder Include="Application\Features\ShiftReportFeatures\Helpers\" />
+    <Folder Include="Application\Features\ShiftReportFeatures\ServiceContracts\EndOfShiftReportFeatures\" />
     <Folder Include="Domain\Security\Policys\" />
   </ItemGroup>
 

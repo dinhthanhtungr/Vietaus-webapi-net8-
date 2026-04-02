@@ -14,7 +14,8 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.ShiftRepor
         public void Configure(EntityTypeBuilder<EndOfShiftReportDetailForAll> entity)
         {
             entity.ToTable("endofshiftreportdetailforall", "shiftreports");
-            entity.HasNoKey();
+
+            entity.HasKey(x => x.ShiftReportDetailForAllId);
 
             entity.Property(x => x.ShiftReportDetailForAllId)
                   .UseIdentityAlwaysColumn()
@@ -35,8 +36,16 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.ShiftRepor
                   .HasColumnName("weightstockedkg")
                   .HasPrecision(16, 3);
 
-            // tìm nhanh theo externalid (liên kết mềm)
-            entity.HasIndex(x => x.ExternalId).HasDatabaseName("ix_eosrdf_externalid");
+            entity.Property(x => x.ShiftReportForAllId)
+                  .HasColumnName("shiftreportforall_id");
+
+            entity.HasIndex(x => x.ExternalId)
+                  .HasDatabaseName("ix_eosrdf_externalid");
+
+            entity.HasOne(x => x.ShiftReportForAll)
+                  .WithMany(x => x.ShiftReportDetails)
+                  .HasForeignKey(x => x.ShiftReportForAllId)
+                  .HasConstraintName("fk_eosrdf_eosrf");
         }
     }
 }

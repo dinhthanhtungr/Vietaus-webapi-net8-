@@ -8,6 +8,7 @@ using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContract
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 using VietausWebAPI.Infrastructure.Helpers.Repositories;
 using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
+using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOrders.GetRepositories;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing
 {
@@ -23,6 +24,8 @@ namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing
         {
             await _context.ProductionSelectVersions.AddRangeAsync(ProductionSelectVersions, ct);
         }
+
+
         public void UpdateAsync(ProductionSelectVersion ProductionSelectVersion, CancellationToken ct)
         {
             _context.Update(ProductionSelectVersion);

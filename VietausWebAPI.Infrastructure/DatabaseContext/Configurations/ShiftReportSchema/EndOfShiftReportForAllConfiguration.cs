@@ -14,7 +14,8 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.ShiftRepor
         public void Configure(EntityTypeBuilder<EndOfShiftReportForAll> entity)
         {
             entity.ToTable("endofshiftreportforall", "shiftreports");
-            entity.HasNoKey();
+
+            entity.HasKey(x => x.ShiftReportForAllId);
 
             entity.Property(x => x.ShiftReportForAllId)
                   .UseIdentityAlwaysColumn()
@@ -46,10 +47,14 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.ShiftRepor
             entity.Property(x => x.ProductStatus)
                   .HasColumnName("productstatus");
 
-            // Indexes thực dụng cho truy vấn
-            entity.HasIndex(x => x.CreatedAt).HasDatabaseName("ix_eosrf_created_at");
-            entity.HasIndex(x => new { x.MachineId, x.ShiftId }).HasDatabaseName("ix_eosrf_machine_shift");
-            entity.HasIndex(x => x.ProductCode).HasDatabaseName("ix_eosrf_productcode");
+            entity.HasIndex(x => x.CreatedAt)
+                  .HasDatabaseName("ix_eosrf_created_at");
+
+            entity.HasIndex(x => new { x.MachineId, x.ShiftId })
+                  .HasDatabaseName("ix_eosrf_machine_shift");
+
+            entity.HasIndex(x => x.ProductCode)
+                  .HasDatabaseName("ix_eosrf_productcode");
         }
     }
 }

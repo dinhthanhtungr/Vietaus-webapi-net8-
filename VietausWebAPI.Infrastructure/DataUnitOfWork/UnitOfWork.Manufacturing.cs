@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts.GetRepositories;
 using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
+using VietausWebAPI.Infrastructure.Repositories.Manufacturing.ProductionSelectVersionRepositories;
 
 namespace VietausWebAPI.Infrastructure.DataUnitOfWork
 {
@@ -15,6 +17,8 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IManufacturingFormulaRepository ManufacturingFormulaRepository { get; }
         public IProductStandardFormulaRepository ProductStandardFormulaRepository { get; }
         public IProductionSelectVersionRepository ProductionSelectVersionRepository { get; }
+        public IProductionSelectVersionReadRepository ProductionSelectVersionReadRepository { get; }
+
         public IMfgOrderPORepository MfgOrderPORepository { get; }
         public ISchedualMfgRepository SchedualMfgRepository { get; }
 

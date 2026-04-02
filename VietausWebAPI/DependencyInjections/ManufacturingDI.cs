@@ -6,6 +6,8 @@ using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOr
 using VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services;
 using VietausWebAPI.Infrastructure.Repositories.Manufacturing;
 using VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProductionOrderFeatures;
+using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts.GetRepositories;
+using VietausWebAPI.Infrastructure.Repositories.Manufacturing.ProductionSelectVersionRepositories;
 
 namespace VietausWebAPI.WebAPI.DependencyInjections
 {
@@ -28,6 +30,7 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
 
             services.AddScoped<IProductStandardFormulaRepository, ProductStandardFormulaRepository>();
             services.AddScoped<IProductionSelectVersionRepository, ProductionSelectVersionRepository>();
+            services.AddScoped<IProductionSelectVersionReadRepository, ProductionSelectVersionReadRepository>();
             services.AddScoped<IMfgOrderPORepository, MfgOrderPORepository>();
             services.AddScoped<ISchedualMfgRepository, SchedualMfgRepository>();
             // services.AddScoped<IManufacturingFormulaLogRepository, ManufacturingFormulaLogRepository>();

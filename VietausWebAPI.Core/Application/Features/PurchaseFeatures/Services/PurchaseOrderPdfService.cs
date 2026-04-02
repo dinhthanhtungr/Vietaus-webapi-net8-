@@ -132,6 +132,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
             var po = await _unitOfWork.PurchaseOrderRepository
                 .Query(track: true)
                 .Include(x => x.PurchaseOrderDetails)
+                    .ThenInclude(d => d.Material)
                 .FirstOrDefaultAsync(x => x.PurchaseOrderId == purchaseOrderId, ct);
 
             if (po == null) throw new Exception("Purchase Order not found (for warehouse request).");
@@ -147,15 +148,23 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
             if (existed) return;
 
             // 3) Tạo header
+            var materialCategoryId = Guid.Parse("3bed94ed-da05-4e5f-ac04-c7647aaa63d6");
+
+            var hasMaterialCategory = po.PurchaseOrderDetails
+                .Where(d => d.IsActive)
+                .Any(d => d.Material != null && d.Material.CategoryId == materialCategoryId);
+
             var req = new WarehouseRequest
             {
-                // RequestId: identity (DB tự tăng) -> không set
-                RequestCode = await _idService.NextAsync(DocumentPrefix.PRQ.ToString()), // bạn có thể đổi rule
+                RequestCode = await _idService.NextAsync(DocumentPrefix.PRQ.ToString()),
                 ReqStatus = WarehouseRequestStatus.Pending,
                 RequestName = $"Nhập kho NCC - PO {(po.ExternalId ?? po.PurchaseOrderId.ToString())}",
                 IsActive = true,
 
-                ReqType = WareHouseRequestType.ImportOther,
+                ReqType = hasMaterialCategory
+                    ? WareHouseRequestType.ImportMaterial
+                    : WareHouseRequestType.ImportOther,
+
                 codeFromRequest = po.ExternalId ?? "Error no externalId",
 
                 CompanyId = po.CompanyId.Value,
@@ -169,15 +178,11 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                     .OrderBy(d => d.LineNo)
                     .Select(d => new WarehouseRequestDetail
                     {
-                        // DetailId identity -> không set
                         ProductCode = d.MaterialExternalIDSnapshot ?? string.Empty,
                         ProductName = d.MaterialNameSnapshot ?? string.Empty,
-
-                        // Tuỳ nghiệp vụ: bạn đang dùng WeightKg/BagNumber/StockStatus
                         WeightKg = d.RequestQuantity ?? 0m,
                         BagNumber = TryParseBagNumber(d.Package),
                         StockStatus = VoucherDetailType.Waiter.ToString(),
-
                         LotNumber = null,
                         IsActive = true
                     })

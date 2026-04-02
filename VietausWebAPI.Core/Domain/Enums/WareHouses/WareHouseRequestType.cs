@@ -22,11 +22,15 @@ namespace VietausWebAPI.Core.Domain.Enums.WareHouses
         ImportRawMaterial = 5,            // Nhập nguyên vật liệu
         ImportDefectiveRawMaterial = 7,   // Nhập nguyên vật liệu lỗi
         ImportOther = 9,                  // Nhập khác
+        ImportReturn = 11,                // Nhập trả hàng 
+        ImportMaterial = 13,              // Nhập vật tư
 
         ExportFinishedGood = 2,           // Xuất hàng thành phẩm
         ExportDefectiveFinishedGood = 4,  // Xuất hàng thành phẩm lỗi
         ExportRawMaterial = 6,            // Xuất nguyên vật liệu
         ExportDefectiveRawMaterial = 8,   // Xuất nguyên vật liệu lỗi
         ExportOther = 10,                 // Xuất khác
+        ExportReturn = 12,               // Xuất trả hàng
+        ExportMaterial = 14,             // Xuất vật tư
     }
 }

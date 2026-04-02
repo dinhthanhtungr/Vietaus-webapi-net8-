@@ -14,10 +14,12 @@ using System.Xml.Linq;
 using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas;
 using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOrders;
 using VietausWebAPI.Core.Application.Features.Manufacturing.Queries.MfgProductionOrders;
+using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts.GetRepositories;
 using VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrderFeatures;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.ShiftReportFeatures.RepositoriesContracts.EndOfShiftReportFeatures;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.EventLogDtos;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.ServiceContracts;
@@ -73,7 +75,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
         /// <param name="query"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<OperationResult<PagedResult<GetSummaryMfgProductionOrder>>> GetAllAsync(MfgProductionOrderQuery query, CancellationToken ct = default)
+        public async Task<OperationResult<PagedResult<GetSummaryMfgProductionOrder>>> GetAllAsync(
+            MfgProductionOrderQuery query,
+            CancellationToken ct = default)
         {
             if (query.PageNumber <= 0) query.PageNumber = 1;
             if (query.PageSize <= 0) query.PageSize = 15;
@@ -101,12 +105,11 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     || (po.CustomerNameSnapshot != null && EF.Functions.ILike(po.CustomerNameSnapshot, pattern))
                     || (po.FormulaExternalIdSnapshot != null && EF.Functions.ILike(po.FormulaExternalIdSnapshot, pattern))
                     || po.Product.SampleRequests.Any(sr =>
-                            sr.IsActive && EF.Functions.ILike(sr.ExternalId, pattern))
-                    // ✅ thêm search theo ManufacturingFormula.ExternalId (version hiện hành)
+                        sr.IsActive && EF.Functions.ILike(sr.ExternalId, pattern))
                     || (
                         from v in vers
                         join mf in mfs on v.ManufacturingFormulaId equals mf.ManufacturingFormulaId
-                        where v.MfgProductionOrderId == po.MfgProductionOrderId 
+                        where v.MfgProductionOrderId == po.MfgProductionOrderId
                         select mf.ExternalId
                     ).Any(x => x != null && EF.Functions.ILike(x, pattern))
                     || (
@@ -118,7 +121,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     ).Any(x => x != null && EF.Functions.ILike(x, pattern))
                 );
             }
-
 
             if (query.CompanyId.HasValue && query.CompanyId.Value != Guid.Empty)
                 result = result.Where(p => p.CompanyId == query.CompanyId.Value);
@@ -135,8 +137,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             if (query.To.HasValue)
                 result = result.Where(p => p.CreatedDate <= query.To.Value);
 
-            // Sort mặc định: CreatedDate desc
-            // Nếu IsLastUpdate == true: UpdatedDate desc (null -> CreatedDate), rồi CreatedDate desc để ổn định
             if (query.IsLastUpdate == true)
             {
                 result = result
@@ -148,12 +148,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 result = result.OrderByDescending(p => p.CreatedDate);
             }
 
-            // ✅ total đúng (trước khi skip/take)
             var totalCount = await result.CountAsync(ct);
-
             var skip = (query.PageNumber - 1) * query.PageSize;
 
-            // ✅ page ngay trên DB
             var items = await result
                 .Skip(skip)
                 .Take(query.PageSize)
@@ -192,7 +189,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     ProductExternalIdSnapshot = o.ProductExternalIdSnapshot,
                     CustomerExternalIdSnapshot = o.CustomerExternalIdSnapshot,
                     CustomerNameSnapshot = o.CustomerNameSnapshot,
-
                     TotalQuantity = o.TotalQuantity,
                     Status = o.Status,
                     CreatedDate = o.CreatedDate,
@@ -200,10 +196,12 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 })
                 .ToListAsync(ct);
 
+            await FillFormulaHistoriesAsync(items, ct);
+
             return OperationResult<PagedResult<GetSummaryMfgProductionOrder>>.Ok(
                 new PagedResult<GetSummaryMfgProductionOrder>(
                     items,
-                    totalCount,              // ✅ dùng totalCount, không phải items.Count
+                    totalCount,
                     query.PageNumber,
                     query.PageSize
                 )
@@ -1207,5 +1205,82 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             //return (order, mfgFormula, materials, select, link);
             return (order, link);
         }
+
+
+
+        private async Task FillFormulaHistoriesAsync(
+                   List<GetSummaryMfgProductionOrder> items,
+                   CancellationToken ct = default)
+                        {
+                            if (items == null || items.Count == 0)
+                                return;
+
+                            var orderIds = items
+                                .Select(x => x.MfgProductionOrderId)
+                                .Distinct()
+                                .ToList();
+
+                            var orderExternalIds = items
+                                .Where(x => !string.IsNullOrWhiteSpace(x.ExternalId))
+                                .Select(x => x.ExternalId!.Trim())
+                                .Distinct()
+                                .ToList();
+
+                            if (orderIds.Count == 0 || orderExternalIds.Count == 0)
+                                return;
+
+                            var formulaHistoryRows = await _unitOfWork.ProductionSelectVersionReadRepository
+                                .GetFormulaHistoriesByProductionOrderIdsAsync(orderIds, ct);
+
+                            if (formulaHistoryRows == null || formulaHistoryRows.Count == 0)
+                                return;
+
+                            var formulaExternalIds = formulaHistoryRows
+                                .Where(x => !string.IsNullOrWhiteSpace(x.MfgFormulaExternalId))
+                                .Select(x => x.MfgFormulaExternalId.Trim())
+                                .Distinct()
+                                .ToList();
+
+                            if (formulaExternalIds.Count == 0)
+                                return;
+
+                            var quantityRows = await _unitOfWork.EndOfShiftReportReadRepositories
+                                .GetFormulaQuantitiesAsync(orderExternalIds, formulaExternalIds, ct);
+
+                            var quantityDict = quantityRows.ToDictionary(
+                                x => $"{x.MfgFormulaExternalId}",
+                                x => x);
+
+                            var historiesByOrderId = formulaHistoryRows
+                                .GroupBy(x => x.MfgProductionOrderId)
+                                .ToDictionary(
+                                    g => g.Key,
+                                    g => g
+                                        .OrderByDescending(x => x.CreatedDate)
+                                        .Select(x =>
+                                        {
+                                            var key = $"{x.MfgFormulaExternalId}";
+                                            quantityDict.TryGetValue(key, out var qty);
+
+                                            return new GetMFGFormulaHistories
+                                            {
+                                                MfgFormulaExternalId = x.MfgFormulaExternalId,
+                                                CreatedDate = x.CreatedDate,
+                                                TotalQuantity = qty?.TotalQuantity ?? 0,
+                                                GoodQuantity = qty?.GoodQuantity ?? 0,
+                                                ErrorQuantity = qty?.ErrorQuantity ?? 0
+                                            };
+                                        })
+                                        .ToList()
+                                );
+
+                            foreach (var item in items)
+                            {
+                                item.MFGFormulaHistories =
+                                    historiesByOrderId.TryGetValue(item.MfgProductionOrderId, out var histories)
+                                        ? histories
+                                        : new List<GetMFGFormulaHistories>();
+                            }
+                        }
     }
 }

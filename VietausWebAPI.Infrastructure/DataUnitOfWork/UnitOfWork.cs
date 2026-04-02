@@ -12,6 +12,7 @@ using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.Formula
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature.ColorChipRecordFeatures;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts.GetRepositories;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts.SupplierFeatures;
 using VietausWebAPI.Core.Application.Features.Notifications.RepositoriesContracts;
@@ -22,6 +23,7 @@ using VietausWebAPI.Core.Application.Features.ReportFeatures.RepositoriesContrac
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.CustomerFeatures;
 using VietausWebAPI.Core.Application.Features.Sales.RepositoriesContracts.MerchandiseOrderFeatures;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.ShiftReportFeatures.RepositoriesContracts.EndOfShiftReportFeatures;
 using VietausWebAPI.Core.Application.Features.ShiftReportFeatures.RepositoriesContracts.ExtruderOperationHistoryRepositories;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Warehouse.RepositoriesContracts;
@@ -43,7 +45,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             // ==== Report ====
 
             IFinishPLPUReportRepository finishPLPUReportRepository,
-
+            
             IMerchandiseOrderReportRepositorys merchandiseOrderReportRepositorys,
 
 
@@ -120,6 +122,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             IManufacturingFormulaRepository manufacturingFormulaRepository,
             IProductStandardFormulaRepository productStandardFormulaRepository,
             IProductionSelectVersionRepository productionSelectVersionRepository,
+            IProductionSelectVersionReadRepository productionSelectVersionReadRepository,
             IMfgOrderPORepository mfgOrderPORepository,
             ISchedualMfgRepository schedualMfgRepository,
 
@@ -141,6 +144,8 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
 
             // ==== ExtruderOperationHistory ====
             IExtruderOperationHistoryReadRepositories extruderOperationHistoryReadRepositories,
+            IEndOfShiftReportReadRepositories endOfShiftReportReadRepositories,
+
 
             // ==== Purchase ====
             IPurchaseOrderRepository purchaseOrderRepository,
@@ -240,6 +245,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             ManufacturingFormulaRepository = manufacturingFormulaRepository;
             ProductStandardFormulaRepository = productStandardFormulaRepository;
             ProductionSelectVersionRepository = productionSelectVersionRepository;
+            ProductionSelectVersionReadRepository = productionSelectVersionReadRepository;
             MfgOrderPORepository = mfgOrderPORepository;
             SchedualMfgRepository = schedualMfgRepository;
 
@@ -261,7 +267,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
 
             // ==== ExtruderOperationHistory ====
             ExtruderOperationHistoryReadRepositories = extruderOperationHistoryReadRepositories;
-
+            EndOfShiftReportReadRepositories = endOfShiftReportReadRepositories;
             // ===== Purchase =====
             PurchaseOrderRepository = purchaseOrderRepository;
             PurchaseOrderDetailRepository = purchaseOrderDetailRepository;
