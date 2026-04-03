@@ -494,6 +494,8 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                         .Select(x => x.ProductPackage)
                         .FirstOrDefault(),
 
+                    COAType = inspection.Types, // entity là Types (string?), PDF là COAType
+
                     CreateDate = inspection.CreateDate ?? DateTime.Now
                 };
 

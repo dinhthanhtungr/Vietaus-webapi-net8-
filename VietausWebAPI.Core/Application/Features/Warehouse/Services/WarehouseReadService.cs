@@ -115,10 +115,10 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                     .ToDictionary(g => g.Key, g => g.First());
 
                 var productMap = (await _unitOfWork.ProductRepository.Query()
-                    .Where(p => p.Code != null && productCodes.Contains(p.Code))
+                    .Where(p => p.ColourCode != null && productCodes.Contains(p.ColourCode))
                     .Select(p => new
                     {
-                        Code = p.Code!,
+                        Code = p.ColourCode!,
                         Name = p.Name,
                         CategoryName = p.Category != null ? p.Category.Name : ""
                     })

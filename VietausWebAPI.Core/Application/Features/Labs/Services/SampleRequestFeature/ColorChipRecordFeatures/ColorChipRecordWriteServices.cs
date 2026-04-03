@@ -44,8 +44,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     ColorChipRecordId = Guid.CreateVersion7(),
 
                     RecordType = request.RecordType,
-                    ChipPurpose = request.ChipPurpose,
                     ResinType = request.ResinType,
+                    LogoType = request.LogoType,
+                    FormStyle = request.FormStyle,
 
                     ProductId = request.ProductId,
                     ProductCodeSnapshot = request.ProductCodeSnapshot,

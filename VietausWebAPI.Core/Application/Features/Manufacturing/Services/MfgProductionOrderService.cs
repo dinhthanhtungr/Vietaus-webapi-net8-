@@ -75,138 +75,150 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
         /// <param name="query"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<OperationResult<PagedResult<GetSummaryMfgProductionOrder>>> GetAllAsync(
-            MfgProductionOrderQuery query,
-            CancellationToken ct = default)
+        public async Task<OperationResult<PagedResult<GetSummaryMfgProductionOrder>>> GetAllAsync(MfgProductionOrderQuery query, CancellationToken ct = default)
         {
-            if (query.PageNumber <= 0) query.PageNumber = 1;
-            if (query.PageSize <= 0) query.PageSize = 15;
-
-            var result = _unitOfWork.MfgProductionOrderRepository.Query();
-
-            var links = _unitOfWork.MfgOrderPORepository.Query();
-            var dets = _unitOfWork.MerchandiseOrderRepository.QueryDetail();
-            var mos = _unitOfWork.MerchandiseOrderRepository.Query();
-
-            var vers = _unitOfWork.ProductionSelectVersionRepository.Query();
-            var mfs = _unitOfWork.ManufacturingFormulaRepository.Query();
-
-            if (!string.IsNullOrWhiteSpace(query.Keyword))
+            try
             {
-                var keyword = query.Keyword.Trim();
-                var pattern = $"%{keyword}%";
+                if (query.PageNumber <= 0) query.PageNumber = 1;
+                if (query.PageSize <= 0) query.PageSize = 15;
 
-                result = result.Where(po =>
-                    EF.Functions.ILike(po.ExternalId, pattern)
-                    || (po.ProductExternalIdSnapshot != null && EF.Functions.ILike(po.ProductExternalIdSnapshot, pattern))
-                    || (po.ProductNameSnapshot != null && EF.Functions.ILike(po.ProductNameSnapshot, pattern))
-                    || (po.ColorName != null && EF.Functions.ILike(po.ColorName, pattern))
-                    || (po.CustomerExternalIdSnapshot != null && EF.Functions.ILike(po.CustomerExternalIdSnapshot, pattern))
-                    || (po.CustomerNameSnapshot != null && EF.Functions.ILike(po.CustomerNameSnapshot, pattern))
-                    || (po.FormulaExternalIdSnapshot != null && EF.Functions.ILike(po.FormulaExternalIdSnapshot, pattern))
-                    || po.Product.SampleRequests.Any(sr =>
-                        sr.IsActive && EF.Functions.ILike(sr.ExternalId, pattern))
-                    || (
-                        from v in vers
-                        join mf in mfs on v.ManufacturingFormulaId equals mf.ManufacturingFormulaId
-                        where v.MfgProductionOrderId == po.MfgProductionOrderId
-                        select mf.ExternalId
-                    ).Any(x => x != null && EF.Functions.ILike(x, pattern))
-                    || (
-                        from l in links
-                        join d in dets on l.MerchandiseOrderDetailId equals d.MerchandiseOrderDetailId
-                        join mo in mos on d.MerchandiseOrderId equals mo.MerchandiseOrderId
-                        where l.MfgProductionOrderId == po.MfgProductionOrderId
-                        select mo.ExternalId
-                    ).Any(x => x != null && EF.Functions.ILike(x, pattern))
+                var result = _unitOfWork.MfgProductionOrderRepository.Query();
+
+                var links = _unitOfWork.MfgOrderPORepository.Query();
+                var dets = _unitOfWork.MerchandiseOrderRepository.QueryDetail();
+                var mos = _unitOfWork.MerchandiseOrderRepository.Query();
+
+                var vers = _unitOfWork.ProductionSelectVersionRepository.Query();
+                var mfs = _unitOfWork.ManufacturingFormulaRepository.Query();
+
+                if (!string.IsNullOrWhiteSpace(query.Keyword))
+                {
+                    var keyword = query.Keyword.Trim();
+                    var pattern = $"%{keyword}%";
+
+                    result = result.Where(po =>
+                        EF.Functions.ILike(po.ExternalId, pattern)
+                        || (po.ProductExternalIdSnapshot != null && EF.Functions.ILike(po.ProductExternalIdSnapshot, pattern))
+                        || (po.ProductNameSnapshot != null && EF.Functions.ILike(po.ProductNameSnapshot, pattern))
+                        || (po.ColorName != null && EF.Functions.ILike(po.ColorName, pattern))
+                        || (po.CustomerExternalIdSnapshot != null && EF.Functions.ILike(po.CustomerExternalIdSnapshot, pattern))
+                        || (po.CustomerNameSnapshot != null && EF.Functions.ILike(po.CustomerNameSnapshot, pattern))
+                        || (po.FormulaExternalIdSnapshot != null && EF.Functions.ILike(po.FormulaExternalIdSnapshot, pattern))
+                        || po.Product.SampleRequests.Any(sr =>
+                            sr.IsActive && EF.Functions.ILike(sr.ExternalId, pattern))
+                        || (
+                            from v in vers
+                            join mf in mfs on v.ManufacturingFormulaId equals mf.ManufacturingFormulaId
+                            where v.MfgProductionOrderId == po.MfgProductionOrderId
+                            select mf.ExternalId
+                        ).Any(x => x != null && EF.Functions.ILike(x, pattern))
+                        || (
+                            from l in links
+                            join d in dets on l.MerchandiseOrderDetailId equals d.MerchandiseOrderDetailId
+                            join mo in mos on d.MerchandiseOrderId equals mo.MerchandiseOrderId
+                            where l.MfgProductionOrderId == po.MfgProductionOrderId
+                            select mo.ExternalId
+                        ).Any(x => x != null && EF.Functions.ILike(x, pattern))
+                    );
+                }
+
+                if (query.CompanyId.HasValue && query.CompanyId.Value != Guid.Empty)
+                    result = result.Where(p => p.CompanyId == query.CompanyId.Value);
+
+                if (query.MfgProductionOrderId.HasValue && query.MfgProductionOrderId.Value != Guid.Empty)
+                    result = result.Where(p => p.MfgProductionOrderId == query.MfgProductionOrderId.Value);
+
+                if (query.Statuses is { Count: > 0 })
+                    result = result.Where(p => query.Statuses.Contains(p.Status));
+
+                if (query.From.HasValue)
+                    result = result.Where(p => p.CreatedDate >= query.From.Value);
+
+                if (query.To.HasValue)
+                    result = result.Where(p => p.CreatedDate <= query.To.Value);
+
+                if (query.IsLastUpdate == true)
+                {
+                    result = result
+                        .OrderByDescending(p => p.UpdatedDate)
+                        .ThenByDescending(p => p.CreatedDate);
+                }
+                else
+                {
+                    result = result.OrderByDescending(p => p.CreatedDate);
+                }
+
+                var totalCount = await result.CountAsync(ct);
+                var skip = (query.PageNumber - 1) * query.PageSize;
+
+                var items = await result
+                    .Skip(skip)
+                    .Take(query.PageSize)
+                    .Select(o => new GetSummaryMfgProductionOrder
+                    {
+                        MfgProductionOrderId = o.MfgProductionOrderId,
+                        ExternalId = o.ExternalId,
+
+                        MfgFormualaExternalIdSnapshot = (
+                            from v in vers
+                            join mf in mfs on v.ManufacturingFormulaId equals mf.ManufacturingFormulaId
+                            where v.MfgProductionOrderId == o.MfgProductionOrderId && v.ValidTo == null
+                            orderby v.ValidFrom descending
+                            select mf.ExternalId
+                        ).FirstOrDefault(),
+
+                        MerchandiseOrderId = (
+                            from l in links
+                            join d in dets on l.MerchandiseOrderDetailId equals d.MerchandiseOrderDetailId
+                            join mo in mos on d.MerchandiseOrderId equals mo.MerchandiseOrderId
+                            where l.MfgProductionOrderId == o.MfgProductionOrderId
+                            orderby mo.MerchandiseOrderId descending
+                            select mo.MerchandiseOrderId
+                        ).FirstOrDefault(),
+
+                        MerchandiseOrderExternalId = (
+                            from l in links
+                            join d in dets on l.MerchandiseOrderDetailId equals d.MerchandiseOrderDetailId
+                            join mo in mos on d.MerchandiseOrderId equals mo.MerchandiseOrderId
+                            where l.MfgProductionOrderId == o.MfgProductionOrderId
+                            orderby mo.MerchandiseOrderId descending
+                            select mo.ExternalId
+                        ).FirstOrDefault(),
+
+                        ProductNameSnapshot = o.ProductNameSnapshot,
+                        ProductExternalIdSnapshot = o.ProductExternalIdSnapshot,
+                        CustomerExternalIdSnapshot = o.CustomerExternalIdSnapshot,
+                        CustomerNameSnapshot = o.CustomerNameSnapshot,
+                        TotalQuantity = o.TotalQuantity,
+                        Status = o.Status,
+                        CreatedDate = o.CreatedDate,
+                        BagType = o.BagType,
+                    })
+                    .ToListAsync(ct);
+
+                await FillFormulaHistoriesAsync(items, ct);
+
+                return OperationResult<PagedResult<GetSummaryMfgProductionOrder>>.Ok(
+                    new PagedResult<GetSummaryMfgProductionOrder>(
+                        items,
+                        totalCount,
+                        query.PageNumber,
+                        query.PageSize
+                    )
                 );
             }
 
-            if (query.CompanyId.HasValue && query.CompanyId.Value != Guid.Empty)
-                result = result.Where(p => p.CompanyId == query.CompanyId.Value);
-
-            if (query.MfgProductionOrderId.HasValue && query.MfgProductionOrderId.Value != Guid.Empty)
-                result = result.Where(p => p.MfgProductionOrderId == query.MfgProductionOrderId.Value);
-
-            if (query.Statuses is { Count: > 0 })
-                result = result.Where(p => query.Statuses.Contains(p.Status));
-
-            if (query.From.HasValue)
-                result = result.Where(p => p.CreatedDate >= query.From.Value);
-
-            if (query.To.HasValue)
-                result = result.Where(p => p.CreatedDate <= query.To.Value);
-
-            if (query.IsLastUpdate == true)
+            catch (OperationCanceledException)
             {
-                result = result
-                    .OrderByDescending(p => p.UpdatedDate)
-                    .ThenByDescending(p => p.CreatedDate);
+                return OperationResult<PagedResult<GetSummaryMfgProductionOrder>>.Fail("Yêu cầu đã bị hủy.");
             }
-            else
+            catch (Exception ex)
             {
-                result = result.OrderByDescending(p => p.CreatedDate);
+                return OperationResult<PagedResult<GetSummaryMfgProductionOrder>>.Fail($"Lỗi hệ thống: {ex.Message}");
             }
 
-            var totalCount = await result.CountAsync(ct);
-            var skip = (query.PageNumber - 1) * query.PageSize;
-
-            var items = await result
-                .Skip(skip)
-                .Take(query.PageSize)
-                .Select(o => new GetSummaryMfgProductionOrder
-                {
-                    MfgProductionOrderId = o.MfgProductionOrderId,
-                    ExternalId = o.ExternalId,
-
-                    MfgFormualaExternalIdSnapshot = (
-                        from v in vers
-                        join mf in mfs on v.ManufacturingFormulaId equals mf.ManufacturingFormulaId
-                        where v.MfgProductionOrderId == o.MfgProductionOrderId && v.ValidTo == null
-                        orderby v.ValidFrom descending
-                        select mf.ExternalId
-                    ).FirstOrDefault(),
-
-                    MerchandiseOrderId = (
-                        from l in links
-                        join d in dets on l.MerchandiseOrderDetailId equals d.MerchandiseOrderDetailId
-                        join mo in mos on d.MerchandiseOrderId equals mo.MerchandiseOrderId
-                        where l.MfgProductionOrderId == o.MfgProductionOrderId
-                        orderby mo.MerchandiseOrderId descending
-                        select mo.MerchandiseOrderId
-                    ).FirstOrDefault(),
-
-                    MerchandiseOrderExternalId = (
-                        from l in links
-                        join d in dets on l.MerchandiseOrderDetailId equals d.MerchandiseOrderDetailId
-                        join mo in mos on d.MerchandiseOrderId equals mo.MerchandiseOrderId
-                        where l.MfgProductionOrderId == o.MfgProductionOrderId
-                        orderby mo.MerchandiseOrderId descending
-                        select mo.ExternalId
-                    ).FirstOrDefault(),
-
-                    ProductNameSnapshot = o.ProductNameSnapshot,
-                    ProductExternalIdSnapshot = o.ProductExternalIdSnapshot,
-                    CustomerExternalIdSnapshot = o.CustomerExternalIdSnapshot,
-                    CustomerNameSnapshot = o.CustomerNameSnapshot,
-                    TotalQuantity = o.TotalQuantity,
-                    Status = o.Status,
-                    CreatedDate = o.CreatedDate,
-                    BagType = o.BagType,
-                })
-                .ToListAsync(ct);
-
-            await FillFormulaHistoriesAsync(items, ct);
-
-            return OperationResult<PagedResult<GetSummaryMfgProductionOrder>>.Ok(
-                new PagedResult<GetSummaryMfgProductionOrder>(
-                    items,
-                    totalCount,
-                    query.PageNumber,
-                    query.PageSize
-                )
-            );
         }
+
         /// <summary>
         /// Lấy danh sách công thức theo lệnh sản xuất với phân trang và lọc
         /// </summary>
@@ -1206,11 +1218,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             return (order, link);
         }
 
-
-
-        private async Task FillFormulaHistoriesAsync(
-                   List<GetSummaryMfgProductionOrder> items,
-                   CancellationToken ct = default)
+        /// <summary>
+        /// Lọc và gán lịch sử công thức sản xuất (MFGFormulaHistories) cho mỗi lệnh sản xuất trong danh sách, dựa trên MfgProductionOrderId và ExternalId.
+        /// </summary>
+        /// <param name="items"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        private async Task FillFormulaHistoriesAsync(List<GetSummaryMfgProductionOrder> items, CancellationToken ct = default)
                         {
                             if (items == null || items.Count == 0)
                                 return;

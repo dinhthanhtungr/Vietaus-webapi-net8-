@@ -167,7 +167,11 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                 {
                     ManufacturingFormulaId = f.FormulaId, // giữ tạm property cũ để không vỡ DTO
                     ExternalId = f.ExternalId,
-                    Note = f.Note,
+
+                    Note = !string.IsNullOrWhiteSpace(f.Note)
+                        ? f.Note
+                        : f.Product.Requirement,
+
                     FormulaItems = f.FormulaMaterials
                         .Where(i => i.IsActive)
                         .OrderBy(i => i.LineNo)

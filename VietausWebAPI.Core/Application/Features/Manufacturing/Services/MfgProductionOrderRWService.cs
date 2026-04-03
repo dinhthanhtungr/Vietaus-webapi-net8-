@@ -405,7 +405,11 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
         /// <param name="formulaExternalIdSnapshot">ExternalId snapshot của công thức VU.</param>
         /// <param name="mpoCreatedDate">Ngày tạo MPO để fallback nếu Formula không còn tồn tại.</param>
         /// <returns>Danh sách summary chỉ gồm 1 dòng FromVu hoặc rỗng.</returns>
-        private async Task<List<GetMfgProductionOrderRWSummary>> GetVuFallbackSummaryAsync(Guid mfgProductionOrderId, Guid? formulaId, string? formulaExternalIdSnapshot, DateTime mpoCreatedDate)
+        private async Task<List<GetMfgProductionOrderRWSummary>> GetVuFallbackSummaryAsync(
+            Guid mfgProductionOrderId,
+            Guid? formulaId,
+            string? formulaExternalIdSnapshot,
+            DateTime mpoCreatedDate)
         {
             if (formulaId == null || formulaId == Guid.Empty)
                 return new List<GetMfgProductionOrderRWSummary>();
@@ -417,7 +421,9 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                 {
                     x.FormulaId,
                     x.ExternalId,
-                    x.Note,
+                    Note = !string.IsNullOrWhiteSpace(x.Note)
+                        ? x.Note
+                        : x.Product.Requirement,
                     x.CreatedDate
                 })
                 .FirstOrDefaultAsync();
@@ -524,7 +530,9 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                 {
                     x.FormulaId,
                     x.ExternalId,
-                    x.Note,
+                    Note = !string.IsNullOrWhiteSpace(x.Note)
+                        ? x.Note
+                        : x.Product.Requirement,
                     x.CreatedDate
                 })
                 .FirstOrDefaultAsync();

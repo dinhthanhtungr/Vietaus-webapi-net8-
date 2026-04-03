@@ -78,8 +78,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                         //  .FontSize(9).Black();
 
                         tx.Span("Ngày kế hoạch tạo phiếu: ").FontSize(9);
-                        tx.Span(templateOnly ? "....../....../......" : $"{d.CreatedDate:dd/MM/yyyy}")
-                          .FontSize(11).Black();
+                        tx.Span(templateOnly ? "....../....../...... ..:.." : $"{d.CreatedDate:dd/MM/yyyy HH:mm}")
+                                                  .FontSize(11).Black();
                     });
 
                 });

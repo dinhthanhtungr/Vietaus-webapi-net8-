@@ -41,7 +41,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                 c.Page(page =>
                 {
                     page.Size(PageSizes.A4);
-                    page.Margin(30);
+                    page.Margin(10);
                     page.DefaultTextStyle(t => t.FontFamily("Open Sans").FontSize(9));
 
                     page.Header().Component(new HeaderComponent());
@@ -120,15 +120,14 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                 {
                     table.ColumnsDefinition(cd =>
                     {
-                        cd.ConstantColumn(70);
-                        cd.RelativeColumn(2.4f);
-                        cd.RelativeColumn(1.2f);
-                        cd.ConstantColumn(45);
-                        cd.RelativeColumn(1.1f);
-                        cd.ConstantColumn(65);
-                        cd.RelativeColumn(1.1f);
+                        cd.RelativeColumn(1.2f);  // Mã SP
+                        cd.RelativeColumn(4.3f);  // Tên SP
+                        cd.RelativeColumn(1.5f);  // Số lô
+                        cd.RelativeColumn(0.9f);  // Đơn vị
+                        cd.RelativeColumn(1.4f);  // Số lượng
+                        cd.RelativeColumn(1.0f);  // Số bao
+                        cd.RelativeColumn(1.8f);  // Số PO
                     });
-
                     var borderStyle = new Func<IContainer, IContainer>(x => x.Border(1).BorderColor(Colors.Black));
 
                     table.Header(row =>
@@ -153,7 +152,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                         cellStyle("Số lô", "Batch No")(row.Cell());
                         cellStyle("Đơn vị", "Unit")(row.Cell());
                         cellStyle("Số lượng", "Quantity")(row.Cell());
-                        cellStyle("Số bao", "Bag number")(row.Cell());
+                        cellStyle("Số bao", "Bag No")(row.Cell());
                         cellStyle("Số PO", "PO No")(row.Cell());
                     });
 

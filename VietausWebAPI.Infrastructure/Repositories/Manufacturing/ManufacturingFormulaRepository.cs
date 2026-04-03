@@ -52,6 +52,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing
                         f => f.ManufacturingFormulaId,
                         s => s.ManufacturingFormulaId,
                         (f, s) => f)
+                    .Distinct()
                     .OrderByDescending(f => f.Name)   // nhớ zero-pad để sort đúng theo số
                     .Select(f => f.Name)
                     .FirstOrDefaultAsync();

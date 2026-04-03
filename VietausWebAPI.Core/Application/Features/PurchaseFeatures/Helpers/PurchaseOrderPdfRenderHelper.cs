@@ -130,8 +130,8 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Helpers
                         .PaddingVertical(2)
                         .PaddingHorizontal(6);
 
-                    static string Money(decimal? v) => (v ?? 0m).ToString("#,0.00");
-                    static string Qty(decimal? v) => (v ?? 0m).ToString("0.00");
+                    static string Money(decimal? v) => (v ?? 0m).ToString("#,0");
+                    static string Qty(decimal? v) => (v ?? 0m).ToString("0");
 
                     table.Header(row =>
                     {

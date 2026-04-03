@@ -1,11 +1,12 @@
-﻿using QuestPDF.Fluent;
+﻿using DocumentFormat.OpenXml.Math;
+using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using VietausWebAPI.Core.Application.Shared.Helper;
-using VietausWebAPI.Core.Application.Features.Labs.Helpers;
-using VietausWebAPI.Core.Domain.Entities;
-using VietausWebAPI.Core.Application.Shared.Helper.Pdfs;
 using VietausWebAPI.Core.Application.Features.DevandqaFeatures.DTOs.ProductInspectionFeature;
+using VietausWebAPI.Core.Application.Features.Labs.Helpers;
+using VietausWebAPI.Core.Application.Shared.Helper;
+using VietausWebAPI.Core.Application.Shared.Helper.Pdfs;
+using VietausWebAPI.Core.Domain.Entities;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
 {
@@ -14,6 +15,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
         private readonly PDFResultValue _result;
         private readonly PDFSpecificationsValue? _specs;
         private bool _isLongGiangBag;
+        private bool _isLongGiangBagWithSpecs;
 
         // Constructor 1: chỉ có kết quả kiểm tra
         public COAPdf(PDFResultValue result)
@@ -42,8 +44,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                     .Replace("_", " ")
                     .Contains("long giang", StringComparison.OrdinalIgnoreCase);
 
+                _isLongGiangBagWithSpecs = _result.COAType == "COA-LG"; 
 
-                if (_isLongGiangBag)
+                if (_isLongGiangBag || _isLongGiangBagWithSpecs)
                 {
                     page.Header().Component(new LGHeaderComponent());
                 }
@@ -106,15 +109,19 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                                 AddRow("Company (Tên công ty):", "LONG GIANG CHEMICAL CO.,LTD");
                             });
 
-                            // Bên phải là ảnh
-                            row.ConstantItem(90).AlignMiddle().AlignLeft().Element(e =>
+                            if(_isLongGiangBag)
                             {
-                                var imagePath = "wwwroot/images/BagType/LongGiangBag.jpg";
-                                if (File.Exists(imagePath))
-                                    e.Image(Image.FromFile(imagePath)).FitHeight().FitWidth();
-                                else
-                                    e.Text("Logo").FontSize(10);
-                            });
+                                // Bên phải là ảnh
+                                row.ConstantItem(90).AlignMiddle().AlignLeft().Element(e =>
+                                {
+                                    var imagePath = "wwwroot/images/BagType/LongGiangBag.jpg";
+                                    if (File.Exists(imagePath))
+                                        e.Image(Image.FromFile(imagePath)).FitHeight().FitWidth();
+                                    else
+                                        e.Text("Logo").FontSize(10);
+                                });
+                            }
+
                         });
 
                         column.Item().PaddingTop(5).AlignCenter().AlignMiddle().Text(text =>

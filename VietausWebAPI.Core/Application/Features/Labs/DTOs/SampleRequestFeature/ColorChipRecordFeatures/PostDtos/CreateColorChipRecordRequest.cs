@@ -10,8 +10,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
     public class CreateColorChipRecordRequest
     {
         public RecordType RecordType { get; set; }
-        public ChipPurpose ChipPurpose { get; set; }
         public ResinType ResinType { get; set; }
+        public LogoType LogoType { get; set; }
+        public FormStyle FormStyle { get; set; }
 
         public Guid? ProductId { get; set; }
         public string? ProductCodeSnapshot { get; set; }

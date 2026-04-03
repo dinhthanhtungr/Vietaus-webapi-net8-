@@ -37,6 +37,7 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.DTOs.ProductI
         public string? BlackDots { get; set; }
         public bool? MigrationTest { get; set; }
 
+        public string? COAType { get; set; } // Loại COA (VD: COA-PI-2023-0001, COA-PI-2023-0002...)
         public DateTime CreateDate { get; set; }
     }
 }

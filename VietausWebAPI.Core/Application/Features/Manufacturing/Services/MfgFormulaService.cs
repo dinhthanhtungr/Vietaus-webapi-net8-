@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using DocumentFormat.OpenXml.Drawing.Diagrams;
+using DocumentFormat.OpenXml.Presentation;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -421,6 +422,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     IsRecycle = x.ProductionOrder.Product.IsRecycle,
                     x.ProductionOrder.CustomerNameSnapshot,
                     MerchadiseOrderExternalId = x.Detail.MerchandiseOrder.ExternalId,
+                    MerchadiseOrderId = x.Detail.MerchandiseOrderId,
                     x.ProductionOrder.TotalQuantityRequest,
                     x.ProductionOrder.TotalQuantity,
                     x.ProductionOrder.Status,
@@ -595,6 +597,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 IsRecycle = mpo.IsRecycle,
 
                 MerchadiseOrderExternalId = mpo.MerchadiseOrderExternalId,
+                MerchadiseOrderId = mpo.MerchadiseOrderId,
                 CustomerNameSnapshot = mpo.CustomerNameSnapshot,
 
                 SaleTotalPrice = mpo.UnitPriceAgreed,
@@ -763,7 +766,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     {
                         FormulaId = f.ManufacturingFormulaId,
                         ExternalId = f.ExternalId,
-                        Name = f.Name,
+                        //Name = f.Name,
+                        Name = "-",
                         FormulaSourceIdCreatedDate = f.CreatedDate,
                         Materials = f.ManufacturingFormulaMaterials
                             .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
@@ -1246,12 +1250,17 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     nextMpoStatus = ManufacturingProductOrder.FormulaSuccess.ToString();
                 }
 
+                req.Name = await ExternalIdGenerator.GenerateFormulaCode(
+                    "F",
+                    prefix => _unitOfWork.ManufacturingFormulaRepository.GetLatestExternalIdStartsWithAsync(prefix, req.mfgProductionOrderId)
+                );
+
                 // 1) Tạo ManufacturingFormula (VA)
                 var mf = new ManufacturingFormula
                 {
                     ManufacturingFormulaId = Guid.CreateVersion7(),
                     ExternalId = await _externalId.NextAsync(DocumentPrefix.VA.ToString(), ct: ct),
-                    Name = "F001",
+                    Name = req.Name,
                     Status = formulaStatus,
                     TotalPrice = req.ManufacturingFormulaMaterials.Sum(x => x.UnitPrice * x.Quantity),
 
