@@ -25,50 +25,33 @@ namespace VietausWebAPI.Core.Domain.Entities.SampleRequestSchema
         // 3. Product Snapshot
         // =========================================================
         public Guid? ProductId { get; set; }
-        public string? ProductCodeSnapshot { get; set; }
-        public string? ProductNameSnapshot { get; set; }
-        public string? ColorNameSnapshot { get; set; }
 
-        // =========================================================
-        // 4. Formula Snapshot
-        // =========================================================
-        public Guid? ManufacturingFormulaId { get; set; } // Công thức VA lúc tạo mẫu
-        public string? ManufacturingFormulaExternalIdSnapshot { get; set; }
-
-        public Guid? DevelopmentFormulaId { get; set; } // Công thức VU lúc phát triển mẫu
-        public string? DevelopmentFormulaExternalIdSnapshot { get; set; }
-
-        // =========================================================
-        // 5. Customer Snapshot
-        // =========================================================
-        public Guid? CustomerId { get; set; }
-        public string? CustomerExternalIdSnapshot { get; set; }
-        public string? CustomerNameSnapshot { get; set; }
 
         // =========================================================
         // 6. Technical Information
         // =========================================================
-        public decimal? AddRate { get; set; }
+        public string? Machine { get; set; }
         public string? Resin { get; set; }
-
-        public decimal? TemperatureMin { get; set; }
-        public decimal? TemperatureMax { get; set; }
+        public string? TemperatureLimit { get; set; } = string.Empty;
 
         // =========================================================
         // 7. Physical / Form Information
         // =========================================================
         public string? SizeText { get; set; }          // ví dụ: 2.4 x 3.2
         public decimal? PelletWeightGram { get; set; } // trọng lượng hạt
-        public string? AntiStaticInfo { get; set; }    // "Không có", "Có", ...
+        public string? NetWeightGram { get; set; }          // trọng lượng tịnh
+        public bool? Electrostatic { get; set; }    // Tĩnh điện, ...
 
         // =========================================================
         // 8. Document / Record Info
         // =========================================================
-        public Guid AttachmentCollectionId { get; set; }
+        public Guid? AttachmentCollectionId { get; set; }
         public DateTime? RecordDate { get; set; }
         public string? Note { get; set; }
         public string? PrintNote { get; set; }
-
+        public decimal Lightness { get; set; }   // L*
+        public decimal AValue { get; set; }      // a*
+        public decimal BValue { get; set; }      // b*
         // =========================================================
         // 9. Audit
         // =========================================================
@@ -83,10 +66,10 @@ namespace VietausWebAPI.Core.Domain.Entities.SampleRequestSchema
         // =========================================================
         // 10. Navigation Properties
         // =========================================================
-        public virtual AttachmentCollection AttachmentCollection { get; set; } = null!;
-        public virtual Customer? Customer { get; set; }
-        public virtual Formula? DevelopmentFormula { get; set; }
-        public virtual ManufacturingFormula? ManufacturingFormula { get; set; }
+        public virtual AttachmentCollection? AttachmentCollection { get; set; } = null!;
+        public virtual ICollection<ColorChipRecordDevelopmentFormula> DevelopmentFormulas { get; set; }
+            = new List<ColorChipRecordDevelopmentFormula>();
         public virtual Product? Product { get; set; }
+
     }
 }

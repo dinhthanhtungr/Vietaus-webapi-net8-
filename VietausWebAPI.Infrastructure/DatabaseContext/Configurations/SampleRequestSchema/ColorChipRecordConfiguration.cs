@@ -1,5 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
 
@@ -41,85 +40,28 @@ namespace VietausWebAPI.Infrastructure.Persistence.Configurations.SampleRequestS
                 .IsRequired();
 
             // =========================================================
-            // 2. Product Snapshot
+            // 2. Product
             // =========================================================
             b.Property(x => x.ProductId)
                 .HasColumnName("product_id");
 
-            b.Property(x => x.ProductCodeSnapshot)
-                .HasColumnName("product_code_snapshot")
-                .HasMaxLength(100);
-
-            b.Property(x => x.ProductNameSnapshot)
-                .HasColumnName("product_name_snapshot")
-                .HasMaxLength(500);
-
-            b.Property(x => x.ColorNameSnapshot)
-                .HasColumnName("color_name_snapshot")
-                .HasMaxLength(500);
-
             // =========================================================
-            // 3. Formula Snapshot
+            // 3. Technical Information
             // =========================================================
-            b.Property(x => x.ManufacturingFormulaId)
-                .HasColumnName("manufacturing_formula_id");
-
-            b.Property(x => x.ManufacturingFormulaExternalIdSnapshot)
-                .HasColumnName("manufacturing_formula_external_id_snapshot")
-                .HasMaxLength(100);
-
-            b.Property(x => x.DevelopmentFormulaId)
-                .HasColumnName("development_formula_id");
-
-            b.Property(x => x.DevelopmentFormulaExternalIdSnapshot)
-                .HasColumnName("development_formula_external_id_snapshot")
-                .HasMaxLength(100);
-
-            // =========================================================
-            // 4. Attachment / Record Info
-            // =========================================================
-            b.Property(x => x.AttachmentCollectionId)
-                .HasColumnName("attachment_collection_id")
-                .IsRequired();
-
-            b.Property(x => x.RecordDate)
-                .HasColumnName("record_date");
-
-            // =========================================================
-            // 5. Customer Snapshot
-            // =========================================================
-            b.Property(x => x.CustomerId)
-                .HasColumnName("customer_id");
-
-            b.Property(x => x.CustomerExternalIdSnapshot)
-                .HasColumnName("customer_external_id_snapshot")
-                .HasMaxLength(100);
-
-            b.Property(x => x.CustomerNameSnapshot)
-                .HasColumnName("customer_name_snapshot")
-                .HasMaxLength(500);
-
-            // =========================================================
-            // 6. Technical Information
-            // =========================================================
-            b.Property(x => x.AddRate)
-                .HasColumnName("add_rate")
-                .HasPrecision(18, 6);
+            b.Property(x => x.Machine)
+                .HasColumnName("machine")
+                .HasMaxLength(200);
 
             b.Property(x => x.Resin)
                 .HasColumnName("resin")
                 .HasMaxLength(200);
 
-            b.Property(x => x.TemperatureMin)
-                .HasColumnName("temperature_min")
-                .HasPrecision(18, 6);
-
-            b.Property(x => x.TemperatureMax)
-                .HasColumnName("temperature_max")
-                .HasPrecision(18, 6);
+            b.Property(x => x.TemperatureLimit)
+                .HasColumnName("temperature_limit")
+                .HasMaxLength(200);
 
             // =========================================================
-            // 7. Physical / Form Information
+            // 4. Physical / Form Information
             // =========================================================
             b.Property(x => x.SizeText)
                 .HasColumnName("size_text")
@@ -129,13 +71,34 @@ namespace VietausWebAPI.Infrastructure.Persistence.Configurations.SampleRequestS
                 .HasColumnName("pellet_weight_gram")
                 .HasPrecision(18, 6);
 
-            b.Property(x => x.AntiStaticInfo)
-                .HasColumnName("anti_static_info")
-                .HasMaxLength(200);
+            b.Property(x => x.NetWeightGram)
+                .HasColumnName("net_weight_gram")
+                .HasMaxLength(100);
+
+            b.Property(x => x.Electrostatic)
+                .HasColumnName("electrostatic");
+
+            b.Property(x => x.Lightness)
+                .HasColumnName("lightness")
+                .HasColumnType("decimal(10,4)");
+
+            b.Property(x => x.AValue)
+                .HasColumnName("a_value")
+                .HasColumnType("decimal(10,4)");
+
+            b.Property(x => x.BValue)
+                .HasColumnName("b_value")
+                .HasColumnType("decimal(10,4)");
 
             // =========================================================
-            // 8. Notes
+            // 5. Document / Record Info
             // =========================================================
+            b.Property(x => x.AttachmentCollectionId)
+                .HasColumnName("attachment_collection_id");
+
+            b.Property(x => x.RecordDate)
+                .HasColumnName("record_date");
+
             b.Property(x => x.Note)
                 .HasColumnName("note")
                 .HasMaxLength(2000);
@@ -145,7 +108,7 @@ namespace VietausWebAPI.Infrastructure.Persistence.Configurations.SampleRequestS
                 .HasMaxLength(2000);
 
             // =========================================================
-            // 9. Audit
+            // 6. Audit
             // =========================================================
             b.Property(x => x.CreatedDate)
                 .HasColumnName("created_date")
@@ -171,56 +134,37 @@ namespace VietausWebAPI.Infrastructure.Persistence.Configurations.SampleRequestS
                 .IsRequired();
 
             // =========================================================
-            // 10. Relationships
+            // 7. Relationships
             // =========================================================
-
-            // Relationship: ColorChipRecord -> AttachmentCollection
             b.HasOne(x => x.AttachmentCollection)
                 .WithMany()
                 .HasForeignKey(x => x.AttachmentCollectionId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Relationship: ColorChipRecord -> Customer
-            b.HasOne(x => x.Customer)
-                .WithMany()
-                .HasForeignKey(x => x.CustomerId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            // Relationship: ColorChipRecord -> DevelopmentFormula
-            b.HasOne(x => x.DevelopmentFormula)
-                .WithMany(x => x.ColorChipRecords)
-                .HasForeignKey(x => x.DevelopmentFormulaId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            // Relationship: ColorChipRecord -> ManufacturingFormula
-            b.HasOne(x => x.ManufacturingFormula)
-                .WithMany(x => x.ColorChipRecords)
-                .HasForeignKey(x => x.ManufacturingFormulaId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            // Relationship: ColorChipRecord -> Product
             b.HasOne(x => x.Product)
                 .WithMany(x => x.ColorChipRecords)
                 .HasForeignKey(x => x.ProductId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            b.HasMany(x => x.DevelopmentFormulas)
+                .WithOne(x => x.ColorChipRecord)
+                .HasForeignKey(x => x.ColorChipRecordId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             // =========================================================
-            // 11. Indexes
+            // 8. Indexes
             // =========================================================
-            b.HasIndex(x => new { x.ManufacturingFormulaId, x.IsActive })
-                .HasDatabaseName("ix_color_chip_records_manufacturing_formula_id_is_active");
+            b.HasIndex(x => new { x.ProductId, x.IsActive })
+                .HasDatabaseName("ix_color_chip_records_product_id_is_active");
 
-            b.HasIndex(x => new { x.DevelopmentFormulaId, x.IsActive })
-                .HasDatabaseName("ix_color_chip_records_development_formula_id_is_active");
+            b.HasIndex(x => new { x.RecordType, x.IsActive })
+                .HasDatabaseName("ix_color_chip_records_record_type_is_active");
 
-            b.HasIndex(x => new { x.RecordType, x.ProductCodeSnapshot, x.IsActive })
-                .HasDatabaseName("ix_color_chip_records_record_type_product_code_snapshot_is_active");
+            b.HasIndex(x => new { x.RecordDate, x.IsActive })
+                .HasDatabaseName("ix_color_chip_records_record_date_is_active");
 
-            b.HasIndex(x => new { x.ManufacturingFormulaExternalIdSnapshot, x.IsActive })
-                .HasDatabaseName("ix_color_chip_records_mfg_formula_external_id_snapshot_is_active");
-
-            b.HasIndex(x => new { x.DevelopmentFormulaExternalIdSnapshot, x.IsActive })
-                .HasDatabaseName("ix_color_chip_records_dev_formula_external_id_snapshot_is_active");
+            b.HasIndex(x => new { x.CompanyId, x.IsActive })
+                .HasDatabaseName("ix_color_chip_records_company_id_is_active");
         }
     }
 }

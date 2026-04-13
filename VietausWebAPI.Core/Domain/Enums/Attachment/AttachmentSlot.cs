@@ -16,6 +16,7 @@ namespace VietausWebAPI.Core.Domain.Enums.Attachment
         Specification,   // Spec/tiêu chuẩn kỹ thuật
         Other,           // Khác
         SampleRequest,   // Ảnh mẫu
+        ColouredChip,    // Mẫu màu
         QcReport,        // Báo cáo QC
     }
 

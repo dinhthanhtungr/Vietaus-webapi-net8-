@@ -728,8 +728,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
         {
             try
             {
-                if (query.ProductId == Guid.Empty)
-                    return OperationResult<PagedResult<GetSummaryMfgFormula>>.Fail("Id công thức không hợp lệ.");
+                //if (query.ProductId == Guid.Empty)
+                //    return OperationResult<PagedResult<GetSummaryMfgFormula>>.Fail("Id công thức không hợp lệ.");
 
                 if (query.PageNumber <= 0) query.PageNumber = 1;
                 if (query.PageSize <= 0) query.PageSize = 15;
@@ -739,14 +739,14 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 var mfr = _unitOfWork.ManufacturingFormulaRepository.Query().AsNoTracking();
                 var fr = _unitOfWork.FormulaRepository.Query().AsNoTracking();
                 var mpo = _unitOfWork.MfgProductionOrderRepository.Query().AsNoTracking();
-
+                var hasProductFilter = query.ProductId.HasValue && query.ProductId.Value != Guid.Empty;
                 // =========================
                 // VA RAW
                 // =========================
                 var vaRaw = await (
                     from s in psv
                     join o in mpo on s.MfgProductionOrderId equals o.MfgProductionOrderId
-                    where o.ProductId == query.ProductId
+                    where (!hasProductFilter || (query.ProductId.HasValue && o.ProductId == query.ProductId.Value))
                           && s.ManufacturingFormulaId != null
                     let isLatestForThisFormula =
                         !psv.Any(s2 =>
@@ -766,10 +766,26 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     {
                         FormulaId = f.ManufacturingFormulaId,
                         ExternalId = f.ExternalId,
-                        //Name = f.Name,
                         Name = "-",
                         FormulaSourceIdCreatedDate = f.CreatedDate,
+
+                        ColourCode = o.Product != null ? o.Product.ColourCode : null,
+                        ColourName = !string.IsNullOrEmpty(o.ColorName)
+                            ? o.ColorName
+                            : (o.Product != null ? o.Product.ColourName : null),
+                        CustomerName = o.CustomerNameSnapshot,
+                        FormulaExternalId = o.FormulaExternalIdSnapshot,
+                        MfgFormulaExternalId = f.ExternalId,
+                        SampleRequestExternalId = o.Product != null
+                            ? o.Product.SampleRequests
+                                .Where(sr => sr.IsActive)
+                                .OrderByDescending(sr => sr.CreatedDate)
+                                .Select(sr => sr.ExternalId)
+                                .FirstOrDefault()
+                            : null,
+
                         Materials = f.ManufacturingFormulaMaterials
+                            .Where(x => x.IsActive)
                             .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
                             .ThenBy(x => x.MaterialExternalIdSnapshot)
                             .Select(m => new RawSummaryFormulaMaterialRow
@@ -790,7 +806,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             .ToList()
                     }
                 ).ToListAsync(ct);
-
                 // =========================
                 // VU RAW
                 // =========================
@@ -804,7 +819,25 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         ExternalId = f.ExternalId,
                         Name = f.Name,
                         FormulaSourceIdCreatedDate = f.CreatedDate,
+
+                        // search fields
+                        ColourCode = f.Product != null ? f.Product.ColourCode : null,
+                        ColourName = f.Product != null ? f.Product.ColourName : null,
+                        CustomerName = f.Product.SampleRequests
+                            .Where(sr => sr.IsActive)
+                            .OrderByDescending(sr => sr.CreatedDate)
+                            .Select(sr => sr.Customer.CustomerName)
+                            .FirstOrDefault(),
+                        SampleRequestExternalId = f.Product.SampleRequests
+                            .Where(sr => sr.IsActive)
+                            .OrderByDescending(sr => sr.CreatedDate)
+                            .Select(sr => sr.ExternalId)
+                            .FirstOrDefault(),
+                        FormulaExternalId = f.ExternalId,
+                        MfgFormulaExternalId = null,
+
                         Materials = f.FormulaMaterials
+                            .Where(x => x.IsActive)
                             .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
                             .ThenBy(x => x.MaterialExternalIdSnapshot)
                             .Select(m => new RawSummaryFormulaMaterialRow
@@ -835,6 +868,22 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     FormulaSource.FromVU => vuRaw,
                     _ => vaRaw.Concat(vuRaw).ToList()
                 };
+
+                if (!string.IsNullOrWhiteSpace(query.Keyword))
+                {
+                    var keyword = query.Keyword.Trim().ToLower();
+
+                    merged = merged
+                        .Where(x =>
+                            (!string.IsNullOrWhiteSpace(x.ColourCode) && x.ColourCode.ToLower().Contains(keyword)) ||
+                            (!string.IsNullOrWhiteSpace(x.SampleRequestExternalId) && x.SampleRequestExternalId.ToLower().Contains(keyword)) ||
+                            (!string.IsNullOrWhiteSpace(x.ColourName) && x.ColourName.ToLower().Contains(keyword)) ||
+                            (!string.IsNullOrWhiteSpace(x.CustomerName) && x.CustomerName.ToLower().Contains(keyword)) ||
+                            (!string.IsNullOrWhiteSpace(x.FormulaExternalId) && x.FormulaExternalId.ToLower().Contains(keyword)) ||
+                            (!string.IsNullOrWhiteSpace(x.MfgFormulaExternalId) && x.MfgFormulaExternalId.ToLower().Contains(keyword))
+                        )
+                        .ToList();
+                }
 
                 var totalCount = merged.Count;
 
@@ -1209,6 +1258,24 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
             if (req.ManufacturingFormulaMaterials == null || !req.ManufacturingFormulaMaterials.Any())
                 return OperationResult.Fail("Công thức phải có ít nhất 1 nguyên vật liệu.");
+
+            var activeMaterials = req.ManufacturingFormulaMaterials
+                .Where(x => x.IsActive != false)
+                .ToList();
+
+            var materialErrors = activeMaterials
+                .Select((x, i) => new { Item = x, Row = i + 1 })
+                .Where(x => x.Item.ItemId == Guid.Empty)
+                .Select(x => $"Dòng {x.Row}: chưa chọn ItemId")
+                .ToList();
+
+            if (materialErrors.Any())
+                return OperationResult.Fail(string.Join(" | ", materialErrors));
+
+            var totalQuantity = activeMaterials.Sum(x => x.Quantity);
+
+            if (totalQuantity < 1 || totalQuantity > 1)
+                return OperationResult.Fail("Tổng Quantity của các dòng đang hoạt động phải > 1.");
 
             // Bắt buộc phải select
             if (!req.IsSelect)
@@ -1691,6 +1758,45 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 // =====================================================
                 if (req.ManufacturingFormulaMaterials != null)
                 {
+                    var activeMaterials = req.ManufacturingFormulaMaterials
+                        .Select((x, i) => new { Item = x, Row = i + 1 })
+                        .Where(x => x.Item.IsActive != false)
+                        .ToList();
+
+                    var invalidRows = activeMaterials
+                        .Where(x => x.Item.ItemId == Guid.Empty)
+                        .Select(x => x.Row)
+                        .ToList();
+
+                    if (invalidRows.Any())
+                    {
+                        await _unitOfWork.RollbackTransactionAsync();
+                        return OperationResult.Fail(
+                            $"Có dòng vật tư chưa chọn ItemId: {string.Join(", ", invalidRows)}");
+                    }
+
+                    var totalQuantity = activeMaterials.Sum(x => x.Item.Quantity);
+
+                    if (totalQuantity < 1 || totalQuantity > 1)
+                    {
+                        await _unitOfWork.RollbackTransactionAsync();
+                        return OperationResult.Fail(
+                            "Tổng Quantity của các dòng đang hoạt động phải > 1.");
+                    }
+
+                    //var invalidRows = req.ManufacturingFormulaMaterials
+                    //.Select((x, i) => new { Item = x, Row = i + 1 })
+                    //.Where(x => x.Item.ItemId == Guid.Empty)
+                    //.Select(x => x.Row)
+                    //.ToList();
+
+                    //if (invalidRows.Any())
+                    //{
+                    //    return OperationResult.Fail(
+                    //        $"Có dòng vật tư chưa chọn ItemId: {string.Join(", ", invalidRows)}");
+                    //}
+
+
                     CreateFormulaVersionSnapshot(existing, now, req.Note);
 
                     var incoming = req.ManufacturingFormulaMaterials.ToList();

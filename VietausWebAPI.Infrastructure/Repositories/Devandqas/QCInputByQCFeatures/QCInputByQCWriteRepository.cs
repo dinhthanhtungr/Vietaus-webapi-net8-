@@ -74,12 +74,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
             return entity;
         }
 
-
-        public async Task<QCInputByQC> PatchByVoucherDetailIdAsync(
-            long voucherDetailId,
-            PatchQCInputByQC patch,
-            Guid userId,
-            CancellationToken ct)
+        public async Task<QCInputByQC> PatchByVoucherDetailIdAsync(long voucherDetailId, PatchQCInputByQC patch, Guid userId, CancellationToken ct)
         {
             var entity = await _context.QCInputByQCs
                 .FirstOrDefaultAsync(x => x.VoucherDetailId == voucherDetailId, ct)
@@ -154,8 +149,6 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
             await _context.SaveChangesAsync(ct);
             return entity;
         }
-
-
 
         // ======================================================================== Helper ======================================================================== 
         public async Task<QCInputByQC> UpdateAttachmentStatusByVoucherDetailIdAsync(

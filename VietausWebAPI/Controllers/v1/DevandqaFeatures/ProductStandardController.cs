@@ -50,7 +50,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.DevandqaFeatures
             return Ok();
         }
 
-        [HttpPut("Update")]
+        [HttpPatch("Update")]
         public async Task<IActionResult> UpdateProductStandard([FromBody] PatchProductStandard productStandard)
         {
             if (productStandard == null)

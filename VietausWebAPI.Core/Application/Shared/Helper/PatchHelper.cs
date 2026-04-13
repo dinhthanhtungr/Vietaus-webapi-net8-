@@ -66,5 +66,19 @@ namespace VietausWebAPI.Core.Application.Shared.Helper
             return changed;
         }
 
+        public static bool SetIfEnum<T>(
+            T? incoming,
+            Func<T> current,
+            Action<T> apply
+        ) where T : struct, Enum
+        {
+            if (!incoming.HasValue) return false;
+
+            var cur = current();
+            var changed = !EqualityComparer<T>.Default.Equals(incoming.Value, cur);
+            if (changed) apply(incoming.Value);
+            return changed;
+        }
+
     }
 }

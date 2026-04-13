@@ -34,5 +34,6 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts
         // Color Chip Record
         IColorChipRecordReadRepositories ColorChipRecordReadRepositories { get; }
         IColorChipRecordWriteRepositories ColorChipRecordWriteRepositories { get; }
+        IColorChipRecordUpsertRepositories ColorChipRecordUpsertRepositories { get; }
     }
 }

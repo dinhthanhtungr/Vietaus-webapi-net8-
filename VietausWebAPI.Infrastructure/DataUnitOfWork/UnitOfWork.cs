@@ -2,6 +2,7 @@
 
 using Microsoft.EntityFrameworkCore.Storage;
 using VietausWebAPI.Core.Application.Features.Attachments.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Attachments.RepositoriesContracts.GalleryItemFeatures;
 using VietausWebAPI.Core.Application.Features.CompanyFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.DeliveryOrders.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.DevandqaFeatures.RepositoriesContracts;
@@ -11,6 +12,7 @@ using VietausWebAPI.Core.Application.Features.Identity.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature.ColorChipRecordFeatures;
+using VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFeature.ColorChipRecordFeatures;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts.GetRepositories;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts;
@@ -53,6 +55,8 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             IAttachmentCollectionRepository attachmentCollectionRepository,
             IAttachmentModelRepository attachmentModelRepository,
 
+            IImageGalleryReadRepository imageGalleryReadRepository,
+
             // ==== Identity ====
             IApplicationUserRepository applicationUserRepository,
             IApplicationUserRoleRepository applicationUserRoleRepository,
@@ -87,6 +91,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
 
             IColorChipRecordReadRepositories colorChipRecordReadRepositories,
             IColorChipRecordWriteRepositories colorChipRecordWriteRepositories,
+            IColorChipRecordUpsertRepositories colorChipRecordUpsertRepositories,
 
             // ==== Planning ====
             IScheduealRepository scheduealRepository,
@@ -175,6 +180,8 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             AttachmentCollectionRepository = attachmentCollectionRepository;
             AttachmentModelRepository = attachmentModelRepository;
 
+            ImageGalleryReadRepository = imageGalleryReadRepository;
+
             // ===== Company/Common =====
             CompanyRepository = companyRepository;
             EmployeesCommonRepository = employeesCommonRepository;
@@ -211,7 +218,8 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             ManufacturingVUFormulaRepository = manufacturingVUFormulaRepository;
 
             ColorChipRecordReadRepositories = colorChipRecordReadRepositories;
-            ColorChipRecordWriteRepositories = colorChipRecordWriteRepositories;    
+            ColorChipRecordWriteRepositories = colorChipRecordWriteRepositories;
+            ColorChipRecordUpsertRepositories = colorChipRecordUpsertRepositories;
 
             // ===== Planning =====
             ScheduealRepository = scheduealRepository;

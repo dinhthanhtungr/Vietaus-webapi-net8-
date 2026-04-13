@@ -15,5 +15,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs
         public Guid CompanyId { get; set; }
         public Guid UpdateBy { get; set; }
         public List<Guid> Deliverers { get; set; } = new List<Guid>();
+
+        public List<PatchDeliveryOrderDetailBag> Details { get; set; } = new();
     }
 }

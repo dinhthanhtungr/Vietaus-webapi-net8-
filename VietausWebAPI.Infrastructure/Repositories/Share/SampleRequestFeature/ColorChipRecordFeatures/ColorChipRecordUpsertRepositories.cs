@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Server.Kestrel.Core.Features;
+﻿using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,22 +10,15 @@ using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
 
 namespace VietausWebAPI.Infrastructure.Repositories.Share.SampleRequestFeature.ColorChipRecordFeatures
 {
-    public class ColorChipRecordWriteRepositories : IColorChipRecordWriteRepositories
+    public class ColorChipRecordUpsertRepositories : IColorChipRecordUpsertRepositories
     {
         private readonly ApplicationDbContext _context;
-        public ColorChipRecordWriteRepositories(ApplicationDbContext context)
+
+        public ColorChipRecordUpsertRepositories(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        public async Task<ColorChipRecord> CreateAsync(ColorChipRecord entity, CancellationToken cancellationToken = default)
-        {
-            if (entity == null)
-                throw new ArgumentNullException(nameof(entity));
 
-            await _context.ColorChipRecords.AddAsync(entity, cancellationToken);
-
-            return entity;
-        }
     }
 }

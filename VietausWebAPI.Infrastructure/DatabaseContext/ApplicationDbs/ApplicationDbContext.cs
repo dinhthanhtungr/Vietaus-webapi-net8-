@@ -61,7 +61,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
         public virtual DbSet<FormulaMaterial> FormulaMaterials { get; set; }
 
         public virtual DbSet<ColorChipRecord> ColorChipRecords { get; set; }
-
+        public virtual DbSet<ColorChipRecordDevelopmentFormula> ColorChipRecordDevelopmentFormulas { get; set; }
         public virtual DbSet<MfgProductionOrdersPlan> MfgProductionOrdersPlans { get; set; }
 
         public virtual DbSet<Product> Products { get; set; }

@@ -25,5 +25,6 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
 
         public IColorChipRecordReadRepositories ColorChipRecordReadRepositories { get; }
         public IColorChipRecordWriteRepositories ColorChipRecordWriteRepositories { get; }
+        public IColorChipRecordUpsertRepositories ColorChipRecordUpsertRepositories { get; }
     }
 }

@@ -117,6 +117,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
 
                 await tx.CommitAsync();
                 return _pdfRenderHelper.Render(vm, false);
+                //return _pdfRenderHelper.RenderTemplate();
             }
             catch
             {

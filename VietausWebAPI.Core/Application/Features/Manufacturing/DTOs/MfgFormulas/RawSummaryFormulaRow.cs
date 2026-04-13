@@ -13,5 +13,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas
         public string? Name { get; set; }
         public DateTime? FormulaSourceIdCreatedDate { get; set; }
         public List<RawSummaryFormulaMaterialRow> Materials { get; set; } = new();
+
+        // thêm field để search
+        public string? ColourCode { get; set; }
+        public string? ColourName { get; set; }
+        public string? CustomerName { get; set; }
+        public string? SampleRequestExternalId { get; set; }
+        public string? FormulaExternalId { get; set; }
+        public string? MfgFormulaExternalId { get; set; }
     }
 }

@@ -8,6 +8,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs
 {
     public class GetDeliveryOrderDetail
     {
+        public Guid Id { get; set; }
         public Guid? ProductId { get; set; }
         public string? ProductExternalIdSnapShot { get; set; }
         public string? ProductNameSnapShot { get; set; }

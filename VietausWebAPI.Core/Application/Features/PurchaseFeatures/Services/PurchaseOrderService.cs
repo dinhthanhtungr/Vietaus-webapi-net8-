@@ -533,10 +533,10 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                 }
 
                 existingPO.UpdatedDate = now;
-                existingPO.UpdatedBy = patchPurchaseOrder.UpdatedBy;
+                existingPO.UpdatedBy = _CurrentUser.EmployeeId;
 
-                PatchHelper.SetIfRef(existingPO.Comment, () => patchPurchaseOrder.Comment, v => existingPO.Comment = v);
-                PatchHelper.SetIfRef(existingPO.PLPUComment, () => patchPurchaseOrder.PLPUComment, v => existingPO.PLPUComment = v);
+                PatchHelper.SetIfRef(patchPurchaseOrder.Comment, () => existingPO.Comment, v => existingPO.Comment = v);
+                PatchHelper.SetIfRef(patchPurchaseOrder.PLPUComment, () => existingPO.PLPUComment, v => existingPO.PLPUComment = v);
 
                 if (patchPurchaseOrder.IsActive == false)
                 {

@@ -1,5 +1,6 @@
 ﻿using VietausWebAPI.Core.Application.Features.DevandqaFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures;
+using VietausWebAPI.Core.Application.Features.Labs.Helpers.SampleRequests.ColourChipRecords;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.FormulaFeatures;
 //using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.QAQCFeature;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
@@ -40,8 +41,9 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
             services.AddScoped<IManufacturingVUFormulaRepository, ManufacturingVUFormulaRepository>();
             services.AddScoped<IFormulaMaterialSnapshotRepository, FormulaMaterialSnapshotRepository>();
 
-            services.AddScoped<IColorChipRecordReadRepositories, ColorChipRecordReadRepositories>();
-            services.AddScoped<IColorChipRecordWriteRepositories, ColorChipRecordWriteRepositories>();
+            services.AddScoped<IColorChipRecordReadRepositories, ColourChipRecordReadRepositories>();
+            services.AddScoped<IColorChipRecordWriteRepositories, ColourChipRecordWriteRepositories>();
+            services.AddScoped<IColorChipRecordUpsertRepositories, ColourChipRecordUpsertRepositories>();
 
             // Services
             //services.AddScoped<IProductStandardService, ProductStandardService>();
@@ -53,7 +55,13 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
             services.AddScoped<IManufacturingVUFormulaService, ManufacturingVUFormulaService>();
             //services.AddScoped<IQCOutputService, QCOutputService>();
 
-            services.AddScoped<IColorChipRecordWriteServices, ColorChipRecordWriteServices>();  
+            services.AddScoped<IColourChipRecordWriteServices, ColourChipRecordWriteServices>();  
+            services.AddScoped<IColourChipRecordReadServices, ColourChipRecordReadServices>();
+            services.AddScoped<IColourChipRecordUpsertServices, ColourChipRecordUpsertServices>();
+            services.AddScoped<IColourChipRecordPrintPDFService, ColourChipRecordPrintPDFService>();
+            services.AddScoped<IColorChipRecordLandscapePdf, ColorChipRecordLandscapePdf>();
+            services.AddScoped<IColorChipRecordPortraitPdf, ColorChipRecordPortraitPdf>();
+            services.AddScoped<IColorChipRecordTanPhuPdf, ColorChipRecordTanPhuPdf>();
 
             //Helpers
             services.AddScoped<IFormulaPDF, FormulaPDF>();

@@ -77,6 +77,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                 {
                     var keyword = query.Keyword.Trim();
                     baseQ = baseQ.Where(x =>
+                        (x.ExternalId ?? "").Contains(keyword) ||
                         (x.Name ?? "").Contains(keyword) ||
                         (x.Product.ColourCode ?? "").Contains(keyword) ||
                         (x.Product.Name ?? "").Contains(keyword));
@@ -300,6 +301,30 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
             var now = DateTime.Now;
             var userId = _currentUser.EmployeeId;
             var companyId = _currentUser.CompanyId;
+
+            var activeMaterials = req.Items
+                .Select((x, i) => new { Item = x, Row = i + 1 })
+                .ToList();
+
+            var invalidRows = activeMaterials
+                .Where(x => x.Item.ItemId == Guid.Empty)
+                .Select(x => x.Row)
+                .ToList();
+
+            if (invalidRows.Any())
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return OperationResult.Fail(
+                    $"Có dòng vật tư chưa chọn ItemId: {string.Join(", ", invalidRows)}");
+            }
+
+            var totalQuantity = activeMaterials.Sum(x => x.Item.Quantity);
+
+            if (totalQuantity < 1 || totalQuantity > 1)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return OperationResult.Fail("Tổng Quantity của các dòng đang hoạt động phải = 1.");
+            }
 
             if (req.Items is null || !req.Items.Any())
                 return OperationResult.Fail("Công thức phải có ít nhất 1 vật tư.");
@@ -531,6 +556,36 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                     .FirstOrDefaultAsync(f => f.FormulaId == req.FormulaId, cancellationToken ?? default);
 
                 if(formulaExist == null) return OperationResult.Fail("Công thức không tồn tại");
+
+                if (req.materialFormulas == null)
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
+                    return OperationResult.Fail("Công thức phải có ít nhất 1 dòng vật tư đang hoạt động.");
+                }
+
+                var activeMaterials = req.materialFormulas
+                    .Select((x, i) => new { Item = x, Row = i + 1 })
+                    .ToList();
+
+                var invalidRows = activeMaterials
+                    .Where(x => x.Item.ItemId == Guid.Empty)
+                    .Select(x => x.Row)
+                    .ToList();
+
+                if (invalidRows.Any())
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
+                    return OperationResult.Fail(
+                        $"Có dòng vật tư chưa chọn ItemId: {string.Join(", ", invalidRows)}");
+                }
+
+                var totalQuantity = activeMaterials.Sum(x => x.Item.Quantity);
+
+                if (totalQuantity < 1 || totalQuantity > 1)
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
+                    return OperationResult.Fail("Tổng Quantity của các dòng đang hoạt động phải = 1.");
+                }
 
                 // 1) Cập nhật thông tin công thức - chỉ khi có gửi giá trị cũ
                 void SetIf<T>(T? incoming, Func<T> current, Action<T> apply) where T : struct

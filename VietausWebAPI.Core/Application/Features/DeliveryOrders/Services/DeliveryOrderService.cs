@@ -353,7 +353,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                             //StockQuantity = 0m
                         })
                         // Chỉ giữ những dòng còn RequestQuantity > 0
-                        .Where(x => x.RequestQuantity > 0)
+                        //.Where(x => x.RequestQuantity > 0)
                         .OrderBy(x => x.ProductExternalIdSnapShot)
                         .ToList()
                 })
@@ -421,6 +421,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                         .OrderBy(d => d.Id) // hoặc theo PONo, tùy ý
                         .Select(d => new GetDeliveryOrderDetail
                         {
+                            Id =d.Id,
                             ProductId = d.ProductId,
                             ProductExternalIdSnapShot = d.ProductExternalIdSnapShot,
                             ProductNameSnapShot = d.ProductNameSnapShot,
@@ -632,6 +633,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                 existingDO.UpdatedDate = now;
                 existingDO.UpdatedBy = userId;
 
+                // ===== UPDATE HEADER =====
                 PatchHelper.SetIfRef(req.Note, () => existingDO.Note, v => existingDO.Note = v);
                 PatchHelper.SetIfRef(req.Status, () => existingDO.Status, v => existingDO.Status = v ?? string.Empty);
 
@@ -663,7 +665,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                     var toAdd = validInforIds.Except(existingIds).ToList();
                     var toRemove = existingIds.Except(validInforIds).ToList();
 
-                    // 3) delete theo query => KHÔNG dính concurrency kiểu Remove(entity)
+                    // 3) delete theo query
                     if (toRemove.Count > 0)
                     {
                         await _unitOfWork.DelivererRepository
@@ -680,9 +682,47 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                             Id = Guid.CreateVersion7(),
                             DeliveryOrderId = existingDO.Id,
                             DelivererInforId = id,
-                            // nếu Deliverer có audit fields thì set luôn như Customer:
-                            // CreatedDate = now, CreatedBy = userId, UpdatedDate = now, UpdatedBy = userId
+                            // CreatedDate = now,
+                            // CreatedBy = userId,
+                            // UpdatedDate = now,
+                            // UpdatedBy = userId
                         }, ct);
+                    }
+                }
+
+                // ===== UPDATE NUM OF BAGS =====
+                if (req.Details != null && req.Details.Count > 0)
+                {
+                    var incomingDetailIds = req.Details
+                        .Where(x => x.Id != Guid.Empty)
+                        .Select(x => x.Id)
+                        .Distinct()
+                        .ToList();
+
+                    var existingDetails = await _unitOfWork.DeliveryOrderDetailRepository
+                        .Query(track: true)
+                        .Where(x => x.DeliveryOrderId == existingDO.Id
+                                 && x.IsActive
+                                 && incomingDetailIds.Contains(x.Id))
+                        .ToListAsync(ct);
+
+                    if (existingDetails.Count != incomingDetailIds.Count)
+                    {
+                        await _unitOfWork.RollbackTransactionAsync();
+                        return OperationResult.Fail("Có chi tiết giao hàng không hợp lệ hoặc không thuộc phiếu giao hàng này.");
+                    }
+
+                    var detailMap = req.Details
+                        .Where(x => x.Id != Guid.Empty)
+                        .GroupBy(x => x.Id)
+                        .ToDictionary(g => g.Key, g => g.First());
+
+                    foreach (var detail in existingDetails)
+                    {
+                        if (detailMap.TryGetValue(detail.Id, out var incoming))
+                        {
+                            detail.NumOfBags = incoming.NumOfBags;
+                        }
                     }
                 }
 

@@ -90,6 +90,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                     {
                         Id = c.UnitId,
                         Name = c.Name ?? "",
+                        Symbol = c.Symbol ?? "",
                     })
                     .ToListAsync(ct);
 

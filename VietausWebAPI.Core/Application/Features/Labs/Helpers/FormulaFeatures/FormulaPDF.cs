@@ -52,7 +52,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
             c.Column(col =>
             {
                 col.Item().AlignCenter().PaddingTop(5)
-                    .Text("PHIẾU CÔNG THỨC").FontSize(14).Bold();
+                    .Text("LỆNH SẢN XUẤT").FontSize(14).Bold();
 
                 col.Item().PaddingTop(5).AlignRight().Row(row =>
                 {

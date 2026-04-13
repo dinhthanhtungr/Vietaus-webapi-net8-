@@ -9,6 +9,7 @@ namespace VietausWebAPI.Core.Domain.Enums.SampleRequests
     public enum FormStyle
     {
         Chips2 = 0,
+        Chips2_NonStandard = 3,
         Chips3 = 1,
         ChipsTanPhu = 2,
     }

@@ -364,15 +364,47 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service.StaticCurrentPr
 
             foreach (var id in ids)
             {
-                if (poDict.TryGetValue(id, out var poInfo) && poInfo.CurrentPrice > 0)
+                poDict.TryGetValue(id, out var poInfo);
+                supplierDict.TryGetValue(id, out var supplierInfo);
+
+                var hasValidPo = poInfo is not null && poInfo.CurrentPrice > 0;
+                var hasValidSupplier = supplierInfo is not null && supplierInfo.CurrentPrice > 0;
+
+                if (hasValidPo && hasValidSupplier)
                 {
-                    result[id] = poInfo;
+                    // Cả 2 đều có giá hợp lệ -> lấy nguồn có ngày mới hơn
+                    if (poInfo!.PriceDate.HasValue && supplierInfo!.PriceDate.HasValue)
+                    {
+                        result[id] = poInfo.PriceDate.Value >= supplierInfo.PriceDate.Value
+                            ? poInfo
+                            : supplierInfo;
+                    }
+                    else if (poInfo!.PriceDate.HasValue)
+                    {
+                        result[id] = poInfo;
+                    }
+                    else if (supplierInfo!.PriceDate.HasValue)
+                    {
+                        result[id] = supplierInfo;
+                    }
+                    else
+                    {
+                        // Cả 2 đều không có ngày -> ưu tiên PO hoặc chọn rule khác nếu muốn
+                        result[id] = poInfo;
+                    }
+
                     continue;
                 }
 
-                if (supplierDict.TryGetValue(id, out var supplierInfo) && supplierInfo.CurrentPrice > 0)
+                if (hasValidPo)
                 {
-                    result[id] = supplierInfo;
+                    result[id] = poInfo!;
+                    continue;
+                }
+
+                if (hasValidSupplier)
+                {
+                    result[id] = supplierInfo!;
                     continue;
                 }
 

@@ -107,6 +107,18 @@ namespace VietausWebAPI.Core.Domain.Security.Rules.Attachment
                     MaxBytes = 20 * MB
                 },
 
+                [AttachmentSlot.ColouredChip] = new SlotRule
+                {
+                    AllowMultiple = true,
+                    AllowedMimePrefixes = new[]
+                    {
+                        "image/",            // ảnh (jpg/png/webp…)
+                        "application/pdf"    // report/scan
+                    },
+                    MaxBytes = 20 * MB,      // mỗi file tối đa 20MB
+                    GenerateThumbnail = true // có ảnh thì tạo thumbnail
+                },
+
                 [AttachmentSlot.QcReport] = new SlotRule
                 {
                     AllowMultiple = true,

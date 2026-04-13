@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SixLabors.ImageSharp.Formats.Jpeg;
 using VietausWebAPI.Core.Application.Features.Attachments.DTOs;
 using VietausWebAPI.Core.Application.Features.Attachments.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.OrderAttachment;
@@ -7,6 +8,9 @@ using VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.Merchandise
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Domain.Enums.Attachment;
 using VietausWebAPI.WebAPI.Helpers;
+
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1.Attachments
 {
@@ -49,17 +53,42 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Attachments
         // DOWNLOAD / VIEW
         // mode=inline (xem) | mode=download (tải)
         [HttpGet("{attachmentId:guid}/content")]
-        public async Task<IActionResult> GetContent(Guid attachmentId, [FromQuery] string mode = "inline", CancellationToken ct = default)
+        public async Task<IActionResult> GetContent(
+            Guid attachmentId,
+            [FromQuery] string mode = "inline",
+            [FromQuery] string? size = null,
+            CancellationToken ct = default)
         {
             var sr = await _attachmentSchemaService.GetContentAsync(attachmentId, ct);
             var isDownload = string.Equals(mode, "download", StringComparison.OrdinalIgnoreCase);
+            var isThumb = string.Equals(size, "thumb", StringComparison.OrdinalIgnoreCase);
 
             if (isDownload)
-                return File(sr.Stream, sr.ContentType, fileDownloadName: sr.FileName); // Content-Disposition: attachment
+                return File(sr.Stream, sr.ContentType, fileDownloadName: sr.FileName);
 
-            // Xem trực tiếp (inline)
+            if (isThumb && sr.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            {
+                using var image = await Image.LoadAsync(sr.Stream, ct);
+
+                image.Mutate(x => x.Resize(new ResizeOptions
+                {
+                    Mode = ResizeMode.Max,
+                    Size = new Size(320, 320)
+                }));
+
+                var output = new MemoryStream();
+                await image.SaveAsJpegAsync(output, new JpegEncoder
+                {
+                    Quality = 70
+                }, ct);
+
+                output.Position = 0;
+                Response.Headers["Content-Disposition"] = $"inline; filename*=UTF-8''{Uri.EscapeDataString(sr.FileName)}";
+                return File(output, "image/jpeg");
+            }
+
             Response.Headers["Content-Disposition"] = $"inline; filename*=UTF-8''{Uri.EscapeDataString(sr.FileName)}";
-            return File(sr.Stream, sr.ContentType); // không set fileDownloadName => inline
+            return File(sr.Stream, sr.ContentType);
         }
 
         // SOFT DELETE

@@ -5160,6 +5160,33 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("Materials", "Material");
                 });
 
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.MaterialGroupName", b =>
+                {
+                    b.Property<Guid>("MaterialGroupNameId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("MaterialGroupNameText")
+                        .IsRequired()
+                        .HasColumnType("citext");
+
+                    b.Property<Guid>("MaterialId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("MaterialGroupNameId")
+                        .HasName("PK_MaterialGroupNames");
+
+                    b.HasIndex(new[] { "MaterialId" }, "IX_MaterialGroupNames_MaterialId");
+
+                    b.ToTable("MaterialGroupNames", "Material");
+                });
+
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.MaterialsSupplier", b =>
                 {
                     b.Property<Guid>("MaterialsSuppliersId")
@@ -6438,24 +6465,17 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("color_chip_record_id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<decimal?>("AddRate")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("numeric(18,6)")
-                        .HasColumnName("add_rate");
+                    b.Property<decimal>("AValue")
+                        .HasColumnType("decimal(10,4)")
+                        .HasColumnName("a_value");
 
-                    b.Property<string>("AntiStaticInfo")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("anti_static_info");
-
-                    b.Property<Guid>("AttachmentCollectionId")
+                    b.Property<Guid?>("AttachmentCollectionId")
                         .HasColumnType("uuid")
                         .HasColumnName("attachment_collection_id");
 
-                    b.Property<string>("ColorNameSnapshot")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("color_name_snapshot");
+                    b.Property<decimal>("BValue")
+                        .HasColumnType("decimal(10,4)")
+                        .HasColumnName("b_value");
 
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
@@ -6469,35 +6489,19 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("created_date");
 
-                    b.Property<string>("CustomerExternalIdSnapshot")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("customer_external_id_snapshot");
-
                     b.Property<Guid?>("CustomerId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("customer_id");
-
-                    b.Property<Guid?>("CustomerId1")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("CustomerNameSnapshot")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("customer_name_snapshot");
-
-                    b.Property<string>("DevelopmentFormulaExternalIdSnapshot")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("development_formula_external_id_snapshot");
-
-                    b.Property<Guid?>("DevelopmentFormulaId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("development_formula_id");
+                    b.Property<bool?>("Electrostatic")
+                        .HasColumnType("boolean")
+                        .HasColumnName("electrostatic");
 
                     b.Property<int>("FormStyle")
                         .HasColumnType("integer")
                         .HasColumnName("form_style");
+
+                    b.Property<Guid?>("FormulaId")
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -6505,18 +6509,26 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
+                    b.Property<decimal>("Lightness")
+                        .HasColumnType("decimal(10,4)")
+                        .HasColumnName("lightness");
+
                     b.Property<int>("LogoType")
                         .HasColumnType("integer")
                         .HasColumnName("logo_type");
 
-                    b.Property<string>("ManufacturingFormulaExternalIdSnapshot")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("manufacturing_formula_external_id_snapshot");
+                    b.Property<string>("Machine")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("machine");
 
                     b.Property<Guid?>("ManufacturingFormulaId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("manufacturing_formula_id");
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("NetWeightGram")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("net_weight_gram");
 
                     b.Property<string>("Note")
                         .HasMaxLength(2000)
@@ -6533,19 +6545,9 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasColumnName("print_note");
 
-                    b.Property<string>("ProductCodeSnapshot")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("product_code_snapshot");
-
                     b.Property<Guid?>("ProductId")
                         .HasColumnType("uuid")
                         .HasColumnName("product_id");
-
-                    b.Property<string>("ProductNameSnapshot")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("product_name_snapshot");
 
                     b.Property<DateTime?>("RecordDate")
                         .HasColumnType("timestamp without time zone")
@@ -6569,15 +6571,10 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("size_text");
 
-                    b.Property<decimal?>("TemperatureMax")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("numeric(18,6)")
-                        .HasColumnName("temperature_max");
-
-                    b.Property<decimal?>("TemperatureMin")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("numeric(18,6)")
-                        .HasColumnName("temperature_min");
+                    b.Property<string>("TemperatureLimit")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("temperature_limit");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid")
@@ -6593,26 +6590,56 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.HasIndex("CustomerId1");
+                    b.HasIndex("FormulaId");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex("ManufacturingFormulaId");
 
-                    b.HasIndex("DevelopmentFormulaExternalIdSnapshot", "IsActive")
-                        .HasDatabaseName("ix_color_chip_records_dev_formula_external_id_snapshot_is_active");
+                    b.HasIndex("CompanyId", "IsActive")
+                        .HasDatabaseName("ix_color_chip_records_company_id_is_active");
 
-                    b.HasIndex("DevelopmentFormulaId", "IsActive")
-                        .HasDatabaseName("ix_color_chip_records_development_formula_id_is_active");
+                    b.HasIndex("ProductId", "IsActive")
+                        .HasDatabaseName("ix_color_chip_records_product_id_is_active");
 
-                    b.HasIndex("ManufacturingFormulaExternalIdSnapshot", "IsActive")
-                        .HasDatabaseName("ix_color_chip_records_mfg_formula_external_id_snapshot_is_active");
+                    b.HasIndex("RecordDate", "IsActive")
+                        .HasDatabaseName("ix_color_chip_records_record_date_is_active");
 
-                    b.HasIndex("ManufacturingFormulaId", "IsActive")
-                        .HasDatabaseName("ix_color_chip_records_manufacturing_formula_id_is_active");
-
-                    b.HasIndex("RecordType", "ProductCodeSnapshot", "IsActive")
-                        .HasDatabaseName("ix_color_chip_records_record_type_product_code_snapshot_is_active");
+                    b.HasIndex("RecordType", "IsActive")
+                        .HasDatabaseName("ix_color_chip_records_record_type_is_active");
 
                     b.ToTable("color_chip_records", "SampleRequests");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.ColorChipRecordDevelopmentFormula", b =>
+                {
+                    b.Property<Guid>("ColorChipRecordDevelopmentFormulaId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("color_chip_record_development_formula_id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("ColorChipRecordId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("color_chip_record_id");
+
+                    b.Property<Guid?>("DevelopmentFormulaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("development_formula_id");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.HasKey("ColorChipRecordDevelopmentFormulaId");
+
+                    b.HasIndex("ColorChipRecordId")
+                        .HasDatabaseName("ix_ccrdf_color_chip_record_id");
+
+                    b.HasIndex("DevelopmentFormulaId")
+                        .HasDatabaseName("ix_ccrdf_development_formula_id");
+
+                    b.ToTable("color_chip_record_development_formulas", "SampleRequests");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Formula", b =>
@@ -10136,6 +10163,18 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("UpdatedByNavigation");
                 });
 
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.MaterialGroupName", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.MaterialSchema.Material", "Material")
+                        .WithMany("MaterialGroupNames")
+                        .HasForeignKey("MaterialId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_MaterialGroupNames_Materials");
+
+                    b.Navigation("Material");
+                });
+
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MaterialSchema.MaterialsSupplier", b =>
                 {
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.Employee", "CreatedByNavigation")
@@ -10502,27 +10541,19 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.AttachmentSchema.AttachmentCollection", "AttachmentCollection")
                         .WithMany()
                         .HasForeignKey("AttachmentCollectionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.CustomerSchema.Customer", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.CustomerSchema.Customer", null)
                         .WithMany("ColorChipRecords")
-                        .HasForeignKey("CustomerId1");
+                        .HasForeignKey("CustomerId");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Formula", "DevelopmentFormula")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Formula", null)
                         .WithMany("ColorChipRecords")
-                        .HasForeignKey("DevelopmentFormulaId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("FormulaId");
 
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormula", "ManufacturingFormula")
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormula", null)
                         .WithMany("ColorChipRecords")
-                        .HasForeignKey("ManufacturingFormulaId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("ManufacturingFormulaId");
 
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Product", "Product")
                         .WithMany("ColorChipRecords")
@@ -10531,13 +10562,25 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Navigation("AttachmentCollection");
 
-                    b.Navigation("Customer");
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.ColorChipRecordDevelopmentFormula", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.ColorChipRecord", "ColorChipRecord")
+                        .WithMany("DevelopmentFormulas")
+                        .HasForeignKey("ColorChipRecordId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Formula", "DevelopmentFormula")
+                        .WithMany()
+                        .HasForeignKey("DevelopmentFormulaId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ColorChipRecord");
 
                     b.Navigation("DevelopmentFormula");
-
-                    b.Navigation("ManufacturingFormula");
-
-                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Formula", b =>
@@ -11429,6 +11472,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Navigation("ManufacturingFormulaMaterials");
 
+                    b.Navigation("MaterialGroupNames");
+
                     b.Navigation("MaterialsSuppliers");
 
                     b.Navigation("PriceHistories");
@@ -11482,6 +11527,11 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("PurchaseOrderDetails");
 
                     b.Navigation("PurchaseOrderLinks");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.ColorChipRecord", b =>
+                {
+                    b.Navigation("DevelopmentFormulas");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.SampleRequestSchema.Formula", b =>
