@@ -200,11 +200,11 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
                 select new GetSummaryQCInput
                 {
                     VoucherDetailId = vd.VoucherDetailId,
-                    ExternalId = vd.ProductCode,
-                    Name = vd.ProductName,
+                    ExternalId = m != null ? (m.ExternalId ?? vd.ProductCode ?? "") : (vd.ProductCode ?? ""),
+                    Name = m != null ? (m.Name ?? vd.ProductName ?? "") : (vd.ProductName ?? ""),
                     LotNumber = vd.LotNumber ?? "",
                     QtyKg = vd.QtyKg,
-                    Unit = "",
+                    Unit = m != null ? (m.Unit ?? "") : "",
                     VoucherType = vd.VoucherType,
 
                     CategoryName = c != null ? (c.Name ?? "") : "",

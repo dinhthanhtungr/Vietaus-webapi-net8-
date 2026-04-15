@@ -50,7 +50,22 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 if (!string.IsNullOrWhiteSpace(query.KeyWord))
                 {
                     var kw = query.KeyWord.Trim();
-                    shelfQuery = shelfQuery.Where(x => (x.Code ?? "").Contains(kw));
+
+                    shelfQuery =
+                        from s in _unitOfWork.WarehouseShelfStockRepository.Query()
+                        join m in _unitOfWork.MaterialRepository.Query()
+                            on s.Code equals m.ExternalId into mj
+                        from m in mj.DefaultIfEmpty()
+
+                        join p in _unitOfWork.ProductRepository.Query()
+                            on s.Code equals p.ColourCode into pj
+                        from p in pj.DefaultIfEmpty()
+
+                        where (s.Code ?? "").Contains(kw)
+                           || (m.Name ?? "").Contains(kw)
+                           || (p.Name ?? "").Contains(kw)
+
+                        select s;
                 }
 
                 if (query.StockTypes.HasValue)

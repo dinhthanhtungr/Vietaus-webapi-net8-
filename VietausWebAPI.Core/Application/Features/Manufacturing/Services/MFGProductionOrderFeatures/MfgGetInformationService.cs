@@ -143,8 +143,14 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                             UnitPrice = i.UnitPrice,
                             TotalPrice = i.TotalPrice,
 
-                            MaterialNameSnapshot = i.MaterialNameSnapshot,
-                            MaterialExternalIdSnapshot = i.MaterialExternalIdSnapshot,
+                            MaterialNameSnapshot = i.itemType == ItemType.Material
+                                ? (i.Material != null ? i.Material.Name : i.MaterialNameSnapshot)
+                                : (i.Product != null ? i.Product.Name : i.MaterialNameSnapshot),
+
+                            MaterialExternalIdSnapshot = i.itemType == ItemType.Material
+                                ? (i.Material != null ? i.Material.ExternalId : i.MaterialNameSnapshot)
+                                : (i.Product != null ? i.Product.ColourCode : i.MaterialNameSnapshot),
+
                             Unit = i.Unit,
                             IsActive = i.IsActive,
                             LineNo = i.LineNo,
@@ -188,8 +194,13 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                             UnitPrice = i.UnitPrice,
                             TotalPrice = i.TotalPrice,
 
-                            MaterialNameSnapshot = i.MaterialNameSnapshot,
-                            MaterialExternalIdSnapshot = i.MaterialExternalIdSnapshot,
+                            MaterialNameSnapshot = i.itemType == ItemType.Material
+                                ? (i.Material != null ? i.Material.Name : i.MaterialNameSnapshot)
+                                : (i.Product != null ? i.Product.Name : i.MaterialNameSnapshot),
+
+                            MaterialExternalIdSnapshot = i.itemType == ItemType.Material
+                                ? (i.Material != null ? i.Material.ExternalId : i.MaterialNameSnapshot)
+                                : (i.Product != null ? i.Product.ColourCode : i.MaterialNameSnapshot),
                             Unit = i.Unit,
                             IsActive = i.IsActive,
                             LineNo = i.LineNo,
@@ -398,8 +409,13 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                     UnitPrice = x.UnitPrice,
                     TotalPrice = x.TotalPrice,
 
-                    MaterialNameSnapshot = x.MaterialNameSnapshot,
-                    MaterialExternalIdSnapshot = x.MaterialExternalIdSnapshot,
+                    MaterialNameSnapshot = x.itemType == ItemType.Material
+                                ? (x.Material != null ? x.Material.Name : x.MaterialNameSnapshot)
+                                : (x.Product != null ? x.Product.Name : x.MaterialNameSnapshot),
+
+                    MaterialExternalIdSnapshot = x.itemType == ItemType.Material
+                                ? (x.Material != null ? x.Material.ExternalId : x.MaterialNameSnapshot)
+                                : (x.Product != null ? x.Product.ColourCode : x.MaterialNameSnapshot),
                     Unit = x.Unit,
                     IsActive = x.IsActive,
                     LineNo = x.LineNo,

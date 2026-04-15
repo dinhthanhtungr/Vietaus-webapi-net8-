@@ -175,38 +175,74 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                     })
                     .ToListAsync();
 
+
+
                 var detailMap = details
                     .GroupBy(x => x.VoucherId)
                     .ToDictionary(g => g.Key, g => g.ToList());
 
-                var items = headers.Select(x => new WarehouseVoucherDto
+                var requestExternalIds = headers
+                    .Where(x => x.ReqType == WareHouseRequestType.ImportOther) // sửa theo enum thật của bạn
+                    .Select(x => x.CodeFromRequest)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct()
+                    .ToList();
+
+                var supplierMap = await (
+                    from po in _unitOfWork.PurchaseOrderRepository.Query().AsNoTracking()
+                    join pos in _unitOfWork.PurchaseOrderSnapshotRepository.Query().AsNoTracking()
+                        on po.PurchaseOrderSnapshotId equals pos.PurchaseOrderSnapshotId
+                    where po.ExternalId != null && requestExternalIds.Contains(po.ExternalId)
+                    select new
+                    {
+                        po.ExternalId,
+                        pos.SupplierNameSnapshot,
+                        pos.SupplierExternalIdSnapshot
+                    })
+                    .ToDictionaryAsync(
+                        x => x.ExternalId!,
+                        x => new
+                        {
+                            x.SupplierNameSnapshot,
+                            x.SupplierExternalIdSnapshot
+                        });
+
+                var items = headers.Select(x =>
                 {
-                    VoucherId = x.VoucherId,
-                    VoucherCode = x.VoucherCode,
-                    VoucherType = x.VoucherType,
-                    Status = x.Status,
-                    CreatedDate = x.CreatedDate,
+                    supplierMap.TryGetValue(x.CodeFromRequest ?? "", out var supplierInfo);
 
-                    RequestId = x.RequestId,
-                    RequestCode = x.RequestCode,
-                    RequestName = x.RequestName,
-                    ReqStatus = x.ReqStatus,
-                    ReqType = x.ReqType,
-                    CodeFromRequest = x.CodeFromRequest,
+                    return new WarehouseVoucherDto
+                    {
+                        VoucherId = x.VoucherId,
+                        VoucherCode = x.VoucherCode,
+                        VoucherType = x.VoucherType,
+                        Status = x.Status,
+                        CreatedDate = x.CreatedDate,
 
-                    CompanyId = x.CompanyId,
-                    CompanyName = companyMap.TryGetValue(x.CompanyId, out var companyName)
-                        ? companyName
-                        : string.Empty,
+                        RequestId = x.RequestId,
+                        RequestCode = x.RequestCode,
+                        RequestName = x.RequestName,
+                        ReqStatus = x.ReqStatus,
+                        ReqType = x.ReqType,
+                        CodeFromRequest = x.CodeFromRequest,
 
-                    CreatedBy = x.CreatedBy,
-                    CreatedByName = employeeMap.TryGetValue(x.CreatedBy, out var employeeName)
-                        ? employeeName
-                        : string.Empty,
+                        CompanyId = x.CompanyId,
+                        CompanyName = companyMap.TryGetValue(x.CompanyId, out var companyName)
+                            ? companyName
+                            : string.Empty,
 
-                    Details = detailMap.TryGetValue(x.VoucherId, out var voucherDetails)
-                        ? voucherDetails
-                        : new List<WarehouseVoucherDetailDto>()
+                        CreatedBy = x.CreatedBy,
+                        CreatedByName = employeeMap.TryGetValue(x.CreatedBy, out var employeeName)
+                            ? employeeName
+                            : string.Empty,
+
+                        SupplierName = supplierInfo?.SupplierNameSnapshot ?? string.Empty,
+                        SupplierExternalId = supplierInfo?.SupplierExternalIdSnapshot ?? string.Empty,
+
+                        Details = detailMap.TryGetValue(x.VoucherId, out var voucherDetails)
+                            ? voucherDetails
+                            : new List<WarehouseVoucherDetailDto>()
+                    };
                 }).ToList();
 
                 var result = new PagedResult<WarehouseVoucherDto>(items, totalCount, pageNumber, pageSize);

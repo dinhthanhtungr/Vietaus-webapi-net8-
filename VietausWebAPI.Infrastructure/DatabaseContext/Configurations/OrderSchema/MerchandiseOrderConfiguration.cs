@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
+using VietausWebAPI.Core.Domain.Enums.Merchadises;
 
 namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurations.OrderSchema
 {
@@ -26,6 +27,12 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
                  .HasColumnName("MerchandiseOrderId")
                  .ValueGeneratedOnAdd()
                  .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.OrderType)
+                  .HasColumnName("OrderType")
+                  .HasConversion<int>()
+                  .HasDefaultValue(OrderType.Merchandise)
+                  .IsRequired();
 
             entity.Property(e => e.ExternalId)
                  .HasColumnName("ExternalId")
@@ -71,6 +78,11 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
                  .HasColumnName("Currency")
                  .HasMaxLength(10)
                  .IsUnicode(false);
+
+            entity.Property(e => e.ExchangeRate)
+                  .HasColumnName("ExchangeRate")
+                  .HasPrecision(18, 4);
+
 
             entity.Property(e => e.IsPaid)
                  .HasColumnName("IsPaid")

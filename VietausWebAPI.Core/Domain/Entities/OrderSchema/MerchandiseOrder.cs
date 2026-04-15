@@ -6,6 +6,7 @@ using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 using VietausWebAPI.Core.Domain.Entities.DeliverySchema;
 using VietausWebAPI.Core.Domain.Entities.HrSchema;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
+using VietausWebAPI.Core.Domain.Enums.Merchadises;
 
 namespace VietausWebAPI.Core.Domain.Entities.OrderSchema;
 
@@ -13,6 +14,8 @@ public partial class MerchandiseOrder
 {
     public Guid MerchandiseOrderId { get; set; }
     public string ExternalId { get; set; } = string.Empty;
+    public OrderType OrderType { get; set; } = OrderType.Merchandise;
+
     public Guid AttachmentCollectionId { get; set; }
 
 
@@ -35,7 +38,9 @@ public partial class MerchandiseOrder
     public decimal? Vat { get; set; }
 
     public string Status { get; set; } = string.Empty;
+
     public string? Currency { get; set; }
+    public decimal? ExchangeRate { get; set; }
 
     public Guid CompanyId { get; set; }
     public bool IsPaid { get; set; }

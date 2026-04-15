@@ -136,7 +136,13 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                     .ThenInclude(d => d.Material)
                 .FirstOrDefaultAsync(x => x.PurchaseOrderId == purchaseOrderId, ct);
 
+
+
             if (po == null) throw new Exception("Purchase Order not found (for warehouse request).");
+
+            if (string.IsNullOrWhiteSpace(po.ExternalId) || po.ExternalId.Contains("PO"))
+                return; // Nếu PO chưa có ExternalId hoặc ExternalId không đúng định dạng, thì không tạo WarehouseRequest. Tránh lỗi khi PO chưa được tạo ExternalId.
+
             if (po.CompanyId == null) throw new Exception("Purchase Order missing CompanyId.");
             if (po.CreatedBy == null) throw new Exception("Purchase Order missing CreatedBy.");
 

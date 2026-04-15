@@ -154,8 +154,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                         m.CategoryId,
                         m.Quantity,
                         m.Unit,
-                        m.MaterialNameSnapshot,
-                        m.MaterialExternalIdSnapshot
+                        m.Material.Name,
+                        m.Material.ExternalId
                     })
                     .ToListAsync(ct);
 
@@ -242,8 +242,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                                 TotalPrice = x.Quantity * unitPrice,
                                 ExpiryDate = expiryDate,
                                 Unit = x.Unit,
-                                MaterialNameSnapshot = x.MaterialNameSnapshot,
-                                MaterialExternalIdSnapshot = x.MaterialExternalIdSnapshot
+                                MaterialNameSnapshot = x.Name,
+                                MaterialExternalIdSnapshot = x.ExternalId
                             };
                         }).ToList()
                     );

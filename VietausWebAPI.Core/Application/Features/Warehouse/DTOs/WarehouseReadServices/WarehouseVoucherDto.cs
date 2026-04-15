@@ -28,6 +28,9 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadSe
         public Guid CreatedBy { get; set; }
         public string CreatedByName { get; set; } = string.Empty;
 
+        public string? SupplierName { get; set; }
+        public string? SupplierExternalId { get; set; }
+
         public List<WarehouseVoucherDetailDto> Details { get; set; } = new();
     }
 }

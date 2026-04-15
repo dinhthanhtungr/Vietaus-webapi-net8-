@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper.Configuration.Annotations;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -79,8 +80,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
 
                 var existingMfgOrderPO = await _unitOfWork.MfgOrderPORepository.Query(track: true)
                     .Where(x => x.MfgProductionOrderId == req.MfgProductionOrderId && x.IsActive)
-                    .Include(x => x.ProductionOrder)
-                    .Include(x => x.Detail)
+                        .Include(x => x.ProductionOrder)
+                        .Include(x => x.Detail)
                     .FirstOrDefaultAsync(ct);
 
                 if (existingMfgOrderPO == null)
@@ -255,8 +256,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
 
                 var existingMfgOrderPO = await _unitOfWork.MfgOrderPORepository.Query(track: true)
                     .Where(x => x.MfgProductionOrderId == req.MfgProductionOrderId && x.IsActive)
-                    .Include(x => x.ProductionOrder)
-                    .Include(x => x.Detail)
+                        .Include(x => x.ProductionOrder)
+                        .Include(x => x.Detail)
                     .FirstOrDefaultAsync(ct);
 
                 if (existingMfgOrderPO == null)
@@ -377,40 +378,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                 await _unitOfWork.ManufacturingFormulaMaterialRepository.AddRangeAsync(materialEntities, ct);
 
                 // =====================================================
-                // 4. SET STANDARD IF NEEDED
-                // =====================================================
-                //if (shouldCreateStandard)
-                //{
-                //    var currentStd = await _unitOfWork.ProductStandardFormulaRepository.Query(track: true)
-                //        .Where(x => x.CompanyId == companyId
-                //                    && x.ProductId == req.ProductId
-                //                    && x.ValidTo == null)
-                //        .FirstOrDefaultAsync(ct);
-
-                //    if (currentStd != null)
-                //    {
-                //        currentStd.ValidTo = now;
-                //        currentStd.ClosedBy = userId;
-                //        _unitOfWork.ProductStandardFormulaRepository.UpdateAsync(currentStd, ct);
-                //    }
-
-                //    var newStd = new ProductStandardFormula
-                //    {
-                //        ProductStandardFormulaId = Guid.CreateVersion7(),
-                //        ProductId = req.ProductId,
-                //        ManufacturingFormulaId = mf.ManufacturingFormulaId,
-                //        ValidFrom = now,
-                //        ValidTo = null,
-                //        CreatedBy = userId,
-                //        ClosedBy = null,
-                //        CompanyId = companyId,
-                //        Note = req.Note
-                //    };
-
-                //    await _unitOfWork.ProductStandardFormulaRepository.AddAsync(newStd, ct);
-                //}
-
-                // =====================================================
                 // 5. APPLY FLOW BY FORMULA TYPE
                 // =====================================================
 
@@ -505,7 +472,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                 // =====================================================
                 // 9. PRICE WARNING
                 // =====================================================
-                await TrySendPriceWarningAsync(req, mf, mpo, ct);
+                //await TrySendPriceWarningAsync(req, mf, mpo, ct);
+                await TrySendPriceWarningAsync(req, mf, existingMfgOrderPO, ct);
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
@@ -682,30 +650,128 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
         /// <param name="mpo">Lệnh sản xuất hiện tại, dùng để tạo link điều hướng và payload cảnh báo.</param>
         /// <param name="ct">CancellationToken dùng để hủy tác vụ bất đồng bộ nếu cần.</param>
         /// <returns>Task bất đồng bộ hoàn tất khi xử lý kiểm tra/gửi cảnh báo xong.</returns>
+        //private async Task TrySendPriceWarningAsync(
+        //    PostMfgFormulaAndUpdateMpoRequest req,
+        //    ManufacturingFormula mf,
+        //    MfgProductionOrder mpo,
+        //    CancellationToken ct)
+        //{
+        //    try
+        //    {
+        //        decimal? targetPrice = await _priceProvider.GetTargetPriceByMpoAsync(
+        //            mfgProductionOrderId: req.MfgProductionOrderId,
+        //            ct: ct
+        //        );
+
+        //        var ignoreCustomerId = Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75");
+
+        //        var isIgnoreCustomer =
+        //            mpo?.CustomerId.HasValue == true &&
+        //            mpo.CustomerId.Value == ignoreCustomerId;
+
+        //        var productColourCode = mpo?.ProductExternalIdSnapshot;
+
+        //        var totalCost = mf.TotalPrice;
+
+        //        var shouldPublishPriceWarning =
+        //            !isIgnoreCustomer &&
+        //            targetPrice.HasValue &&
+        //            totalCost > targetPrice.Value;
+
+        //        if (!shouldPublishPriceWarning)
+        //            return;
+
+        //        var title = !string.IsNullOrWhiteSpace(productColourCode)
+        //            ? $"Cảnh báo giá: {productColourCode}"
+        //            : $"Cảnh báo giá: {mf.ExternalId}";
+
+        //        var message = !string.IsNullOrWhiteSpace(productColourCode)
+        //            ? $"SP {productColourCode}: Tổng chi phí {totalCost:N0} > Giá bán {targetPrice.Value:N0}"
+        //            : $"Tổng chi phí {totalCost:N0} > Giá bán {targetPrice.Value:N0}";
+
+        //        await _notificationService.PublishAsync(new PublishNotificationRequest
+        //        {
+        //            Topic = TopicNotifications.PriceOverSellCreated,
+        //            Severity = NotificationSeverity.Warning,
+        //            Title = title,
+        //            Message = message,
+        //            Link = $"/labs/mfgformula/{mpo.MfgProductionOrderId}/{mf.ManufacturingFormulaId}",
+        //            PayloadJson = JsonSerializer.Serialize(new
+        //            {
+        //                FormulaId = mf.ManufacturingFormulaId,
+        //                ExternalId = mf.ExternalId,
+        //                ProductColourCode = mpo?.Product?.ColourCode,
+        //                ProductCode = mpo?.Product?.Code,
+        //                ProductName = mpo?.Product?.Name,
+        //                TotalCost = totalCost,
+        //                TargetPrice = targetPrice.Value,
+        //                MpoId = req.MfgProductionOrderId,
+        //                CustomerId = mpo?.CustomerId
+        //            }),
+        //            TargetRoles = new()
+        //            {
+        //                AppRoles.PLPUNotify,
+        //                AppRoles.President,
+        //                AppRoles.Developer
+        //            }
+        //        }, ct);
+        //    }
+        //    catch
+        //    {
+        //    }
+        //}
+
+        /// <summary>
+        /// Kiểm tra chênh lệch giữa tổng giá công thức vừa tạo và giá mục tiêu của MPO.
+        /// Nếu tổng giá công thức vượt giá mục tiêu thì gửi notification cảnh báo.
+        ///
+        /// Hàm này chỉ mang tính hỗ trợ cảnh báo, không được phép làm fail luồng chính.
+        /// Vì vậy toàn bộ logic bên trong được bọc try/catch và sẽ bỏ qua im lặng nếu xảy ra lỗi.
+        ///
+        /// Notification được gửi tới các role đã cấu hình, ví dụ:
+        /// - PLPUNotify
+        /// - President
+        /// </summary>
+        /// <param name="req">Request gốc chứa thông tin MfgProductionOrderId để truy xuất giá mục tiêu.</param>
+        /// <param name="mf">Công thức vừa tạo, dùng để lấy ExternalId, FormulaId và TotalPrice.</param>
+        /// <param name="mpo">Lệnh sản xuất hiện tại, dùng để tạo link điều hướng và payload cảnh báo.</param>
+        /// <param name="ct">CancellationToken dùng để hủy tác vụ bất đồng bộ nếu cần.</param>
+        /// <returns>Task bất đồng bộ hoàn tất khi xử lý kiểm tra/gửi cảnh báo xong.</returns>
         private async Task TrySendPriceWarningAsync(
             PostMfgFormulaAndUpdateMpoRequest req,
             ManufacturingFormula mf,
-            MfgProductionOrder mpo,
+            MfgOrderPO mpo,
             CancellationToken ct)
         {
             try
             {
-                decimal? targetPrice = await _priceProvider.GetTargetPriceByMpoAsync(
-                    mfgProductionOrderId: req.MfgProductionOrderId,
-                    ct: ct
-                );
+                //decimal? targetPrice = await _priceProvider.GetTargetPriceByMpoAsync(
+                //    mfgProductionOrderId: req.MfgProductionOrderId,
+                //    ct: ct
+                //);
+
+
+                var existingMerchandiseOrder = mpo?.Detail != null
+                    ? await _unitOfWork.MerchandiseOrderRepository.Query()
+                        .FirstOrDefaultAsync(o => o.MerchandiseOrderId == mpo.Detail.MerchandiseOrderId, ct)
+                    : null;
+
+                decimal? targetPrice = mpo?.Detail.UnitPriceAgreed * (existingMerchandiseOrder?.ExchangeRate ?? 1m);
+
 
                 var ignoreCustomerId = Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75");
 
-                var isIgnoreCustomer =
-                    mpo?.CustomerId.HasValue == true &&
-                    mpo.CustomerId.Value == ignoreCustomerId;
+                var isIgnoreCustomer = existingMerchandiseOrder != null &&
+                    existingMerchandiseOrder?.CustomerId == ignoreCustomerId;
 
-                var productColourCode = mpo?.ProductExternalIdSnapshot;
+                var productColourCode = mpo?.ProductionOrder?.ProductExternalIdSnapshot;
 
                 var totalCost = mf.TotalPrice;
 
+                var orderTypeCurrent = existingMerchandiseOrder?.OrderType;
+
                 var shouldPublishPriceWarning =
+                    orderTypeCurrent != OrderType.Internal &&
                     !isIgnoreCustomer &&
                     targetPrice.HasValue &&
                     totalCost > targetPrice.Value;
@@ -713,13 +779,22 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                 if (!shouldPublishPriceWarning)
                     return;
 
+                var titlePrefix = orderTypeCurrent == OrderType.Complaint
+                    ? "Xử lý khiếu nại"
+                    : "Cảnh báo giá";
+
+                var messagePrefix = orderTypeCurrent == OrderType.Complaint
+                    ? "Xử lý khiếu nại"
+                    : "SP";
+
                 var title = !string.IsNullOrWhiteSpace(productColourCode)
-                    ? $"Cảnh báo giá: {productColourCode}"
-                    : $"Cảnh báo giá: {mf.ExternalId}";
+                    ? $"{titlePrefix}: {productColourCode}"
+                    : $"{titlePrefix}: {mf.ExternalId}";
 
                 var message = !string.IsNullOrWhiteSpace(productColourCode)
-                    ? $"SP {productColourCode}: Tổng chi phí {totalCost:N0} > Giá bán {targetPrice.Value:N0}"
-                    : $"Tổng chi phí {totalCost:N0} > Giá bán {targetPrice.Value:N0}";
+                    ? $"{messagePrefix} {productColourCode}: Tổng chi phí {totalCost:N0} > Giá bán {targetPrice.Value:N0}"
+                    : $"{messagePrefix}: Tổng chi phí {totalCost:N0} > Giá bán {targetPrice.Value:N0}";
+
 
                 await _notificationService.PublishAsync(new PublishNotificationRequest
                 {
@@ -732,13 +807,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                     {
                         FormulaId = mf.ManufacturingFormulaId,
                         ExternalId = mf.ExternalId,
-                        ProductColourCode = mpo?.Product?.ColourCode,
-                        ProductCode = mpo?.Product?.Code,
-                        ProductName = mpo?.Product?.Name,
+                        ProductColourCode = productColourCode,
+                        ProductCode = mpo?.ProductionOrder?.Product?.Code,
+                        ProductName = mpo?.ProductionOrder?.Product?.Name,
                         TotalCost = totalCost,
                         TargetPrice = targetPrice.Value,
                         MpoId = req.MfgProductionOrderId,
-                        CustomerId = mpo?.CustomerId
+                        CustomerId = existingMerchandiseOrder?.CustomerId
                     }),
                     TargetRoles = new()
                     {

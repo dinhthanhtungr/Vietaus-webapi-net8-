@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs;
+using VietausWebAPI.Core.Domain.Enums.Merchadises;
 
 namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTOs
 {
@@ -11,6 +12,8 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTO
     {
         public Guid MerchandiseOrderId { get; set; }
         public string? ExternalId { get; set; }
+        public OrderType OrderType { get; set; } = OrderType.Merchandise;
+
         public Guid AttachmentCollectionId { get; set; }
 
         public Guid? CustomerId { get; set; }
@@ -29,6 +32,8 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTO
 
         public decimal? Vat { get; set; }
         public string? Status { get; set; }
+        public string? Currency { get; set; }
+        public decimal? ExchangeRate { get; set; }
 
         public DateTime? PaymentDate { get; set; }
         public string? Note { get; set; }

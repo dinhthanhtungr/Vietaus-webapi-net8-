@@ -707,8 +707,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
                 var existingMfgOrderPO = await _unitOfWork.MfgOrderPORepository.Query(track: true)
                     .Where(p => p.MfgProductionOrderId == req.MfgProductionOrderId && p.IsActive == true)
-                    .Include(p => p.ProductionOrder)
-                    .Include(p => p.Detail)
+                        .Include(p => p.ProductionOrder)
+                        .Include(p => p.Detail)
                     .FirstOrDefaultAsync(ct);
 
                 if (existingMfgOrderPO == null)
@@ -879,8 +879,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
                 var existingMfgOrderPO = await _unitOfWork.MfgOrderPORepository.Query(track: true)
                     .Where(p => p.MfgProductionOrderId == mfgProductionOrderId && p.IsActive == true)
-                    .Include(p => p.ProductionOrder)
-                    .Include(p => p.Detail)
+                        .Include(p => p.ProductionOrder)
+                        .Include(p => p.Detail)
                     .FirstOrDefaultAsync(ct);
 
                 if (existingMfgOrderPO == null || existingMfgOrderPO.ProductionOrder == null)

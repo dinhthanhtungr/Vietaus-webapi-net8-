@@ -131,7 +131,8 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Helpers
                         .PaddingHorizontal(6);
 
                     static string Money(decimal? v) => (v ?? 0m).ToString("#,0");
-                    static string Qty(decimal? v) => (v ?? 0m).ToString("0");
+                    static string MoneyPrice(decimal? v) => (v ?? 0m).ToString("#,0.0000");
+                    static string Qty(decimal? v) => (v ?? 0m).ToString("0.#");
 
                     table.Header(row =>
                     {
@@ -176,7 +177,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Helpers
 
                             Td(table.Cell()).AlignLeft().Text(it.MaterialNameSnapshot ?? "").FontSize(9);
                             Td(table.Cell()).AlignRight().Text(Qty(qty)).FontSize(9);
-                            Td(table.Cell()).AlignRight().Text(Money(price)).FontSize(9);
+                            Td(table.Cell()).AlignRight().Text(MoneyPrice(price)).FontSize(9);
                             Td(table.Cell()).AlignRight().Text(it.Package ?? "").FontSize(9);
                             Td(table.Cell()).AlignRight().Text(Money(line)).FontSize(9);
                         }

@@ -17,6 +17,8 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         public Guid? ManufacturingFormulaId { get; set; }
 
 
+        //public bool IsSelected { get; set; }    // true = công thức được chọn, false = công thức không được chọn (dù có thể vẫn còn hiệu lực)
+
         public DateTime? ValidFrom { get; set; }
         public DateTime? ValidTo { get; set; }          // null = hiện hành
 

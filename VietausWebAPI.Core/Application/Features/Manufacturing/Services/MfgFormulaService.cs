@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Drawing.Diagrams;
 using DocumentFormat.OpenXml.Presentation;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
@@ -15,6 +17,7 @@ using VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.CompareFormulaDTOs;
 using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.FormulaVersion;
 using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas;
+using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOrderRWs.UpsertInformationDtos;
 using VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOrders;
 using VietausWebAPI.Core.Application.Features.Manufacturing.Queries.MfgFormulas;
 using VietausWebAPI.Core.Application.Features.Manufacturing.Queries.MfgProductionOrders;
@@ -41,6 +44,7 @@ using VietausWebAPI.Core.Domain.Enums.Category;
 using VietausWebAPI.Core.Domain.Enums.Formulas;
 using VietausWebAPI.Core.Domain.Enums.Logs;
 using VietausWebAPI.Core.Domain.Enums.Manufacturings;
+using VietausWebAPI.Core.Domain.Enums.Merchadises;
 using VietausWebAPI.Core.Domain.Enums.Notifications;
 using VietausWebAPI.WebAPI.Helpers.Securities.Roles;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -195,8 +199,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         m.Unit,
                         SnapshotUnitPrice = m.UnitPrice,
                         SnapshotTotalPrice = m.TotalPrice,
-                        m.MaterialNameSnapshot,
-                        m.MaterialExternalIdSnapshot
+                        DisplayName = m.itemType == ItemType.Material
+                            ? (m.Material != null ? m.Material.Name : "")
+                            : (m.Product != null ? m.Product.Name : ""),
+
+                        DisplayExternalId = m.itemType == ItemType.Material
+                            ? (m.Material != null ? m.Material.ExternalId : "")
+                            : (m.Product != null ? m.Product.ColourCode : "")
                     })
                     .ToListAsync(ct);
 
@@ -242,8 +251,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             Unit = m.Unit ?? "",
                             UnitPrice = unitPrice,
                             TotalPrice = totalPrice,
-                            MaterialNameSnapshot = m.MaterialNameSnapshot ?? "",
-                            MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot ?? ""
+                            MaterialNameSnapshot = m.DisplayName,
+                            MaterialExternalIdSnapshot = m.DisplayExternalId
                         };
                     })
                     .ToList();
@@ -304,8 +313,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         fm.Unit,
                         SnapshotUnitPrice = fm.UnitPrice,
                         SnapshotTotalPrice = fm.TotalPrice,
-                        fm.MaterialNameSnapshot,
-                        fm.MaterialExternalIdSnapshot
+                        DisplayName = fm.itemType == ItemType.Material
+                            ? (fm.Material != null ? fm.Material.Name : "")
+                            : (fm.Product != null ? fm.Product.Name : ""),
+
+                        DisplayExternalId = fm.itemType == ItemType.Material
+                            ? (fm.Material != null ? fm.Material.ExternalId : "")
+                            : (fm.Product != null ? fm.Product.ColourCode : "")
                     })
                     .ToListAsync(ct);
 
@@ -351,8 +365,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             Unit = fm.Unit ?? "",
                             UnitPrice = unitPrice,
                             TotalPrice = totalPrice,
-                            MaterialNameSnapshot = fm.MaterialNameSnapshot ?? "",
-                            MaterialExternalIdSnapshot = fm.MaterialExternalIdSnapshot ?? ""
+                            MaterialNameSnapshot = fm.DisplayName,
+                            MaterialExternalIdSnapshot = fm.DisplayExternalId
                         };
                     })
                     .ToList();
@@ -476,8 +490,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     m.Quantity,
                     m.Unit,
                     SnapshotUnitPrice = m.UnitPrice,
-                    m.MaterialNameSnapshot,
-                    m.MaterialExternalIdSnapshot
+                    DisplayName = m.itemType == ItemType.Material
+                            ? (m.Material != null ? m.Material.Name : "")
+                            : (m.Product != null ? m.Product.Name : ""),
+
+                    DisplayExternalId = m.itemType == ItemType.Material
+                            ? (m.Material != null ? m.Material.ExternalId : "")
+                            : (m.Product != null ? m.Product.ColourCode : "")
                 })
                 .ToListAsync(ct);
 
@@ -575,8 +594,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         Unit = m.Unit ?? "",
                         UnitPrice = unitPrice,
                         TotalPrice = totalPrice,
-                        MaterialNameSnapshot = m.MaterialNameSnapshot ?? "",
-                        MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot ?? ""
+                        MaterialNameSnapshot = m.DisplayName ?? "",
+                        MaterialExternalIdSnapshot = m.DisplayExternalId ?? ""
                     };
                 })
                 .ToList();
@@ -669,8 +688,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     UnitPrice = x.UnitPrice,
                     TotalPrice = x.TotalPrice,
 
-                    MaterialNameSnapshot = x.MaterialNameSnapshot,
-                    MaterialExternalIdSnapshot = x.MaterialExternalIdSnapshot,
+                    MaterialNameSnapshot = x.itemType == ItemType.Material
+                        ? (x.Material != null ? x.Material.Name : "")
+                        : (x.Product != null ? x.Product.Name : ""),
+
+                    MaterialExternalIdSnapshot = x.itemType == ItemType.Material
+                        ? (x.Material != null ? x.Material.ExternalId : "")
+                        : (x.Product != null ? x.Product.ColourCode : ""),
                     Unit = x.Unit,
                     IsActive = x.IsActive
                 })
@@ -799,8 +823,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                                 CategoryId = m.CategoryId,
                                 Quantity = m.Quantity,
                                 Unit = m.Unit,
-                                MaterialNameSnapshot = m.MaterialNameSnapshot,
-                                MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot,
+                                MaterialNameSnapshot = m.itemType == ItemType.Material
+                                    ? (m.Material != null ? m.Material.Name : "")
+                                    : (m.Product != null ? m.Product.Name : ""),
+
+                                MaterialExternalIdSnapshot = m.itemType == ItemType.Material
+                                    ? (m.Material != null ? m.Material.ExternalId : "")
+                                    : (m.Product != null ? m.Product.ColourCode : ""),
                                 FallbackUnitPrice = m.UnitPrice
                             })
                             .ToList()
@@ -839,7 +868,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         Materials = f.FormulaMaterials
                             .Where(x => x.IsActive)
                             .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
-                            .ThenBy(x => x.MaterialExternalIdSnapshot)
                             .Select(m => new RawSummaryFormulaMaterialRow
                             {
                                 itemType = m.itemType,
@@ -851,8 +879,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                                 CategoryId = m.CategoryId,
                                 Quantity = m.Quantity,
                                 Unit = m.Unit,
-                                MaterialNameSnapshot = m.MaterialNameSnapshot,
-                                MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot,
+                                MaterialNameSnapshot = m.itemType == ItemType.Material
+                                    ? (m.Material != null ? m.Material.Name : "")
+                                    : (m.Product != null ? m.Product.Name : ""),
+
+                                MaterialExternalIdSnapshot = m.itemType == ItemType.Material
+                                    ? (m.Material != null ? m.Material.ExternalId : "")
+                                    : (m.Product != null ? m.Product.ColourCode : ""),
                                 FallbackUnitPrice = m.UnitPrice
                             })
                             .ToList()
@@ -1021,8 +1054,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             UnitPrice = i.UnitPrice,
                             TotalPrice = i.TotalPrice,
 
-                            MaterialNameSnapshot = i.MaterialNameSnapshot,
-                            MaterialExternalIdSnapshot = i.MaterialExternalIdSnapshot,
+                            MaterialNameSnapshot = i.itemType == ItemType.Material
+                                    ? (i.Material != null ? i.Material.Name : "")
+                                    : (i.Product != null ? i.Product.Name : ""),
+
+                            MaterialExternalIdSnapshot = i.itemType == ItemType.Material
+                                    ? (i.Material != null ? i.Material.ExternalId : "")
+                                    : (i.Product != null ? i.Product.ColourCode : ""),
                             Unit = i.Unit,
                             IsActive = true
                         })
@@ -1165,8 +1203,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             CategoryId = m.CategoryId,
                             Quantity = m.Quantity,
                             Unit = m.Unit,
-                            MaterialNameSnapshot = m.MaterialNameSnapshot,
-                            MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot
+                            MaterialNameSnapshot = m.itemType == ItemType.Material
+                                    ? (m.Material != null ? m.Material.Name : "")
+                                    : (m.Product != null ? m.Product.Name : ""),
+
+                            MaterialExternalIdSnapshot = m.itemType == ItemType.Material
+                                    ? (m.Material != null ? m.Material.ExternalId : "")
+                                    : (m.Product != null ? m.Product.ColourCode : ""),
                         }
                     })
                     .ToListAsync(ct)
@@ -1191,8 +1234,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             CategoryId = m.CategoryId,
                             Quantity = m.Quantity,
                             Unit = m.Unit,
-                            MaterialNameSnapshot = m.MaterialNameSnapshot,
-                            MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot
+                            MaterialNameSnapshot = m.itemType == ItemType.Material
+                                    ? (m.Material != null ? m.Material.Name : "")
+                                    : (m.Product != null ? m.Product.Name : ""),
+
+                            MaterialExternalIdSnapshot = m.itemType == ItemType.Material
+                                    ? (m.Material != null ? m.Material.ExternalId : "")
+                                    : (m.Product != null ? m.Product.ColourCode : ""),
                         }
                     })
                     .ToListAsync(ct)
@@ -1294,14 +1342,19 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             {
                 var mpoId = req.mfgProductionOrderId.Value;
 
-                var mpo = await _unitOfWork.MfgProductionOrderRepository
+                var existingMfgOrderPO = await _unitOfWork.MfgOrderPORepository
                     .Query(track: true)
-                    .Include(o => o.Product)
+                        .Include(o => o.ProductionOrder)
+                        .Include(o => o.Detail)
                     .FirstOrDefaultAsync(o =>
                         o.MfgProductionOrderId == mpoId &&
-                        o.CompanyId == companyId &&
                         o.IsActive,
                         ct);
+                
+                if (existingMfgOrderPO == null)
+                    return OperationResult.Fail("Không tìm thấy MfgOrderPO.");
+
+                var mpo = existingMfgOrderPO.ProductionOrder;
 
                 if (mpo == null)
                     return OperationResult.Fail("Không tìm thấy lệnh sản xuất.");
@@ -1485,53 +1538,55 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 }
 
 
-                var ignoreCustomerId = Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75");
-                var isIgnoreCustomer = mpo.CustomerId.HasValue && mpo.CustomerId.Value == ignoreCustomerId;
+                //var ignoreCustomerId = Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75");
+                //var isIgnoreCustomer = mpo.CustomerId.HasValue && mpo.CustomerId.Value == ignoreCustomerId;
 
-                // Customer bị chặn => không thông báo luôn
-                if (isIgnoreCustomer)
-                {
-                    await _unitOfWork.SaveChangesAsync();
-                    await _unitOfWork.CommitTransactionAsync();
-                    return OperationResult.Ok("Tạo công thức sản xuất thành công.");
-                }
+                //// Customer bị chặn => không thông báo luôn
+                //if (isIgnoreCustomer)
+                //{
+                //    await _unitOfWork.SaveChangesAsync();
+                //    await _unitOfWork.CommitTransactionAsync();
+                //    return OperationResult.Ok("Tạo công thức sản xuất thành công.");
+                //}
 
-                // Chỉ lấy đúng ColourCode
-                var productColourCode = mpo.Product?.ColourCode?.Trim() ?? string.Empty;
+                //// Chỉ lấy đúng ColourCode
+                //var productColourCode = mpo.Product?.ColourCode?.Trim() ?? string.Empty;
 
-                // Các điều kiện giá chỉ xét khi KHÔNG thuộc customer bị chặn
-                if (targetPrice.HasValue && (mf.TotalPrice ?? 0m) > targetPrice.Value)
-                {
-                    var title = !string.IsNullOrWhiteSpace(productColourCode)
-                        ? $"Cảnh báo giá: {productColourCode}"
-                        : $"Cảnh báo giá: {mf.ExternalId}";
+                //// Các điều kiện giá chỉ xét khi KHÔNG thuộc customer bị chặn
+                //if (targetPrice.HasValue && (mf.TotalPrice ?? 0m) > targetPrice.Value)
+                //{
+                //    var title = !string.IsNullOrWhiteSpace(productColourCode)
+                //        ? $"Cảnh báo giá: {productColourCode}"
+                //        : $"Cảnh báo giá: {mf.ExternalId}";
 
-                    var message = !string.IsNullOrWhiteSpace(productColourCode)
-                        ? $"SP {productColourCode}: Tổng chi phí {(mf.TotalPrice ?? 0m):N0} > Giá bán {targetPrice.Value:N0}"
-                        : $"Tổng chi phí {(mf.TotalPrice ?? 0m):N0} > Giá bán {targetPrice.Value:N0}";
+                //    var message = !string.IsNullOrWhiteSpace(productColourCode)
+                //        ? $"SP {productColourCode}: Tổng chi phí {(mf.TotalPrice ?? 0m):N0} > Giá bán {targetPrice.Value:N0}"
+                //        : $"Tổng chi phí {(mf.TotalPrice ?? 0m):N0} > Giá bán {targetPrice.Value:N0}";
 
-                    await _notificationService.PublishAsync(new PublishNotificationRequest
-                    {
-                        Topic = TopicNotifications.PriceOverSellCreated,
-                        Severity = NotificationSeverity.Warning,
-                        Title = title,
-                        Message = message,
-                        Link = $"/labs/mfgformula/{mpo.MfgProductionOrderId}/{mf.ManufacturingFormulaId}",
-                        PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
-                        {
-                            FormulaId = mf.ManufacturingFormulaId,
-                            ExternalId = mf.ExternalId,
-                            ProductColourCode = mpo.Product?.ColourCode,
-                            ProductCode = mpo.Product?.Code,
-                            ProductName = mpo.Product?.Name,
-                            TotalCost = mf.TotalPrice,
-                            TargetPrice = targetPrice.Value,
-                            MpoId = mpoId,
-                            CustomerId = mpo.CustomerId
-                        }),
-                        TargetRoles = new() { AppRoles.PLPUNotify, AppRoles.President, AppRoles.Developer }
-                    }, ct);
-                }
+                //    await _notificationService.PublishAsync(new PublishNotificationRequest
+                //    {
+                //        Topic = TopicNotifications.PriceOverSellCreated,
+                //        Severity = NotificationSeverity.Warning,
+                //        Title = title,
+                //        Message = message,
+                //        Link = $"/labs/mfgformula/{mpo.MfgProductionOrderId}/{mf.ManufacturingFormulaId}",
+                //        PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
+                //        {
+                //            FormulaId = mf.ManufacturingFormulaId,
+                //            ExternalId = mf.ExternalId,
+                //            ProductColourCode = mpo.Product?.ColourCode,
+                //            ProductCode = mpo.Product?.Code,
+                //            ProductName = mpo.Product?.Name,
+                //            TotalCost = mf.TotalPrice,
+                //            TargetPrice = targetPrice.Value,
+                //            MpoId = mpoId,
+                //            CustomerId = mpo.CustomerId
+                //        }),
+                //        TargetRoles = new() { AppRoles.PLPUNotify, AppRoles.President, AppRoles.Developer }
+                //    }, ct);
+                //}
+
+                await TrySendPriceWarningAsync(mf, existingMfgOrderPO, ct);
 
 
                 await _unitOfWork.SaveChangesAsync();
@@ -1611,17 +1666,30 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
                 MfgProductionOrder? mpoEntity = null;
 
+                if (!req.mfgProductionOrderId.HasValue)
+                    return OperationResult.Fail("Thiếu MfgProductionOrderId.");
+
+                var orderId = req.mfgProductionOrderId.Value;
+
+                var existingMfgOrderPO = await _unitOfWork.MfgOrderPORepository
+                    .Query(track: true)
+                        .Include(o => o.ProductionOrder)
+                        .Include(o => o.Detail)
+                    .FirstOrDefaultAsync(o =>
+                        o.MfgProductionOrderId == orderId &&
+                        o.IsActive,
+                        ct);
+
+                if (existingMfgOrderPO == null)
+                    return OperationResult.Fail("Không tìm thấy MfgOrderPO.");
+
                 // =====================================================
                 // 1) ALWAYS SELECT nếu có MfgProductionOrderId
                 // =====================================================
                 if (req.mfgProductionOrderId.HasValue && req.mfgProductionOrderId.Value != Guid.Empty)
                 {
-                    var orderId = req.mfgProductionOrderId.Value;
 
-                    mpoEntity = await _unitOfWork.MfgProductionOrderRepository
-                        .Query(track: true)
-                        .Include(o => o.Product)
-                        .FirstOrDefaultAsync(o => o.MfgProductionOrderId == orderId && o.IsActive, ct);
+                    mpoEntity = existingMfgOrderPO.ProductionOrder;
 
                     if (mpoEntity == null)
                         return OperationResult.Fail("Không tìm thấy lệnh sản xuất.");
@@ -1957,51 +2025,53 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     // không chặn flow
                 }
 
-                var ignoreCustomerId = Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75");
+                //var ignoreCustomerId = Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75");
 
-                var isIgnoreCustomer =
-                    mpoEntity?.CustomerId.HasValue == true &&
-                    mpoEntity.CustomerId.Value == ignoreCustomerId;
+                //var isIgnoreCustomer =
+                //    mpoEntity?.CustomerId.HasValue == true &&
+                //    mpoEntity.CustomerId.Value == ignoreCustomerId;
 
-                var productColourCode = mpoEntity?.Product?.ColourCode?.Trim() ?? string.Empty;
+                //var productColourCode = mpoEntity?.Product?.ColourCode?.Trim() ?? string.Empty;
 
-                var shouldPublishPriceWarning =
-                    !isIgnoreCustomer &&
-                    targetPrice.HasValue &&
-                    (existing.TotalPrice ?? 0m) > targetPrice.Value;
+                //var shouldPublishPriceWarning =
+                //    !isIgnoreCustomer &&
+                //    targetPrice.HasValue &&
+                //    (existing.TotalPrice ?? 0m) > targetPrice.Value;
 
-                if (shouldPublishPriceWarning)
-                {
-                    var title = !string.IsNullOrWhiteSpace(productColourCode)
-                        ? $"Cảnh báo giá: {productColourCode}"
-                        : $"Cảnh báo giá: {existing.ExternalId}";
+                //if (shouldPublishPriceWarning)
+                //{
+                //    var title = !string.IsNullOrWhiteSpace(productColourCode)
+                //        ? $"Cảnh báo giá: {productColourCode}"
+                //        : $"Cảnh báo giá: {existing.ExternalId}";
 
-                    var message = !string.IsNullOrWhiteSpace(productColourCode)
-                        ? $"SP {productColourCode}: Tổng chi phí {(existing.TotalPrice ?? 0m):N0} > Giá bán {targetPrice.Value:N0}"
-                        : $"Tổng chi phí {(existing.TotalPrice ?? 0m):N0} > Giá bán {targetPrice.Value:N0}";
+                //    var message = !string.IsNullOrWhiteSpace(productColourCode)
+                //        ? $"SP {productColourCode}: Tổng chi phí {(existing.TotalPrice ?? 0m):N0} > Giá bán {targetPrice.Value:N0}"
+                //        : $"Tổng chi phí {(existing.TotalPrice ?? 0m):N0} > Giá bán {targetPrice.Value:N0}";
 
-                    await _notificationService.PublishAsync(new PublishNotificationRequest
-                    {
-                        Topic = TopicNotifications.PriceOverSellCreated,
-                        Severity = NotificationSeverity.Warning,
-                        Title = title,
-                        Message = message,
-                        Link = $"/labs/mfgformula/{req.mfgProductionOrderId}/{req.ManufacturingFormulaId}",
-                        PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
-                        {
-                            FormulaId = req.ManufacturingFormulaId,
-                            ExternalId = existing.ExternalId,
-                            ProductColourCode = mpoEntity?.Product?.ColourCode,
-                            ProductCode = mpoEntity?.Product?.Code,
-                            ProductName = mpoEntity?.Product?.Name,
-                            TotalCost = existing.TotalPrice,
-                            TargetPrice = targetPrice.Value,
-                            MpoId = req.mfgProductionOrderId,
-                            CustomerId = mpoEntity?.CustomerId
-                        }),
-                        TargetRoles = new() { AppRoles.PLPUNotify, AppRoles.President, AppRoles.Developer }
-                    }, ct);
-                }
+                //    await _notificationService.PublishAsync(new PublishNotificationRequest
+                //    {
+                //        Topic = TopicNotifications.PriceOverSellCreated,
+                //        Severity = NotificationSeverity.Warning,
+                //        Title = title,
+                //        Message = message,
+                //        Link = $"/labs/mfgformula/{req.mfgProductionOrderId}/{req.ManufacturingFormulaId}",
+                //        PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
+                //        {
+                //            FormulaId = req.ManufacturingFormulaId,
+                //            ExternalId = existing.ExternalId,
+                //            ProductColourCode = mpoEntity?.Product?.ColourCode,
+                //            ProductCode = mpoEntity?.Product?.Code,
+                //            ProductName = mpoEntity?.Product?.Name,
+                //            TotalCost = existing.TotalPrice,
+                //            TargetPrice = targetPrice.Value,
+                //            MpoId = req.mfgProductionOrderId,
+                //            CustomerId = mpoEntity?.CustomerId
+                //        }),
+                //        TargetRoles = new() { AppRoles.PLPUNotify, AppRoles.President, AppRoles.Developer }
+                //    }, ct);
+                //}
+
+                await TrySendPriceWarningAsync(existing, existingMfgOrderPO, ct);
 
                 return OperationResult.Ok("Cập nhật công thức thành công");
             }
@@ -2157,6 +2227,98 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             //}
         }
 
+
+        private async Task TrySendPriceWarningAsync(
+            ManufacturingFormula mf,
+            MfgOrderPO mpo,
+            CancellationToken ct)
+        {
+            try
+            {
+                //decimal? targetPrice = await _priceProvider.GetTargetPriceByMpoAsync(
+                //    mfgProductionOrderId: req.MfgProductionOrderId,
+                //    ct: ct
+                //);
+
+
+                var existingMerchandiseOrder = mpo?.Detail != null
+                    ? await _unitOfWork.MerchandiseOrderRepository.Query()
+                        .FirstOrDefaultAsync(o => o.MerchandiseOrderId == mpo.Detail.MerchandiseOrderId, ct)
+                    : null;
+
+                decimal? targetPrice = mpo?.Detail.UnitPriceAgreed * (existingMerchandiseOrder?.ExchangeRate ?? 1m);
+
+
+                var ignoreCustomerId = Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75");
+
+                var isIgnoreCustomer = existingMerchandiseOrder != null &&
+                    existingMerchandiseOrder?.CustomerId == ignoreCustomerId;
+
+                var productColourCode = mpo?.ProductionOrder?.ProductExternalIdSnapshot;
+
+                var totalCost = mf.TotalPrice;
+
+                var orderTypeCurrent = existingMerchandiseOrder?.OrderType;
+
+                var shouldPublishPriceWarning =
+                    orderTypeCurrent != OrderType.Internal &&
+                    !isIgnoreCustomer &&
+                    targetPrice.HasValue &&
+                    totalCost > targetPrice.Value;
+
+                if (!shouldPublishPriceWarning)
+                    return;
+
+                var titlePrefix = orderTypeCurrent == OrderType.Complaint
+                    ? "Xử lý khiếu nại"
+                    : "Cảnh báo giá";
+
+                var messagePrefix = orderTypeCurrent == OrderType.Complaint
+                    ? "Xử lý khiếu nại"
+                    : "SP";
+
+                var title = !string.IsNullOrWhiteSpace(productColourCode)
+                    ? $"{titlePrefix}: {productColourCode}"
+                    : $"{titlePrefix}: {mf.ExternalId}";
+
+                var message = !string.IsNullOrWhiteSpace(productColourCode)
+                    ? $"{messagePrefix} {productColourCode}: Tổng chi phí {totalCost:N0} > Giá bán {targetPrice.Value:N0}"
+                    : $"{messagePrefix}: Tổng chi phí {totalCost:N0} > Giá bán {targetPrice.Value:N0}";
+
+
+                await _notificationService.PublishAsync(new PublishNotificationRequest
+                {
+                    Topic = TopicNotifications.PriceOverSellCreated,
+                    Severity = NotificationSeverity.Warning,
+                    Title = title,
+                    Message = message,
+                    Link = $"/labs/mfgformula/{mpo?.MfgProductionOrderId}/{mf.ManufacturingFormulaId}",
+                    PayloadJson = JsonSerializer.Serialize(new
+                    {
+                        FormulaId = mf.ManufacturingFormulaId,
+                        ExternalId = mf.ExternalId,
+                        ProductColourCode = productColourCode,
+                        ProductCode = mpo?.ProductionOrder?.Product?.Code,
+                        ProductName = mpo?.ProductionOrder?.Product?.Name,
+                        TotalCost = totalCost,
+                        TargetPrice = targetPrice.Value,
+                        MpoId = mpo?.MfgProductionOrderId,
+                        CustomerId = existingMerchandiseOrder?.CustomerId
+                    }),
+                    TargetRoles = new()
+                    {
+                        AppRoles.PLPUNotify,
+                        AppRoles.President,
+                        AppRoles.Developer
+                    }
+                }, ct);
+            }
+            catch
+            {
+            }
+        }
+
+
         // ====================================================================== Export PDF ======================================================================
         public async Task<byte[]> ExportVAFormulaToPdfAsync(Guid mfgProductionOrderId, CancellationToken ct = default)
         {
@@ -2216,19 +2378,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                                         .ThenBy(x => x.MaterialExternalIdSnapshot)
                                         .Select(m => new FormulaPDFMaterialDTOs
                                         {
-                                            ExternalId =
-                                                !string.IsNullOrWhiteSpace(m.MaterialExternalIdSnapshot)
-                                                    ? m.MaterialExternalIdSnapshot!
-                                                    : (m.itemType == ItemType.Material
-                                                        ? (m.Material.ExternalId ?? "")
-                                                        : ""),
+                                            ExternalId = m.itemType == ItemType.Material
+                                                ? (m.Material != null ? (m.Material.ExternalId ?? "") : "")
+                                                : (m.Product != null ? (m.Product.ColourCode ?? "") : ""),
 
-                                            MaterialName =
-                                                !string.IsNullOrWhiteSpace(m.MaterialNameSnapshot)
-                                                    ? m.MaterialNameSnapshot!
-                                                    : (m.itemType == ItemType.Material
-                                                        ? (m.Material.Name ?? "")
-                                                        : (m.Product.Name ?? "")),
+                                            MaterialName = m.itemType == ItemType.Material
+                                                ? (m.Material != null ? (m.Material.Name ?? "") : "")
+                                                : (m.Product != null ? (m.Product.Name ?? "") : ""),
 
                                             CategoryId = m.CategoryId,
                                             Quantity = m.Quantity,

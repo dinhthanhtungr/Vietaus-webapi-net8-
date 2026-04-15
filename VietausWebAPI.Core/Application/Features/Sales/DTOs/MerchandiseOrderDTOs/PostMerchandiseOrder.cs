@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Enums.Merchadises;
 
 namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTOs
 {
     public class PostMerchandiseOrder
     {
         public Guid MerchandiseOrderId { get; set; }
+        public OrderType OrderType { get; set; } = OrderType.Merchandise;
         public string? ExternalId { get; set; }
 
 
@@ -32,6 +34,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTO
 
         public string? Status { get; set; }
         public string? Currency { get; set; }
+        public decimal? ExchangeRate { get; set; }
 
         public bool? IsPaid { get; set; }
 
