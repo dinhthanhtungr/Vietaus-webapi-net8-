@@ -293,9 +293,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                     req.FormulaType == FormulaType.FromVu ||
                     req.FormulaType == FormulaType.Standard;
                     
-                    
-                    
-
                 var waitForQc =
                     req.FormulaType == FormulaType.ProductionOld ||
                     req.FormulaType == FormulaType.Production ||
@@ -307,9 +304,23 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                     req.FormulaType == FormulaType.FromVu ||
                     req.FormulaType == FormulaType.Improvement;
 
+                var shouldGetNoteFromProductRequirement =
+                    req.FormulaType == FormulaType.FromVu ||
+                    req.FormulaType == FormulaType.Improvement;
+
                 var formulaStatus = autoSelectAndScheduling
                     ? ManufacturingProductOrderFormula.Checking.ToString()
                     : ManufacturingProductOrderFormula.New.ToString();
+
+                string? formulaNote = req.Note;
+
+                if (shouldGetNoteFromProductRequirement)
+                {
+                    formulaNote = await _unitOfWork.ProductRepository.Query()
+                        .Where(p => p.ProductId == req.ProductId && p.IsActive)
+                        .Select(p => p.Requirement)
+                        .FirstOrDefaultAsync(ct);
+                }
 
                 var mf = new ManufacturingFormula
                 {
@@ -322,7 +333,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
 
                     SourceType = req.SourceType.Value,
                     IsActive = true,
-                    Note = req.Note,
+                    Note = formulaNote,
 
                     CreatedDate = now,
                     UpdatedDate = now,

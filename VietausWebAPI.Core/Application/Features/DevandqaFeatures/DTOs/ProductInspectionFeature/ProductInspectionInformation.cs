@@ -67,6 +67,9 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.DTOs.ProductI
         public string? StorageCondition { get; set; }
         public bool? IsStorageConditionPass { get; set; }
 
+        public bool? IsIntrinsicViscosity { get; set; }
+        public string? IntrinsicViscosity { get; set; }
+
         public string? MeshType { get; set; }
         public bool? IsMeshAttached { get; set; }
 

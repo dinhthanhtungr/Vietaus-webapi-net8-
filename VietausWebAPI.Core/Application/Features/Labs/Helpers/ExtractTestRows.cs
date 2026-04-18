@@ -54,6 +54,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
             Add("Flexural Modulus/Mô đun uốn", result.FlexuralModulus, "-", specs?.FlexuralModulus, "Vietaus std", "MPa");
             Add("Impact Resistance/Chịu va đập", result.ImpactResistance, "-", specs?.IzodImpactStrength, "Vietaus std", "kJ/m²");
             Add("Hardness/Độ cứng", result.Hardness, "-", specs?.Hardness, "Vietaus std", "Shore D");
+            Add("IV/Độ nhớt", result.IntrinsicViscosity, "-", "-", "Vietaus std", "dL/g");
 
             Add("Antistatic/Chống tĩnh điện", result.Antistatic, "Có", null, "Vietaus std", "-");
             Add("Black Dots/Chấm đen", result.BlackDots, "-", specs?.BlackDots, "Vietaus std", "-");

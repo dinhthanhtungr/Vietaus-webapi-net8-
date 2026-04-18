@@ -27,4 +27,8 @@
     <ProjectReference Include="..\VietausWebAPI.Core\VietausWebAPI.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Repositories\Sales\ReportFeatures\ReadRepositories\" />
+  </ItemGroup>
+
 </Project>

@@ -86,6 +86,9 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.DevandqaSc
             entity.Property(x => x.StorageCondition).HasColumnName("storage_condition").HasColumnType("citext");
             entity.Property(x => x.IsStorageConditionPass).HasColumnName("is_storage_condition_pass");
 
+            entity.Property(x => x.IntrinsicViscosity).HasColumnName("intrinsic_viscosity").HasColumnType("citext");
+            entity.Property(x => x.IsIntrinsicViscosity).HasColumnName("is_intrinsic_viscosity");
+
             // Khác
             entity.Property(x => x.DwellTime).HasColumnName("dwell_time");             // bool?
             entity.Property(x => x.BlackDots).HasColumnName("black_dots").HasColumnType("citext");

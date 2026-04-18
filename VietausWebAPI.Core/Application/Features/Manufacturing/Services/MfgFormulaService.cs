@@ -2025,53 +2025,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     // không chặn flow
                 }
 
-                //var ignoreCustomerId = Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75");
 
-                //var isIgnoreCustomer =
-                //    mpoEntity?.CustomerId.HasValue == true &&
-                //    mpoEntity.CustomerId.Value == ignoreCustomerId;
-
-                //var productColourCode = mpoEntity?.Product?.ColourCode?.Trim() ?? string.Empty;
-
-                //var shouldPublishPriceWarning =
-                //    !isIgnoreCustomer &&
-                //    targetPrice.HasValue &&
-                //    (existing.TotalPrice ?? 0m) > targetPrice.Value;
-
-                //if (shouldPublishPriceWarning)
-                //{
-                //    var title = !string.IsNullOrWhiteSpace(productColourCode)
-                //        ? $"Cảnh báo giá: {productColourCode}"
-                //        : $"Cảnh báo giá: {existing.ExternalId}";
-
-                //    var message = !string.IsNullOrWhiteSpace(productColourCode)
-                //        ? $"SP {productColourCode}: Tổng chi phí {(existing.TotalPrice ?? 0m):N0} > Giá bán {targetPrice.Value:N0}"
-                //        : $"Tổng chi phí {(existing.TotalPrice ?? 0m):N0} > Giá bán {targetPrice.Value:N0}";
-
-                //    await _notificationService.PublishAsync(new PublishNotificationRequest
-                //    {
-                //        Topic = TopicNotifications.PriceOverSellCreated,
-                //        Severity = NotificationSeverity.Warning,
-                //        Title = title,
-                //        Message = message,
-                //        Link = $"/labs/mfgformula/{req.mfgProductionOrderId}/{req.ManufacturingFormulaId}",
-                //        PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
-                //        {
-                //            FormulaId = req.ManufacturingFormulaId,
-                //            ExternalId = existing.ExternalId,
-                //            ProductColourCode = mpoEntity?.Product?.ColourCode,
-                //            ProductCode = mpoEntity?.Product?.Code,
-                //            ProductName = mpoEntity?.Product?.Name,
-                //            TotalCost = existing.TotalPrice,
-                //            TargetPrice = targetPrice.Value,
-                //            MpoId = req.mfgProductionOrderId,
-                //            CustomerId = mpoEntity?.CustomerId
-                //        }),
-                //        TargetRoles = new() { AppRoles.PLPUNotify, AppRoles.President, AppRoles.Developer }
-                //    }, ct);
-                //}
-
-                await TrySendPriceWarningAsync(existing, existingMfgOrderPO, ct);
+                // Thông báo nếu giá công thức mới vượt giá mục tiêu (Tạm thời command xem truyện gì sẽ xảy ra)
+                //await TrySendPriceWarningAsync(existing, existingMfgOrderPO, ct);
 
                 return OperationResult.Ok("Cập nhật công thức thành công");
             }

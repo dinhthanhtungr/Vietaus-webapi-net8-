@@ -132,7 +132,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Helpers
 
                     static string Money(decimal? v) => (v ?? 0m).ToString("#,0");
                     static string MoneyPrice(decimal? v) => (v ?? 0m).ToString("#,0.0000");
-                    static string Qty(decimal? v) => (v ?? 0m).ToString("0.#");
+                    static string Qty(decimal? v) => (v ?? 0m).ToString("#,0.00");
 
                     table.Header(row =>
                     {

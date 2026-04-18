@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DocumentFormat.OpenXml.Drawing.Diagrams;
+using System;
 using System.Collections.Generic;
 
 namespace VietausWebAPI.Core.Domain.Entities.DevandqaSchema;
@@ -63,6 +64,8 @@ public partial class ProductInspection
 
     public bool? IsTensileStrengthPass { get; set; }
 
+
+
     public string? FlexuralModulus { get; set; }
 
     public bool? IsFlexuralModulusPass { get; set; }
@@ -78,6 +81,9 @@ public partial class ProductInspection
     public string? StorageCondition { get; set; }
 
     public bool? IsStorageConditionPass { get; set; }
+
+    public string? IntrinsicViscosity { get; set; }
+    public bool? IsIntrinsicViscosity { get; set; }
 
     public bool? DwellTime { get; set; }
 

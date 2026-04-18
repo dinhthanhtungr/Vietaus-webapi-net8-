@@ -42,7 +42,7 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         public virtual ICollection<ProductStandardFormula> ProductStandardFormulas { get; set; } = new List<ProductStandardFormula>();
         public virtual ICollection<ProductionSelectVersion> ProductionSelectVersions { get; set; } = new List<ProductionSelectVersion>();
         public virtual ICollection<ManufacturingFormulaVersion> ManufacturingFormulaVersions { get; set; } = new List<ManufacturingFormulaVersion>();
-        public virtual ICollection<ColorChipRecord> ColorChipRecords { get; set; } = new List<ColorChipRecord>();
+      
         public virtual ManufacturingFormula? SourceManufacturingFormula { get; set; }
         public virtual Formula? SourceVUFormula { get; set; }
         public virtual Employee? CreatedByNavigation { get; set; }

@@ -140,13 +140,13 @@ namespace Shared.Enums
     /// <summary>
     /// Trạng thái phiếu kho (string).
     /// </summary>
-    public static class WarehouseRequestStatus
-    {
-        public const string Pending = "Pending";     // (was 0)
-        public const string Approved = "Approved";   // (was 1)
-        public const string Cancelled = "Cancelled"; // (was 2)
-        public const string Completed = "Completed"; // (was 3)
-    }
+    //public static class WarehouseRequestStatus
+    //{
+    //    public const string Pending = "Pending";     // (was 0)
+    //    public const string Approved = "Approved";   // (was 1)
+    //    public const string Cancelled = "Cancelled"; // (was 2)
+    //    public const string Completed = "Completed"; // (was 3)
+    //}
 
     /// <summary>
     /// Trạng thái giữ chỗ (string).

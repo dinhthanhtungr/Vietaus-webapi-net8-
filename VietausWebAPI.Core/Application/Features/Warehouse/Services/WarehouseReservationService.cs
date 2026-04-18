@@ -400,6 +400,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 .Where(wr => wr.codeFromRequest == externalId && wr.IsActive)
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(wr => wr.IsActive, false)
+                    .SetProperty(wr => wr.ReqStatus, WarehouseRequestStatus.Cancelled)
                     .SetProperty(wr => wr.UpdatedDate, DateTime.Now)
                     .SetProperty(wr => wr.UpdatedBy, _currentUser.EmployeeId),
                     ct);

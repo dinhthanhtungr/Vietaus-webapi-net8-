@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
@@ -11,9 +12,11 @@ using VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs;
 namespace VietausWebAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260418014136_UpdateColorChipMfgProduction")]
+    partial class UpdateColorChipMfgProduction
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -4400,123 +4403,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasDatabaseName("ux_zones_warehouse_external");
 
                     b.ToTable("zones", "mro");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ColorChipManufacturingRecord", b =>
-                {
-                    b.Property<Guid>("ColorChipMfgRecordId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("color_chip_mfg_record_id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("company_id");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_date");
-
-                    b.Property<bool?>("Electrostatic")
-                        .HasColumnType("boolean")
-                        .HasColumnName("electrostatic");
-
-                    b.Property<int>("FormStyle")
-                        .HasColumnType("integer")
-                        .HasColumnName("form_style");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<int>("LogoType")
-                        .HasColumnType("integer")
-                        .HasColumnName("logo_type");
-
-                    b.Property<string>("Machine")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("machine");
-
-                    b.Property<Guid?>("ManufacturingFormulaId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("manufacturing_formula_id");
-
-                    b.Property<Guid?>("MfgProductionOrderId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("mfg_production_order_id");
-
-                    b.Property<string>("NetWeightGram")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("net_weight_gram");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)")
-                        .HasColumnName("note");
-
-                    b.Property<decimal?>("PelletWeightGram")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("numeric(18,6)")
-                        .HasColumnName("pellet_weight_gram");
-
-                    b.Property<string>("PrintNote")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)")
-                        .HasColumnName("print_note");
-
-                    b.Property<DateTime?>("RecordDate")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("record_date");
-
-                    b.Property<string>("Resin")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("resin");
-
-                    b.Property<int>("ResinType")
-                        .HasColumnType("integer")
-                        .HasColumnName("resin_type");
-
-                    b.Property<string>("SizeText")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("size_text");
-
-                    b.Property<string>("TemperatureLimit")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("temperature_limit");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("updated_by");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("updated_date");
-
-                    b.HasKey("ColorChipMfgRecordId");
-
-                    b.HasIndex("ManufacturingFormulaId");
-
-                    b.HasIndex("MfgProductionOrderId");
-
-                    b.HasIndex("ColorChipMfgRecordId", "IsActive")
-                        .HasDatabaseName("ix_color_chip_records_color_chip_mfg_record_id_is_active");
-
-                    b.HasIndex("RecordDate", "IsActive")
-                        .HasDatabaseName("ix_color_chip_records_record_date_is_active");
-
-                    b.ToTable("color_chip_manufacturing_records", "manufacturing");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormula", b =>
@@ -9941,23 +9827,6 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasConstraintName("fk_zones_warehouse_id");
 
                     b.Navigation("Warehouse");
-                });
-
-            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ColorChipManufacturingRecord", b =>
-                {
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormula", "ManufacturingFormula")
-                        .WithMany()
-                        .HasForeignKey("ManufacturingFormulaId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.MfgProductionOrder", "MfgProductionOrder")
-                        .WithMany()
-                        .HasForeignKey("MfgProductionOrderId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("ManufacturingFormula");
-
-                    b.Navigation("MfgProductionOrder");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.ManufacturingSchema.ManufacturingFormula", b =>

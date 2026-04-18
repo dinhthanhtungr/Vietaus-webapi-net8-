@@ -54,7 +54,6 @@ public partial class Formula
     public virtual ICollection<FormulaMaterial> FormulaMaterials { get; set; } = new List<FormulaMaterial>();
     public virtual ICollection<ManufacturingFormula> ManufacturingFormulaSources { get; set; } = new List<ManufacturingFormula>();
     public virtual ICollection<MfgProductionOrder> ManufacturingProductionOrders { get; set; } = new List<MfgProductionOrder>();
-    public virtual ICollection<ColorChipRecord> ColorChipRecords { get; set; } = new List<ColorChipRecord>();
 
     public virtual Product Product { get; set; } = null!;
 

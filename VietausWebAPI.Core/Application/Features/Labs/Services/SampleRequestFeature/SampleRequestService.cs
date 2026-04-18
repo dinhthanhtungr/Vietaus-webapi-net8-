@@ -684,13 +684,13 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 // 3) Patch SampleRequest (chỉ những field cho phép)
                 PatchHelper.SetIfGuid(req.CustomerId, () => existing.CustomerId, v => existing.CustomerId = v);
 
-                PatchHelper.SetIf(req.RealDeliveryDate, () => existing.RealDeliveryDate.GetValueOrDefault(), v => existing.RealDeliveryDate = v);
-                PatchHelper.SetIf(req.RequestTestSampleDate, () => existing.RequestTestSampleDate.GetValueOrDefault(), v => existing.RequestTestSampleDate = v);
-                PatchHelper.SetIf(req.ExpectedDeliveryDate, () => existing.ExpectedDeliveryDate.GetValueOrDefault(), v => existing.ExpectedDeliveryDate = v);
-                PatchHelper.SetIf(req.RequestDeliveryDate, () => existing.RequestDeliveryDate.GetValueOrDefault(), v => existing.RequestDeliveryDate = v);
-                PatchHelper.SetIf(req.ResponseDeliveryDate, () => existing.ResponseDeliveryDate.GetValueOrDefault(), v => existing.ResponseDeliveryDate = v);
-                PatchHelper.SetIf(req.RealPriceQuoteDate, () => existing.RealPriceQuoteDate.GetValueOrDefault(), v => existing.RealPriceQuoteDate = v);
-                PatchHelper.SetIf(req.ExpectedPriceQuoteDate, () => existing.ExpectedPriceQuoteDate.GetValueOrDefault(), v => existing.ExpectedPriceQuoteDate = v);
+                PatchHelper.SetIfNullable(req.RealDeliveryDate, () => existing.RealDeliveryDate.GetValueOrDefault(), v => existing.RealDeliveryDate = v);
+                PatchHelper.SetIfNullable(req.RequestTestSampleDate, () => existing.RequestTestSampleDate.GetValueOrDefault(), v => existing.RequestTestSampleDate = v);
+                PatchHelper.SetIfNullable(req.ExpectedDeliveryDate, () => existing.ExpectedDeliveryDate.GetValueOrDefault(), v => existing.ExpectedDeliveryDate = v);
+                PatchHelper.SetIfNullable(req.RequestDeliveryDate, () => existing.RequestDeliveryDate.GetValueOrDefault(), v => existing.RequestDeliveryDate = v);
+                PatchHelper.SetIfNullable(req.ResponseDeliveryDate, () => existing.ResponseDeliveryDate.GetValueOrDefault(), v => existing.ResponseDeliveryDate = v);
+                PatchHelper.SetIfNullable(req.RealPriceQuoteDate, () => existing.RealPriceQuoteDate.GetValueOrDefault(), v => existing.RealPriceQuoteDate = v);
+                PatchHelper.SetIfNullable(req.ExpectedPriceQuoteDate, () => existing.ExpectedPriceQuoteDate.GetValueOrDefault(), v => existing.ExpectedPriceQuoteDate = v);
 
                 PatchHelper.SetIfRef(req.AdditionalComment, () => existing.AdditionalComment, v => existing.AdditionalComment = v);
                 PatchHelper.SetIfRef(req.Status, () => existing.Status, v => existing.Status = v);

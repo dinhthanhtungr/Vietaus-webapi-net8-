@@ -154,8 +154,14 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                         m.CategoryId,
                         m.Quantity,
                         m.Unit,
-                        m.Material.Name,
-                        m.Material.ExternalId
+
+                        DisplayName = m.itemType == ItemType.Material
+                            ? (m.Material != null ? m.Material.Name : "")
+                            : (m.Product != null ? m.Product.Name : ""),
+
+                        DisplayExternalId = m.itemType == ItemType.Material
+                            ? (m.Material != null ? m.Material.ExternalId : "")
+                            : (m.Product != null ? m.Product.ColourCode : "")
                     })
                     .ToListAsync(ct);
 
@@ -229,7 +235,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                                     x.itemType,
                                     itemId);
                             }
-
                             return new GetMaterialFormula
                             {
                                 FormulaMaterialId = x.FormulaMaterialId,
@@ -242,8 +247,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                                 TotalPrice = x.Quantity * unitPrice,
                                 ExpiryDate = expiryDate,
                                 Unit = x.Unit,
-                                MaterialNameSnapshot = x.Name,
-                                MaterialExternalIdSnapshot = x.ExternalId
+                                MaterialNameSnapshot = x.DisplayName,
+                                MaterialExternalIdSnapshot = x.DisplayExternalId
                             };
                         }).ToList()
                     );

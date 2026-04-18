@@ -222,6 +222,9 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                 StorageCondition = x.StorageCondition,
                 IsStorageConditionPass = x.IsStorageConditionPass,
 
+                IntrinsicViscosity = x.IntrinsicViscosity,
+                IsIntrinsicViscosity = x.IsIntrinsicViscosity,
+
                 MeshType = x.MeshType,
                 IsMeshAttached = x.IsMeshAttached,
 
@@ -384,6 +387,9 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                 StorageCondition = productInspection.StorageCondition,
                 IsStorageConditionPass = productInspection.IsStorageConditionPass,
 
+                IntrinsicViscosity = productInspection.IntrinsicViscosity,
+                IsIntrinsicViscosity = productInspection.IsIntrinsicViscosity,
+
                 MeshType = productInspection.MeshType,
                 IsMeshAttached = productInspection.IsMeshAttached,
 
@@ -483,6 +489,7 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                     ImpactResistance = inspection.ImpactResistance,
                     Antistatic = inspection.Antistatic,
                     StorageCondition = inspection.StorageCondition,
+                    IntrinsicViscosity = inspection.IntrinsicViscosity,
 
                     DwellTime = inspection.DwellTime,
                     BlackDots = inspection.BlackDots,

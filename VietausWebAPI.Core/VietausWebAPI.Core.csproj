@@ -24,6 +24,9 @@
     <Folder Include="Application\Features\Labs\DTOs\QAQCFeature\ProductStandardFeature\" />
     <Folder Include="Application\Features\Labs\DTOs\SampleRequestFeature\ColorChipRecordFeatures\PatchDtos\" />
     <Folder Include="Application\Features\Labs\Mappers\" />
+    <Folder Include="Application\Features\Sales\RepositoriesContracts\ReportFeatures\ReadRepositories\" />
+    <Folder Include="Application\Features\Sales\ServiceContracts\ReportFeatures\ReadServiceContracts\" />
+    <Folder Include="Application\Features\Sales\Services\ReportFeatures\ReadServices\" />
     <Folder Include="Application\Features\ShiftReportFeatures\Helpers\" />
     <Folder Include="Application\Features\ShiftReportFeatures\ServiceContracts\EndOfShiftReportFeatures\" />
     <Folder Include="Domain\Security\Policys\" />
