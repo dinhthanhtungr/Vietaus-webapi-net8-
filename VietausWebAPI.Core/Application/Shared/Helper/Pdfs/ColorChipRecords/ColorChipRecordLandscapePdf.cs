@@ -7,7 +7,7 @@ using System.IO;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.ColorChipRecordFeatures.PDFDtos;
 using VietausWebAPI.Core.Domain.Enums.SampleRequests;
 
-namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.SampleRequests.ColourChipRecords
+namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
 {
     public class ColorChipRecordLandscapePdf : IColorChipRecordLandscapePdf
     {
@@ -63,15 +63,15 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.SampleRequests.Co
 
             var leftText = isBatchNoEmpty
                 ? "OPTION 1"
-                : (string.IsNullOrWhiteSpace(m.LowerText) ? "LOWER" : m.LowerText);
+                : string.IsNullOrWhiteSpace(m.LowerText) ? "LOWER" : m.LowerText;
 
             var centerText = isBatchNoEmpty
                 ? "OPTION 2"
-                : (string.IsNullOrWhiteSpace(m.StandardText) ? "STANDARD" : m.StandardText);
+                : string.IsNullOrWhiteSpace(m.StandardText) ? "STANDARD" : m.StandardText;
 
             var rightText = isBatchNoEmpty
                 ? "OPTION 3"
-                : (string.IsNullOrWhiteSpace(m.UpperText) ? "UPPER" : m.UpperText);
+                : string.IsNullOrWhiteSpace(m.UpperText) ? "UPPER" : m.UpperText;
 
             c.PaddingTop(2)
              .PaddingBottom(2)

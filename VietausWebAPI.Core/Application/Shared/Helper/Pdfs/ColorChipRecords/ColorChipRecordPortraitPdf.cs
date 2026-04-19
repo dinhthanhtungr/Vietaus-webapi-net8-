@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.ColorChipRecordFeatures.PDFDtos;
 using VietausWebAPI.Core.Domain.Enums.SampleRequests;
 
-namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.SampleRequests.ColourChipRecords
+namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
 {
     public class ColorChipRecordPortraitPdf : IColorChipRecordPortraitPdf
     {
@@ -298,11 +298,11 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.SampleRequests.Co
 
             var leftText = isBatchNoEmpty
                 ? "OPTION 1"
-                : (templateOnly ? "" : m.BatchNo);
+                : templateOnly ? "" : m.BatchNo;
 
             var rightText = isBatchNoEmpty
                 ? "OPTION 2"
-                : (string.IsNullOrWhiteSpace(m.StandardText) ? "STANDARD" : m.StandardText);
+                : string.IsNullOrWhiteSpace(m.StandardText) ? "STANDARD" : m.StandardText;
 
             var isNonStandard =
                 string.Equals(

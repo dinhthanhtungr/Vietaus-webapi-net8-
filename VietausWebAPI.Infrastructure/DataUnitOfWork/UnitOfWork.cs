@@ -14,6 +14,7 @@ using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleR
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature.ColorChipRecordFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFeature.ColorChipRecordFeatures;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts.ColorChipManufacturingRecords;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts.GetRepositories;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.RepositoriesContracts.SupplierFeatures;
@@ -122,6 +123,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             ISupplierWriteRepository supplierWriteRepository,
 
             // ==== Manufacturing ====
+            IColorChipManufacturingRecordReadRepository colorChipManufacturingRecordReadRepository,
+            IColorChipManufacturingRecordWriteRepository colorChipManufacturingRecordWriteRepository,
+
             IMfgProductionOrderRepository mfgProductionOrderRepository,
             IManufacturingFormulaMaterialRepository manufacturingFormulaMaterialRepository,
             IManufacturingFormulaRepository manufacturingFormulaRepository,
@@ -248,6 +252,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             SupplierWriteRepository = supplierWriteRepository;
 
             // ===== Manufacturing =====
+            ColorChipManufacturingRecordReadRepository = colorChipManufacturingRecordReadRepository;
+            ColorChipManufacturingRecordWriteRepository = colorChipManufacturingRecordWriteRepository;
+
             MfgProductionOrderRepository = mfgProductionOrderRepository;
             ManufacturingFormulaMaterialRepository = manufacturingFormulaMaterialRepository;
             ManufacturingFormulaRepository = manufacturingFormulaRepository;

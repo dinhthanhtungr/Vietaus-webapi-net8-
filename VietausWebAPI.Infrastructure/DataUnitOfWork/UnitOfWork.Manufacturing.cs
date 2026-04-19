@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts.ColorChipManufacturingRecords;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts.GetRepositories;
 using VietausWebAPI.Core.Application.Features.Planning.RepositoriesContracts;
 using VietausWebAPI.Infrastructure.Repositories.Manufacturing.ProductionSelectVersionRepositories;
@@ -12,6 +13,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
 {
     public sealed partial class UnitOfWork
     {
+        public IColorChipManufacturingRecordReadRepository ColorChipManufacturingRecordReadRepository { get; }
+        public IColorChipManufacturingRecordWriteRepository ColorChipManufacturingRecordWriteRepository { get; }
+
         public IMfgProductionOrderRepository MfgProductionOrderRepository { get; }
         public IManufacturingFormulaMaterialRepository ManufacturingFormulaMaterialRepository { get; }
         public IManufacturingFormulaRepository ManufacturingFormulaRepository { get; }

@@ -8,6 +8,10 @@ using VietausWebAPI.Infrastructure.Repositories.Manufacturing;
 using VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProductionOrderFeatures;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts.GetRepositories;
 using VietausWebAPI.Infrastructure.Repositories.Manufacturing.ProductionSelectVersionRepositories;
+using VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts.ColorChipManufacturingRecords;
+using VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorChipManufacturingRecords;
+using VietausWebAPI.Infrastructure.Repositories.Manufacturing.ColorChipManufacturingRecords;
+using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts.ColorChipManufacturingRecords;
 
 namespace VietausWebAPI.WebAPI.DependencyInjections
 {
@@ -23,10 +27,20 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
             services.AddScoped<IMfgPostInformationService, MfgPostInformationService>();
             services.AddScoped<IMfgUpsertInformationService, MfgUpsertInformationService>();
 
+            services.AddScoped<IMfgFormulaService, MfgFormulaService>();
+
+
+            services.AddScoped<IGetColorChipManufacturingRecordService, GetColorChipManufacturingRecordService>();
+            services.AddScoped<IPostColorChipManufacturingRecordService, PostColorChipManufacturingRecordService>();
+            services.AddScoped<IUpsertColorChipManufacturingRecordService, UpsertColorChipManufacturingRecordService>();
+            services.AddScoped<IColorChipManufacturingRecordPrintPdfService, ColorChipManufacturingRecordPrintPdfService>();
 
             services.AddScoped<IManufacturingFormulaRepository, ManufacturingFormulaRepository>();
             services.AddScoped<IManufacturingFormulaMaterialRepository, ManufacturingFormulaMaterialRepository>();
-            services.AddScoped<IMfgFormulaService, MfgFormulaService>();
+
+            services.AddScoped<IColorChipManufacturingRecordReadRepository, ColorChipManufacturingRecordReadRepository>();
+            services.AddScoped<IColorChipManufacturingRecordWriteRepository, ColorChipManufacturingRecordWriteRepository>();
+
 
             services.AddScoped<IProductStandardFormulaRepository, ProductStandardFormulaRepository>();
             services.AddScoped<IProductionSelectVersionRepository, ProductionSelectVersionRepository>();

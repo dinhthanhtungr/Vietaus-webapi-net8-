@@ -5,11 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.ColorChipRecordFeatures.PDFDtos;
 
-namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.SampleRequests.ColourChipRecords
+namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
 {
-    public interface IColorChipRecordLandscapePdf
+    public interface IColorChipRecordPortraitPdf
     {
-        byte[] Render(ColorChipRecordPdfModel model, bool templateOnly = false);
         byte[] RenderTemplate();
+        byte[] Render(ColorChipRecordPdfModel model, bool templateOnly = false);
     }
 }

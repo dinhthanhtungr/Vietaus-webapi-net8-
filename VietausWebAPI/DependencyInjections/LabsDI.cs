@@ -1,6 +1,5 @@
 ﻿using VietausWebAPI.Core.Application.Features.DevandqaFeatures.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures;
-using VietausWebAPI.Core.Application.Features.Labs.Helpers.SampleRequests.ColourChipRecords;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.FormulaFeatures;
 //using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.QAQCFeature;
 using VietausWebAPI.Core.Application.Features.Labs.RepositoriesContracts.SampleRequestFeature;
@@ -16,6 +15,7 @@ using VietausWebAPI.Core.Application.Features.Labs.Services.ProductFeatures;
 using VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFeature;
 using VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFeature.ColorChipRecordFeatures;
 using VietausWebAPI.Core.Application.Features.Manufacturing.RepositoriesContracts;
+using VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords;
 using VietausWebAPI.Infrastructure.Repositories.Devandqas;
 using VietausWebAPI.Infrastructure.Repositories.Labs.FormulaFeatures;
 //using VietausWebAPI.Infrastructure.Repositories.Labs.QAQC;

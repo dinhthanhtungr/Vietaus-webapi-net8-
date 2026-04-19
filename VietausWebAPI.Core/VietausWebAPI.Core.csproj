@@ -23,6 +23,7 @@
     <Folder Include="Application\Features\DevandqaFeatures\DTOs\QCInputDTOs\" />
     <Folder Include="Application\Features\Labs\DTOs\QAQCFeature\ProductStandardFeature\" />
     <Folder Include="Application\Features\Labs\DTOs\SampleRequestFeature\ColorChipRecordFeatures\PatchDtos\" />
+    <Folder Include="Application\Features\Labs\Helpers\SampleRequests\ColourChipRecords\" />
     <Folder Include="Application\Features\Labs\Mappers\" />
     <Folder Include="Application\Features\Sales\RepositoriesContracts\ReportFeatures\ReadRepositories\" />
     <Folder Include="Application\Features\Sales\ServiceContracts\ReportFeatures\ReadServiceContracts\" />

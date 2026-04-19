@@ -5,9 +5,10 @@ using System;
 using System.Globalization;
 using System.IO;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature.ColorChipRecordFeatures.PDFDtos;
+using VietausWebAPI.Core.Application.Features.Labs.Helpers.SampleRequests;
 using VietausWebAPI.Core.Domain.Enums.SampleRequests;
 
-namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.SampleRequests.ColourChipRecords
+namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
 {
     public class ColorChipRecordTanPhuPdf : IColorChipRecordTanPhuPdf
     {
@@ -116,7 +117,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.SampleRequests.Co
 
             var sizeActualText = templateOnly
                 ? ""
-                : (!string.IsNullOrWhiteSpace(m.SizeText) ? m.SizeText : "");
+                : !string.IsNullOrWhiteSpace(m.SizeText) ? m.SizeText : "";
 
             var sizeStandardText = templateOnly
                 ? ""
@@ -124,9 +125,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.SampleRequests.Co
 
             var weightActualText = templateOnly
                 ? ""
-                : (m.PelletWeightGram.HasValue && m.PelletWeightGram.Value > 0
+                : m.PelletWeightGram.HasValue && m.PelletWeightGram.Value > 0
                     ? m.PelletWeightGram.Value.ToString("0.##")
-                    : "");
+                    : "";
 
             var weightStandardText = templateOnly
                 ? ""
@@ -134,11 +135,11 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.SampleRequests.Co
 
             var electrostaticActualText = templateOnly
                 ? ""
-                : (m.Electrostatic ?? false ? "Có" : "Không có");
+                : m.Electrostatic ?? false ? "Có" : "Không có";
 
             var electrostaticStandardText = templateOnly
                 ? ""
-                : (standard.AntiStaticType == AntiStaticType.None ? "Không có" : "Có");
+                : standard.AntiStaticType == AntiStaticType.None ? "Không có" : "Có";
 
             var approvalCompanyName = GetApprovalCompanyName(logoType);
 
