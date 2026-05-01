@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Infrastructure;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,19 +24,22 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
         private readonly IColorChipRecordLandscapePdf _colorChipRecordLandscapePdf; 
         private readonly IColorChipRecordPortraitPdf _colorChipRecordPortraitPdf;
         private readonly IColorChipRecordTanPhuPdf _colorChipRecordTanPhuPdf;
+        private readonly IColorChipRecordTanPhuBacNinhPdf _colorChipRecordTanPhuBacNinhPdf;
 
 
         public ColorChipManufacturingRecordPrintPdfService(IUnitOfWork unitOfWork, 
             ICurrentUser currentUser, 
             IColorChipRecordLandscapePdf colorChipRecordLandscapePdf, 
             IColorChipRecordPortraitPdf colorChipRecordPortraitPdf, 
-            IColorChipRecordTanPhuPdf colorChipRecordTanPhuPdf)
+            IColorChipRecordTanPhuPdf colorChipRecordTanPhuPdf,
+            IColorChipRecordTanPhuBacNinhPdf colorChipRecordTanPhuBacNinhPdf)
         {
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;
             _colorChipRecordLandscapePdf = colorChipRecordLandscapePdf;
             _colorChipRecordPortraitPdf = colorChipRecordPortraitPdf;
             _colorChipRecordTanPhuPdf = colorChipRecordTanPhuPdf;
+            _colorChipRecordTanPhuBacNinhPdf = colorChipRecordTanPhuBacNinhPdf;
         }
 
         public async Task<OperationResult<byte[]>> PrintByIdAsync(Guid colorChipMfgRecordId, CancellationToken ct = default)
@@ -46,16 +50,25 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
             var data = await _unitOfWork.ColorChipManufacturingRecordReadRepository
                 .GetPdfDataByIdAsync(colorChipMfgRecordId, ct);
 
+            var userId = _currentUser.EmployeeId;
+
+            var userName = await _unitOfWork.EmployeesRepository.Query()
+                .Where(x => x.EmployeeId == userId)
+                .Select(x => x.FullName)
+                .FirstOrDefaultAsync(ct);
+
+
             if (data == null)
                 return OperationResult<byte[]>.Fail("Không tìm thấy ColorChipManufacturingRecord.");
 
-            var model = MapToPdfModel(data);
+            var model = MapToPdfModel(data, userName);
 
             var pdfBytes = data.FormStyle switch
             {
                 FormStyle.Chips2 => _colorChipRecordPortraitPdf.Render(model),
                 FormStyle.Chips3 => _colorChipRecordLandscapePdf.Render(model),
                 FormStyle.ChipsTanPhu => _colorChipRecordTanPhuPdf.Render(model),
+                FormStyle.ChipsTanPhuBacNinh => _colorChipRecordTanPhuBacNinhPdf.Render(model),
                 FormStyle.Chips2_NonStandard => _colorChipRecordPortraitPdf.Render(model),
                 _ => _colorChipRecordLandscapePdf.Render(model)
             };
@@ -67,8 +80,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
             return OperationResult<byte[]>.Ok(pdfBytes);
         }
 
-        private static ColorChipRecordPdfModel MapToPdfModel(ColorChipManufacturingRecordPdfData data)
+        private static ColorChipRecordPdfModel MapToPdfModel(ColorChipManufacturingRecordPdfData data, string userName)
         {
+
             return new ColorChipRecordPdfModel
             {
                 BatchNo = data.ManufacturingFormulaExternalId
@@ -82,7 +96,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
                 Code = data.ProductExternalId
                     ?? string.Empty,
 
-                Color = data.ColorName
+                Color = data.ProductName
                     ?? string.Empty,
 
                 AddRate = data.ProductUsageRate != null
@@ -93,8 +107,12 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
                     ? data.Resin
                     : data.ResinType.ToString(),
 
-                PreparedBy = data.PreparedByName ?? string.Empty,
+                PreparedBy = userName ?? string.Empty,
                 Signature = string.Empty,
+
+                StandardText = data.StandardFormula
+                    ?? data.StandardFormula
+                    ?? string.Empty,
 
                 Machine = data.Machine,
                 TemperatureLimit = data.TemperatureLimit,
@@ -104,6 +122,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
                 Electrostatic = data.Electrostatic,
                 Note = data.Note,
                 PrintNote = data.PrintNote,
+                DeltaE = data.DeltaE,
 
                 RecordTypeText = string.Empty,
                 ResinTypeText = data.ResinType.ToString(),

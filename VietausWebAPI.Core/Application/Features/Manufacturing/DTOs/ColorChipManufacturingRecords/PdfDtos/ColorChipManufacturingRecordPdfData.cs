@@ -18,7 +18,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.ColorChipMa
         public DateTime? RecordDate { get; set; }
         public DateTime CreatedDate { get; set; }
 
+
         public string? Machine { get; set; }
+        public string? StandardFormula { get; set; }
         public string? Resin { get; set; }
         public string? TemperatureLimit { get; set; }
         public string? SizeText { get; set; }
@@ -27,6 +29,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.ColorChipMa
         public bool? Electrostatic { get; set; }
         public string? Note { get; set; }
         public string? PrintNote { get; set; }
+        public string? DeltaE { get; set; }
 
         public string? MfgProductionOrderExternalId { get; set; }
         public string? CustomerName { get; set; }

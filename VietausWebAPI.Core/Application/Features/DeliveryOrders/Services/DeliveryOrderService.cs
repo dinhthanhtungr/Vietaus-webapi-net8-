@@ -401,7 +401,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                     CreateBy = po.CreatedBy,
                     CreateDate = po.CreatedDate,
 
-
+                    DeliveryPrice = po.DeliveryPrice,
                     Receiver = po.Receiver,
                     DeliveryAddress = po.DeliveryAddress,
                     PaymentType = po.PaymentType,
@@ -497,6 +497,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                 TaxNumber = request.TaxNumber,
                 PhoneSnapshot = request.PhoneSnapshot,
 
+                DeliveryPrice = request.DeliveryPrice,
                 RequiresUnloading = request.RequiresUnloading,
 
                 Note = request.Note,
@@ -612,7 +613,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
         /// <param name="req"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<OperationResult> UpdateAsync(PatchDeliveryOrder req, CancellationToken ct = default)
+        public async Task<OperationResult> UpdateAsync(PatchDeliveryOrder req, CancellationToken ct = default) 
         {
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -636,6 +637,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                 // ===== UPDATE HEADER =====
                 PatchHelper.SetIfRef(req.Note, () => existingDO.Note, v => existingDO.Note = v);
                 PatchHelper.SetIfRef(req.Status, () => existingDO.Status, v => existingDO.Status = v ?? string.Empty);
+                PatchHelper.SetIfNullable(req.DeliveryPrice, () => existingDO.DeliveryPrice, v => existingDO.DeliveryPrice = v);
 
                 // ===== SYNC Deliverers (replace set) =====
                 if (req.Deliverers != null)

@@ -63,6 +63,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRe
         /// <returns></returns>
         Task<OperationResult> UpdateSampleRequestAsync(UpdateSampleRequest sampleRequest, CancellationToken ct = default);
 
-        Task<OperationResult<string>> UpdateColourCodeName (Guid ProductId, string newLastPrefix, CancellationToken ct = default);
+        Task<OperationResult<string>> UpdateColourCodeName (
+            Guid SampleRequestId, 
+            string newLastPrefix, 
+            CancellationToken ct = default);
     }
 }

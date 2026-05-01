@@ -688,13 +688,31 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     UnitPrice = x.UnitPrice,
                     TotalPrice = x.TotalPrice,
 
+                    //MaterialNameSnapshot = x.itemType == ItemType.Material
+                    //    ? (x.Material != null ? x.Material.Name : "")
+                    //    : (x.Product != null ? x.Product.Name : ""),
+
+                    //MaterialExternalIdSnapshot = x.itemType == ItemType.Material
+                    //    ? (x.Material != null ? x.Material.ExternalId : "")
+                    //    : (x.Product != null ? x.Product.ColourCode : ""),
+
+
                     MaterialNameSnapshot = x.itemType == ItemType.Material
-                        ? (x.Material != null ? x.Material.Name : "")
-                        : (x.Product != null ? x.Product.Name : ""),
+                        ? (x.Material != null ? x.Material.Name : x.MaterialNameSnapshot)
+                        : (x.Product != null
+                            ? $"{x.Product.Name}"
+                            : x.MaterialNameSnapshot),
 
                     MaterialExternalIdSnapshot = x.itemType == ItemType.Material
-                        ? (x.Material != null ? x.Material.ExternalId : "")
-                        : (x.Product != null ? x.Product.ColourCode : ""),
+                        ? (x.Material != null ? x.Material.ExternalId : x.MaterialExternalIdSnapshot)
+                        : (x.Product != null
+                            ? x.Product.SampleRequests
+                                .Where(sr => sr.IsActive)
+                                .OrderByDescending(sr => sr.CreatedDate)
+                                .Select(sr => sr.ExternalId)
+                                .FirstOrDefault()
+                            : x.MaterialExternalIdSnapshot),
+
                     Unit = x.Unit,
                     IsActive = x.IsActive
                 })
@@ -823,13 +841,31 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                                 CategoryId = m.CategoryId,
                                 Quantity = m.Quantity,
                                 Unit = m.Unit,
-                                MaterialNameSnapshot = m.itemType == ItemType.Material
-                                    ? (m.Material != null ? m.Material.Name : "")
-                                    : (m.Product != null ? m.Product.Name : ""),
+                                //MaterialNameSnapshot = m.itemType == ItemType.Material
+                                //    ? (m.Material != null ? m.Material.Name : "")
+                                //    : (m.Product != null ? m.Product.Name : ""),
+
+                                //MaterialExternalIdSnapshot = m.itemType == ItemType.Material
+                                //    ? (m.Material != null ? m.Material.ExternalId : "")
+                                //    : (m.Product != null ? m.Product.ColourCode : ""),
+
+                                MaterialNameSnapshot = m    .itemType == ItemType.Material
+                                    ? (m.Material != null ? m.Material.Name : m.MaterialNameSnapshot)
+                                    : (m.Product != null
+                                        ? $"{m.Product.Name}"
+                                        : m.MaterialNameSnapshot),
 
                                 MaterialExternalIdSnapshot = m.itemType == ItemType.Material
-                                    ? (m.Material != null ? m.Material.ExternalId : "")
-                                    : (m.Product != null ? m.Product.ColourCode : ""),
+                                    ? (m.Material != null ? m.Material.ExternalId : m.MaterialExternalIdSnapshot)
+                                    : (m.Product != null
+                                        ? m.Product.SampleRequests
+                                            .Where(sr => sr.IsActive)
+                                            .OrderByDescending(sr => sr.CreatedDate)
+                                            .Select(sr => sr.ExternalId)
+                                            .FirstOrDefault()
+                                        : m.MaterialExternalIdSnapshot),
+
+
                                 FallbackUnitPrice = m.UnitPrice
                             })
                             .ToList()
@@ -879,13 +915,24 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                                 CategoryId = m.CategoryId,
                                 Quantity = m.Quantity,
                                 Unit = m.Unit,
+
+
                                 MaterialNameSnapshot = m.itemType == ItemType.Material
-                                    ? (m.Material != null ? m.Material.Name : "")
-                                    : (m.Product != null ? m.Product.Name : ""),
+                                    ? (m.Material != null ? m.Material.Name : m.MaterialNameSnapshot)
+                                    : (m.Product != null
+                                        ? $"{m.Product.Name}"
+                                        : m.MaterialNameSnapshot),
 
                                 MaterialExternalIdSnapshot = m.itemType == ItemType.Material
-                                    ? (m.Material != null ? m.Material.ExternalId : "")
-                                    : (m.Product != null ? m.Product.ColourCode : ""),
+                                    ? (m.Material != null ? m.Material.ExternalId : m.MaterialExternalIdSnapshot)
+                                    : (m.Product != null
+                                        ? m.Product.SampleRequests
+                                            .Where(sr => sr.IsActive)
+                                            .OrderByDescending(sr => sr.CreatedDate)
+                                            .Select(sr => sr.ExternalId)
+                                            .FirstOrDefault()
+                                        : m.MaterialExternalIdSnapshot),
+
                                 FallbackUnitPrice = m.UnitPrice
                             })
                             .ToList()
@@ -1054,13 +1101,30 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             UnitPrice = i.UnitPrice,
                             TotalPrice = i.TotalPrice,
 
+                            //MaterialNameSnapshot = i.itemType == ItemType.Material
+                            //        ? (i.Material != null ? i.Material.Name : "")
+                            //        : (i.Product != null ? i.Product.Name : ""),
+
+                            //MaterialExternalIdSnapshot = i.itemType == ItemType.Material
+                            //        ? (i.Material != null ? i.Material.ExternalId : "")
+                            //        : (i.Product != null ? i.Product.ColourCode : ""),
+
                             MaterialNameSnapshot = i.itemType == ItemType.Material
-                                    ? (i.Material != null ? i.Material.Name : "")
-                                    : (i.Product != null ? i.Product.Name : ""),
+                                ? (i.Material != null ? i.Material.Name : i.MaterialNameSnapshot)
+                                : (i.Product != null
+                                    ? $"{i.Product.Name}"
+                                    : i.MaterialNameSnapshot),
 
                             MaterialExternalIdSnapshot = i.itemType == ItemType.Material
-                                    ? (i.Material != null ? i.Material.ExternalId : "")
-                                    : (i.Product != null ? i.Product.ColourCode : ""),
+                                ? (i.Material != null ? i.Material.ExternalId : i.MaterialExternalIdSnapshot)
+                                : (i.Product != null
+                                    ? i.Product.SampleRequests
+                                        .Where(sr => sr.IsActive)
+                                        .OrderByDescending(sr => sr.CreatedDate)
+                                        .Select(sr => sr.ExternalId)
+                                        .FirstOrDefault()
+                                    : i.MaterialExternalIdSnapshot),
+
                             Unit = i.Unit,
                             IsActive = true
                         })
@@ -1203,13 +1267,30 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             CategoryId = m.CategoryId,
                             Quantity = m.Quantity,
                             Unit = m.Unit,
-                            MaterialNameSnapshot = m.itemType == ItemType.Material
-                                    ? (m.Material != null ? m.Material.Name : "")
-                                    : (m.Product != null ? m.Product.Name : ""),
 
+                            //MaterialNameSnapshot = m.itemType == ItemType.Material
+                            //        ? (m.Material != null ? m.Material.Name : "")
+                            //        : (m.Product != null ? m.Product.Name : ""),
+
+                            //MaterialExternalIdSnapshot = m.itemType == ItemType.Material
+                            //        ? (m.Material != null ? m.Material.ExternalId : "")
+                            //        : (m.Product != null ? m.Product.ColourCode : ""),
+
+                            MaterialNameSnapshot = m.itemType == ItemType.Material
+                                ? (m.Material != null ? m.Material.Name : m.MaterialNameSnapshot)
+                                : (m.Product != null
+                                    ? $"{m.Product.Name}"
+                                    : m.MaterialNameSnapshot),
                             MaterialExternalIdSnapshot = m.itemType == ItemType.Material
-                                    ? (m.Material != null ? m.Material.ExternalId : "")
-                                    : (m.Product != null ? m.Product.ColourCode : ""),
+                                ? (m.Material != null ? m.Material.ExternalId : m.MaterialExternalIdSnapshot)
+                                : (m.Product != null
+                                    ? m.Product.SampleRequests
+                                        .Where(sr => sr.IsActive)
+                                        .OrderByDescending(sr => sr.CreatedDate)
+                                        .Select(sr => sr.ExternalId)
+                                        .FirstOrDefault()
+                                    : m.MaterialExternalIdSnapshot),
+
                         }
                     })
                     .ToListAsync(ct)
@@ -1234,13 +1315,22 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             CategoryId = m.CategoryId,
                             Quantity = m.Quantity,
                             Unit = m.Unit,
-                            MaterialNameSnapshot = m.itemType == ItemType.Material
-                                    ? (m.Material != null ? m.Material.Name : "")
-                                    : (m.Product != null ? m.Product.Name : ""),
 
+
+                            MaterialNameSnapshot = m.itemType == ItemType.Material
+                                ? (m.Material != null ? m.Material.Name : m.MaterialNameSnapshot)
+                                : (m.Product != null
+                                    ? $"{m.Product.Name}"
+                                    : m.MaterialNameSnapshot),
                             MaterialExternalIdSnapshot = m.itemType == ItemType.Material
-                                    ? (m.Material != null ? m.Material.ExternalId : "")
-                                    : (m.Product != null ? m.Product.ColourCode : ""),
+                                ? (m.Material != null ? m.Material.ExternalId : m.MaterialExternalIdSnapshot)
+                                : (m.Product != null
+                                    ? m.Product.SampleRequests
+                                        .Where(sr => sr.IsActive)
+                                        .OrderByDescending(sr => sr.CreatedDate)
+                                        .Select(sr => sr.ExternalId)
+                                        .FirstOrDefault()
+                                    : m.MaterialExternalIdSnapshot),
                         }
                     })
                     .ToListAsync(ct)
@@ -1665,6 +1755,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     existing.TotalPrice = req.MfgTotalPrice.Value;
 
                 MfgProductionOrder? mpoEntity = null;
+                var shouldLogFormulaSuccess = false;
 
                 if (!req.mfgProductionOrderId.HasValue)
                     return OperationResult.Fail("Thiếu MfgProductionOrderId.");
@@ -1735,6 +1826,11 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         await _unitOfWork.ProductionSelectVersionRepository.AddAsync(newPsv, ct);
                     }
 
+                    else if (activeOfThisFormula.ValidFrom == null)
+                    {
+                        activeOfThisFormula.ValidFrom = now;
+                    }
+
                     // BE tự quyết định status
                     var isMpoFormulaRequested =
                         string.Equals(mpoEntity.Status, ManufacturingProductOrder.FormulaRequested.ToString(), StringComparison.OrdinalIgnoreCase);
@@ -1749,6 +1845,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         mpoEntity.Status = ManufacturingProductOrder.FormulaSuccess.ToString();
                         mpoEntity.UpdatedBy = userId;
                         mpoEntity.UpdatedDate = now;
+                        shouldLogFormulaSuccess = true;
                     }
                     else
                     {
@@ -1759,13 +1856,12 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     existing.UpdatedBy = userId;
                     existing.UpdatedDate = now;
                 }
-
                 // =====================================================
                 // 2) STANDARD
                 // =====================================================
                 if (req.mfgProductionOrderId.HasValue && productId != Guid.Empty)
                 {
-                    if (req.IsStandard)
+                    if (req.IsStandard == true)
                     {
                         var currentStandards = await _unitOfWork.ProductStandardFormulaRepository
                             .Query(track: true)
@@ -1775,17 +1871,19 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                                 psf.ValidTo == null)
                             .ToListAsync(ct);
 
-                        foreach (var psf in currentStandards)
-                        {
-                            psf.ValidTo = now;
-                            psf.ClosedBy = userId;
-                        }
-
                         var hasCurrentStdForThisFormula = currentStandards.Any(psf =>
                             psf.ManufacturingFormulaId == existing.ManufacturingFormulaId);
 
+                        // Chỉ khi công thức hiện tại chưa phải standard active
+                        // thì mới đóng standard cũ và mở standard mới
                         if (!hasCurrentStdForThisFormula)
                         {
+                            foreach (var psf in currentStandards)
+                            {
+                                psf.ValidTo = now;
+                                psf.ClosedBy = userId;
+                            }
+
                             var newStd = new ProductStandardFormula
                             {
                                 ProductStandardFormulaId = Guid.CreateVersion7(),
@@ -1802,7 +1900,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             await _unitOfWork.ProductStandardFormulaRepository.AddAsync(newStd, ct);
                         }
                     }
-                    else
+                    else if (req.IsStandard == false)
                     {
                         var currentStdForThisFormula = await _unitOfWork.ProductStandardFormulaRepository
                             .Query(track: true)
@@ -2004,6 +2102,19 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         if (!Equals(before, after))
                             materialChanged = true;
                     }
+                }
+
+                if (shouldLogFormulaSuccess && mpoEntity != null)
+                {
+                    await _TimelineService.AddEventLogAsync(new EventLogModels
+                    {
+                        employeeId = userId,
+                        eventType = EventType.ManufacturingProductOrder,
+                        sourceCode = mpoEntity.ExternalId ?? string.Empty,
+                        sourceId = mpoEntity.MfgProductionOrderId,
+                        status = ManufacturingProductOrder.FormulaSuccess.ToString(),
+                        note = $"QC xác nhận công thức {existing.ExternalId} vào {now:dd/MM/yyyy HH:mm:ss} bởi {_currentUser.personName}"
+                    }, ct);
                 }
 
                 await _unitOfWork.SaveChangesAsync();
@@ -2328,19 +2439,51 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                                     v.ManufacturingFormula.Name,
                                     v.MfgProductionOrder.FormulaExternalIdSnapshot,
 
+
+                                    v.ManufacturingFormula.SourceType,
+                                    v.ManufacturingFormula.SourceManufacturingExternalIdSnapshot,
+                                    v.ManufacturingFormula.SourceVUExternalIdSnapshot,
+
+                                    v.ManufacturingFormula.CreatedDate,
+
                                     Materials = v.ManufacturingFormula.ManufacturingFormulaMaterials
                                         .Where(m => m.IsActive)
                                         .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
                                         .ThenBy(x => x.MaterialExternalIdSnapshot)
                                         .Select(m => new FormulaPDFMaterialDTOs
                                         {
-                                            ExternalId = m.itemType == ItemType.Material
-                                                ? (m.Material != null ? (m.Material.ExternalId ?? "") : "")
-                                                : (m.Product != null ? (m.Product.ColourCode ?? "") : ""),
+                                            //ExternalId = m.itemType == ItemType.Material
+                                            //    ? (m.Material != null ? (m.Material.ExternalId ?? "") : "")
+                                            //    : (m.Product != null ? (m.Product.ColourCode ?? "") : ""),
+
+                                            //MaterialName = m.itemType == ItemType.Material
+                                            //    ? (m.Material != null ? (m.Material.Name ?? "") : "")
+                                            //    : (m.Product != null ? (m.Product.Name ?? "") : ""),
+
 
                                             MaterialName = m.itemType == ItemType.Material
-                                                ? (m.Material != null ? (m.Material.Name ?? "") : "")
-                                                : (m.Product != null ? (m.Product.Name ?? "") : ""),
+                                                ? (m.Material != null
+                                                    ? m.Material.Name ?? string.Empty
+                                                    : m.MaterialNameSnapshot ?? string.Empty)
+                                                : (m.Product != null
+                                                    ? string.IsNullOrWhiteSpace(m.Product.ColourCode)
+                                                        ? m.Product.Name ?? string.Empty
+                                                        : $"[{m.Product.ColourCode}] {m.Product.Name ?? string.Empty}"
+                                                    : m.MaterialNameSnapshot ?? string.Empty),
+
+
+                                            ExternalId = m.itemType == ItemType.Material
+                                                ? (m.Material != null
+                                                    ? m.Material.ExternalId ?? string.Empty
+                                                    : m.MaterialExternalIdSnapshot ?? string.Empty)
+                                                : (m.Product != null
+                                                    ? m.Product.SampleRequests
+                                                        .Where(sr => sr.IsActive)
+                                                        .OrderByDescending(sr => sr.CreatedDate)
+                                                        .Select(sr => sr.ExternalId)
+                                                        .FirstOrDefault() ?? m.MaterialExternalIdSnapshot ?? string.Empty
+                                                    : m.MaterialExternalIdSnapshot ?? string.Empty),
+
 
                                             CategoryId = m.CategoryId,
                                             Quantity = m.Quantity,
@@ -2361,6 +2504,16 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         $"MPO {data.ProductionOrderNo} chưa chọn công thức VA hiện hành (ProductionSelectVersion.ValidTo == null).");
 
                 var materials = data.Current.Formula.Materials ?? new List<FormulaPDFMaterialDTOs>();
+
+
+                var merchandiseOrderInfo = await _unitOfWork.MfgOrderPORepository.Query()
+                    .Where(x => x.MfgProductionOrderId == mfgProductionOrderId && x.IsActive)
+                    .Select(x => new
+                    {
+                        MerchandiseOrderExternalId = x.Detail.MerchandiseOrder.ExternalId,
+                        PONo = x.Detail.MerchandiseOrder.PONo
+                    })
+                    .FirstOrDefaultAsync(ct);
 
 
                 await FillAndPersistLotNoIfNeededAsync(
@@ -2393,21 +2546,36 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 var currentFormulaId = data.Current.ManufacturingFormulaId;
                 var currentFormulaExternalId = data.Current.Formula.ExternalId?.Trim();
 
+
+                var copiedFromExternalId =
+                        data.Current.Formula.SourceType == FormulaSource.FromVA
+                            ? data.Current.Formula.SourceManufacturingExternalIdSnapshot
+                            : data.Current.Formula.SourceVUExternalIdSnapshot;
+
+                var currentFormulaCreatedDate = data.Current.Formula.CreatedDate;
+
+
                 var formulaSelectList = string.Join("    ",
                     formulaHistory
                         .Where(x => !string.IsNullOrWhiteSpace(x.FormulaExternalId))
                         .Where(x =>
                             x.ManufacturingFormulaId != currentFormulaId
+                            && x.ValidFrom < currentFormulaCreatedDate
                             && !string.Equals(
                                 x.FormulaExternalId!.Trim(),
                                 currentFormulaExternalId,
+                                StringComparison.OrdinalIgnoreCase)
+                            && !string.Equals(
+                                x.FormulaExternalId!.Trim(),
+                                copiedFromExternalId,
                                 StringComparison.OrdinalIgnoreCase))
                         .GroupBy(x => x.FormulaExternalId!.Trim(), StringComparer.OrdinalIgnoreCase)
                         .Select(g => g.OrderByDescending(x => x.ValidFrom).First())
                         .OrderByDescending(x => x.ValidFrom)
-                        .Take(8)
+                        .Take(4)
                         .Select(x => x.FormulaExternalId!.Trim())
                 );
+
 
 
                 // Build DTO đúng format VU để reuse _FormulaPDF
@@ -2419,6 +2587,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     CreatedDate = data.CreatedDate,
 
                     FormulaSelectList = formulaSelectList,
+                    copiedFromExternalId = copiedFromExternalId,
 
                     getManufacturingVUFormula = new GetManufacturingVUFormula
                     {
@@ -2434,6 +2603,10 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         Name = data.Name,
                         CustomerCode = data.CustomerCode,
                         CustomerName = data.CustomerName,
+                        MerchandiseOrderExternalId = merchandiseOrderInfo?.MerchandiseOrderExternalId,
+                        PONo = merchandiseOrderInfo?.PONo,
+
+
                         LabNote = data.LabNote,
                         Requirement = data.Requirement,
                         PlpuNote = data.PlpuNote

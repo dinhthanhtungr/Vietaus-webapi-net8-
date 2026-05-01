@@ -19,6 +19,7 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
             services.AddScoped<IWarehouseRequestRepository, WarehouseRequestRepository>();
 
 
+            services.AddScoped<IWarehouseShelfLedgerReadRepository, WarehouseShelfLedgerReadRepository>();
             services.AddScoped<IWarehouseVoucherReadRepository, WarehouseVoucherReadRepository>();
             services.AddScoped<IWarehouseVoucherDetailReadRepository, WarehouseVoucherDetailReadRepository>();
 

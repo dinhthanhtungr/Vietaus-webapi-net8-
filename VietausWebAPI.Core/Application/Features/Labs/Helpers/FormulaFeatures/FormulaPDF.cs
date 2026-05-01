@@ -129,9 +129,13 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                             t.Cell().Element(GridCell).Text(tx =>
                             {
                                 tx.Span("Khách hàng: ").FontSize(labelSize);
-                                tx.Span(templateOnly ? "" : $"{($"{s.CustomerCode} ".Trim(' ', '-'))}")
+
+                                tx.Span(templateOnly
+                                    ? ""
+                                    : $"{s.CustomerCode ?? ""} | {s.MerchandiseOrderExternalId ?? ""} | {s.PONo ?? ""}")
                                   .FontSize(valueSize).Black();
                             });
+
 
                             t.Cell().Element(GridCell).Text(tx =>
                             {
@@ -263,24 +267,71 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                 ? ""
                 : (d.FormulaSelectList ?? "");
 
-            c.Column(col =>
-            {
-                col.Item().Element(HeaderCell)
-                    .Text("Lịch sử công thức đã chọn")
-                    .FontSize(9)
-                    .SemiBold();
+            var copiedFormulaText = string.IsNullOrWhiteSpace(d.copiedFromExternalId)
+                ? "-"
+                : d.copiedFromExternalId;
 
-                col.Item().Element(BodyCell).Text(text =>
-                {
-                    if (templateOnly || string.IsNullOrWhiteSpace(formulaHistoryText))
-                    {
-                        text.Span("-").FontSize(9);
-                        return;
-                    }
 
-                    text.Span(formulaHistoryText).FontSize(9);
-                });
-            });
+            c.Border(1)
+             .BorderColor(Colors.Black)
+             .Row(row =>
+             {
+                 row.ConstantItem(180).BorderRight(1).BorderColor(Colors.Black).Column(left =>
+                 {
+                     left.Item()
+                         .Background(Colors.Grey.Lighten2)
+                         .PaddingVertical(4)
+                         .PaddingHorizontal(6)
+                         .Text("Công thức copy từ")
+                         .FontSize(9)
+                         .SemiBold();
+
+                     left.Item()
+                         .PaddingVertical(4)
+                         .PaddingHorizontal(6)
+                         .MinHeight(24)
+                         .AlignMiddle()
+                         .Text(text =>
+                         {
+                             if (templateOnly || string.IsNullOrWhiteSpace(copiedFormulaText))
+                             {
+                                 text.Span("-").FontSize(9);
+                                 return;
+                             }
+
+                             text.Span(copiedFormulaText).FontSize(9);
+                         });
+                 });
+
+                 row.RelativeItem().Column(right =>
+                 {
+                     right.Item()
+                         .Background(Colors.Grey.Lighten2)
+                         .PaddingVertical(4)
+                         .PaddingHorizontal(6)
+                         .Text("Lịch sử công thức đã từng chạy")
+                         .FontSize(9)
+                         .SemiBold();
+
+                     right.Item()
+                         .PaddingVertical(4)
+                         .PaddingHorizontal(6)
+                         .MinHeight(24)
+                         .AlignMiddle()
+                         .Text(text =>
+                         {
+                             if (templateOnly || string.IsNullOrWhiteSpace(formulaHistoryText))
+                             {
+                                 text.Span("-").FontSize(9);
+                                 return;
+                             }
+
+                             text.Span(formulaHistoryText).FontSize(9);
+                         });
+                 });
+             });
+
+
 
             static IContainer HeaderCell(IContainer x) =>
                 x.Border(1)
@@ -485,8 +536,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
             if (categoryId == POLYMER_ID) return "Plastic/Nhựa";
             return "Others/Khác";
         }
-
-
 
         private void BuildMachineSetupSection(IContainer c, ManufacturingVUPDF d, bool templateOnly)
         {

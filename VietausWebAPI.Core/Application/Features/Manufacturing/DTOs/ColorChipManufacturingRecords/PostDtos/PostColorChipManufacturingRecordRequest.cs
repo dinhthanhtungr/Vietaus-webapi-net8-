@@ -12,6 +12,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.ColorChipMa
         public Guid? MfgProductionOrderId { get; set; }
         public Guid? ManufacturingFormulaId { get; set; }
 
+        public string? StandardFormula { get; set; }
         public string? Machine { get; set; }
         public string? Resin { get; set; }
         public string? TemperatureLimit { get; set; }
@@ -20,6 +21,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.ColorChipMa
         public decimal? PelletWeightGram { get; set; }
         public string? NetWeightGram { get; set; }
         public bool? Electrostatic { get; set; }
+        public string? DeltaE { get; set; }
 
         public DateTime? RecordDate { get; set; }
         public string? Note { get; set; }

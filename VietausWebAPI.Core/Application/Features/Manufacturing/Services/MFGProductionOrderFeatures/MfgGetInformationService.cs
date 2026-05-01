@@ -143,13 +143,30 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                             UnitPrice = i.UnitPrice,
                             TotalPrice = i.TotalPrice,
 
+                            //MaterialNameSnapshot = i.itemType == ItemType.Material
+                            //    ? (i.Material != null ? i.Material.Name : i.MaterialNameSnapshot)
+                            //    : (i.Product != null ? i.Product.Name : i.MaterialNameSnapshot),
+
+                            //MaterialExternalIdSnapshot = i.itemType == ItemType.Material
+                            //    ? (i.Material != null ? i.Material.ExternalId : i.MaterialNameSnapshot)
+                            //    : (i.Product != null ? i.Product.ColourCode : i.MaterialNameSnapshot),
+
                             MaterialNameSnapshot = i.itemType == ItemType.Material
                                 ? (i.Material != null ? i.Material.Name : i.MaterialNameSnapshot)
-                                : (i.Product != null ? i.Product.Name : i.MaterialNameSnapshot),
+                                : (i.Product != null
+                                    ? $"{i.Product.Name}"
+                                    : i.MaterialNameSnapshot),
 
-                            MaterialExternalIdSnapshot = i.itemType == ItemType.Material
-                                ? (i.Material != null ? i.Material.ExternalId : i.MaterialNameSnapshot)
-                                : (i.Product != null ? i.Product.ColourCode : i.MaterialNameSnapshot),
+                                                        MaterialExternalIdSnapshot = i.itemType == ItemType.Material
+                                ? (i.Material != null ? i.Material.ExternalId : i.MaterialExternalIdSnapshot)
+                                : (i.Product != null
+                                    ? i.Product.SampleRequests
+                                        .Where(sr => sr.IsActive)
+                                        .OrderByDescending(sr => sr.CreatedDate)
+                                        .Select(sr => sr.ExternalId)
+                                        .FirstOrDefault()
+                                    : i.MaterialExternalIdSnapshot),
+
 
                             Unit = i.Unit,
                             IsActive = i.IsActive,
@@ -194,13 +211,31 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                             UnitPrice = i.UnitPrice,
                             TotalPrice = i.TotalPrice,
 
+                            //MaterialNameSnapshot = i.itemType == ItemType.Material
+                            //    ? (i.Material != null ? i.Material.Name : i.MaterialNameSnapshot)
+                            //    : (i.Product != null ? i.Product.Name : i.MaterialNameSnapshot),
+
+                            //MaterialExternalIdSnapshot = i.itemType == ItemType.Material
+                            //    ? (i.Material != null ? i.Material.ExternalId : i.MaterialNameSnapshot)
+                            //    : (i.Product != null ? i.Product.ColourCode : i.MaterialNameSnapshot),
+
                             MaterialNameSnapshot = i.itemType == ItemType.Material
                                 ? (i.Material != null ? i.Material.Name : i.MaterialNameSnapshot)
-                                : (i.Product != null ? i.Product.Name : i.MaterialNameSnapshot),
+                                : (i.Product != null
+                                    ? $"{i.Product.Name}"
+                                    : i.MaterialNameSnapshot),
 
-                            MaterialExternalIdSnapshot = i.itemType == ItemType.Material
-                                ? (i.Material != null ? i.Material.ExternalId : i.MaterialNameSnapshot)
-                                : (i.Product != null ? i.Product.ColourCode : i.MaterialNameSnapshot),
+                                                        MaterialExternalIdSnapshot = i.itemType == ItemType.Material
+                                ? (i.Material != null ? i.Material.ExternalId : i.MaterialExternalIdSnapshot)
+                                : (i.Product != null
+                                    ? i.Product.SampleRequests
+                                        .Where(sr => sr.IsActive)
+                                        .OrderByDescending(sr => sr.CreatedDate)
+                                        .Select(sr => sr.ExternalId)
+                                        .FirstOrDefault()
+                                    : i.MaterialExternalIdSnapshot),
+
+
                             Unit = i.Unit,
                             IsActive = i.IsActive,
                             LineNo = i.LineNo,
@@ -284,7 +319,8 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                         {
                             MerchandiseOrderDetailId = link.MerchandiseOrderDetailId,
                             MerchandiseOrderId = link.Detail.MerchandiseOrderId,
-                            MerchandiseOrderExternalId = link.Detail.MerchandiseOrder.ExternalId
+                            MerchandiseOrderExternalId = link.Detail.MerchandiseOrder.ExternalId,
+                            PONo = link.Detail.MerchandiseOrder.PONo
 
                         })
                         .FirstOrDefault()
@@ -302,6 +338,7 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                 MerchandiseOrderId = baseData.OrderLink?.MerchandiseOrderId ?? Guid.Empty,
                 MerchandiseOrderDetailId = baseData.OrderLink?.MerchandiseOrderDetailId ?? Guid.Empty,
                 MerchandiseOrderExternalId = baseData.OrderLink?.MerchandiseOrderExternalId,
+                PONo = baseData.OrderLink?.PONo,
 
                 CustomerNameSnapshot = baseData.CustomerNameSnapshot,
                 CustomerExternalIdSnapshot = baseData.CustomerExternalIdSnapshot,
@@ -409,13 +446,29 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                     UnitPrice = x.UnitPrice,
                     TotalPrice = x.TotalPrice,
 
-                    MaterialNameSnapshot = x.itemType == ItemType.Material
-                                ? (x.Material != null ? x.Material.Name : x.MaterialNameSnapshot)
-                                : (x.Product != null ? x.Product.Name : x.MaterialNameSnapshot),
+                    //MaterialNameSnapshot = x.itemType == ItemType.Material
+                    //            ? (x.Material != null ? x.Material.Name : x.MaterialNameSnapshot)
+                    //            : (x.Product != null ? x.Product.Name : x.MaterialNameSnapshot),
 
-                    MaterialExternalIdSnapshot = x.itemType == ItemType.Material
-                                ? (x.Material != null ? x.Material.ExternalId : x.MaterialNameSnapshot)
-                                : (x.Product != null ? x.Product.ColourCode : x.MaterialNameSnapshot),
+                    //MaterialExternalIdSnapshot = x.itemType == ItemType.Material
+                    //            ? (x.Material != null ? x.Material.ExternalId : x.MaterialNameSnapshot)
+                    //            : (x.Product != null ? x.Product.ColourCode : x.MaterialNameSnapshot),
+
+                    MaterialNameSnapshot = x.itemType == ItemType.Material
+                        ? (x.Material != null ? x.Material.Name : x.MaterialNameSnapshot)
+                        : (x.Product != null
+                            ? $"{x.Product.Name}"
+                            : x.MaterialNameSnapshot),
+                                        MaterialExternalIdSnapshot = x.itemType == ItemType.Material
+                        ? (x.Material != null ? x.Material.ExternalId : x.MaterialExternalIdSnapshot)
+                        : (x.Product != null
+                            ? x.Product.SampleRequests
+                                .Where(sr => sr.IsActive)
+                                .OrderByDescending(sr => sr.CreatedDate)
+                                .Select(sr => sr.ExternalId)
+                                .FirstOrDefault()
+                            : x.MaterialExternalIdSnapshot),
+
                     Unit = x.Unit,
                     IsActive = x.IsActive,
                     LineNo = x.LineNo,

@@ -32,7 +32,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
 
                     //page.Header().Component(new HeaderComponent());
                     page.Content().Element(x => BuildContent(x, data));
-                    page.Footer().Component(new FooterComponent());
+                    page.Footer().Component(new MFGFooterComponent());
                 });
             });
 
@@ -553,12 +553,11 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                 });
 
                 // body: 1 hàng cao để ký (nhìn là biết ký ở đâu)
-                col.Item().Height(70).Row(r =>
+                col.Item().Height(50).Row(r =>
                 {
                     r.RelativeItem().Element(BodyBox).Column(c1 =>
                     {
-                        c1.Item().Text("Hàng đạt / Không đạt / Hao hụt").FontSize(8);
-                        c1.Item().PaddingTop(6).Text("☐ Hàng đạt    ☐ Hàng không đạt    ☐ Hao hụt").FontSize(8);
+
                     });
 
                     r.RelativeItem().Element(BodyBox).AlignCenter().AlignTop().Text("Ký & ghi rõ họ tên");
@@ -566,14 +565,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                     r.RelativeItem().Element(BodyBox).AlignCenter().AlignTop().Text("Ký & ghi rõ họ tên");
                 });
 
-                // date row (nhỏ thôi)
-                col.Item().Row(r =>
-                {
-                    r.RelativeItem().Element(DateBox).Text("Ngày hoàn thành: .......... / .......... / ..........").FontSize(8);
-                    r.RelativeItem().Element(DateBox).Text("Date: ....../....../......").FontSize(8);
-                    r.RelativeItem().Element(DateBox).Text("Date: ....../....../......").FontSize(8);
-                    r.RelativeItem().Element(DateBox).Text("Date: ....../....../......").FontSize(8);
-                });
+
             });
 
             static IContainer HeaderBox(IContainer x) =>

@@ -12,6 +12,7 @@ namespace VietausWebAPI.Core.Domain.Enums.Notifications
         ProductSampleCreated,
         ProductSampleUpdated,
         ProductSampleDeleted,
+        SampleRequestUpdated,
 
         // ==================== Merchandise Orders ====================
         MerchandiseOrderCreated,

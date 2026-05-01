@@ -60,7 +60,17 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.Manufactur
                   .OnDelete(DeleteBehavior.SetNull)
                   .HasConstraintName("fk_psv_closed_by");
 
-            entity.HasIndex(x => x.MfgProductionOrderId).HasDatabaseName("ix_psv_mpo");
+            entity.HasIndex(x => x.MfgProductionOrderId)
+                  .IsUnique()
+                  .HasFilter("valid_to IS NULL AND valid_from IS NOT NULL")
+                  .HasDatabaseName("ux_psv_one_active_per_mpo");
+
+            entity.HasIndex(x => x.MfgProductionOrderId)
+                  .IsUnique()
+                  .HasFilter("valid_to IS NULL AND valid_from IS NOT NULL")
+                  .HasDatabaseName("ux_psv_one_active_per_mpo");
+
+
             entity.HasIndex(x => x.ManufacturingFormulaId).HasDatabaseName("ix_psv_formula");
             entity.HasIndex(x => new { x.MfgProductionOrderId, x.ValidFrom })
                   .IsDescending(false, true).HasDatabaseName("ix_psv_mpo_validfrom_desc");

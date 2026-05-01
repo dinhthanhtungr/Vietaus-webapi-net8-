@@ -101,7 +101,8 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                         {
                             MerchandiseOrderDetailId = link.MerchandiseOrderDetailId,
                             MerchandiseOrderId = link.Detail.MerchandiseOrderId,
-                            MerchandiseOrderExternalId = link.Detail.MerchandiseOrder.ExternalId
+                            MerchandiseOrderExternalId = link.Detail.MerchandiseOrder.ExternalId,
+                            PONo = link.Detail.MerchandiseOrder.PONo,
                         })
                         .FirstOrDefault()
                 })
@@ -133,6 +134,7 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                 MerchandiseOrderId = baseData.OrderLink?.MerchandiseOrderId ?? Guid.Empty,
                 MerchandiseOrderDetailId = baseData.OrderLink?.MerchandiseOrderDetailId ?? Guid.Empty,
                 MerchandiseOrderExternalId = baseData.OrderLink?.MerchandiseOrderExternalId,
+                PONo = baseData.OrderLink?.PONo,
 
                 CustomerNameSnapshot = baseData.CustomerNameSnapshot,
                 CustomerExternalIdSnapshot = baseData.CustomerExternalIdSnapshot,
@@ -170,7 +172,7 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                 result.ManufacturingFormulaIdIsSelect = standard.ManufacturingFormulaId;
                 result.ManufacturingFormulaExternalIdIsSelect = standard.ExternalId;
 
-                var summaries = await GetStandardSummariesAsync(baseData.ProductId);
+                var summaries = await GetCurrentStandardSummaryAsync(baseData.ProductId);
 
                 // Nếu VU hiện tại khác VU của MPO trước đó thì chèn thêm dòng Improvement lên đầu danh sách.
                 if (shouldAddImprovement)
@@ -346,6 +348,54 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                     Id = x.ManufacturingFormulaId!.Value
                 })
                 .ToListAsync();
+        }
+
+        /// <summary>
+        /// Lấy đúng 1 summary Standard hiện hành của Product.
+        ///
+        /// Rule:
+        /// - cùng ProductId
+        /// - có ManufacturingFormulaId
+        /// - ValidTo == null
+        /// - ưu tiên bản mới nhất theo ValidFrom
+        /// </summary>
+        /// <param name="productId">Id của Product.</param>
+        /// <returns>Danh sách gồm 1 dòng Standard hiện hành hoặc rỗng nếu không có.</returns>
+        private async Task<List<GetMfgProductionOrderRWSummary>> GetCurrentStandardSummaryAsync(Guid productId)
+        {
+            var currentStandard = await _unitOfWork.ProductStandardFormulaRepository
+                .Query(false)
+                .Where(x =>
+                    x.ProductId == productId &&
+                    x.ManufacturingFormulaId != null &&
+                    x.ValidTo == null)
+                .OrderByDescending(x => x.ValidFrom)
+                .Select(x => new GetMfgProductionOrderRWSummary
+                {
+                    MfgProductionOrderId = _unitOfWork.ProductionSelectVersionRepository
+                        .Query(false)
+                        .Where(sv =>
+                            sv.ManufacturingFormulaId == x.ManufacturingFormulaId &&
+                            sv.MfgProductionOrder != null &&
+                            sv.MfgProductionOrder.ProductId == x.ProductId)
+                        .OrderByDescending(sv => sv.ValidFrom)
+                        .Select(sv => (Guid?)sv.MfgProductionOrderId)
+                        .FirstOrDefault(),
+                    FormulaType = FormulaType.Standard,
+                    ExternalId = x.ManufacturingFormula != null ? x.ManufacturingFormula.ExternalId : null,
+                    CreatedDate = x.ManufacturingFormula != null
+                        ? x.ManufacturingFormula.CreatedDate
+                        : x.ValidFrom,
+                    Note = !string.IsNullOrWhiteSpace(x.Note)
+                        ? x.Note
+                        : (x.ManufacturingFormula != null ? x.ManufacturingFormula.Note : null),
+                    Id = x.ManufacturingFormulaId!.Value
+                })
+                .FirstOrDefaultAsync();
+
+            return currentStandard != null
+                ? new List<GetMfgProductionOrderRWSummary> { currentStandard }
+                : new List<GetMfgProductionOrderRWSummary>();
         }
         /// <summary>
         /// Lấy danh sách các công thức đã từng được chọn trong ProductionSelectVersion

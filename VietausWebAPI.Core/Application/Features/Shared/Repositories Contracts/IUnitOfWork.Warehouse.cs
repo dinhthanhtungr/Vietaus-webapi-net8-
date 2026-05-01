@@ -15,6 +15,7 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts
         IWarehouseRequestDetailRepository WarehouseRequestDetailRepository { get; }
         IWarehouseRequestRepository WarehouseRequestRepository { get; }
 
+        IWarehouseShelfLedgerReadRepository WarehouseShelfLedgerReadRepository { get; }
         IWarehouseVoucherReadRepository WarehouseVoucherReadRepository { get; }
         IWarehouseVoucherDetailReadRepository WarehouseVoucherDetailReadRepository { get; }
     }

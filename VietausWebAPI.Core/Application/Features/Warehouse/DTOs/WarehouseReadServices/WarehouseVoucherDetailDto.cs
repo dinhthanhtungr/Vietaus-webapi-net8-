@@ -23,6 +23,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadSe
         public int? SlotId { get; set; }
         public int? PurposeId { get; set; }
         public bool IsIncrease { get; set; }
+        public DateTime? MovementDate { get; set; }
 
         public DateTime ExpiryDate { get; set; }
         public VoucherDetailType VoucherType { get; set; }

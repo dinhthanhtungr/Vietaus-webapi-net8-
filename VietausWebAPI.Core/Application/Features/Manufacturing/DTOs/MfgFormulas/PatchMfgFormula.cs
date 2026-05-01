@@ -23,7 +23,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas
         //public FormulaSource SourceType { get; set; }                     // "FromVA" hoặc "FromVU"
 
         public bool IsSelect { get; set; }
-        public bool IsStandard { get; set; }
+        public bool? IsStandard { get; set; }
         public string? Note { get; set; }
 
         public virtual ICollection<PatchMfgFormulaMaterial> ManufacturingFormulaMaterials { get; set; } = new List<PatchMfgFormulaMaterial>();

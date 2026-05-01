@@ -49,10 +49,14 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
                     FormStyle = request.FormStyle,
                     MfgProductionOrderId = request.MfgProductionOrderId,
                     ManufacturingFormulaId = request.ManufacturingFormulaId,
+                    
+                    StandardFormula = request.StandardFormula,
                     Machine = request.Machine,
                     Resin = request.Resin,
                     TemperatureLimit = request.TemperatureLimit ?? string.Empty,
                     SizeText = request.SizeText,
+                    DeltaE = request.DeltaE,
+
                     PelletWeightGram = request.PelletWeightGram,
                     NetWeightGram = request.NetWeightGram,
                     Electrostatic = request.Electrostatic,
@@ -84,10 +88,14 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
                         ManufacturingFormulaId = x.ManufacturingFormulaId,
                         ManufacturingFormulaExternalId = x.ManufacturingFormula != null ? x.ManufacturingFormula.ExternalId : null,
                         ManufacturingFormulaName = x.ManufacturingFormula != null ? x.ManufacturingFormula.Name : null,
+
+                        StandardFormula = x.StandardFormula,
                         Machine = x.Machine,
                         Resin = x.Resin,
                         TemperatureLimit = x.TemperatureLimit,
                         SizeText = x.SizeText,
+                        DeltaE = x.DeltaE,
+
                         PelletWeightGram = x.PelletWeightGram,
                         NetWeightGram = x.NetWeightGram,
                         Electrostatic = x.Electrostatic,

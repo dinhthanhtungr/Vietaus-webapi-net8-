@@ -49,13 +49,40 @@ public partial class Employee
     public string? Status { get; set; }
 
     public DateOnly? EndDate { get; set; }
-    public Company Company { get; set; } = default!;
     public bool IsActive { get; set; } = true;
+
+    public DateTime? CreatedDate { get; set; } = DateTime.Now;
+    public Guid? CreatedBy { get; set; }
+
+    public DateTime? UpdatedDate { get; set; }
+    public Guid? UpdatedBy { get; set; }
+
+    public Company Company { get; set; } = default!;
+
+    public virtual Employee? CreatedByNavigation { get; set; }
+    public virtual Employee? UpdatedByNavigation { get; set; }
+
+    public virtual ICollection<Employee> CreatedEmployees { get; set; } = new List<Employee>();
+    public virtual ICollection<Employee> UpdatedEmployees { get; set; } = new List<Employee>();
+
 
     public virtual ICollection<ApplicationUser> ApplicationUsers { get; set; } = new List<ApplicationUser>();
 
+    public virtual EmployeeProfile? EmployeeProfile { get; set; }
+
+    public virtual ICollection<EmployeeWorkProfile> EmployeeWorkProfiles { get; set; } = new List<EmployeeWorkProfile>();
+    public virtual ICollection<EmployeeContract> EmployeeContracts { get; set; } = new List<EmployeeContract>();
+    public virtual ICollection<EmployeeBankAccount> EmployeeBankAccounts { get; set; } = new List<EmployeeBankAccount>();
+    public virtual ICollection<EmployeeInsuranceProfile> EmployeeInsuranceProfiles { get; set; } = new List<EmployeeInsuranceProfile>();
+    public virtual ICollection<EmployeeRelative> EmployeeRelatives { get; set; } = new List<EmployeeRelative>();
+    public virtual ICollection<EmployeeDocument> EmployeeDocuments { get; set; } = new List<EmployeeDocument>();
+
+    public virtual ICollection<EmployeeWorkProfile> EmployeeWorkProfileCreatedByNavigations { get; set; } = new List<EmployeeWorkProfile>();
+
+    public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
+
     //public virtual ICollection<ApprovalHistory> ApprovalHistories { get; set; } = new List<ApprovalHistory>();
-   
+
     public virtual ICollection<AttachmentModel> AttachmentCreatedByNavigations { get; set; } = new List<AttachmentModel>(); // Fix for IDE0028
 
 

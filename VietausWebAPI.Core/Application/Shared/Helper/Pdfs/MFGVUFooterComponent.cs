@@ -70,7 +70,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs
                 //});
 
 
-                col.Item().PaddingTop(10).Row(row =>
+                col.Item().PaddingTop(5).Row(row =>
                 {
                     row.RelativeItem()
                         .AlignLeft()

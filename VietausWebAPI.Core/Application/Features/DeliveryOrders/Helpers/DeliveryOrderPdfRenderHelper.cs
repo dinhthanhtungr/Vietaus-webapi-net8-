@@ -128,7 +128,11 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                         cd.RelativeColumn(1.0f);  // Số bao
                         cd.RelativeColumn(1.8f);  // Số PO
                     });
+
+
                     var borderStyle = new Func<IContainer, IContainer>(x => x.Border(1).BorderColor(Colors.Black));
+
+
 
                     table.Header(row =>
                     {
@@ -199,6 +203,15 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                         {
                             foreach (var r in g)
                             {
+                                var quantityCellStyle = new Func<IContainer, IContainer>(x =>
+                                {
+                                    var styled = borderStyle(x);
+
+                                    return r?.IsSingleMaterialFormula == true
+                                        ? styled.Background(Colors.Grey.Lighten3)
+                                        : styled;
+                                });
+
                                 borderStyle(table.Cell()).PaddingVertical(4).PaddingHorizontal(4).AlignLeft()
                                     .Text(r?.ProductCode ?? "");
 
@@ -211,7 +224,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                                 borderStyle(table.Cell()).PaddingVertical(4).PaddingHorizontal(6).AlignLeft()
                                     .Text("Kg");
 
-                                borderStyle(table.Cell()).PaddingVertical(4).PaddingHorizontal(6).AlignRight()
+                                quantityCellStyle(table.Cell()).PaddingVertical(4).PaddingHorizontal(6).AlignRight()
                                     .Text($"{(r?.WeightKg ?? 0m):0.00}");
 
                                 borderStyle(table.Cell()).PaddingVertical(4).PaddingHorizontal(6).AlignRight()
@@ -221,6 +234,8 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                                     .Text(r?.PONoNumber ?? "");
                             }
                         }
+
+
 
                         borderStyle(table.Cell().ColumnSpan(7))
                             .PaddingVertical(4).PaddingHorizontal(6).AlignRight()

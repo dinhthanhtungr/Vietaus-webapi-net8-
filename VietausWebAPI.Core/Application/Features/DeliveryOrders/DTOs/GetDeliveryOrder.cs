@@ -24,6 +24,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs
         public string? PhoneSnapshot { get; set; }
 
         public bool? RequiresUnloading { get; set; }
+        public decimal? DeliveryPrice { get; set; }
 
         public string Status { get; set; } = string.Empty; // "Pending", "In Transit", "Delivered", "Cancelled"
 

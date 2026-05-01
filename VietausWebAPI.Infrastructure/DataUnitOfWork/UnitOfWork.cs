@@ -141,6 +141,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             IWarehouseRequestDetailRepository warehouseRequestDetailRepository,
             IWarehouseRequestRepository warehouseRequestRepository,
 
+            IWarehouseShelfLedgerReadRepository warehouseShelfLedgerReadRepository,
             IWarehouseVoucherReadRepository warehouseVoucherReadRepository,
             IWarehouseVoucherDetailReadRepository warehouseVoucherDetailReadRepository,
 
@@ -270,6 +271,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             WarehouseRequestDetailRepository = warehouseRequestDetailRepository;
             WarehouseRequestRepository = warehouseRequestRepository;
 
+            WarehouseShelfLedgerReadRepository = warehouseShelfLedgerReadRepository;
             WarehouseVoucherReadRepository = warehouseVoucherReadRepository;
             WarehouseVoucherDetailReadRepository = warehouseVoucherDetailReadRepository;
 

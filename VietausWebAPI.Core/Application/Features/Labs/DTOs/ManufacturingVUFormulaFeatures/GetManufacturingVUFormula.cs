@@ -23,6 +23,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.ManufacturingVUFormu
         public string? Name { get; set; }
         public string? CustomerCode { get; set; }
         public string? CustomerName { get; set; }
+        public string? MerchandiseOrderExternalId { get; set; }
+        public string? PONo { get; set; }
+
 
         public double? userRate { get; set; }
 

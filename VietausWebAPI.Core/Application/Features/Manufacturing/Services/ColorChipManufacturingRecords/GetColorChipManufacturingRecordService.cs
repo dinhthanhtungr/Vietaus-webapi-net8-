@@ -45,6 +45,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
                     ManufacturingFormulaId = x.ManufacturingFormulaId,
                     ManufacturingFormulaExternalId = x.ManufacturingFormula != null ? x.ManufacturingFormula.ExternalId : null,
                     ManufacturingFormulaName = x.ManufacturingFormula != null ? x.ManufacturingFormula.Name : null,
+
+                    StandardFormula = x.StandardFormula,
                     Machine = x.Machine,
                     Resin = x.Resin,
                     TemperatureLimit = x.TemperatureLimit,
@@ -54,6 +56,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
                     Electrostatic = x.Electrostatic,
                     RecordDate = x.RecordDate,
                     Note = x.Note,
+                    DeltaE = x.DeltaE,
+
                     PrintNote = x.PrintNote,
                     CreatedDate = x.CreatedDate,
                     CreatedBy = x.CreatedBy,

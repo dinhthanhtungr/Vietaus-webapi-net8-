@@ -214,6 +214,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                                 .Select(link => link.MerchandiseOrder != null ? link.MerchandiseOrder.ExternalId : null)
                             .Distinct()
                             .ToList(),
+
                         Details = po.PurchaseOrderDetails
                             .Select(d => new GetPurchaseOrderDetail
                             {
@@ -226,6 +227,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                                 BaseDateSnapshot = d.BaseDateSnapshot,
                                 Package = d.Package,
                                 RequestQuantity = d.RequestQuantity,
+                                RealQuantity = d.RealQuantity,
                                 UnitPriceAgreed = d.UnitPriceAgreed,
                                 TotalPriceAgreed = d.TotalPriceAgreed,
                                 DeliveryDate = d.DeliveryDate,

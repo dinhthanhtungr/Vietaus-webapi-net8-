@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Helpers;
 using System;
@@ -7,6 +8,8 @@ using System.Collections.Generic;
 using System.Formats.Asn1;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
@@ -823,22 +826,52 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             }
         }
 
+        public record AdditiveItem(string Id, string Code, string Name);
+
         public async Task<OperationResult<string>> UpdateColourCodeName(
-            Guid ProductId,
+            Guid sampleRequestId,
             string newLastPrefix,
             CancellationToken ct = default)
         {
+
+            List<AdditiveItem> AdditiveItems = new()
+            {
+                new("",  "", ""),
+                new("A_AB",  "A", "Anti-Block"),
+                new("A_AS",  "A", "Anti-Static"),
+                new("A_ASC", "A", "Anti-Scratch"),
+                new("A_ASL", "A", "Anti-Slip"),
+                new("A_AFG", "A", "Anti-Fogging"),
+                new("A_AMB", "A", "Anti-Microbial"),
+                new("A_AOX", "A", "Anti-Oxidant"),
+                new("Y_CLA", "Y", "Clarifying Agent"),
+                new("R_FR",  "R", "Flame Retardant"),
+                new("I_IM",  "I", "Impact Modifier"),
+                new("N_NA",  "N", "Nucleating Agent"),
+                new("O_OB",  "O", "Optical Brightener"),
+                new("P_PA",  "P", "Process Acid"),
+                new("S_SC",  "S", "Scent"),
+                new("U_UV",  "U", "UV Protection"),
+                new("L_SL",  "L", "Slip"),
+                new("J_ST",  "J", "Sterate"),
+                new("C_CP",  "C", "Compound"),
+                new("D_DC",  "D", "Dry Colour"),
+            };
+
+
+            if (sampleRequestId == Guid.Empty)
+                return OperationResult<string>.Fail("Dữ liệu không hợp lệ.");
+
+            if (string.IsNullOrWhiteSpace(newLastPrefix))
+                return OperationResult<string>.Fail("Suffix không được để trống.");
+
+            await _unitOfWork.BeginTransactionAsync();
+
             try
             {
-                if (string.IsNullOrWhiteSpace(newLastPrefix))
-                    return OperationResult<string>.Fail("Hậu tố mới không được để trống.");
-
-                newLastPrefix = newLastPrefix.Trim().ToUpper();
-
                 var sampleRequest = await _unitOfWork.SampleRequestRepository.Query(track: true)
                     .Include(sr => sr.Product)
-                    .Where(sr => sr.ProductId == ProductId)
-                    .SingleOrDefaultAsync(ct);
+                    .SingleOrDefaultAsync(sr => sr.SampleRequestId == sampleRequestId && sr.IsActive, ct);
 
                 if (sampleRequest == null)
                     return OperationResult<string>.Fail("Yêu cầu mẫu không tồn tại.");
@@ -846,44 +879,139 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 if (sampleRequest.Product == null)
                     return OperationResult<string>.Fail("SampleRequest chưa có sản phẩm.");
 
-                if (sampleRequest.Status != SampleRequestStatus.InProgress.ToString())
-                    return OperationResult<string>.Fail("Chỉ được đổi ColourCode khi SampleRequest đang InProgress.");
+                if (string.IsNullOrWhiteSpace(sampleRequest.Product.ColourCode))
+                    return OperationResult<string>.Fail("Sản phẩm chưa có ColourCode.");
+
+                var allowedStatuses = new[]
+                {
+                    SampleRequestStatus.New.ToString(),
+                    SampleRequestStatus.SampleReceived.ToString(),
+                    SampleRequestStatus.InProgress.ToString()
+                };
+
+                if (!allowedStatuses.Contains(sampleRequest.Status))
+                    return OperationResult<string>.Fail(
+                        "Chỉ được đổi ColourCode khi SampleRequest đang New, SampleReceived hoặc InProgress.");
 
                 var oldColourCode = sampleRequest.Product.ColourCode?.Trim().ToUpper();
                 if (string.IsNullOrWhiteSpace(oldColourCode))
                     return OperationResult<string>.Fail("Product chưa có ColourCode.");
 
-                // Bỏ hậu tố cũ ở cuối, giữ lại phần gốc
-                // Ví dụ: LL71A -> baseCode = LL71
-                var baseCode = oldColourCode[..^1];
+                var parsed = ParseColourCode(oldColourCode);
+                if (parsed == null)
+                    return OperationResult<string>.Fail("ColourCode hiện tại không đúng định dạng.");
 
-                // Template để helper sinh số chen vào trước hậu tố
-                // Ví dụ: LL71_C
-                var template = $"{baseCode}_{newLastPrefix}";
+                var suffix = newLastPrefix.Trim().ToUpper();
+                if (!Regex.IsMatch(suffix, "^[A-Z]$"))
+                    return OperationResult<string>.Fail("Suffix phải là đúng 1 ký tự chữ cái.");
 
-                var existingCodes = _unitOfWork.ProductRepository.Query()
-                    .Where(p => p.ProductId != sampleRequest.Product.ProductId) // loại trừ chính nó
-                    .Select(p => p.ColourCode);
+                var additiveItem = AdditiveItems
+                    .FirstOrDefault(x => string.Equals(x.Code, suffix, StringComparison.OrdinalIgnoreCase));
 
-                var newColourCode = await ExternalIdGenerator.GenerateCodeFromTemplateAsync(
-                    template: template,
-                    existingCodes: existingCodes,
-                    getMaxNumberFunc: _unitOfWork.SampleRequestRepository.GetMaxRunningNumberByLeftPrefixAsync,
-                    padWidth: 0,
-                    ct: ct);
+                if (additiveItem == null)
+                    return OperationResult<string>.Fail("Không tìm thấy Additive tương ứng với ký tự được gửi lên.");
+
+                sampleRequest.Product.Additive = additiveItem.Code;
 
 
+                var prefix = parsed.Value.Prefix;
+                var runningNumber = parsed.Value.Number;
 
-                sampleRequest.Product.ColourCode = newColourCode;
+                string candidate;
+                do
+                {
+                    candidate = $"{prefix}{runningNumber}{suffix}";
+
+                    var exists = await _unitOfWork.ProductRepository.Query()
+                        .AnyAsync(p =>
+                            p.ProductId != sampleRequest.ProductId &&
+                            p.ColourCode != null &&
+                            p.ColourCode.ToUpper() == candidate,
+                            ct);
+
+                    if (!exists)
+                        break;
+
+                    runningNumber++;
+                }
+                while (true);
+
+                var oldCode = sampleRequest.Product.ColourCode;
+                var now = DateTime.Now;
+
+                sampleRequest.Product.ColourCode = candidate;
+                sampleRequest.Product.UpdatedBy = _currentUser.EmployeeId;
+                sampleRequest.Product.UpdatedDate = now;
+
+                var newCode = candidate;
+                var saleId = sampleRequest.ManagerBy;
+
+                var groupIds = await _unitOfWork.MemberInGroupRepository.Query()
+                    .Where(x => x.Profile == saleId && x.IsActive)
+                    .Select(x => x.GroupId)
+                    .Distinct()
+                    .ToListAsync(ct);
+
+                var leaderIds = await _unitOfWork.MemberInGroupRepository.Query()
+                    .Where(x => groupIds.Contains(x.GroupId)
+                                && x.IsActive
+                                && x.IsAdmin == true
+                                && x.Profile.HasValue)
+                    .Select(x => x.Profile!.Value)
+                    .Distinct()
+                    .ToListAsync(ct);
+
+                var recipientIds = leaderIds
+                    .Append(saleId)
+                    .Where(x => x != Guid.Empty)
+                    .Distinct()
+                    .ToList();
 
                 await _unitOfWork.SaveChangesAsync();
 
-                return OperationResult<string>.Ok(newColourCode);
+                //await _notificationService.PublishAsync(new PublishNotificationRequest
+                //{
+                //    Topic = TopicNotifications.SampleRequestUpdated,
+                //    Severity = NotificationSeverity.Info,
+                //    Title = $"Đổi ColourCode - {sampleRequest.ExternalId}",
+                //    Message = $"ColourCode đã đổi từ {oldCode} sang {newCode}.",
+                //    Link = $"/sales/product-orders/{sampleRequest.SampleRequestId}",
+                //    PayloadJson = JsonSerializer.Serialize(new
+                //    {
+                //        SampleRequestId = sampleRequest.SampleRequestId,
+                //        OldColourCode = oldCode,
+                //        NewColourCode = newCode
+                //    }),
+                //    TargetUserIds = recipientIds
+                //}, ct);
+
+                await _unitOfWork.CommitTransactionAsync();
+                return OperationResult<string>.Ok(newCode, "Cập nhật ColourCode thành công");
             }
             catch (Exception ex)
             {
+                await _unitOfWork.RollbackTransactionAsync();
                 return OperationResult<string>.Fail($"Lỗi khi cập nhật: {ex.Message}");
             }
         }
+
+
+
+        private static (string Prefix, int Number, string? OldSuffix)? ParseColourCode(string code)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+                return null;
+
+            var match = Regex.Match(code.Trim().ToUpper(), @"^([A-Z]+)(\d+)([A-Z]?)$");
+            if (!match.Success)
+                return null;
+
+            return (
+                Prefix: match.Groups[1].Value,
+                Number: int.Parse(match.Groups[2].Value),
+                OldSuffix: string.IsNullOrWhiteSpace(match.Groups[3].Value) ? null : match.Groups[3].Value
+            );
+        }
+
     }
 }

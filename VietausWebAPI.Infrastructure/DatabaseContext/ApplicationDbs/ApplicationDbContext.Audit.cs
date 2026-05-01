@@ -13,5 +13,6 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
     {
         public virtual DbSet<EventLog> EventLogs { get; set; } = default!;
         public virtual DbSet<CodeCounter> CodeCounters { get; set; } = default!;
+        public virtual DbSet<AuditLog> AuditLogs { get; set; } = default!;
     }
 }

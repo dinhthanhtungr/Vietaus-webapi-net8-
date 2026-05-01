@@ -38,6 +38,7 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         // 6. Technical Information
         // =========================================================
         public string? Machine { get; set; }
+        public string? StandardFormula { get; set; } 
         public string? Resin { get; set; }
         public string? TemperatureLimit { get; set; } = string.Empty;
 
@@ -48,6 +49,7 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         public decimal? PelletWeightGram { get; set; } // trọng lượng hạt
         public string? NetWeightGram { get; set; }          // trọng lượng tịnh
         public bool? Electrostatic { get; set; }    // Tĩnh điện, ...
+        public string? DeltaE { get; set; }              // Delta E (độ lệch màu)
 
         // =========================================================
         // 8. Document / Record Info

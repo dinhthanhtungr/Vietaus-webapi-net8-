@@ -37,6 +37,21 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.HrSchema
             entity.Property(e => e.PartId).HasColumnName("PartID");     // NÊN để nullable nếu dùng SET NULL
             entity.Property(e => e.CompanyId).HasColumnName("CompanyId");
 
+            entity.Property(e => e.CreatedDate).HasColumnName("created_date");
+
+            entity.Property(e => e.UpdatedBy)
+                .HasColumnName("updated_by");
+
+            entity.HasOne(e => e.CreatedByNavigation)
+                .WithMany(e => e.CreatedEmployees)
+                .HasForeignKey(e => e.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UpdatedByNavigation)
+                .WithMany(e => e.UpdatedEmployees)
+                .HasForeignKey(e => e.UpdatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Part bị xoá -> SET NULL cho Employee.PartId (khuyến nghị)
             entity.HasOne(d => d.Part).WithMany(p => p.Employees)
                   .HasForeignKey(d => d.PartId)

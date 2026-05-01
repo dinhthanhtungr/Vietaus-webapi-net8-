@@ -121,7 +121,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
 
             var sizeStandardText = templateOnly
                 ? ""
-                : standard.SizeText;
+                : GetSizeStandardText(standard);
 
             var weightActualText = templateOnly
                 ? ""
@@ -131,7 +131,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
 
             var weightStandardText = templateOnly
                 ? ""
-                : $"{standard.PelletWeightMinGram:0.##}-{standard.PelletWeightMaxGram:0.##}";
+                : GetWeightStandardText(standard);
 
             var electrostaticActualText = templateOnly
                 ? ""
@@ -166,16 +166,18 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
                  // Row 2
                  AddCell(table, "DATE", bold: true);
                  AddCell(table, dateText, alignCenter: true, bold: true);
-                 AddCell(table, m.PrintNote, alignCenter: true, bold: true);
+                 AddApprovalBlock(table, approvalText, rowSpan: 2);
+                 //AddCell(table, m.PrintNote, alignCenter: true, bold: true);
 
                  // Row 3
                  AddCell(table, "CUSTOMER", bold: true, minHeight: 22f);
                  AddCell(table, customerText, alignCenter: true, bold: true, minHeight: 22f);
-                 AddApprovalBlock(table, approvalText, rowSpan: 3);
+                 
 
                  // Row 4
                  AddCell(table, "CODE", bold: true);
                  AddCell(table, codeText, alignCenter: true, bold: true);
+                 AddNoteBlock(table, m.PrintNote, rowSpan: 2);
 
                  // Row 5
                  AddCell(table, "COLOR", bold: true, minHeight: 26f);
@@ -246,14 +248,33 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
         private void AddApprovalBlock(
             TableDescriptor table,
             string? text,
-            uint rowSpan = 3)
+            uint rowSpan = 2)
         {
             table.Cell()
                 .RowSpan(rowSpan)
                 .Border(borderWidth)
                 .BorderColor(Colors.Black)
-                .MinHeight(84)
-                .Padding(6)
+                .MinHeight(50)
+                .Padding(2)
+                .Element(cell =>
+                {
+                    cell.AlignMiddle()
+                        .AlignCenter()
+                        .Text(string.IsNullOrWhiteSpace(text) ? "" : text)
+                        .FontSize(labelFontSize);
+                });
+        }
+
+        private void AddNoteBlock(
+            TableDescriptor table,
+            string? text,
+            uint rowSpan = 2)
+        {
+            table.Cell()
+                .RowSpan(rowSpan)
+                .Border(borderWidth)
+                .BorderColor(Colors.Black)
+                .Padding(2)
                 .Element(cell =>
                 {
                     cell.AlignMiddle()
@@ -264,9 +285,9 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
         }
 
         private void AddPreparedByBlock(
-    TableDescriptor table,
-    string? preparedByText,
-    uint rowSpan = 2)
+            TableDescriptor table,
+            string? preparedByText,
+            uint rowSpan = 2)
         {
             table.Cell()
                 .RowSpan(rowSpan)
@@ -293,7 +314,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
 
         private void BuildBottomSection(IContainer c, ColorChipRecordPdfModel m, bool templateOnly)
         {
-            var rightText = string.IsNullOrWhiteSpace(m.StandardText) ? "CHUẨN" : m.StandardText;
+            var rightText = m.StandardText ?? string.Empty;
 
             c.Column(col =>
             {
@@ -301,18 +322,30 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
 
                 col.Item().Row(row =>
                 {
-                    row.RelativeItem()
-                        .AlignCenter()
-                        .Text(m.BatchNo)
-                        .FontSize(16)
-                        .Bold();
+                    if (string.IsNullOrWhiteSpace(rightText))
+                    {
+                        row.RelativeItem()
+                            .AlignCenter()
+                            .Text(m.BatchNo)
+                            .FontSize(16)
+                            .Bold();
+                    }
+                    else
+                    {
+                        row.RelativeItem()
+                            .AlignCenter()
+                            .Text(m.BatchNo)
+                            .FontSize(16)
+                            .Bold();
 
-                    row.RelativeItem()
-                        .AlignCenter()
-                        .Text(rightText)
-                        .FontSize(16)
-                        .Bold();
+                        row.RelativeItem()
+                            .AlignCenter()
+                            .Text(rightText)
+                            .FontSize(16)
+                            .Bold();
+                    }
                 });
+
 
                 col.Item()
                     .PaddingLeft(28)
@@ -400,6 +433,16 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
                 LogoType.Others => "COMPANY",
                 _ => "VIET UC POLYMER"
             };
+        }
+
+        protected virtual string GetSizeStandardText(ResinStandardSpec standard)
+        {
+            return standard.SizeText;
+        }
+
+        protected virtual string GetWeightStandardText(ResinStandardSpec standard)
+        {
+            return $"{standard.PelletWeightMinGram:0.##}-{standard.PelletWeightMaxGram:0.##}";
         }
     }
 }

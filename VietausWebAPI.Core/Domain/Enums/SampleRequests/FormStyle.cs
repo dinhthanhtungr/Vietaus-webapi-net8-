@@ -12,5 +12,6 @@ namespace VietausWebAPI.Core.Domain.Enums.SampleRequests
         Chips2_NonStandard = 3,
         Chips3 = 1,
         ChipsTanPhu = 2,
+        ChipsTanPhuBacNinh = 4,
     }
 }

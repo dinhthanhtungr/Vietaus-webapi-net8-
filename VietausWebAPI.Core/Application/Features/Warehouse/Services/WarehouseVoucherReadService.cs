@@ -169,13 +169,38 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                         SlotId = x.SlotId,
                         PurposeId = x.PurposeId,
                         IsIncrease = x.IsIncrease,
+                        MovementDate = null,
                         ExpiryDate = x.ExpiryDate,
                         VoucherType = x.VoucherType,
                         Note = x.Note
                     })
                     .ToListAsync();
 
+                var voucherDetailIds = details
+                    .Select(x => x.VoucherDetailId)
+                    .Distinct()
+                    .ToList();
 
+                var movementDateMap = voucherDetailIds.Count == 0
+                    ? new Dictionary<long, DateTime>()
+                    : await _unitOfWork.WarehouseShelfLedgerReadRepository.Query()
+                        .AsNoTracking()
+                        .Where(x => x.VoucherDetailId != null && voucherDetailIds.Contains(x.VoucherDetailId.Value))
+                        .GroupBy(x => x.VoucherDetailId!.Value)
+                        .Select(g => new
+                        {
+                            VoucherDetailId = g.Key,
+                            MovementDate = g.Max(x => x.CreatedAt)
+                        })
+                        .ToDictionaryAsync(x => x.VoucherDetailId, x => x.MovementDate);
+
+                foreach (var detail in details)
+                {
+                    if (movementDateMap.TryGetValue(detail.VoucherDetailId, out var movementDate))
+                    {
+                        detail.MovementDate = movementDate;
+                    }
+                }
 
                 var detailMap = details
                     .GroupBy(x => x.VoucherId)
@@ -316,11 +341,38 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                         SlotId = x.SlotId,
                         PurposeId = x.PurposeId,
                         IsIncrease = x.IsIncrease,
+                        MovementDate = null,
                         ExpiryDate = x.ExpiryDate,
                         VoucherType = x.VoucherType,
                         Note = x.Note
                     })
                     .ToListAsync();
+
+                var voucherDetailIds = details
+                    .Select(x => x.VoucherDetailId)
+                    .Distinct()
+                    .ToList();
+
+                var movementDateMap = voucherDetailIds.Count == 0
+                    ? new Dictionary<long, DateTime>()
+                    : await _unitOfWork.WarehouseShelfLedgerReadRepository.Query()
+                        .AsNoTracking()
+                        .Where(x => x.VoucherDetailId != null && voucherDetailIds.Contains(x.VoucherDetailId.Value))
+                        .GroupBy(x => x.VoucherDetailId!.Value)
+                        .Select(g => new
+                        {
+                            VoucherDetailId = g.Key,
+                            MovementDate = g.Max(x => x.CreatedAt)
+                        })
+                        .ToDictionaryAsync(x => x.VoucherDetailId, x => x.MovementDate);
+
+                foreach (var detail in details)
+                {
+                    if (movementDateMap.TryGetValue(detail.VoucherDetailId, out var movementDate))
+                    {
+                        detail.MovementDate = movementDate;
+                    }
+                }
 
                 var result = new WarehouseVoucherDto
                 {

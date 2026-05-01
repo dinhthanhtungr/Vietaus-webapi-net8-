@@ -25,6 +25,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs
         public string? TaxNumber { get; set; }
         public string? PhoneSnapshot { get; set; }
 
+        public decimal? DeliveryPrice { get; set; }
         public bool? RequiresUnloading { get; set; }
 
         public string? Note { get; set; }

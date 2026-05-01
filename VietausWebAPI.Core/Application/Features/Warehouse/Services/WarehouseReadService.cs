@@ -8,12 +8,13 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Application.Features.PurchaseFeatures.DTOs.Material_warehouse;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadServices;
 using VietausWebAPI.Core.Application.Features.Warehouse.Queries;
 using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
-using VietausWebAPI.Core.Domain.Enums.WareHouses;
-using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
+using VietausWebAPI.Core.Domain.Entities.WarehouseSchema;
+using VietausWebAPI.Core.Domain.Enums.WareHouses;
 
 namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 {
@@ -44,242 +45,15 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 var pageNumber = query.PageNumber <= 0 ? 1 : query.PageNumber;
                 var pageSize = query.PageSize <= 0 ? 15 : query.PageSize;
 
-                var shelfQuery = _unitOfWork.WarehouseShelfStockRepository.Query()
-                    .Where(s => s.Code != null && s.Code != "");
+                var items = await BuildStockAvailableItemsAsync(query);
+                var totalCount = items.Count;
 
-                if (!string.IsNullOrWhiteSpace(query.KeyWord))
-                {
-                    var kw = query.KeyWord.Trim();
-
-                    shelfQuery =
-                        from s in _unitOfWork.WarehouseShelfStockRepository.Query()
-                        join m in _unitOfWork.MaterialRepository.Query()
-                            on s.Code equals m.ExternalId into mj
-                        from m in mj.DefaultIfEmpty()
-
-                        join p in _unitOfWork.ProductRepository.Query()
-                            on s.Code equals p.ColourCode into pj
-                        from p in pj.DefaultIfEmpty()
-
-                        where (s.Code ?? "").Contains(kw)
-                           || (m.Name ?? "").Contains(kw)
-                           || (p.Name ?? "").Contains(kw)
-
-                        select s;
-                }
-
-                if (query.StockTypes.HasValue)
-                {
-                    shelfQuery = shelfQuery.Where(x => x.StockType == query.StockTypes.Value);
-                }
-
-                // 1) Header group theo Code + StockType
-                var headerQuery =
-                    from s in shelfQuery
-                    group s by new { s.Code, s.StockType } into g
-                    select new GetStockAvaiable
-                    {
-                        ShelfStockId = g.Min(x => x.ShelfStockId),
-                        Code = g.Key.Code!,
-                        StockType = g.Key.StockType,
-                        CodeName = "",
-                        CategoryName = "",
-                        TotalOnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m,
-                        ReservedOpenAllKg = 0m,
-                        AvailableKg = 0m,
-                        StockDetailAvaiables = new List<StockDetailAvaiable>()
-                    };
-
-                var totalCount = await headerQuery.CountAsync();
-
-                var items = await headerQuery
-                    .OrderBy(x => x.Code)
+                var pagedItems = items
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
-                    .ToListAsync();
-
-                if (items.Count == 0)
-                {
-                    var empty = new PagedResult<GetStockAvaiable>(items, totalCount, pageNumber, pageSize);
-                    return OperationResult<PagedResult<GetStockAvaiable>>.Ok(empty);
-                }
-
-                // 2) Load tên NVL / thành phẩm
-                var materialCodes = items
-                    .Where(x => x.StockType == StockType.RawMaterial || x.StockType == StockType.DefectiveRawMaterial)
-                    .Select(x => x.Code)
-                    .Distinct()
                     .ToList();
 
-                var productCodes = items
-                    .Where(x => x.StockType == StockType.FinishedGood || x.StockType == StockType.DefectiveFinishedGood)
-                    .Select(x => x.Code)
-                    .Distinct()
-                    .ToList();
-
-                var materialMap = (await _unitOfWork.MaterialRepository.Query()
-                    .Where(m => m.ExternalId != null && materialCodes.Contains(m.ExternalId))
-                    .Select(m => new
-                    {
-                        Code = m.ExternalId!,
-                        Name = m.Name,
-                        CategoryName = m.Category != null ? m.Category.Name : ""
-                    })
-                    .ToListAsync())
-                    .GroupBy(x => x.Code)
-                    .ToDictionary(g => g.Key, g => g.First());
-
-                var productMap = (await _unitOfWork.ProductRepository.Query()
-                    .Where(p => p.ColourCode != null && productCodes.Contains(p.ColourCode))
-                    .Select(p => new
-                    {
-                        Code = p.ColourCode!,
-                        Name = p.Name,
-                        CategoryName = p.Category != null ? p.Category.Name : ""
-                    })
-                    .ToListAsync())
-                    .GroupBy(x => x.Code)
-                    .ToDictionary(g => g.Key, g => g.First());
-
-                var codes = items.Select(x => x.Code).Distinct().ToList();
-
-                // 3) Detail chỉ group theo Code + StockType + Company + LotNo
-                var detailRows = await (
-                    from s in _unitOfWork.WarehouseShelfStockRepository.Query()
-                    where codes.Contains(s.Code)
-                          && s.ShelfStockCode != "CT.0.1"
-                    group s by new
-                    {
-                        s.Code,
-                        s.StockType,
-                        s.ShelfStockCode,
-                        CompanyName = s.Company != null ? s.Company.Name : "",
-                        s.LotNo
-                    }
-                    into g
-                    select new
-                    {
-                        Code = g.Key.Code,
-                        StockType = g.Key.StockType,
-                        ShelfStockCode = g.Key.ShelfStockCode,
-                        CompanyName = g.Key.CompanyName ?? "",
-                        LotNo = g.Key.LotNo,
-                        OnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m
-                    }
-                ).ToListAsync();
-
-                var mixingRows = await (
-                    from s in _unitOfWork.WarehouseShelfStockRepository.Query()
-                    where codes.Contains(s.Code)
-                          && s.ShelfStockCode == "CT.0.1"
-                    group s by new
-                    {
-                        s.Code,
-                        s.StockType,
-                        s.ShelfStockCode,
-                        CompanyName = s.Company != null ? s.Company.Name : "",
-                        s.LotNo
-                    }
-                    into g
-                    select new
-                    {
-                        Code = g.Key.Code,
-                        StockType = g.Key.StockType,
-                        ShelfStockCode = g.Key.ShelfStockCode,
-                        CompanyName = g.Key.CompanyName ?? "",
-                        LotNo = g.Key.LotNo,
-                        OnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m
-                    }
-                ).ToListAsync();
-
-                // 4) Reserved group theo Code
-                var reservedRows = await (
-                    from t in _unitOfWork.WarehouseTempStockRepository.Query()
-                    where codes.Contains(t.Code)
-                       && t.ReserveStatus == ReserveStatus.Open.ToString()
-                    group t by t.Code into g
-                    select new
-                    {
-                        Code = g.Key,
-                        ReservedOpenKg = g.Sum(x => (decimal?)((x.QtyRequest ?? 0m) - (x.QtyUsed ?? 0m))) ?? 0m
-                    }
-                ).ToListAsync();
-
-                var reservedMap = reservedRows.ToDictionary(x => x.Code, x => x.ReservedOpenKg);
-
-                // 5) Merge detail vào header
-                var headerMap = items.ToDictionary(x => (x.Code, x.StockType));
-
-                foreach (var d in detailRows)
-                {
-                    if (!headerMap.TryGetValue((d.Code, d.StockType), out var header))
-                        continue;
-
-                    header.StockDetailAvaiables.Add(new StockDetailAvaiable
-                    {
-                        LotNo = d.LotNo,
-                        ShelfStockCode = d.ShelfStockCode,
-                        CompanyName = d.CompanyName,
-                        OnHandKg = d.OnHandKg
-                    });
-                }
-
-                foreach (var m in mixingRows)
-                {
-                    if (!headerMap.TryGetValue((m.Code, m.StockType), out var header))
-                        continue;
-
-                    header.StockDetailAvaiables.Add(new StockDetailAvaiable
-                    {
-                        LotNo = m.LotNo,
-                        ShelfStockCode = "CT.0.1 - KHO CÂN TRỘN",
-                        CompanyName = m.CompanyName,
-                        OnHandKg = m.OnHandKg
-                    });
-                }
-
-                // 6) Fill Reserved / Available ở header
-                foreach (var it in items)
-                {
-                    var isDefective =
-                        it.StockType == StockType.DefectiveRawMaterial ||
-                        it.StockType == StockType.DefectiveFinishedGood;
-
-                    var reserved = 0m;
-
-                    if (!isDefective && reservedMap.TryGetValue(it.Code, out var rv))
-                    {
-                        reserved = rv;
-                    }
-
-                    it.ReservedOpenAllKg = isDefective ? 0m : reserved;
-                    it.AvailableKg = isDefective ? 0m : (it.TotalOnHandKg - reserved);
-
-                    if ((it.StockType == StockType.RawMaterial || it.StockType == StockType.DefectiveRawMaterial)
-                        && materialMap.TryGetValue(it.Code, out var m))
-                    {
-                        it.CodeName = m.Name ?? string.Empty;
-                        it.CategoryName = m.CategoryName ?? string.Empty;
-                    }
-                    else if ((it.StockType == StockType.FinishedGood || it.StockType == StockType.DefectiveFinishedGood)
-                        && productMap.TryGetValue(it.Code, out var p))
-                    {
-                        it.CodeName = p.Name ?? string.Empty;
-                        it.CategoryName = p.CategoryName ?? string.Empty;
-                    }
-                }
-
-                // 7) Filter available <= 0
-                if (query.OnlyAvailableLeZero)
-                {
-                    items = items
-                        .Where(x => (x.AvailableKg ?? 0m) <= 0m)
-                        .ToList();
-
-                    totalCount = items.Count;
-                }
-
-                var result = new PagedResult<GetStockAvaiable>(items, totalCount, pageNumber, pageSize);
+                var result = new PagedResult<GetStockAvaiable>(pagedItems, totalCount, pageNumber, pageSize);
                 return OperationResult<PagedResult<GetStockAvaiable>>.Ok(result);
             }
             catch (Exception ex)
@@ -363,7 +137,60 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 
         }
 
+        public async Task<OperationResult<List<StockAvailableExportRow>>> GetStockAvailableExportAsync(WarehouseReadServiceQuery query)
+        {
+            try
+            {
+                var items = await BuildStockAvailableItemsAsync(query);
 
+                var result = new List<StockAvailableExportRow>();
+
+                foreach (var header in items.OrderBy(x => x.Code))
+                {
+                    if (header.StockDetailAvaiables == null || header.StockDetailAvaiables.Count == 0)
+                    {
+                        result.Add(new StockAvailableExportRow
+                        {
+                            Code = header.Code ?? string.Empty,
+                            CodeName = header.CodeName ?? string.Empty,
+                            CategoryName = header.CategoryName ?? string.Empty,
+                            StockType = header.StockType.ToString(),
+                            TotalOnHandKg = header.TotalOnHandKg,
+                            ShelfStockCode = string.Empty,
+                            CompanyName = string.Empty,
+                            LotNo = string.Empty,
+                            OnHandKg = 0m
+                        });
+
+                        continue;
+                    }
+
+                    foreach (var detail in header.StockDetailAvaiables
+                                 .OrderBy(x => x.ShelfStockCode)
+                                 .ThenBy(x => x.LotNo))
+                    {
+                        result.Add(new StockAvailableExportRow
+                        {
+                            Code = header.Code ?? string.Empty,
+                            CodeName = header.CodeName ?? string.Empty,
+                            CategoryName = header.CategoryName ?? string.Empty,
+                            StockType = header.StockType.ToString(),
+                            TotalOnHandKg = header.TotalOnHandKg ,
+                            ShelfStockCode = detail.ShelfStockCode ?? string.Empty,
+                            CompanyName = detail.CompanyName ?? string.Empty,
+                            LotNo = detail.LotNo ?? string.Empty,
+                            OnHandKg = detail.OnHandKg
+                        });
+                    }
+                }
+
+                return OperationResult<List<StockAvailableExportRow>>.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return OperationResult<List<StockAvailableExportRow>>.Fail(ex.Message);
+            }
+        }
 
         // ======================================================================== Helper ======================================================================== 
 
@@ -474,152 +301,238 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             return map;
         }
 
-
-        public async Task<OperationResult<List<StockAvailableExportRow>>> GetStockAvailableExportAsync(WarehouseReadServiceQuery query)
+        private IQueryable<WarehouseShelfStock> BuildShelfStockQuery(WarehouseReadServiceQuery query)
         {
-            try
+            var shelfQuery = _unitOfWork.WarehouseShelfStockRepository.Query()
+                .Where(s => s.Code != null && s.Code != "");
+
+            if (!string.IsNullOrWhiteSpace(query.KeyWord))
             {
-                var shelfQuery = _unitOfWork.WarehouseShelfStockRepository.Query()
-                    .Where(s => !string.IsNullOrWhiteSpace(s.Code));
+                var kw = query.KeyWord.Trim();
 
-                if (!string.IsNullOrWhiteSpace(query.KeyWord))
-                {
-                    var kw = query.KeyWord.Trim();
-                    shelfQuery = shelfQuery.Where(x => (x.Code ?? "").Contains(kw));
-                }
-
-                if (query.StockTypes.HasValue)
-                {
-                    shelfQuery = shelfQuery.Where(x => x.StockType == query.StockTypes.Value);
-                }
-
-                // 1) Tổng tồn theo Code + StockType
-                var headerRows = await (
-                    from s in shelfQuery
-                    group s by new { s.Code, s.StockType } into g
-                    select new
-                    {
-                        Code = g.Key.Code!,
-                        StockType = g.Key.StockType,
-                        TotalOnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m
-                    }
-                ).ToListAsync();
-
-                if (headerRows.Count == 0)
-                    return OperationResult<List<StockAvailableExportRow>>.Ok(new List<StockAvailableExportRow>());
-
-                var materialCodes = headerRows
-                    .Where(x => x.StockType == StockType.RawMaterial || x.StockType == StockType.DefectiveRawMaterial)
-                    .Select(x => x.Code)
-                    .Distinct()
-                    .ToList();
-
-                var productCodes = headerRows
-                    .Where(x => x.StockType == StockType.FinishedGood || x.StockType == StockType.DefectiveFinishedGood)
-                    .Select(x => x.Code)
-                    .Distinct()
-                    .ToList();
-
-                var materialMap = (await _unitOfWork.MaterialRepository.Query()
-                    .Where(m => m.ExternalId != null && materialCodes.Contains(m.ExternalId))
-                    .Select(m => new
-                    {
-                        Code = m.ExternalId!,
-                        Name = m.Name,
-                        CategoryName = m.Category != null ? m.Category.Name : ""
-                    })
-                    .ToListAsync())
-                    .GroupBy(x => x.Code)
-                    .ToDictionary(g => g.Key, g => g.First());
-
-                var productMap = (await _unitOfWork.ProductRepository.Query()
-                    .Where(p => p.Code != null && productCodes.Contains(p.Code))
-                    .Select(p => new
-                    {
-                        Code = p.Code!,
-                        Name = p.Name,
-                        CategoryName = p.Category != null ? p.Category.Name : ""
-                    })
-                    .ToListAsync())
-                    .GroupBy(x => x.Code)
-                    .ToDictionary(g => g.Key, g => g.First());
-
-                var codes = headerRows.Select(x => x.Code).Distinct().ToList();
-
-                // 2) Lấy detail tồn kho
-                var detailRows = await (
+                shelfQuery =
                     from s in _unitOfWork.WarehouseShelfStockRepository.Query()
-                    where codes.Contains(s.Code)
-                    group s by new
-                    {
-                        s.Code,
-                        s.StockType,
-                        s.ShelfStockCode,
-                        CompanyName = s.Company != null ? s.Company.Name : "",
-                        s.LotNo
-                    }
-                    into g
-                    select new
-                    {
-                        Code = g.Key.Code,
-                        StockType = g.Key.StockType,
-                        ShelfStockCode = g.Key.ShelfStockCode,
-                        CompanyName = g.Key.CompanyName ?? "",
-                        LotNo = g.Key.LotNo,
-                        OnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m
-                    }
-                ).ToListAsync();
+                    join m in _unitOfWork.MaterialRepository.Query()
+                        on s.Code equals m.ExternalId into mj
+                    from m in mj.DefaultIfEmpty()
+                    join p in _unitOfWork.ProductRepository.Query()
+                        on s.Code equals p.ColourCode into pj
+                    from p in pj.DefaultIfEmpty()
+                    where (s.Code ?? "").Contains(kw)
+                       || (m.Name ?? "").Contains(kw)
+                       || (p.Name ?? "").Contains(kw)
+                    select s;
+            }
 
-                var totalMap = headerRows.ToDictionary(
-                    x => (x.Code, x.StockType),
-                    x => x.TotalOnHandKg
-                );
+            if (query.StockTypes.HasValue)
+            {
+                shelfQuery = shelfQuery.Where(x => x.StockType == query.StockTypes.Value);
+            }
 
-                var result = new List<StockAvailableExportRow>();
+            return shelfQuery;
+        }
 
-                foreach (var d in detailRows.OrderBy(x => x.Code).ThenBy(x => x.ShelfStockCode).ThenBy(x => x.LotNo))
+        private async Task<List<GetStockAvaiable>> BuildStockAvailableItemsAsync(WarehouseReadServiceQuery query)
+        {
+            var shelfQuery = BuildShelfStockQuery(query);
+
+            var items = await (
+                from s in shelfQuery
+                group s by new { s.Code, s.StockType } into g
+                select new GetStockAvaiable
                 {
-                    string codeName = string.Empty;
-                    string categoryName = string.Empty;
+                    ShelfStockId = g.Min(x => x.ShelfStockId),
+                    Code = g.Key.Code!,
+                    StockType = g.Key.StockType,
+                    CodeName = "",
+                    CategoryName = "",
+                    TotalOnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m,
+                    ReservedOpenAllKg = 0m,
+                    AvailableKg = 0m,
+                    StockDetailAvaiables = new List<StockDetailAvaiable>()
+                }
+            )
+            .OrderBy(x => x.Code)
+            .ToListAsync();
 
-                    if ((d.StockType == StockType.RawMaterial || d.StockType == StockType.DefectiveRawMaterial)
-                        && materialMap.TryGetValue(d.Code, out var m))
-                    {
-                        codeName = m.Name ?? string.Empty;
-                        categoryName = m.CategoryName ?? string.Empty;
-                    }
-                    else if ((d.StockType == StockType.FinishedGood || d.StockType == StockType.DefectiveFinishedGood)
-                        && productMap.TryGetValue(d.Code, out var p))
-                    {
-                        codeName = p.Name ?? string.Empty;
-                        categoryName = p.CategoryName ?? string.Empty;
-                    }
+            if (items.Count == 0)
+                return items;
 
-                    var shelfStockCode = d.ShelfStockCode == "CT.0.1"
-                        ? "CT.0.1 - KHO CÂN TRỘN"
-                        : d.ShelfStockCode ?? string.Empty;
+            var materialCodes = items
+                .Where(x => x.StockType == StockType.RawMaterial || x.StockType == StockType.DefectiveRawMaterial)
+                .Select(x => x.Code)
+                .Distinct()
+                .ToList();
 
-                    result.Add(new StockAvailableExportRow
-                    {
-                        Code = d.Code ?? string.Empty,
-                        CodeName = codeName,
-                        CategoryName = categoryName,
-                        StockType = d.StockType.ToString(),
-                        TotalOnHandKg = totalMap.TryGetValue((d.Code, d.StockType), out var total) ? total : 0m,
-                        ShelfStockCode = shelfStockCode,
-                        CompanyName = d.CompanyName ?? string.Empty,
-                        LotNo = d.LotNo,
-                        OnHandKg = d.OnHandKg
-                    });
+            var productCodes = items
+                .Where(x => x.StockType == StockType.FinishedGood || x.StockType == StockType.DefectiveFinishedGood)
+                .Select(x => x.Code)
+                .Distinct()
+                .ToList();
+
+            var materialMap = (await _unitOfWork.MaterialRepository.Query()
+                .Where(m => m.ExternalId != null && materialCodes.Contains(m.ExternalId))
+                .Select(m => new
+                {
+                    Code = m.ExternalId!,
+                    Name = m.Name,
+                    CategoryName = m.Category != null ? m.Category.Name : ""
+                })
+                .ToListAsync())
+                .GroupBy(x => x.Code)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            var productMap = (await _unitOfWork.ProductRepository.Query()
+                .Where(p => p.ColourCode != null && productCodes.Contains(p.ColourCode))
+                .Select(p => new
+                {
+                    Code = p.ColourCode!,
+                    Name = p.Name,
+                    CategoryName = p.Category != null ? p.Category.Name : ""
+                })
+                .ToListAsync())
+                .GroupBy(x => x.Code)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            var codes = items.Select(x => x.Code).Distinct().ToList();
+
+            var detailRows = await (
+                from s in _unitOfWork.WarehouseShelfStockRepository.Query()
+                where codes.Contains(s.Code)
+                      && s.ShelfStockCode != "CT.0.1"
+                group s by new
+                {
+                    s.Code,
+                    s.StockType,
+                    s.ShelfStockCode,
+                    CompanyName = s.Company != null ? s.Company.Name : "",
+                    s.LotNo
+                }
+                into g
+                select new
+                {
+                    Code = g.Key.Code,
+                    StockType = g.Key.StockType,
+                    ShelfStockCode = g.Key.ShelfStockCode,
+                    CompanyName = g.Key.CompanyName ?? "",
+                    LotNo = g.Key.LotNo,
+                    OnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m
+                }
+            ).ToListAsync();
+
+            var mixingRows = await (
+                from s in _unitOfWork.WarehouseShelfStockRepository.Query()
+                where codes.Contains(s.Code)
+                      && s.ShelfStockCode == "CT.0.1"
+                group s by new
+                {
+                    s.Code,
+                    s.StockType,
+                    s.ShelfStockCode,
+                    CompanyName = s.Company != null ? s.Company.Name : "",
+                    s.LotNo
+                }
+                into g
+                select new
+                {
+                    Code = g.Key.Code,
+                    StockType = g.Key.StockType,
+                    ShelfStockCode = g.Key.ShelfStockCode,
+                    CompanyName = g.Key.CompanyName ?? "",
+                    LotNo = g.Key.LotNo,
+                    OnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m
+                }
+            ).ToListAsync();
+
+            var reservedRows = await (
+                from t in _unitOfWork.WarehouseTempStockRepository.Query()
+                where codes.Contains(t.Code)
+                   && t.ReserveStatus == ReserveStatus.Open.ToString()
+                group t by t.Code into g
+                select new
+                {
+                    Code = g.Key,
+                    ReservedOpenKg = g.Sum(x => (decimal?)((x.QtyRequest ?? 0m) - (x.QtyUsed ?? 0m))) ?? 0m
+                }
+            ).ToListAsync();
+
+            var reservedMap = reservedRows.ToDictionary(x => x.Code, x => x.ReservedOpenKg);
+            var headerMap = items.ToDictionary(x => (x.Code, x.StockType));
+
+            foreach (var d in detailRows)
+            {
+                if (!headerMap.TryGetValue((d.Code, d.StockType), out var header))
+                    continue;
+
+                header.StockDetailAvaiables.Add(new StockDetailAvaiable
+                {
+                    LotNo = d.LotNo,
+                    ShelfStockCode = d.ShelfStockCode,
+                    CompanyName = d.CompanyName,
+                    OnHandKg = d.OnHandKg
+                });
+            }
+
+            foreach (var m in mixingRows)
+            {
+                if (!headerMap.TryGetValue((m.Code, m.StockType), out var header))
+                    continue;
+
+                header.StockDetailAvaiables.Add(new StockDetailAvaiable
+                {
+                    LotNo = m.LotNo,
+                    ShelfStockCode = "CT.0.1 - KHO CÂN TRỘN",
+                    CompanyName = m.CompanyName,
+                    OnHandKg = m.OnHandKg
+                });
+            }
+
+            foreach (var it in items)
+            {
+                var isDefective =
+                    it.StockType == StockType.DefectiveRawMaterial ||
+                    it.StockType == StockType.DefectiveFinishedGood;
+
+                var reserved = 0m;
+                if (!isDefective && reservedMap.TryGetValue(it.Code, out var rv))
+                {
+                    reserved = rv;
                 }
 
-                return OperationResult<List<StockAvailableExportRow>>.Ok(result);
+                it.ReservedOpenAllKg = isDefective ? 0m : reserved;
+                it.AvailableKg = isDefective ? 0m : (it.TotalOnHandKg - reserved);
+
+                if ((it.StockType == StockType.RawMaterial || it.StockType == StockType.DefectiveRawMaterial)
+                    && materialMap.TryGetValue(it.Code, out var m))
+                {
+                    it.CodeName = m.Name ?? string.Empty;
+                    it.CategoryName = m.CategoryName ?? string.Empty;
+                }
+                else if ((it.StockType == StockType.FinishedGood || it.StockType == StockType.DefectiveFinishedGood)
+                    && productMap.TryGetValue(it.Code, out var p))
+                {
+                    it.CodeName = p.Name ?? string.Empty;
+                    it.CategoryName = p.CategoryName ?? string.Empty;
+                }
             }
-            catch (Exception ex)
+
+            if (query.OnlyAvailableLeZero)
             {
-                return OperationResult<List<StockAvailableExportRow>>.Fail(ex.Message);
+                items = items
+                    .Where(x => (x.AvailableKg ?? 0m) <= 0m)
+                    .ToList();
             }
+
+            if (query.AvailableMax.HasValue)
+            {
+                items = items
+                    .Where(x => (x.AvailableKg ?? 0m) <= query.AvailableMax.Value)
+                    .ToList();
+            }
+
+            return items;
         }
+
 
     }
 }

@@ -15,6 +15,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
         public IWarehouseRequestDetailRepository WarehouseRequestDetailRepository { get; }
         public IWarehouseRequestRepository WarehouseRequestRepository { get; }
 
+        public IWarehouseShelfLedgerReadRepository WarehouseShelfLedgerReadRepository { get; }
         public IWarehouseVoucherReadRepository WarehouseVoucherReadRepository { get; }
         public IWarehouseVoucherDetailReadRepository WarehouseVoucherDetailReadRepository { get; }
     }

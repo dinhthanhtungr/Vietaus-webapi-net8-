@@ -272,6 +272,8 @@ namespace VietausWebAPI.Core.Application.Features.HR.Services
                 }
 
                 var employeeEntity = _mapper.Map<Employee>(employee);
+
+                employeeEntity.CompanyId = _currentUser.CompanyId;
                 await _unitOfWork.EmployeesRepository.PostEmployees(employeeEntity);
 
 

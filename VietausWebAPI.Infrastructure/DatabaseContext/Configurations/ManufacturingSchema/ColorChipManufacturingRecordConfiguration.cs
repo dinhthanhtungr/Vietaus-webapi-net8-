@@ -50,6 +50,10 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.Manufactur
             // =========================================================
             // 5. Manufacturing Info
             // =========================================================
+            b.Property(x => x.StandardFormula)
+                .HasColumnName("standard_formula")
+                .HasMaxLength(255);
+
             b.Property(x => x.Machine)
                 .HasColumnName("machine")
                 .HasMaxLength(255);
@@ -79,6 +83,10 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.Manufactur
             
             b.Property(x => x.Electrostatic)
                 .HasColumnName("electrostatic");
+
+            b.Property(x => x.DeltaE)
+                .HasColumnName("delta_e")
+                .HasMaxLength(255);
 
             // =========================================================
             // 7. Document / Record Info

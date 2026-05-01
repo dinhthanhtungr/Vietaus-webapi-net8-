@@ -20,6 +20,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
         private readonly IColorChipRecordLandscapePdf _colorChipRecordPdf;
         private readonly IColorChipRecordPortraitPdf _colorChipRecordPortraitPdf;
         private readonly IColorChipRecordTanPhuPdf _ColorChipRecordTanPhuPdf;
+        private readonly IColorChipRecordTanPhuBacNinhPdf _colorChipRecordTanPhuBacNinhPdf;
         private readonly ICurrentUser _currentUser;
 
         public ColourChipRecordPrintPDFService(
@@ -27,12 +28,14 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             IColorChipRecordLandscapePdf colorChipRecordPdf,
             IColorChipRecordPortraitPdf colorChipRecordPortraitPdf,
             IColorChipRecordTanPhuPdf colorChipRecordTanPhuPdf,
+            IColorChipRecordTanPhuBacNinhPdf colorChipRecordTanPhuBacNinhPdf,
             ICurrentUser currentUser)
         {
             _unitOfWork = unitOfWork;
             _colorChipRecordPdf = colorChipRecordPdf;
             _colorChipRecordPortraitPdf = colorChipRecordPortraitPdf;
             _ColorChipRecordTanPhuPdf = colorChipRecordTanPhuPdf;
+            _colorChipRecordTanPhuBacNinhPdf = colorChipRecordTanPhuBacNinhPdf;
             _currentUser = currentUser;
         }
 
@@ -62,11 +65,17 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 if (result == null)
                     return OperationResult<byte[]>.Fail("Không tìm thấy ColorChipRecord theo ProductId.");
 
+                if(result.FormStyle == FormStyle.ChipsTanPhu)
+                {
+                    result.PdfModel.StandardText = string.Empty;
+                }
+
                 byte[] pdfBytes = result.FormStyle switch
                 {
                     FormStyle.Chips2 => _colorChipRecordPortraitPdf.Render(result.PdfModel),
                     FormStyle.Chips3 => _colorChipRecordPdf.Render(result.PdfModel),
                     FormStyle.ChipsTanPhu => _ColorChipRecordTanPhuPdf.Render(result.PdfModel),
+                    FormStyle.ChipsTanPhuBacNinh => _colorChipRecordTanPhuBacNinhPdf.Render(result.PdfModel),
                     FormStyle.Chips2_NonStandard => _colorChipRecordPortraitPdf.Render(result.PdfModel),
                     _ => _colorChipRecordPdf.Render(result.PdfModel)
                 };
@@ -82,70 +91,5 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             }
         }
 
-        private ColorChipRecordPdfModel MapToPdfModel(
-            ColorChipRecord entity,
-            dynamic? sampleRequest)
-        {
-            var firstDevelopmentFormulaCode = entity.DevelopmentFormulas?
-                .Where(x => x.IsActive && x.DevelopmentFormula != null)
-                .Select(x => x.DevelopmentFormula!.ExternalId)
-                .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
-
-            var preparedByName =
-                entity.DevelopmentFormulas?
-                    .Where(x => x.IsActive && x.DevelopmentFormula != null)
-                    .Select(x => x.DevelopmentFormula!.CreatedByNavigation != null
-                        ? x.DevelopmentFormula.CreatedByNavigation.FullName
-                        : null)
-                    .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))
-                ??
-                entity.Product?.CreatedByNavigation?.FullName
-                ??
-                string.Empty;
-
-            return new ColorChipRecordPdfModel
-            {
-                BatchNo = firstDevelopmentFormulaCode ?? string.Empty,
-                Date = entity.RecordDate ?? entity.CreatedDate,
-
-                Customer = sampleRequest?.CustomerName ?? string.Empty,
-                Code = entity.Product?.ColourCode ?? string.Empty,
-                Color = entity.Product?.Name ?? string.Empty,
-
-                AddRate = entity.Product?.UsageRate != null
-                    ? $"{entity.Product.UsageRate}%"
-                    : string.Empty,
-
-                Resin = !string.IsNullOrWhiteSpace(entity.Resin)
-                    ? entity.Resin!
-                    : entity.ResinType.ToString(),
-
-                PreparedBy = preparedByName,
-                Signature = string.Empty,
-
-                Machine = entity.Machine,
-                TemperatureLimit = entity.TemperatureLimit,
-                SizeText = entity.SizeText,
-                PelletWeightGram = entity.PelletWeightGram,
-                NetWeightGram = entity.NetWeightGram,
-                Electrostatic = entity.Electrostatic,
-                Note = entity.Note,
-                PrintNote = entity.PrintNote,
-
-                RecordTypeText = entity.RecordType.ToString(),
-                ResinTypeText = entity.ResinType.ToString(),
-                LogoTypeText = entity.LogoType.ToString(),
-                FormStyleText = entity.FormStyle.ToString(),
-                DeltaE = entity.Product?.DeltaE ?? string.Empty,
-
-                DevelopmentFormulaCodes = entity.DevelopmentFormulas?
-                    .Where(x => x.IsActive && x.DevelopmentFormula != null)
-                    .Select(x => x.DevelopmentFormula!.ExternalId ?? string.Empty)
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .Distinct()
-                    .ToList()
-                    ?? new()
-            };
-        }
     }
 }

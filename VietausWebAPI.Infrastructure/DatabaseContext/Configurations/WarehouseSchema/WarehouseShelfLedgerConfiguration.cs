@@ -37,19 +37,24 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.WarehouseS
             entity.Property(x => x.LotNumber).HasColumnName("lotNumber");
 
             entity.Property(x => x.DeltaKg)
-                  .HasPrecision(10, 2)
+                  .HasPrecision(18, 3)
                   .IsRequired()
                   .HasColumnName("deltaKg");
 
             entity.Property(x => x.BeforeKg)
-                  .HasPrecision(10, 2)
+                  .HasPrecision(18, 3)
                   .IsRequired()
                   .HasColumnName("beforeKg");
 
             entity.Property(x => x.AfterKg)
-                  .HasPrecision(10, 2)
+                  .HasPrecision(18, 3)
                   .IsRequired()
                   .HasColumnName("afterKg");
+
+            entity.Property(x => x.StockType)
+                    .HasColumnName("stockType")
+                    .HasConversion<int>();
+
 
             entity.Property(x => x.Reason).HasColumnName("reason");
 

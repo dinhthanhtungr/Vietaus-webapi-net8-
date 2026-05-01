@@ -1,5 +1,6 @@
 ﻿using AutoMapper.Configuration.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -491,11 +492,25 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
 
                 return OperationResult.Ok("Lưu và tạo công thức thành công.");
             }
+
+            catch (DbUpdateException ex) when (
+                ex.InnerException is PostgresException pg &&
+                pg.SqlState == "23505" &&
+                (
+                    pg.ConstraintName == "ux_psv_one_active_per_mpo" ||
+                    pg.ConstraintName == "ux_psv_one_pending_per_mpo"
+                ))
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return OperationResult.Fail("Lệnh sản xuất này đã có công thức đang được xử lý bởi người khác. Vui lòng tải lại dữ liệu.");
+            }
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync();
                 return OperationResult.Fail($"Có lỗi xảy ra trong quá trình lưu và tạo công thức: {ex.Message}");
             }
+
+
         }
 
         /// <summary>
@@ -527,8 +542,42 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
         /// </param>
         /// <param name="ct">CancellationToken dùng để hủy tác vụ bất đồng bộ nếu cần.</param>
         /// <returns>Task bất đồng bộ hoàn tất khi bản ghi version đã được thêm vào repository.</returns>
-        private async Task CreateNewSelectedFormulaVersionAsync(Guid mpoId, Guid formulaId, Guid companyId, DateTime now, Guid userId, bool isActiveSelect, CancellationToken ct)
+        private async Task CreateNewSelectedFormulaVersionAsync(
+            Guid mpoId,
+            Guid formulaId,
+            Guid companyId,
+            DateTime now,
+            Guid userId,
+            bool isActiveSelect,
+            CancellationToken ct)
         {
+            if (isActiveSelect)
+            {
+                var hasActive = await _unitOfWork.ProductionSelectVersionRepository
+                    .Query(track: false)
+                    .AnyAsync(x =>
+                        x.MfgProductionOrderId == mpoId &&
+                        x.ValidTo == null &&
+                        x.ValidFrom != null,
+                        ct);
+
+                if (hasActive)
+                    throw new InvalidOperationException("Lệnh sản xuất này đã có công thức active. Vui lòng tải lại dữ liệu.");
+            }
+            else
+            {
+                var hasPending = await _unitOfWork.ProductionSelectVersionRepository
+                    .Query(track: false)
+                    .AnyAsync(x =>
+                        x.MfgProductionOrderId == mpoId &&
+                        x.ValidTo == null &&
+                        x.ValidFrom == null,
+                        ct);
+
+                if (hasPending)
+                    throw new InvalidOperationException("Lệnh sản xuất này đã có công thức chờ QC. Vui lòng tải lại dữ liệu.");
+            }
+
             var newPsv = new ProductionSelectVersion
             {
                 ProductionSelectVersionId = Guid.CreateVersion7(),
@@ -543,7 +592,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
 
             await _unitOfWork.ProductionSelectVersionRepository.AddAsync(newPsv, ct);
         }
-
 
         /// <summary>
         /// Đảm bảo lệnh sản xuất đã có bản ghi schedule trong bảng <see cref="SchedualMfg"/>.
@@ -1080,6 +1128,20 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                 var enteredSchedulingNow =
                     !string.Equals(oldStatus, ManufacturingProductOrder.Scheduling.ToString(), StringComparison.OrdinalIgnoreCase)
                     && string.Equals(mpo.Status, ManufacturingProductOrder.Scheduling.ToString(), StringComparison.OrdinalIgnoreCase);
+
+                if (enteredSchedulingNow)
+                {
+                    await _timeLineService.AddEventLogAsync(new EventLogModels
+                    {
+                        employeeId = userId,
+                        eventType = EventType.ManufacturingProductOrder,
+                        sourceCode = mpo.ExternalId ?? string.Empty,
+                        sourceId = mpo.MfgProductionOrderId,
+                        status = ManufacturingProductOrder.Scheduling.ToString(),
+                        note = $"Chuyển sang chờ xếp lịch vào {now:dd/MM/yyyy HH:mm:ss} bởi {_currentUser.personName}"
+                    }, ct);
+                }
+
 
                 var shouldSyncReservation =
                     formulaItemsForReserve != null

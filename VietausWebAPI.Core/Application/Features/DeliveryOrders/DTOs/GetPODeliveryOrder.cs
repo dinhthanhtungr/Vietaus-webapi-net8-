@@ -25,6 +25,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs
         public string? Receiver { get; set; }
         public string? DeliveryAddress { get; set; }
         public string? PaymentType { get; set; }
+        public decimal? DeliveryPrice { get; set; }
 
         public string? Status { get; set; }
         public string? Currency { get; set; }

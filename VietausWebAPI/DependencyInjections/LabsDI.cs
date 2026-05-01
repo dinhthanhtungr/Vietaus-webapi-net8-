@@ -62,11 +62,13 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
             services.AddScoped<IColorChipRecordLandscapePdf, ColorChipRecordLandscapePdf>();
             services.AddScoped<IColorChipRecordPortraitPdf, ColorChipRecordPortraitPdf>();
             services.AddScoped<IColorChipRecordTanPhuPdf, ColorChipRecordTanPhuPdf>();
+            services.AddScoped<IColorChipRecordTanPhuBacNinhPdf, ColorChipRecordTanPhuBacNinhPdf>();
 
             //Helpers
             services.AddScoped<IFormulaPDF, FormulaPDF>();
             services.AddScoped<IFormulaXML, FormulaXML>();
             services.AddScoped<IVUFormulaPDF, VUFormulaPDF>();
+            services.AddScoped<IProductFormulaRuleHelper, ProductFormulaRuleHelper>();
             return services;
         }
     }

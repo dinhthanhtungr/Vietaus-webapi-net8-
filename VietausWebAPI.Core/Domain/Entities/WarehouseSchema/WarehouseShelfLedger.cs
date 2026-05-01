@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.CompanySchema;
 using VietausWebAPI.Core.Domain.Entities.HrSchema;
+using VietausWebAPI.Core.Domain.Enums.WareHouses;
 
 namespace VietausWebAPI.Core.Domain.Entities.WarehouseSchema
 {
@@ -16,6 +17,8 @@ namespace VietausWebAPI.Core.Domain.Entities.WarehouseSchema
         public long? VoucherDetailId { get; set; }        // FK (nếu có)
         public int SlotId { get; set; }                   // FK → WarehouseShelf
         public Guid CompanyId { get; set; }               // FK → Company
+
+        public StockType? StockType { get; set; }
 
         public string? ProductCode { get; set; }
         public string? LotNumber { get; set; }

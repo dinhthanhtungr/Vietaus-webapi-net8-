@@ -41,6 +41,8 @@ namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing.ColorChipManuf
                      CreatedDate = x.CreatedDate,
 
                      Machine = x.Machine,
+
+                     StandardFormula = x.StandardFormula,
                      Resin = x.Resin,
                      TemperatureLimit = x.TemperatureLimit,
                      SizeText = x.SizeText,
@@ -49,6 +51,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing.ColorChipManuf
                      Electrostatic = x.Electrostatic,
                      Note = x.Note,
                      PrintNote = x.PrintNote,
+                     DeltaE = x.DeltaE,
 
                      MfgProductionOrderExternalId = x.MfgProductionOrder != null
                          ? x.MfgProductionOrder.ExternalId
@@ -130,6 +133,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing.ColorChipManuf
                         ? x.ManufacturingFormula.Name
                         : null,
 
+                    StandardFormula = x.StandardFormula,
                     Machine = x.Machine,
                     Resin = x.Resin,
                     TemperatureLimit = x.TemperatureLimit,
@@ -140,6 +144,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing.ColorChipManuf
                     RecordDate = x.RecordDate,
                     Note = x.Note,
                     PrintNote = x.PrintNote,
+                    DeltaE = x.DeltaE,
 
                     CreatedDate = x.CreatedDate,
                     CreatedBy = x.CreatedBy,
