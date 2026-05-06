@@ -79,6 +79,14 @@ public partial class Employee
 
     public virtual ICollection<EmployeeWorkProfile> EmployeeWorkProfileCreatedByNavigations { get; set; } = new List<EmployeeWorkProfile>();
 
+
+
+    public virtual ICollection<PayrollEmployeeRun> PayrollEmployeeRuns { get; set; } = new List<PayrollEmployeeRun>();
+    public virtual ICollection<EmployeeInsuranceContribution> EmployeeInsuranceContributions { get; set; } = new List<EmployeeInsuranceContribution>();
+    public virtual ICollection<EmployeeInsuranceBook> EmployeeInsuranceBooks { get; set; } = new List<EmployeeInsuranceBook>();
+    public virtual ICollection<EmployeeInsuranceClaim> EmployeeInsuranceClaims { get; set; } = new List<EmployeeInsuranceClaim>();
+
+
     public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 
     //public virtual ICollection<ApprovalHistory> ApprovalHistories { get; set; } = new List<ApprovalHistory>();

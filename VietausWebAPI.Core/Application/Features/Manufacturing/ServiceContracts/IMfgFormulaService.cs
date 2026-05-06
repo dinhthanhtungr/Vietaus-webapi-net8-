@@ -90,5 +90,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts
 
         Task<byte[]> ExportVAFormulaToPdfAsync(Guid mfgProductionOrderId, CancellationToken ct = default);
 
+
+        Task<byte[]> ExportCurrentByMpoToXmlAsync(Guid mfgProductionOrderId, CancellationToken ct = default);
+
     }
 }

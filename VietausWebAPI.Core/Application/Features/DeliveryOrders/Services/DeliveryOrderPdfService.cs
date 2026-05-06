@@ -125,18 +125,46 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                     throw new Exception("Delivery Order not found.");
 
 
-                var productIds = vm.Details
-                    .Where(x => x.ProductId.HasValue)
-                    .Select(x => x.ProductId!.Value);
+                var manufacturingFormulaExternalIds = vm.Details
+                    .SelectMany(x => SplitExternalIds(x.LotNumber))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                var singleMaterialManufacturingFormulaExternalIds =
+                    await _productFormulaRuleHelper.GetManufacturingFormulaExternalIdsWithSingleMaterialAsync(
+                        manufacturingFormulaExternalIds,
+                        ct);
+
+                var fallbackProductIds = vm.Details
+                    .Where(x =>
+                    {
+                        var rowExternalIds = SplitExternalIds(x.LotNumber).ToList();
+
+                        return x.ProductId.HasValue
+                               && (rowExternalIds.Count == 0
+                                   || !rowExternalIds.Any(singleMaterialManufacturingFormulaExternalIds.Contains));
+                    })
+                    .Select(x => x.ProductId!.Value)
+                    .Distinct()
+                    .ToList();
 
                 var singleMaterialProductIds =
-                    await _productFormulaRuleHelper.GetProductIdsWithSingleMaterialFormulaAsync(productIds, ct);
+                    await _productFormulaRuleHelper.GetProductIdsWithSingleMaterialFormulaAsync(fallbackProductIds, ct);
 
                 foreach (var row in vm.Details)
                 {
+                    var rowExternalIds = SplitExternalIds(row.LotNumber).ToList();
+                    var hasSingleMaterialManufacturingFormula =
+                        rowExternalIds.Any(singleMaterialManufacturingFormulaExternalIds.Contains);
+
+                    var shouldFallbackToProductFormula =
+                        rowExternalIds.Count == 0 || !hasSingleMaterialManufacturingFormula;
+
                     row.IsSingleMaterialFormula =
-                        row.ProductId.HasValue &&
-                        singleMaterialProductIds.Contains(row.ProductId.Value);
+                        hasSingleMaterialManufacturingFormula
+                        || (shouldFallbackToProductFormula
+                            && row.ProductId.HasValue
+                            && singleMaterialProductIds.Contains(row.ProductId.Value));
                 }
 
                 // ====== (B4) Cập nhật RealQuantity cho MerchandiseOrderDetail ======
@@ -258,6 +286,16 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
             }
 
 
+        }
+
+        private static IEnumerable<string> SplitExternalIds(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return Enumerable.Empty<string>();
+
+            return value
+                .Split(new[] { ',', ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(x => !string.IsNullOrWhiteSpace(x));
         }
     }
 }

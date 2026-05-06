@@ -18,8 +18,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures
         public string? ExternalId { get; set; }
         public string? CustomerName { get; set; }
         public string? CustomerCode { get; set; }
-        public string? SaleComment { get; set; }
-        public string? AdditionalComment { get; set; } = string.Empty;
+        public string? LabNote { get; set; }
+        public string? Requirement { get; set; } = string.Empty;
 
         public List<GetFormula>? SampleFormulas { get; set; }
     }

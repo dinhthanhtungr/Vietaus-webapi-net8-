@@ -20,5 +20,20 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.RepositoriesCon
             MerchandiseOrderReportQuery query,
             ViewerScope viewerScope,
             CancellationToken cancellationToken = default);
+
+        Task<MerchandiseOrderReportHeaderDto> GetMerchandiseOrderHeaderReportAsync(
+            MerchandiseOrderReportQuery query,
+            ViewerScope viewerScope,
+            CancellationToken cancellationToken = default);
+
+        Task<(IReadOnlyList<MerchandiseOrderReportRowDto> Items, int TotalCount)> GetMerchandiseOrderRowsAsync(
+            MerchandiseOrderReportQuery query,
+            ViewerScope viewerScope,
+            CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<MerchandiseOrderReportDetailDto>> GetMerchandiseOrderDetailReportAsync(
+            Guid merchandiseOrderId,
+            ViewerScope viewerScope,
+            CancellationToken cancellationToken = default);
     }
 }

@@ -28,6 +28,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.ColorChipMa
         public string? NetWeightGram { get; set; }
         public bool? Electrostatic { get; set; }
         public string? DeltaE { get; set; }
+        public double? UsageRate { get; set; }
 
         public DateTime? RecordDate { get; set; }
         public string? Note { get; set; }

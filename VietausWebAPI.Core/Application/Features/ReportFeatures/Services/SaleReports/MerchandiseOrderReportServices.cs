@@ -50,5 +50,37 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.SaleRe
             var helper = new ExportMerchandiseOrderReportExcelHelper();
             return helper.Export(rows);
         }
+
+        public async Task<MerchandiseOrderReportHeaderDto> GetMerchandiseOrderHeaderReportAsync(
+            MerchandiseOrderReportQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            query ??= new MerchandiseOrderReportQuery();
+
+            var viewerScope = await _visibilityHelper.BuildViewerScopeAsync(cancellationToken);
+            return await _repository.GetMerchandiseOrderHeaderReportAsync(query, viewerScope, cancellationToken);
+        }
+
+        public async Task<PagedResult<MerchandiseOrderReportRowDto>> GetMerchandiseOrderRowsAsync(
+            MerchandiseOrderReportQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            query ??= new MerchandiseOrderReportQuery();
+
+            var viewerScope = await _visibilityHelper.BuildViewerScopeAsync(cancellationToken);
+            var (items, totalCount) = await _repository.GetMerchandiseOrderRowsAsync(query, viewerScope, cancellationToken);
+            var pageNumber = query.PageNumber <= 0 ? 1 : query.PageNumber;
+            var pageSize = Math.Min(query.PageSize <= 0 ? 15 : query.PageSize, 15);
+
+            return new PagedResult<MerchandiseOrderReportRowDto>(items, totalCount, pageNumber, pageSize);
+        }
+
+        public async Task<IReadOnlyList<MerchandiseOrderReportDetailDto>> GetMerchandiseOrderDetailReportAsync(
+            Guid merchandiseOrderId,
+            CancellationToken cancellationToken = default)
+        {
+            var viewerScope = await _visibilityHelper.BuildViewerScopeAsync(cancellationToken);
+            return await _repository.GetMerchandiseOrderDetailReportAsync(merchandiseOrderId, viewerScope, cancellationToken);
+        }
     }
 }

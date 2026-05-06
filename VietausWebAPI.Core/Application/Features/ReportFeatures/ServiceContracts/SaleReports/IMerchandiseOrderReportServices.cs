@@ -18,5 +18,17 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.ServiceContract
         Task<byte[]> ExportSummaryMOReportExcelAsync(
             MerchandiseOrderReportQuery query,
             CancellationToken ct = default);
+
+        Task<MerchandiseOrderReportHeaderDto> GetMerchandiseOrderHeaderReportAsync(
+            MerchandiseOrderReportQuery query,
+            CancellationToken cancellationToken = default);
+
+        Task<PagedResult<MerchandiseOrderReportRowDto>> GetMerchandiseOrderRowsAsync(
+            MerchandiseOrderReportQuery query,
+            CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<MerchandiseOrderReportDetailDto>> GetMerchandiseOrderDetailReportAsync(
+            Guid merchandiseOrderId,
+            CancellationToken cancellationToken = default);
     }
 }

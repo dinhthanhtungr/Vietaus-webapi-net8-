@@ -27,7 +27,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Helpers.SaleRep
 
             // ===== TITLE =====
             ws.Cell(1, 1).Value = "BÁO CÁO ĐƠN HÀNG / KẾ HOẠCH GIAO";
-            ws.Range(1, 1, 1, 15).Merge();
+            ws.Range(1, 1, 1, 18).Merge();
             ws.Cell(1, 1).Style.Font.Bold = true;
             ws.Cell(1, 1).Style.Font.FontSize = 16;
             ws.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
@@ -52,7 +52,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Helpers.SaleRep
                 "SL đã giao",
                 "SL còn lại",
                 "Đơn giá",
-                "Thành tiền",
+                "Thành tiền đặt",
+                "Tiền thực bán",
+                "Tiền còn lại",
                 "Trạng thái"
             };
 
@@ -108,13 +110,17 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Helpers.SaleRep
                 ws.Cell(r, 13).Value = item.RemainingQuantity;
                 ws.Cell(r, 14).Value = item.UnitPrice;
                 ws.Cell(r, 15).Value = item.TotalPrice;
-                ws.Cell(r, 16).Value = item.Status;
+                ws.Cell(r, 16).Value = item.ActualSoldAmount;
+                ws.Cell(r, 17).Value = item.RemainingAmount;
+                ws.Cell(r, 18).Value = item.Status;
 
                 ws.Cell(r, 11).Style.NumberFormat.Format = "#,##0.##";
                 ws.Cell(r, 12).Style.NumberFormat.Format = "#,##0.##";
                 ws.Cell(r, 13).Style.NumberFormat.Format = "#,##0.##";
                 ws.Cell(r, 14).Style.NumberFormat.Format = "#,##0.##";
                 ws.Cell(r, 15).Style.NumberFormat.Format = "#,##0.##";
+                ws.Cell(r, 16).Style.NumberFormat.Format = "#,##0.##";
+                ws.Cell(r, 17).Style.NumberFormat.Format = "#,##0.##";
 
                 var rowRange = ws.Range(r, 1, r, headers.Length);
                 rowRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
@@ -134,10 +140,12 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Helpers.SaleRep
                 ws.Cell(r, 13).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
                 ws.Cell(r, 14).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
                 ws.Cell(r, 15).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                ws.Cell(r, 16).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                ws.Cell(r, 17).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
 
                 ws.Cell(r, 4).Style.Alignment.WrapText = true;
                 ws.Cell(r, 6).Style.Alignment.WrapText = true;
-                ws.Cell(r, 16).Style.Alignment.WrapText = true;
+                ws.Cell(r, 18).Style.Alignment.WrapText = true;
 
                 if (item.RemainingQuantity > 0)
                 {
@@ -161,21 +169,29 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Helpers.SaleRep
             ws.Cell(summaryRow + 3, 1).Value = "Tổng SL còn lại";
             ws.Cell(summaryRow + 3, 2).Value = rows.Sum(x => x.RemainingQuantity);
 
-            ws.Cell(summaryRow + 4, 1).Value = "Tổng thành tiền";
+            ws.Cell(summaryRow + 4, 1).Value = "Tổng thành tiền đặt";
             ws.Cell(summaryRow + 4, 2).Value = rows.Sum(x => x.TotalPrice);
 
-            var summaryRange = ws.Range(summaryRow, 1, summaryRow + 4, 2);
+            ws.Cell(summaryRow + 5, 1).Value = "Tổng tiền thực bán";
+            ws.Cell(summaryRow + 5, 2).Value = rows.Sum(x => x.ActualSoldAmount);
+
+            ws.Cell(summaryRow + 6, 1).Value = "Tổng tiền còn lại";
+            ws.Cell(summaryRow + 6, 2).Value = rows.Sum(x => x.RemainingAmount);
+
+            var summaryRange = ws.Range(summaryRow, 1, summaryRow + 6, 2);
             summaryRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
             summaryRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
             summaryRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
 
-            ws.Range(summaryRow, 1, summaryRow + 4, 1).Style.Font.Bold = true;
-            ws.Range(summaryRow, 1, summaryRow + 4, 1).Style.Fill.BackgroundColor = XLColor.BrightGreen;
+            ws.Range(summaryRow, 1, summaryRow + 6, 1).Style.Font.Bold = true;
+            ws.Range(summaryRow, 1, summaryRow + 6, 1).Style.Fill.BackgroundColor = XLColor.BrightGreen;
 
             ws.Cell(summaryRow + 1, 2).Style.NumberFormat.Format = "#,##0.##";
             ws.Cell(summaryRow + 2, 2).Style.NumberFormat.Format = "#,##0.##";
             ws.Cell(summaryRow + 3, 2).Style.NumberFormat.Format = "#,##0.##";
             ws.Cell(summaryRow + 4, 2).Style.NumberFormat.Format = "#,##0.##";
+            ws.Cell(summaryRow + 5, 2).Style.NumberFormat.Format = "#,##0.##";
+            ws.Cell(summaryRow + 6, 2).Style.NumberFormat.Format = "#,##0.##";
 
             // ===== WIDTH =====
             ws.Column(1).Width = 8;
@@ -194,12 +210,14 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Helpers.SaleRep
             ws.Column(14).Width = 14;
             ws.Column(15).Width = 16;
             ws.Column(16).Width = 16;
+            ws.Column(17).Width = 16;
+            ws.Column(18).Width = 16;
 
             ws.SheetView.FreezeRows(headerRow);
             ws.PageSetup.PageOrientation = XLPageOrientation.Landscape;
             ws.PageSetup.FitToPages(1, 0);
 
-            int finalRow = summaryRow + 4;
+            int finalRow = summaryRow + 6;
             if (finalRow >= 1)
             {
                 ws.Rows(1, finalRow).AdjustToContents();

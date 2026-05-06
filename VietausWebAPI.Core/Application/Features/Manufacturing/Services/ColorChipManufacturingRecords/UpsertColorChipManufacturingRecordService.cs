@@ -95,6 +95,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
             changed |= PatchHelper.SetIfRefNullable(request.NetWeightGram, () => entity.NetWeightGram, v => entity.NetWeightGram = v);
             changed |= PatchHelper.SetIfNullable(request.Electrostatic, () => entity.Electrostatic, v => entity.Electrostatic = v);
             changed |= PatchHelper.SetIfRefNullable(request.DeltaE, () => entity.DeltaE, v => entity.DeltaE = v);   
+            changed |= PatchHelper.SetIfNullable(request.UsageRate, () => entity.UsageRate, v => entity.UsageRate = v);
 
             changed |= PatchHelper.SetIfNullable(request.RecordDate, () => entity.RecordDate, v => entity.RecordDate = v);
             changed |= PatchHelper.SetIfRefNullable(request.Note, () => entity.Note, v => entity.Note = v);

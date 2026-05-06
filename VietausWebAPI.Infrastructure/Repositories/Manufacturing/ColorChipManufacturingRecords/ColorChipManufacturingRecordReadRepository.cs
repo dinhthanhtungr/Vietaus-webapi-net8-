@@ -77,9 +77,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing.ColorChipManuf
                          ? x.MfgProductionOrder.FormulaExternalIdSnapshot
                          : null,
 
-                     ProductUsageRate = x.MfgProductionOrder != null && x.MfgProductionOrder.Product != null
-                         ? x.MfgProductionOrder.Product.UsageRate
-                         : null,
+                     UsageRate = x.UsageRate,
 
                      ManufacturingFormulaExternalId = x.ManufacturingFormula != null
                          ? x.ManufacturingFormula.ExternalId
@@ -141,6 +139,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing.ColorChipManuf
                     PelletWeightGram = x.PelletWeightGram,
                     NetWeightGram = x.NetWeightGram,
                     Electrostatic = x.Electrostatic,
+                    UsageRate = x.UsageRate,
                     RecordDate = x.RecordDate,
                     Note = x.Note,
                     PrintNote = x.PrintNote,

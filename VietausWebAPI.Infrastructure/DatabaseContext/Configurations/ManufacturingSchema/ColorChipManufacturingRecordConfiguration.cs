@@ -88,6 +88,10 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.Manufactur
                 .HasColumnName("delta_e")
                 .HasMaxLength(255);
 
+            b.Property(x => x.UsageRate)
+                .HasColumnName("usage_rate")
+                .HasPrecision(5, 2);
+
             // =========================================================
             // 7. Document / Record Info
             // =========================================================

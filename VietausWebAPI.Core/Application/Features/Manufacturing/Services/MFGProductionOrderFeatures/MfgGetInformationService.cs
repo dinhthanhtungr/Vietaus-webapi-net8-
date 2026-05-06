@@ -157,7 +157,7 @@ namespace VietausWebAPI.Core.Application.Features.ManufacturingFeature.Services
                                     ? $"{i.Product.Name}"
                                     : i.MaterialNameSnapshot),
 
-                                                        MaterialExternalIdSnapshot = i.itemType == ItemType.Material
+                            MaterialExternalIdSnapshot = i.itemType == ItemType.Material
                                 ? (i.Material != null ? i.Material.ExternalId : i.MaterialExternalIdSnapshot)
                                 : (i.Product != null
                                     ? i.Product.SampleRequests

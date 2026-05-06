@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.Vml.Spreadsheet;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Helpers;
@@ -21,6 +22,7 @@ using VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleReques
 using VietausWebAPI.Core.Application.Features.Notifications.DTOs;
 using VietausWebAPI.Core.Application.Features.Notifications.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Service.StaticCurrentPriceHelpers;
 using VietausWebAPI.Core.Application.Features.Shared.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
@@ -75,6 +77,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             try
             {
                 var dto = await _unitOfWork.SampleRequestRepository.Query()
+                    .Include(x => x.Formula)
                     .Where(c => c.SampleRequestId == id && c.IsActive == true)
                     .Select(x => new
                     {
@@ -84,7 +87,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                         x.CustomerId,
                         CustomerName = x.Customer.CustomerName,
                         CustomerCode = x.Customer.ExternalId,
-                        ManagerName = x.ManagerByNavigation.FullName, // đổi sang đúng property tên thật bên Employee nếu khác
+                        ManagerName = x.ManagerByNavigation.FullName,
                         x.ProductId,
                         x.AttachmentCollectionId,
                         x.RealDeliveryDate,
@@ -148,7 +151,73 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                         }
                     })
                     .FirstOrDefaultAsync(ct);
-                // Map sang DTO t   rả về
+
+                if (dto == null)
+                    throw new KeyNotFoundException($"Không tìm thấy SampleRequest: {id}");
+
+                decimal calculatedFormulaTotalPrice = 0m;
+
+                if (dto.Formula != null && dto.FormulaId.HasValue && dto.FormulaId.Value != Guid.Empty)
+                {
+                    var formulaId = dto.FormulaId.Value;
+
+                    var materialRows = await _unitOfWork.FormulaMaterialRepository.Query()
+                        .AsNoTracking()
+                        .Where(m => m.IsActive && m.FormulaId == formulaId)
+                        .Select(m => new
+                        {
+                            m.FormulaId,
+                            m.FormulaMaterialId,
+                            m.LineNo,
+                            m.MaterialId,
+                            m.ProductId,
+                            m.itemType,
+                            m.CategoryId,
+                            m.Quantity,
+                            m.Unit,
+
+                            DisplayName = m.itemType == ItemType.Material
+                                ? (m.Material != null
+                                    ? m.Material.Name
+                                    : m.MaterialNameSnapshot)
+                                : (m.Product != null
+                                    ? m.Product.Name
+                                    : m.MaterialNameSnapshot),
+
+                            DisplayExternalId = m.itemType == ItemType.Material
+                                ? (m.Material != null
+                                    ? m.Material.ExternalId
+                                    : m.MaterialExternalIdSnapshot)
+                                : (m.Product != null
+                                    ? m.Product.ColourCode
+                                    : m.MaterialExternalIdSnapshot)
+                        })
+                        .ToListAsync(ct);
+
+                    var priceInfoDict = await MaterialPriceQueryHelper.LoadLatestItemPriceInfoDictAsync(
+                        _unitOfWork.PurchaseOrderDetailRepository.Query(),
+                        _unitOfWork.MaterialsSupplierRepository.Query(),
+                        _unitOfWork.MerchandiseOrderRepository.QueryDetail(),
+                        materialRows.Select(x => (x.itemType, x.MaterialId, x.ProductId)),
+                        ct);
+
+                    calculatedFormulaTotalPrice = materialRows.Sum(x =>
+                    {
+                        var itemId = x.itemType == ItemType.Material ? x.MaterialId : x.ProductId;
+
+                        if (!itemId.HasValue || itemId.Value == Guid.Empty)
+                            return 0m;
+
+                        var unitPrice = MaterialPriceQueryHelper.ResolveLatestItemPrice(
+                            priceInfoDict,
+                            x.itemType,
+                            itemId,
+                            0m);
+
+                        return decimal.Round(x.Quantity * unitPrice, 2, MidpointRounding.AwayFromZero);
+                    });
+                }
+
                 var sample = new GetSampleRequest
                 {
                     SampleRequestId = dto.SampleRequestId,
@@ -158,7 +227,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     CustomerCode = dto.CustomerCode,
                     ManagerName = dto.ManagerName,
                     ProductId = dto.ProductId,
-                    AttachmentCollectionId = dto.AttachmentCollectionId, // có thể null
+                    AttachmentCollectionId = dto.AttachmentCollectionId,
                     RealDeliveryDate = dto.RealDeliveryDate,
                     ExpectedDeliveryDate = dto.ExpectedDeliveryDate,
                     RequestDeliveryDate = dto.RequestDeliveryDate,
@@ -173,14 +242,13 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     SampleQuantity = dto.SampleQuantity,
                     OtherComment = dto.OtherComment,
                     InfoType = dto.InfoType,
-                    //FormulaId = dto.FormulaId,
-                    // FormulaPrice sẽ set ở dưới nếu có FormulaId
+
                     Formula = dto.Formula != null
                         ? new GetSampleFormula
                         {
                             FormulaId = dto.Formula.FormulaId,
                             ExternalId = dto.Formula.ExternalId,
-                            TotalPrice = dto.Formula.TotalPrice,
+                            TotalPrice = calculatedFormulaTotalPrice,
                             Status = dto.Formula.Status,
                             Note = dto.Formula.Note,
                             Name = dto.Formula.Name,
@@ -191,6 +259,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                             IsSelect = true
                         }
                         : null,
+
                     SaleComment = dto.SaleComment,
                     AdditionalComment = dto.AdditionalComment ?? string.Empty,
                     CustomerProductCode = dto.CustomerProductCode ?? string.Empty,
@@ -203,7 +272,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 {
                     ProductId = dto.Product.ProductId,
                     ColourCode = dto.Product.ColourCode,
-                    Name = dto.Product.Name ?? string.Empty,    // bắt buộc
+                    Name = dto.Product.Name ?? string.Empty,
                     ColourName = dto.Product.ColourName,
                     Additive = dto.Product.Additive,
                     UsageRate = dto.Product.UsageRate,
@@ -235,18 +304,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     IsRecycle = dto.Product.IsRecycle
                 };
 
-                // Tính FormulaPrice nếu có FormulaId (tái sử dụng CalcFromVU)
-                //if (sample.Formula != null && sample.Formula.FormulaId != Guid.Empty)
-                //{ 
-                //    // Lưu ý: CalcFromVU trả về decimal (đã round 2). Có thể mất ~vài ms do query BOM + giá
-                //    var price = await _priceProvider.CalculatePriceAsync(sample.Formula.FormulaId, FormulaSource.FromVU, ct);
-                //    sample.Formula.TotalPrice = price;
-                //}
-                //else
-                //{
-                //    sample.FormulaPrice = null;
-                //}
-
                 return new GetSampleWithProductRequest
                 {
                     Product = product,
@@ -258,6 +315,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 throw new Exception($"Lỗi khi lấy thông tin mẫu: {ex.Message}", ex);
             }
         }
+
 
         /// <summary>
         /// Lấy danh sách mẫu với phân trang và lọc
@@ -438,8 +496,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                         ExternalId = sr.ExternalId,
                         CustomerName = sr.Customer.CustomerName,
                         CustomerCode = sr.Customer.ExternalId,
-                        SaleComment = sr.Product.Requirement ?? string.Empty,
-                        AdditionalComment = sr.Product.LabComment,
+                        LabNote = sr.Product.LabComment,
+                        Requirement = sr.Product.Requirement,
 
                         // 1 Product -> nhiều Formula
                         SampleFormulas = sr.Product.Formulas

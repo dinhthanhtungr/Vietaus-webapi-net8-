@@ -235,5 +235,16 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Manufacturing
                 return StatusCode(500, "An unexpected error occurred during PDF generation.");
             }
         }
+
+        [HttpGet("ExportXmlByMpo")]
+        public async Task<IActionResult> ExportXmlByMpo([FromQuery] Guid mfgProductionOrderId, CancellationToken ct)
+        {
+            var bytes = await _mfgFormulaService.ExportCurrentByMpoToXmlAsync(mfgProductionOrderId, ct);
+            return File(
+                bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"formula_mpo_{mfgProductionOrderId}.xlsx");
+        }
+
     }
 }

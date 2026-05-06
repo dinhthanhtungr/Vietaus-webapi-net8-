@@ -52,6 +52,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                         x.QcCheck,
                         x.LabNote,
 
+                        x.Requirement,
+
                         ProductId = x.Formula.Product.ProductId,
                         ColourCode = x.Formula.Product.ColourCode,
                         Name = x.Formula.Product.Name,
@@ -101,7 +103,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                     CustomerCode = customer?.ExternalId,
                     CustomerName = customer?.CustomerName,
                     LabNote = formula.LabNote,
-                    Requirement = customer?.SaleComment,
+                    Requirement = formula.Requirement,
                     MaterialSnapshots = snaps
                 });
             }

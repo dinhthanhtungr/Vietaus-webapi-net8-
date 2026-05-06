@@ -57,6 +57,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
                     RecordDate = x.RecordDate,
                     Note = x.Note,
                     DeltaE = x.DeltaE,
+                    UsageRate = x.UsageRate,
 
                     PrintNote = x.PrintNote,
                     CreatedDate = x.CreatedDate,
@@ -146,6 +147,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
                     FormStyle = x.FormStyle,
                     RecordDate = x.RecordDate,
                     Machine = x.Machine,
+                    UsageRate = x.UsageRate,
                     IsActive = x.IsActive
                 })
                 .ToListAsync(ct);

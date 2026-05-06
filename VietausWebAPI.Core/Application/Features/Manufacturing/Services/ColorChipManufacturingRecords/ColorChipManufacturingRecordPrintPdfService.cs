@@ -99,8 +99,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
                 Color = data.ProductName
                     ?? string.Empty,
 
-                AddRate = data.ProductUsageRate != null
-                    ? $"{data.ProductUsageRate}%"
+                AddRate = data.UsageRate != null
+                    ? $"{data.UsageRate}%"
                     : string.Empty,
 
                 Resin = !string.IsNullOrWhiteSpace(data.Resin)

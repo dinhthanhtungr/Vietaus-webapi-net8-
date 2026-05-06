@@ -63,6 +63,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
         private readonly INotificationService _notificationService;
         private readonly IPriceProvider _priceProvider;
         private readonly IFormulaPDF _FormulaPDF;
+        private readonly IFormulaXML _formulaXml;
 
         public MfgFormulaService(
                          IUnitOfWork unitOfWork, 
@@ -72,13 +73,15 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                          IWarehouseReadService warehouseReadService,
                          INotificationService notificationService,
                          IPriceProvider priceProvider,
-                         IFormulaPDF formulaPDF)
+                         IFormulaPDF formulaPDF,
+                         IFormulaXML formulaXML)
         {
             _unitOfWork = unitOfWork;
             _externalId = externalId;
             _currentUser = currentUser;
             _TimelineService = timelineService;
             _FormulaPDF = formulaPDF;
+            _formulaXml = formulaXML;
             _warehouseReadService = warehouseReadService;
 
             _notificationService = notificationService;
@@ -782,33 +785,24 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 var fr = _unitOfWork.FormulaRepository.Query().AsNoTracking();
                 var mpo = _unitOfWork.MfgProductionOrderRepository.Query().AsNoTracking();
                 var hasProductFilter = query.ProductId.HasValue && query.ProductId.Value != Guid.Empty;
-                // =========================
-                // VA RAW
-                // =========================
-                var vaRaw = await (
+
+
+
+                var loadVa = query.Source == FormulaSource.FromVA || query.Source == FormulaSource.Both;
+                var loadVu = query.Source == FormulaSource.FromVU || query.Source == FormulaSource.Both;
+
+                IQueryable<RawSummaryFormulaRow> vaHeaderQuery =
                     from s in psv
                     join o in mpo on s.MfgProductionOrderId equals o.MfgProductionOrderId
-                    where (!hasProductFilter || (query.ProductId.HasValue && o.ProductId == query.ProductId.Value))
-                          && s.ManufacturingFormulaId != null
-                    let isLatestForThisFormula =
-                        !psv.Any(s2 =>
-                            s2.MfgProductionOrderId == s.MfgProductionOrderId
-                            && s2.ManufacturingFormulaId == s.ManufacturingFormulaId
-                            && (
-                                s2.ValidFrom > s.ValidFrom
-                                || (s2.ValidFrom == s.ValidFrom
-                                    && s2.ProductionSelectVersionId.CompareTo(s.ProductionSelectVersionId) > 0)
-                            ))
-                    where isLatestForThisFormula
                     join f in mfr on s.ManufacturingFormulaId equals f.ManufacturingFormulaId
-                    orderby s.ValidTo == null descending,
-                            s.ValidFrom descending,
-                            s.ProductionSelectVersionId descending
+                    where loadVa
+                          && s.ManufacturingFormulaId != null
+                          && (!hasProductFilter || o.ProductId == query.ProductId!.Value)
                     select new RawSummaryFormulaRow
                     {
                         FormulaId = f.ManufacturingFormulaId,
                         ExternalId = f.ExternalId,
-                        Name = "-",
+                        Name = f.Name,
                         FormulaSourceIdCreatedDate = f.CreatedDate,
 
                         ColourCode = o.Product != null ? o.Product.ColourCode : null,
@@ -818,66 +812,20 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         CustomerName = o.CustomerNameSnapshot,
                         FormulaExternalId = o.FormulaExternalIdSnapshot,
                         MfgFormulaExternalId = f.ExternalId,
+
                         SampleRequestExternalId = o.Product != null
                             ? o.Product.SampleRequests
                                 .Where(sr => sr.IsActive)
                                 .OrderByDescending(sr => sr.CreatedDate)
                                 .Select(sr => sr.ExternalId)
                                 .FirstOrDefault()
-                            : null,
+                            : null
+                    };
 
-                        Materials = f.ManufacturingFormulaMaterials
-                            .Where(x => x.IsActive)
-                            .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
-                            .ThenBy(x => x.MaterialExternalIdSnapshot)
-                            .Select(m => new RawSummaryFormulaMaterialRow
-                            {
-                                itemType = m.itemType,
-                                ItemId = m.itemType == ItemType.Material
-                                    ? (m.MaterialId ?? Guid.Empty)
-                                    : (m.ProductId ?? Guid.Empty),
-                                MaterialId = m.MaterialId,
-                                ProductId = m.ProductId,
-                                CategoryId = m.CategoryId,
-                                Quantity = m.Quantity,
-                                Unit = m.Unit,
-                                //MaterialNameSnapshot = m.itemType == ItemType.Material
-                                //    ? (m.Material != null ? m.Material.Name : "")
-                                //    : (m.Product != null ? m.Product.Name : ""),
-
-                                //MaterialExternalIdSnapshot = m.itemType == ItemType.Material
-                                //    ? (m.Material != null ? m.Material.ExternalId : "")
-                                //    : (m.Product != null ? m.Product.ColourCode : ""),
-
-                                MaterialNameSnapshot = m    .itemType == ItemType.Material
-                                    ? (m.Material != null ? m.Material.Name : m.MaterialNameSnapshot)
-                                    : (m.Product != null
-                                        ? $"{m.Product.Name}"
-                                        : m.MaterialNameSnapshot),
-
-                                MaterialExternalIdSnapshot = m.itemType == ItemType.Material
-                                    ? (m.Material != null ? m.Material.ExternalId : m.MaterialExternalIdSnapshot)
-                                    : (m.Product != null
-                                        ? m.Product.SampleRequests
-                                            .Where(sr => sr.IsActive)
-                                            .OrderByDescending(sr => sr.CreatedDate)
-                                            .Select(sr => sr.ExternalId)
-                                            .FirstOrDefault()
-                                        : m.MaterialExternalIdSnapshot),
-
-
-                                FallbackUnitPrice = m.UnitPrice
-                            })
-                            .ToList()
-                    }
-                ).ToListAsync(ct);
-                // =========================
-                // VU RAW
-                // =========================
-                var vuRaw = await (
+                IQueryable<RawSummaryFormulaRow> vuHeaderQuery =
                     from f in fr
-                    where f.ProductId == query.ProductId
-                    orderby f.CreatedDate descending, f.FormulaId descending
+                    where loadVu
+                          && (!hasProductFilter || f.ProductId == query.ProductId!.Value)
                     select new RawSummaryFormulaRow
                     {
                         FormulaId = f.FormulaId,
@@ -885,7 +833,6 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         Name = f.Name,
                         FormulaSourceIdCreatedDate = f.CreatedDate,
 
-                        // search fields
                         ColourCode = f.Product != null ? f.Product.ColourCode : null,
                         ColourName = f.Product != null ? f.Product.ColourName : null,
                         CustomerName = f.Product.SampleRequests
@@ -898,80 +845,121 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             .OrderByDescending(sr => sr.CreatedDate)
                             .Select(sr => sr.ExternalId)
                             .FirstOrDefault(),
+
                         FormulaExternalId = f.ExternalId,
-                        MfgFormulaExternalId = null,
+                        MfgFormulaExternalId = null
+                    };
 
-                        Materials = f.FormulaMaterials
-                            .Where(x => x.IsActive)
-                            .OrderBy(x => x.LineNo == 0 ? int.MaxValue : x.LineNo)
-                            .Select(m => new RawSummaryFormulaMaterialRow
-                            {
-                                itemType = m.itemType,
-                                ItemId = m.itemType == ItemType.Material
-                                    ? (m.MaterialId ?? Guid.Empty)
-                                    : (m.ProductId ?? Guid.Empty),
-                                MaterialId = m.MaterialId,
-                                ProductId = m.ProductId,
-                                CategoryId = m.CategoryId,
-                                Quantity = m.Quantity,
-                                Unit = m.Unit,
-
-
-                                MaterialNameSnapshot = m.itemType == ItemType.Material
-                                    ? (m.Material != null ? m.Material.Name : m.MaterialNameSnapshot)
-                                    : (m.Product != null
-                                        ? $"{m.Product.Name}"
-                                        : m.MaterialNameSnapshot),
-
-                                MaterialExternalIdSnapshot = m.itemType == ItemType.Material
-                                    ? (m.Material != null ? m.Material.ExternalId : m.MaterialExternalIdSnapshot)
-                                    : (m.Product != null
-                                        ? m.Product.SampleRequests
-                                            .Where(sr => sr.IsActive)
-                                            .OrderByDescending(sr => sr.CreatedDate)
-                                            .Select(sr => sr.ExternalId)
-                                            .FirstOrDefault()
-                                        : m.MaterialExternalIdSnapshot),
-
-                                FallbackUnitPrice = m.UnitPrice
-                            })
-                            .ToList()
-                    }
-                ).ToListAsync(ct);
-
-                // =========================
-                // CHỌN NGUỒN
-                // =========================
-                List<RawSummaryFormulaRow> merged = query.Source switch
+                IQueryable<RawSummaryFormulaRow> headerQuery = query.Source switch
                 {
-                    FormulaSource.FromVA => vaRaw,
-                    FormulaSource.FromVU => vuRaw,
-                    _ => vaRaw.Concat(vuRaw).ToList()
+                    FormulaSource.FromVA => vaHeaderQuery,
+                    FormulaSource.FromVU => vuHeaderQuery,
+                    _ => vaHeaderQuery.Concat(vuHeaderQuery)
                 };
 
                 if (!string.IsNullOrWhiteSpace(query.Keyword))
                 {
                     var keyword = query.Keyword.Trim().ToLower();
 
-                    merged = merged
-                        .Where(x =>
-                            (!string.IsNullOrWhiteSpace(x.ColourCode) && x.ColourCode.ToLower().Contains(keyword)) ||
-                            (!string.IsNullOrWhiteSpace(x.SampleRequestExternalId) && x.SampleRequestExternalId.ToLower().Contains(keyword)) ||
-                            (!string.IsNullOrWhiteSpace(x.ColourName) && x.ColourName.ToLower().Contains(keyword)) ||
-                            (!string.IsNullOrWhiteSpace(x.CustomerName) && x.CustomerName.ToLower().Contains(keyword)) ||
-                            (!string.IsNullOrWhiteSpace(x.FormulaExternalId) && x.FormulaExternalId.ToLower().Contains(keyword)) ||
-                            (!string.IsNullOrWhiteSpace(x.MfgFormulaExternalId) && x.MfgFormulaExternalId.ToLower().Contains(keyword))
-                        )
-                        .ToList();
+                    headerQuery = headerQuery.Where(x =>
+                        (x.ColourCode != null && x.ColourCode.ToLower().Contains(keyword)) ||
+                        (x.SampleRequestExternalId != null && x.SampleRequestExternalId.ToLower().Contains(keyword)) ||
+                        (x.ColourName != null && x.ColourName.ToLower().Contains(keyword)) ||
+                        (x.CustomerName != null && x.CustomerName.ToLower().Contains(keyword)) ||
+                        (x.FormulaExternalId != null && x.FormulaExternalId.ToLower().Contains(keyword)) ||
+                        (x.MfgFormulaExternalId != null && x.MfgFormulaExternalId.ToLower().Contains(keyword)));
                 }
 
-                var totalCount = merged.Count;
+                var totalCount = await headerQuery.CountAsync(ct);
 
-                var pageRows = merged
+                var pageRows = await headerQuery
                     .OrderByDescending(x => x.FormulaSourceIdCreatedDate)
                     .Skip((query.PageNumber - 1) * query.PageSize)
                     .Take(query.PageSize)
+                    .ToListAsync(ct);
+
+                var vaFormulaIds = pageRows
+                    .Where(x => x.MfgFormulaExternalId != null)
+                    .Select(x => x.FormulaId)
                     .ToList();
+
+                var vuFormulaIds = pageRows
+                    .Where(x => x.MfgFormulaExternalId == null)
+                    .Select(x => x.FormulaId)
+                    .ToList();
+
+                var vaMaterialRows = await _unitOfWork.ManufacturingFormulaMaterialRepository.Query()
+                    .AsNoTracking()
+                    .Where(m => vaFormulaIds.Contains(m.ManufacturingFormulaId) && m.IsActive)
+                    .OrderBy(m => m.LineNo == 0 ? int.MaxValue : m.LineNo)
+                    .ThenBy(m => m.MaterialExternalIdSnapshot)
+                    .Select(m => new
+                    {
+                        FormulaId = m.ManufacturingFormulaId,
+                        Row = new RawSummaryFormulaMaterialRow
+                        {
+                            itemType = m.itemType,
+                            ItemId = m.itemType == ItemType.Material
+                                ? (m.MaterialId ?? Guid.Empty)
+                                : (m.ProductId ?? Guid.Empty),
+                            MaterialId = m.MaterialId,
+                            ProductId = m.ProductId,
+                            CategoryId = m.CategoryId,
+                            Quantity = m.Quantity,
+                            Unit = m.Unit,
+                            MaterialNameSnapshot = m.itemType == ItemType.Material
+                                ? (m.Material != null ? m.Material.Name : m.MaterialNameSnapshot)
+                                : (m.Product != null ? m.Product.Name : m.MaterialNameSnapshot),
+                            MaterialExternalIdSnapshot = m.itemType == ItemType.Material
+                                ? (m.Material != null ? m.Material.ExternalId : m.MaterialExternalIdSnapshot)
+                                : (m.Product != null ? m.Product.ColourCode : m.MaterialExternalIdSnapshot),
+                            FallbackUnitPrice = m.UnitPrice
+                        }
+                    })
+                    .ToListAsync(ct);
+
+                var vuMaterialRows = await _unitOfWork.FormulaMaterialRepository.Query()
+                    .AsNoTracking()
+                    .Where(m => vuFormulaIds.Contains(m.FormulaId) && m.IsActive)
+                    .OrderBy(m => m.LineNo == 0 ? int.MaxValue : m.LineNo)
+                    .ThenBy(m => m.MaterialExternalIdSnapshot)
+                    .Select(m => new
+                    {
+                        FormulaId = m.FormulaId,
+                        Row = new RawSummaryFormulaMaterialRow
+                        {
+                            itemType = m.itemType,
+                            ItemId = m.itemType == ItemType.Material
+                                ? (m.MaterialId ?? Guid.Empty)
+                                : (m.ProductId ?? Guid.Empty),
+                            MaterialId = m.MaterialId,
+                            ProductId = m.ProductId,
+                            CategoryId = m.CategoryId,
+                            Quantity = m.Quantity,
+                            Unit = m.Unit,
+                            MaterialNameSnapshot = m.itemType == ItemType.Material
+                                ? (m.Material != null ? m.Material.Name : m.MaterialNameSnapshot)
+                                : (m.Product != null ? m.Product.Name : m.MaterialNameSnapshot),
+                            MaterialExternalIdSnapshot = m.itemType == ItemType.Material
+                                ? (m.Material != null ? m.Material.ExternalId : m.MaterialExternalIdSnapshot)
+                                : (m.Product != null ? m.Product.ColourCode : m.MaterialExternalIdSnapshot),
+                            FallbackUnitPrice = m.UnitPrice
+                        }
+                    })
+                    .ToListAsync(ct);
+
+                var materialLookup = vaMaterialRows
+                    .Concat(vuMaterialRows)
+                    .GroupBy(x => x.FormulaId)
+                    .ToDictionary(g => g.Key, g => g.Select(x => x.Row).ToList());
+
+                foreach (var row in pageRows)
+                {
+                    row.Materials = materialLookup.TryGetValue(row.FormulaId, out var materials)
+                        ? materials
+                        : new List<RawSummaryFormulaMaterialRow>();
+                }
+
 
                 // =========================
                 // LOAD BẢNG GIÁ MỚI NHẤT
@@ -2627,6 +2615,110 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 throw;
             }
         }
+
+        public async Task<byte[]> ExportCurrentByMpoToXmlAsync(Guid mfgProductionOrderId, CancellationToken ct = default)
+        {
+            using var tx = await _unitOfWork.BeginTransactionAsync();
+
+            try
+            {
+                if (mfgProductionOrderId == Guid.Empty)
+                    throw new ArgumentException("MfgProductionOrderId không hợp lệ.", nameof(mfgProductionOrderId));
+
+                var currentFormula = await (
+                    from v in _unitOfWork.ProductionSelectVersionRepository.Query(false)
+                    join mf in _unitOfWork.ManufacturingFormulaRepository.Query(false)
+                        on v.ManufacturingFormulaId equals mf.ManufacturingFormulaId
+                    where v.MfgProductionOrderId == mfgProductionOrderId
+                          && v.ValidTo == null
+                          && v.ManufacturingFormulaId != null
+                          && mf.IsActive
+                    orderby v.ValidFrom descending
+                    select new
+                    {
+                        ManufacturingFormulaId = v.ManufacturingFormulaId!.Value,
+                        FormulaExternalId = mf.ExternalId
+                    }
+                ).FirstOrDefaultAsync(ct);
+
+                if (currentFormula == null)
+                    throw new KeyNotFoundException($"Không tìm thấy công thức VA hiện hành của lệnh sản xuất: {mfgProductionOrderId}");
+
+                var data = await _unitOfWork.MfgProductionOrderRepository.Query(false)
+                    .Where(mpo => mpo.MfgProductionOrderId == mfgProductionOrderId && mpo.IsActive)
+                    .Select(mpo => new
+                    {
+                        Tp = mpo.ExternalId,
+                        Code = mpo.ProductExternalIdSnapshot,
+                        Name = mpo.ProductNameSnapshot,
+
+                        Formula = _unitOfWork.ManufacturingFormulaRepository.Query(false)
+                            .Where(f => f.ManufacturingFormulaId == currentFormula.ManufacturingFormulaId && f.IsActive)
+                            .Select(f => new
+                            {
+                                f.ManufacturingFormulaId,
+                                f.ExternalId,
+                                Materials = f.ManufacturingFormulaMaterials
+                                    .Where(m => m.IsActive)
+                                    .OrderBy(m => m.LineNo)
+                                    .Select(m => new
+                                    {
+                                        m.LineNo,
+                                        m.Quantity,
+                                        MaterialNameSnapshot = m.itemType == ItemType.Material
+                                            ? (m.Material != null
+                                                ? m.Material.Name
+                                                : m.MaterialNameSnapshot)
+                                            : (m.Product != null
+                                                ? $"{m.Product.Name}"
+                                                : m.MaterialNameSnapshot),
+
+                                        MaterialExternalIdSnapshot = m.itemType == ItemType.Material
+                                            ? (m.Material != null
+                                                ? m.Material.ExternalId
+                                                : m.MaterialExternalIdSnapshot)
+                                            : (m.Product != null
+                                                ? m.Product.SampleRequests
+                                                    .Where(sr => sr.IsActive)
+                                                    .OrderByDescending(sr => sr.CreatedDate)
+                                                    .Select(sr => sr.ExternalId)
+                                                    .FirstOrDefault()
+                                                : m.MaterialExternalIdSnapshot)
+                                    })
+                                    .ToList()
+                            })
+                            .FirstOrDefault()
+                    })
+                    .FirstOrDefaultAsync(ct);
+
+                if (data == null || data.Formula == null)
+                    throw new KeyNotFoundException($"Không tìm thấy dữ liệu export cho lệnh sản xuất: {mfgProductionOrderId}");
+
+                var rows = data.Formula.Materials
+                    .Select(m => new FormulaExportRow
+                    {
+                        TP = data.Tp ?? "",
+                        SoMe = data.Formula.ExternalId ?? "",
+                        Code = data.Code ?? "",
+                        Ten = data.Name ?? "",
+                        NVL = m.MaterialExternalIdSnapshot ?? "",
+                        Detail = m.MaterialNameSnapshot ?? "",
+                        DinhMuc = m.Quantity,
+                        KhachHang = ""
+                    })
+                    .ToList();
+
+                var bytes = _formulaXml.Render(rows);
+                await tx.CommitAsync(ct);
+                return bytes;
+            }
+            catch
+            {
+                await tx.RollbackAsync(ct);
+                throw;
+            }
+        }
+
 
         // ====================================================================== Helper ==========================================================================
 

@@ -20,6 +20,17 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
         public virtual DbSet<JobTitle> JobTitles { get; set; } = default!;
 
 
+        public virtual DbSet<PayrollPeriod> PayrollPeriods { get; set; } = default!;
+        public virtual DbSet<SalaryComponentDefinition> SalaryComponentDefinitions { get; set; } = default!;
+        public virtual DbSet<PayrollEmployeeRun> PayrollEmployeeRuns { get; set; } = default!;
+        public virtual DbSet<PayrollEmployeeRunDetail> PayrollEmployeeRunDetails { get; set; } = default!;
+        public virtual DbSet<EmployeeInsuranceContribution> EmployeeInsuranceContributions { get; set; } = default!;
+        public virtual DbSet<EmployeeInsuranceBook> EmployeeInsuranceBooks { get; set; } = default!;
+        public virtual DbSet<EmployeeInsuranceClaim> EmployeeInsuranceClaims { get; set; } = default!;
+
+
+
+
         public virtual DbSet<Employee> Employees { get; set; } = default!;
         public virtual DbSet<Part> Parts { get; set; } = default!;
 

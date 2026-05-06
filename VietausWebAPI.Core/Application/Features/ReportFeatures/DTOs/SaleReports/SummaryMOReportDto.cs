@@ -27,7 +27,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.DTOs.SaleReport
         public decimal? RemainingQuantity { get; set; }                     // còn lại
 
         public decimal? UnitPrice { get; set; }                             // giá bán
-        public decimal? TotalPrice { get; set; }                            // thành tiền
+        public decimal? TotalPrice { get; set; }                            // thành tiền đặt
+        public decimal? ActualSoldAmount { get; set; }                      // tiền thực bán = SL đã giao * đơn giá
+        public decimal? RemainingAmount { get; set; }                       // tiền còn lại = thành tiền đặt - tiền thực bán
         public string Status { get; set; } = string.Empty;
     }
 }

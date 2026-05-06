@@ -32,14 +32,12 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
 
             var result = await _unitOfWork.FormulaRepository.Query(track: false)
                 .Where(f => ids.Contains(f.ProductId)
-                            && f.IsActive
-                            && f.IsSelect)
+                            && f.IsActive)
                 .Select(f => new
                 {
                     f.ProductId,
                     MaterialCount = f.FormulaMaterials.Count(m =>
-                        m.IsActive &&
-                        m.itemType == ItemType.Material)
+                        m.IsActive)
                 })
                 .Where(x => x.MaterialCount == 1)
                 .Select(x => x.ProductId)
@@ -47,6 +45,36 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                 .ToListAsync(ct);
 
             return result.ToHashSet();
+        }
+
+        public async Task<HashSet<string>> GetManufacturingFormulaExternalIdsWithSingleMaterialAsync(
+            IEnumerable<string> externalIds,
+            CancellationToken ct = default)
+        {
+            var ids = externalIds
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (ids.Count == 0)
+                return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            var result = await _unitOfWork.ManufacturingFormulaRepository.Query(track: false)
+                .Where(f => ids.Contains(f.ExternalId)
+                            && f.IsActive)
+                .Select(f => new
+                {
+                    f.ExternalId,
+                    MaterialCount = f.ManufacturingFormulaMaterials.Count(m =>
+                        m.IsActive && m.itemType == ItemType.Material)
+                })
+                .Where(x => x.MaterialCount == 1)
+                .Select(x => x.ExternalId)
+                .Distinct()
+                .ToListAsync(ct);
+
+            return result.ToHashSet(StringComparer.OrdinalIgnoreCase);
         }
     }
 }

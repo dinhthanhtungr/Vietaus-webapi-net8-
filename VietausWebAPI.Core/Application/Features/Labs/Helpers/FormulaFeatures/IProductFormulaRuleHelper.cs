@@ -11,6 +11,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
         Task<HashSet<Guid>> GetProductIdsWithSingleMaterialFormulaAsync(
             IEnumerable<Guid> productIds,
             CancellationToken ct = default);
+
+        Task<HashSet<string>> GetManufacturingFormulaExternalIdsWithSingleMaterialAsync(
+            IEnumerable<string> externalIds,
+            CancellationToken ct = default);
     }
 
 }

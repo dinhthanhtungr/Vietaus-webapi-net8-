@@ -37,7 +37,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.ColorChipMa
         public string? ProductName { get; set; }
         public string? ColorName { get; set; }
         public string? FormulaExternalIdSnapshot { get; set; }
-        public double? ProductUsageRate { get; set; }
+        public double? UsageRate { get; set; }
 
         public string? ManufacturingFormulaExternalId { get; set; }
         public string? ManufacturingFormulaName { get; set; }

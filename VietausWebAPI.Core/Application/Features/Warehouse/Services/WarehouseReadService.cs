@@ -379,8 +379,8 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                     CategoryName = m.Category != null ? m.Category.Name : ""
                 })
                 .ToListAsync())
-                .GroupBy(x => x.Code)
-                .ToDictionary(g => g.Key, g => g.First());
+                .GroupBy(x => x.Code, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
             var productMap = (await _unitOfWork.ProductRepository.Query()
                 .Where(p => p.ColourCode != null && productCodes.Contains(p.ColourCode))
@@ -391,15 +391,15 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                     CategoryName = p.Category != null ? p.Category.Name : ""
                 })
                 .ToListAsync())
-                .GroupBy(x => x.Code)
-                .ToDictionary(g => g.Key, g => g.First());
+                .GroupBy(x => x.Code, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
 
             var codes = items.Select(x => x.Code).Distinct().ToList();
 
             var detailRows = await (
-                from s in _unitOfWork.WarehouseShelfStockRepository.Query()
-                where codes.Contains(s.Code)
-                      && s.ShelfStockCode != "CT.0.1"
+                from s in shelfQuery
+                where s.ShelfStockCode != "CT.0.1"
                 group s by new
                 {
                     s.Code,
@@ -420,10 +420,10 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 }
             ).ToListAsync();
 
+
             var mixingRows = await (
-                from s in _unitOfWork.WarehouseShelfStockRepository.Query()
-                where codes.Contains(s.Code)
-                      && s.ShelfStockCode == "CT.0.1"
+                from s in shelfQuery
+                where s.ShelfStockCode == "CT.0.1"
                 group s by new
                 {
                     s.Code,
@@ -443,6 +443,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                     OnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m
                 }
             ).ToListAsync();
+
 
             var reservedRows = await (
                 from t in _unitOfWork.WarehouseTempStockRepository.Query()
@@ -457,12 +458,20 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             ).ToListAsync();
 
             var reservedMap = reservedRows.ToDictionary(x => x.Code, x => x.ReservedOpenKg);
-            var headerMap = items.ToDictionary(x => (x.Code, x.StockType));
+            static string NormalizeCode(string? code)
+                => (code ?? string.Empty).Trim().ToUpperInvariant();
+
+            static string StockKey(string? code, StockType stockType)
+                => $"{NormalizeCode(code)}|{(int)stockType}";
+
+            var headerMap = items.ToDictionary(x => StockKey(x.Code, x.StockType));
+
 
             foreach (var d in detailRows)
             {
-                if (!headerMap.TryGetValue((d.Code, d.StockType), out var header))
+                if (!headerMap.TryGetValue(StockKey(d.Code, d.StockType), out var header))
                     continue;
+
 
                 header.StockDetailAvaiables.Add(new StockDetailAvaiable
                 {
@@ -475,8 +484,9 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 
             foreach (var m in mixingRows)
             {
-                if (!headerMap.TryGetValue((m.Code, m.StockType), out var header))
+                if (!headerMap.TryGetValue(StockKey(m.Code, m.StockType), out var header))
                     continue;
+
 
                 header.StockDetailAvaiables.Add(new StockDetailAvaiable
                 {

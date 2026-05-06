@@ -15,6 +15,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.ColorChipMa
         public FormStyle FormStyle { get; set; }
         public DateTime? RecordDate { get; set; }
         public string? Machine { get; set; }
+        public double? UsageRate { get; set; }
         public bool IsActive { get; set; }
     }
 }

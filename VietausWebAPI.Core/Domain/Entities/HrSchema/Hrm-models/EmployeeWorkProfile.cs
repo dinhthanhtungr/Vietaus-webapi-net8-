@@ -13,6 +13,13 @@ namespace VietausWebAPI.Core.Domain.Entities.HrSchema
         public Guid EmployeeWorkProfileId { get; set; } = Guid.CreateVersion7();
         public Guid EmployeeId { get; set; }
 
+
+        public string? DepartmentNameSnapshot { get; set; }
+        public string? SectionNameSnapshot { get; set; }
+        public string? TeamNameSnapshot { get; set; }
+        public string? JobTitleSnapshot { get; set; }
+        public string? JobTitleEnglishSnapshot { get; set; }
+
         public string? AttendanceCode { get; set; }
         public Guid? PartId { get; set; }
         public Guid? GroupId { get; set; }

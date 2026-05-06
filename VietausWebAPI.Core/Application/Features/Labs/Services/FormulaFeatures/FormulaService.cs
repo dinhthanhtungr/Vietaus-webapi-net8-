@@ -861,8 +861,25 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                                         UnitPrice = m.UnitPrice,
                                         TotalPrice = m.TotalPrice,
                                         Unit = m.Unit,
-                                        MaterialNameSnapshot = m.MaterialNameSnapshot,
-                                        MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot
+                                        MaterialNameSnapshot = m.itemType == ItemType.Material
+                                            ? (m.Material != null
+                                                ? m.Material.Name
+                                                : m.MaterialNameSnapshot)
+                                            : (m.Product != null
+                                                ? $"{m.Product.Name}"
+                                                : m.MaterialNameSnapshot),
+
+                                        MaterialExternalIdSnapshot = m.itemType == ItemType.Material
+                                            ? (m.Material != null
+                                                ? m.Material.ExternalId
+                                                : m.MaterialExternalIdSnapshot)
+                                            : (m.Product != null
+                                                ? m.Product.SampleRequests
+                                                    .Where(sr => sr.IsActive)
+                                                    .OrderByDescending(sr => sr.CreatedDate)
+                                                    .Select(sr => sr.ExternalId)
+                                                    .FirstOrDefault()
+                                                : m.MaterialExternalIdSnapshot)
                                     })
                                     .OrderBy(m => m.LineNo)
                                     .ToList()

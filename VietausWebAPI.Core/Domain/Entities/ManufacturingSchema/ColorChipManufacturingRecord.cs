@@ -50,6 +50,7 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         public string? NetWeightGram { get; set; }          // trọng lượng tịnh
         public bool? Electrostatic { get; set; }    // Tĩnh điện, ...
         public string? DeltaE { get; set; }              // Delta E (độ lệch màu)
+        public double? UsageRate { get; set; }             // Tỷ lệ sử dụng (ví dụ: 0.85 cho 85%)
 
         // =========================================================
         // 8. Document / Record Info

@@ -3392,6 +3392,356 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.ToTable("employee_documents", "hr");
                 });
 
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.EmployeeInsuranceBook", b =>
+                {
+                    b.Property<Guid>("EmployeeInsuranceBookId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_insurance_book_id");
+
+                    b.Property<int?>("DetachedLeafCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("detached_leaf_count");
+
+                    b.Property<DateOnly?>("DetachedLeafFromDate")
+                        .HasColumnType("date")
+                        .HasColumnName("detached_leaf_from_date");
+
+                    b.Property<DateOnly?>("DetachedLeafToDate")
+                        .HasColumnType("date")
+                        .HasColumnName("detached_leaf_to_date");
+
+                    b.Property<string>("EmployeeCodeSnapshot")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("employee_code_snapshot");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.Property<Guid?>("EmployeeId1")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EmployeeNameSnapshot")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("employee_name_snapshot");
+
+                    b.Property<bool>("HasBookCover")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("has_book_cover");
+
+                    b.Property<bool>("HasDetachedLeaf")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("has_detached_leaf");
+
+                    b.Property<string>("JobTitleSnapshot")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("job_title_snapshot");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<string>("SocialInsuranceNumberSnapshot")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("social_insurance_number_snapshot");
+
+                    b.HasKey("EmployeeInsuranceBookId")
+                        .HasName("pk_employee_insurance_books");
+
+                    b.HasIndex("EmployeeId")
+                        .HasDatabaseName("ix_employee_insurance_books_employee");
+
+                    b.HasIndex("EmployeeId1");
+
+                    b.HasIndex("SocialInsuranceNumberSnapshot")
+                        .HasDatabaseName("ix_employee_insurance_books_social_number");
+
+                    b.ToTable("employee_insurance_books", "hr");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.EmployeeInsuranceClaim", b =>
+                {
+                    b.Property<Guid>("EmployeeInsuranceClaimId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_insurance_claim_id");
+
+                    b.Property<DateOnly?>("AppointmentDate")
+                        .HasColumnType("date")
+                        .HasColumnName("appointment_date");
+
+                    b.Property<DateOnly?>("ClaimMonth")
+                        .HasColumnType("date")
+                        .HasColumnName("claim_month");
+
+                    b.Property<string>("ClaimMonthLabel")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("claim_month_label");
+
+                    b.Property<string>("ClaimNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("claim_number");
+
+                    b.Property<string>("ClaimType")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("claim_type");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.Property<Guid?>("EmployeeId1")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EmployeeNameSnapshot")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("employee_name_snapshot");
+
+                    b.Property<decimal?>("LeaveDays")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("leave_days");
+
+                    b.Property<DateOnly?>("LeaveFromDate")
+                        .HasColumnType("date")
+                        .HasColumnName("leave_from_date");
+
+                    b.Property<string>("LeaveReason")
+                        .HasColumnType("text")
+                        .HasColumnName("leave_reason");
+
+                    b.Property<DateOnly?>("LeaveToDate")
+                        .HasColumnType("date")
+                        .HasColumnName("leave_to_date");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<string>("ProcessingStatus")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("processing_status");
+
+                    b.Property<DateOnly?>("ReturnedToEmployeeDate")
+                        .HasColumnType("date")
+                        .HasColumnName("returned_to_employee_date");
+
+                    b.Property<int?>("SequenceNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequence_no");
+
+                    b.Property<string>("SocialInsuranceNumberSnapshot")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("social_insurance_number_snapshot");
+
+                    b.HasKey("EmployeeInsuranceClaimId")
+                        .HasName("pk_employee_insurance_claims");
+
+                    b.HasIndex("ClaimMonth")
+                        .HasDatabaseName("ix_employee_insurance_claims_month");
+
+                    b.HasIndex("ClaimNumber")
+                        .HasDatabaseName("ix_employee_insurance_claims_claim_number");
+
+                    b.HasIndex("EmployeeId")
+                        .HasDatabaseName("ix_employee_insurance_claims_employee");
+
+                    b.HasIndex("EmployeeId1");
+
+                    b.ToTable("employee_insurance_claims", "hr");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.EmployeeInsuranceContribution", b =>
+                {
+                    b.Property<Guid>("EmployeeInsuranceContributionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_insurance_contribution_id");
+
+                    b.Property<decimal?>("CompanyHealthInsuranceAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("company_health_insurance_amount");
+
+                    b.Property<decimal?>("CompanyHealthInsuranceRate")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)")
+                        .HasColumnName("company_health_insurance_rate");
+
+                    b.Property<decimal?>("CompanyOccupationalAccidentAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("company_occupational_accident_amount");
+
+                    b.Property<decimal?>("CompanyOccupationalAccidentRate")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)")
+                        .HasColumnName("company_occupational_accident_rate");
+
+                    b.Property<decimal?>("CompanyRetirementAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("company_retirement_amount");
+
+                    b.Property<decimal?>("CompanyRetirementRate")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)")
+                        .HasColumnName("company_retirement_rate");
+
+                    b.Property<decimal?>("CompanySicknessMaternityAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("company_sickness_maternity_amount");
+
+                    b.Property<decimal?>("CompanySicknessMaternityRate")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)")
+                        .HasColumnName("company_sickness_maternity_rate");
+
+                    b.Property<decimal?>("CompanyTotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("company_total_amount");
+
+                    b.Property<decimal?>("CompanyTotalRate")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)")
+                        .HasColumnName("company_total_rate");
+
+                    b.Property<decimal?>("CompanyUnemploymentAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("company_unemployment_amount");
+
+                    b.Property<decimal?>("CompanyUnemploymentRate")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)")
+                        .HasColumnName("company_unemployment_rate");
+
+                    b.Property<DateOnly>("ContributionMonth")
+                        .HasColumnType("date")
+                        .HasColumnName("contribution_month");
+
+                    b.Property<string>("DepartmentSnapshot")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("department_snapshot");
+
+                    b.Property<decimal?>("EmployeeHealthInsuranceAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("employee_health_insurance_amount");
+
+                    b.Property<decimal?>("EmployeeHealthInsuranceRate")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)")
+                        .HasColumnName("employee_health_insurance_rate");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.Property<Guid?>("EmployeeId1")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EmployeeNameSnapshot")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("employee_name_snapshot");
+
+                    b.Property<decimal?>("EmployeeSocialInsuranceAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("employee_social_insurance_amount");
+
+                    b.Property<decimal?>("EmployeeSocialInsuranceRate")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)")
+                        .HasColumnName("employee_social_insurance_rate");
+
+                    b.Property<decimal?>("EmployeeTotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("employee_total_amount");
+
+                    b.Property<decimal?>("EmployeeTotalRate")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)")
+                        .HasColumnName("employee_total_rate");
+
+                    b.Property<decimal?>("EmployeeUnemploymentAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("employee_unemployment_amount");
+
+                    b.Property<decimal?>("EmployeeUnemploymentRate")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)")
+                        .HasColumnName("employee_unemployment_rate");
+
+                    b.Property<string>("JobTitleSnapshot")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("job_title_snapshot");
+
+                    b.Property<decimal?>("MonthlyTotalPayableAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("monthly_total_payable_amount");
+
+                    b.Property<decimal?>("MonthlyTotalPayableRate")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)")
+                        .HasColumnName("monthly_total_payable_rate");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<Guid?>("PayrollPeriodId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payroll_period_id");
+
+                    b.Property<string>("SocialInsuranceNumberSnapshot")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("social_insurance_number_snapshot");
+
+                    b.Property<decimal?>("SocialInsuranceSalary")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("social_insurance_salary");
+
+                    b.Property<decimal?>("UnemploymentInsuranceSalary")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unemployment_insurance_salary");
+
+                    b.HasKey("EmployeeInsuranceContributionId")
+                        .HasName("pk_employee_insurance_contributions");
+
+                    b.HasIndex("EmployeeId1");
+
+                    b.HasIndex("PayrollPeriodId");
+
+                    b.HasIndex("EmployeeId", "ContributionMonth")
+                        .HasDatabaseName("ix_employee_insurance_contributions_employee_month");
+
+                    b.ToTable("employee_insurance_contributions", "hr");
+                });
+
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.EmployeeInsuranceProfile", b =>
                 {
                     b.Property<Guid>("EmployeeInsuranceProfileId")
@@ -3534,6 +3884,9 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasColumnName("created_date")
                         .HasDefaultValueSql("now()");
 
+                    b.Property<string>("DepartmentNameSnapshot")
+                        .HasColumnType("text");
+
                     b.Property<DateOnly>("EffectiveFrom")
                         .HasColumnType("date")
                         .HasColumnName("effective_from");
@@ -3562,9 +3915,15 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasDefaultValue(true)
                         .HasColumnName("is_current");
 
+                    b.Property<string>("JobTitleEnglishSnapshot")
+                        .HasColumnType("text");
+
                     b.Property<Guid?>("JobTitleId")
                         .HasColumnType("uuid")
                         .HasColumnName("job_title_id");
+
+                    b.Property<string>("JobTitleSnapshot")
+                        .HasColumnType("text");
 
                     b.Property<DateOnly?>("OnboardingTrainingDate")
                         .HasColumnType("date")
@@ -3577,6 +3936,12 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Property<DateOnly?>("ProbationEndDate")
                         .HasColumnType("date")
                         .HasColumnName("probation_end_date");
+
+                    b.Property<string>("SectionNameSnapshot")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TeamNameSnapshot")
+                        .HasColumnType("text");
 
                     b.Property<string>("WorkLocation")
                         .HasMaxLength(255)
@@ -3670,6 +4035,485 @@ namespace VietausWebAPI.Infrastructure.Migrations
                         .HasName("PK__Parts__7C3F0D30F786F0A7");
 
                     b.ToTable("Parts", "hr");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.PayrollEmployeeRun", b =>
+                {
+                    b.Property<Guid>("PayrollEmployeeRunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payroll_employee_run_id");
+
+                    b.Property<string>("BankAccountSnapshot")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("bank_account_snapshot");
+
+                    b.Property<decimal?>("BaseSalarySnapshot")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("base_salary_snapshot");
+
+                    b.Property<string>("DepartmentSnapshot")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("department_snapshot");
+
+                    b.Property<string>("EmployeeCodeSnapshot")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("employee_code_snapshot");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.Property<Guid?>("EmployeeId1")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EmployeeNameSnapshot")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("employee_name_snapshot");
+
+                    b.Property<decimal>("EmployerContributionTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("employer_contribution_total");
+
+                    b.Property<decimal>("GrossIncome")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("gross_income");
+
+                    b.Property<decimal?>("InsuranceSalarySnapshot")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("insurance_salary_snapshot");
+
+                    b.Property<string>("JobTitleSnapshot")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("job_title_snapshot");
+
+                    b.Property<DateTime?>("LockedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("locked_at");
+
+                    b.Property<Guid?>("LockedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("locked_by");
+
+                    b.Property<decimal>("NetIncome")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("net_income");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<Guid>("PayrollPeriodId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payroll_period_id");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<decimal>("TotalDeductions")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_deductions");
+
+                    b.Property<decimal>("TotalEarnings")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_earnings");
+
+                    b.HasKey("PayrollEmployeeRunId")
+                        .HasName("pk_payroll_employee_runs");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("EmployeeId1");
+
+                    b.HasIndex("LockedBy");
+
+                    b.HasIndex("PayrollPeriodId", "EmployeeId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_payroll_employee_runs_period_employee");
+
+                    b.ToTable("payroll_employee_runs", "hr");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.PayrollEmployeeRunDetail", b =>
+                {
+                    b.Property<Guid>("PayrollEmployeeRunDetailId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payroll_employee_run_detail_id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<int>("CategorySnapshot")
+                        .HasColumnType("integer")
+                        .HasColumnName("category_snapshot");
+
+                    b.Property<string>("ComponentCodeSnapshot")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("component_code_snapshot");
+
+                    b.Property<string>("ComponentNameSnapshot")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("component_name_snapshot");
+
+                    b.Property<string>("FormulaTextSnapshot")
+                        .HasColumnType("text")
+                        .HasColumnName("formula_text_snapshot");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<Guid>("PayrollEmployeeRunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payroll_employee_run_id");
+
+                    b.Property<decimal?>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("quantity");
+
+                    b.Property<decimal?>("Rate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("rate");
+
+                    b.Property<Guid>("SalaryComponentDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("salary_component_definition_id");
+
+                    b.Property<int>("SortOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("sort_order");
+
+                    b.Property<string>("SourceReference")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("source_reference");
+
+                    b.Property<int>("SourceType")
+                        .HasColumnType("integer")
+                        .HasColumnName("source_type");
+
+                    b.HasKey("PayrollEmployeeRunDetailId")
+                        .HasName("pk_payroll_employee_run_details");
+
+                    b.HasIndex("PayrollEmployeeRunId")
+                        .HasDatabaseName("ix_payroll_employee_run_details_run");
+
+                    b.HasIndex("SalaryComponentDefinitionId")
+                        .HasDatabaseName("ix_payroll_employee_run_details_component");
+
+                    b.ToTable("payroll_employee_run_details", "hr");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.PayrollPeriod", b =>
+                {
+                    b.Property<Guid>("PayrollPeriodId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payroll_period_id");
+
+                    b.Property<Guid?>("ApprovedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approved_by");
+
+                    b.Property<DateTime?>("ApprovedDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("approved_date");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_date");
+
+                    b.Property<DateOnly>("FromDate")
+                        .HasColumnType("date")
+                        .HasColumnName("from_date");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("integer")
+                        .HasColumnName("month");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<int>("PayrollType")
+                        .HasColumnType("integer")
+                        .HasColumnName("payroll_type");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<DateOnly>("ToDate")
+                        .HasColumnType("date")
+                        .HasColumnName("to_date");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer")
+                        .HasColumnName("year");
+
+                    b.HasKey("PayrollPeriodId")
+                        .HasName("pk_payroll_periods");
+
+                    b.HasIndex("ApprovedBy");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_payroll_periods_code");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("Year", "Month", "PayrollType")
+                        .HasDatabaseName("ix_payroll_periods_year_month_type");
+
+                    b.ToTable("payroll_periods", "hr");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.SalaryComponentDefinition", b =>
+                {
+                    b.Property<Guid>("SalaryComponentDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("salary_component_definition_id");
+
+                    b.Property<bool>("AffectsGross")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("affects_gross");
+
+                    b.Property<bool>("AffectsInsuranceBase")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("affects_insurance_base");
+
+                    b.Property<bool>("AffectsNet")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("affects_net");
+
+                    b.Property<bool>("AffectsTaxableIncome")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("affects_taxable_income");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("integer")
+                        .HasColumnName("category");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code");
+
+                    b.Property<string>("FormulaTemplate")
+                        .HasColumnType("text")
+                        .HasColumnName("formula_template");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsSystem")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_system");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<int>("SortOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("sort_order");
+
+                    b.Property<int>("ValueType")
+                        .HasColumnType("integer")
+                        .HasColumnName("value_type");
+
+                    b.HasKey("SalaryComponentDefinitionId")
+                        .HasName("pk_salary_component_definitions");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_salary_component_definitions_code");
+
+                    b.HasIndex("Category", "IsActive")
+                        .HasDatabaseName("ix_salary_component_definitions_category_active");
+
+                    b.ToTable("salary_component_definitions", "hr");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.Salary_models.EmployeeSalaryPackage", b =>
+                {
+                    b.Property<Guid>("EmployeeSalaryPackageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_salary_package_id");
+
+                    b.Property<Guid?>("BankAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("bank_account_id");
+
+                    b.Property<decimal>("BasicSalary")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("basic_salary");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateOnly?>("EffectiveTo")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_to");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.Property<decimal?>("InsuranceSalary")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("insurance_salary");
+
+                    b.Property<bool>("IsCurrent")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_current");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("payment_method");
+
+                    b.Property<decimal?>("StandardWorkingDays")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("standard_working_days");
+
+                    b.Property<decimal?>("StandardWorkingHours")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("standard_working_hours");
+
+                    b.HasKey("EmployeeSalaryPackageId")
+                        .HasName("pk_employee_salary_packages");
+
+                    b.HasIndex("BankAccountId");
+
+                    b.HasIndex("EmployeeId")
+                        .HasDatabaseName("ix_employee_salary_packages_employee");
+
+                    b.HasIndex("EmployeeId", "IsCurrent")
+                        .IsUnique()
+                        .HasDatabaseName("ux_employee_salary_packages_one_current")
+                        .HasFilter("\"is_current\" = true");
+
+                    b.ToTable("employee_salary_packages", "hr");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.Salary_models.EmployeeSalaryPackageComponent", b =>
+                {
+                    b.Property<Guid>("EmployeeSalaryPackageComponentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_salary_package_component_id");
+
+                    b.Property<decimal?>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateOnly?>("EffectiveTo")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_to");
+
+                    b.Property<Guid>("EmployeeSalaryPackageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_salary_package_id");
+
+                    b.Property<string>("FormulaText")
+                        .HasColumnType("text")
+                        .HasColumnName("formula_text");
+
+                    b.Property<bool>("IsRecurring")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_recurring");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<decimal?>("Rate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("rate");
+
+                    b.Property<Guid>("SalaryComponentDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("salary_component_definition_id");
+
+                    b.HasKey("EmployeeSalaryPackageComponentId")
+                        .HasName("pk_employee_salary_package_components");
+
+                    b.HasIndex("EmployeeSalaryPackageId")
+                        .HasDatabaseName("ix_employee_salary_package_components_package");
+
+                    b.HasIndex("SalaryComponentDefinitionId");
+
+                    b.ToTable("employee_salary_package_components", "hr");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.IdCounter", b =>
@@ -4992,6 +5836,11 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("updated_date");
+
+                    b.Property<double?>("UsageRate")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("double precision")
+                        .HasColumnName("usage_rate");
 
                     b.HasKey("ColorChipMfgRecordId");
 
@@ -10147,6 +10996,62 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("Employee");
                 });
 
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.EmployeeInsuranceBook", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_employee_insurance_books_employee");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.Employee", null)
+                        .WithMany("EmployeeInsuranceBooks")
+                        .HasForeignKey("EmployeeId1");
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.EmployeeInsuranceClaim", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_employee_insurance_claims_employee");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.Employee", null)
+                        .WithMany("EmployeeInsuranceClaims")
+                        .HasForeignKey("EmployeeId1");
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.EmployeeInsuranceContribution", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_employee_insurance_contributions_employee");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.Employee", null)
+                        .WithMany("EmployeeInsuranceContributions")
+                        .HasForeignKey("EmployeeId1");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.PayrollPeriod", "PayrollPeriod")
+                        .WithMany("EmployeeInsuranceContributions")
+                        .HasForeignKey("PayrollPeriodId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_employee_insurance_contributions_period");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("PayrollPeriod");
+                });
+
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.EmployeeInsuranceProfile", b =>
                 {
                     b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.Employee", "Employee")
@@ -10226,6 +11131,120 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("JobTitle");
 
                     b.Navigation("Part");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.PayrollEmployeeRun", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_payroll_employee_runs_employee");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.Employee", null)
+                        .WithMany("PayrollEmployeeRuns")
+                        .HasForeignKey("EmployeeId1");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.Employee", "LockedByNavigation")
+                        .WithMany()
+                        .HasForeignKey("LockedBy")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_payroll_employee_runs_locked_by");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.PayrollPeriod", "PayrollPeriod")
+                        .WithMany("PayrollEmployeeRuns")
+                        .HasForeignKey("PayrollPeriodId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_payroll_employee_runs_period");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("LockedByNavigation");
+
+                    b.Navigation("PayrollPeriod");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.PayrollEmployeeRunDetail", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.PayrollEmployeeRun", "PayrollEmployeeRun")
+                        .WithMany("PayrollEmployeeRunDetails")
+                        .HasForeignKey("PayrollEmployeeRunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_payroll_employee_run_details_run");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.SalaryComponentDefinition", "SalaryComponentDefinition")
+                        .WithMany("PayrollEmployeeRunDetails")
+                        .HasForeignKey("SalaryComponentDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_payroll_employee_run_details_component");
+
+                    b.Navigation("PayrollEmployeeRun");
+
+                    b.Navigation("SalaryComponentDefinition");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.PayrollPeriod", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.Employee", "ApprovedByNavigation")
+                        .WithMany()
+                        .HasForeignKey("ApprovedBy")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_payroll_periods_approved_by");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.Employee", "CreatedByNavigation")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_payroll_periods_created_by");
+
+                    b.Navigation("ApprovedByNavigation");
+
+                    b.Navigation("CreatedByNavigation");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.Salary_models.EmployeeSalaryPackage", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.EmployeeBankAccount", "BankAccount")
+                        .WithMany()
+                        .HasForeignKey("BankAccountId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_employee_salary_packages_bank_account");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_employee_salary_packages_employee");
+
+                    b.Navigation("BankAccount");
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.Salary_models.EmployeeSalaryPackageComponent", b =>
+                {
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.Salary_models.EmployeeSalaryPackage", "EmployeeSalaryPackage")
+                        .WithMany("EmployeeSalaryPackageComponents")
+                        .HasForeignKey("EmployeeSalaryPackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_employee_salary_package_components_package");
+
+                    b.HasOne("VietausWebAPI.Core.Domain.Entities.HrSchema.SalaryComponentDefinition", "SalaryComponentDefinition")
+                        .WithMany()
+                        .HasForeignKey("SalaryComponentDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_employee_salary_package_components_definition");
+
+                    b.Navigation("EmployeeSalaryPackage");
+
+                    b.Navigation("SalaryComponentDefinition");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.EquipmentDetailMRO", b =>
@@ -12088,6 +13107,12 @@ namespace VietausWebAPI.Infrastructure.Migrations
 
                     b.Navigation("EmployeeDocuments");
 
+                    b.Navigation("EmployeeInsuranceBooks");
+
+                    b.Navigation("EmployeeInsuranceClaims");
+
+                    b.Navigation("EmployeeInsuranceContributions");
+
                     b.Navigation("EmployeeInsuranceProfiles");
 
                     b.Navigation("EmployeeProfile");
@@ -12135,6 +13160,8 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("MfgProductionOrderCreatedByNavigations");
 
                     b.Navigation("MfgProductionOrderUpdatedByNavigations");
+
+                    b.Navigation("PayrollEmployeeRuns");
 
                     b.Navigation("PriceHistoryCreatedByNavigations");
 
@@ -12199,6 +13226,28 @@ namespace VietausWebAPI.Infrastructure.Migrations
                     b.Navigation("Groups");
 
                     b.Navigation("NotificationRecipients");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.PayrollEmployeeRun", b =>
+                {
+                    b.Navigation("PayrollEmployeeRunDetails");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.PayrollPeriod", b =>
+                {
+                    b.Navigation("EmployeeInsuranceContributions");
+
+                    b.Navigation("PayrollEmployeeRuns");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.SalaryComponentDefinition", b =>
+                {
+                    b.Navigation("PayrollEmployeeRunDetails");
+                });
+
+            modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.HrSchema.Salary_models.EmployeeSalaryPackage", b =>
+                {
+                    b.Navigation("EmployeeSalaryPackageComponents");
                 });
 
             modelBuilder.Entity("VietausWebAPI.Core.Domain.Entities.MROSchema.AreaMRO", b =>

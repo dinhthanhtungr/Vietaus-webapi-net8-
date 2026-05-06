@@ -36,6 +36,49 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.ReportFeatures
         }
 
         /// <summary>
+        /// Lấy số liệu tổng quan để vẽ biểu đồ báo cáo đơn hàng bán.
+        /// </summary>
+        [HttpGet("merchandise-orders/headers")]
+        public async Task<IActionResult> GetMerchandiseOrderHeaderReport(
+            [FromQuery] MerchandiseOrderReportQuery query,
+            CancellationToken ct)
+        {
+            var result = await _merchandiseOrderReportService
+                .GetMerchandiseOrderHeaderReportAsync(query, ct);
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Lấy danh sách đơn hàng bán có phân trang riêng cho infinity scroll.
+        /// Page size tối đa là 15.
+        /// </summary>
+        [HttpGet("merchandise-orders/rows")]
+        public async Task<IActionResult> GetMerchandiseOrderRows(
+            [FromQuery] MerchandiseOrderReportQuery query,
+            CancellationToken ct)
+        {
+            var result = await _merchandiseOrderReportService
+                .GetMerchandiseOrderRowsAsync(query, ct);
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Lấy chi tiết báo cáo của một đơn hàng bán.
+        /// </summary>
+        [HttpGet("merchandise-orders/{merchandiseOrderId:guid}/details")]
+        public async Task<IActionResult> GetMerchandiseOrderDetailReport(
+            [FromRoute] Guid merchandiseOrderId,
+            CancellationToken ct)
+        {
+            var result = await _merchandiseOrderReportService
+                .GetMerchandiseOrderDetailReportAsync(merchandiseOrderId, ct);
+
+            return Ok(result);
+        }
+
+        /// <summary>
         /// Xuất Excel báo cáo đơn hàng bán
         /// </summary>
         [HttpGet("merchandise-orders/export-excel")]
