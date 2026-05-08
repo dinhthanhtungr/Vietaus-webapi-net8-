@@ -12,6 +12,9 @@ namespace VietausWebAPI.Core.Domain.Entities.DeliverySchema
         public string Name { get; set; } = default!;
         public string? DelivererType { get; set; }
         public string? Phone { get; set; }
+        public string? IdentityNumber { get; set; }
+        public string? LicenseNumber { get; set; }
+        public DateTime? LicenseExpiryDate { get; set; }
         public string? Note { get; set; }
         public bool IsActive { get; set; } = true;
     }

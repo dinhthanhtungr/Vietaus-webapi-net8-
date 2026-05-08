@@ -15,5 +15,13 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
         public virtual DbSet<DeliveryOrderDetail> DeliveryOrderDetails { get; set; }
         public virtual DbSet<DelivererInfor> DelivererInfors { get; set; }
         public virtual DbSet<Deliverer> Deliverers { get; set; }
+
+
+        public virtual DbSet<DeliveryTrip> DeliveryTrips { get; set; }
+        public virtual DbSet<DeliveryTripOrder> DeliveryTripOrders { get; set; }
+        public virtual DbSet<DeliveryVehicle> DeliveryVehicles { get; set; }
+        public virtual DbSet<DeliveryStop> DeliveryStops { get; set; }
+        public virtual DbSet<DeliveryProofOfDelivery> DeliveryProofOfDeliveries { get; set; }
+        public virtual DbSet<DeliveryExpense> DeliveryExpenses { get; set; }
     }
 }

@@ -33,5 +33,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 throw;  
             }
         }
+
+
     }
 }

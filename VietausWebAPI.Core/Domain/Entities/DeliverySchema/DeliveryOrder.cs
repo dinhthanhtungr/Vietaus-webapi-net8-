@@ -31,6 +31,17 @@ namespace VietausWebAPI.Core.Domain.Entities.DeliverySchema
         public bool HasPrinted { get; set; } = false;
 
         public bool? RequiresUnloading { get; set; }
+        public DateTime? PlannedDeliveryDate { get; set; }
+        public DateTime? ActualDeliveryDate { get; set; }
+
+        public string? DeliveryWindowFrom { get; set; }
+        public string? DeliveryWindowTo { get; set; }
+
+        public Guid? DeliveryTripId { get; set; }
+
+        public string? FailureReason { get; set; }
+        public bool IsDeliveredSuccessfully { get; set; } = false;
+
 
         public Guid CreatedBy { get; set; }
         public DateTime? CreatedDate { get; set; }
@@ -44,8 +55,10 @@ namespace VietausWebAPI.Core.Domain.Entities.DeliverySchema
         public Employee CreatedByNavigation { get; set; } = default!;
         public Employee UpdatedByNavigation { get; set; } = default!;
 
+        public DeliveryTrip? DeliveryTrip { get; set; }
         public ICollection<DeliveryOrderPO> DeliveryOrderPOs { get; set; } = new List<DeliveryOrderPO>();
         public ICollection<DeliveryOrderDetail> Details { get; set; } = new List<DeliveryOrderDetail>();
         public ICollection<Deliverer> Deliverers { get; set; } = new List<Deliverer>();
+        public ICollection<DeliveryProofOfDelivery> ProofOfDeliveries { get; set; } = new List<DeliveryProofOfDelivery>();
     }
 }

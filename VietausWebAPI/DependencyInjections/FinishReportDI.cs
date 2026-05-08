@@ -18,6 +18,7 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
 
             // PLPU Report
             services.AddScoped<IFinishPLPUReportService, FinishPLPUReportService>();
+            services.AddScoped<IPLPUPurchaseOverviewReportService, PLPUPurchaseOverviewReportService>();
 
             // Sale Report
             services.AddScoped<IMerchandiseOrderReportServices, MerchandiseOrderReportService>();
@@ -26,6 +27,7 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
 
             // PLPU Report
             services.AddScoped<IFinishPLPUReportRepository, FinishPLPUReportRepository>();
+            services.AddScoped<IPLPUPurchaseOverviewReportRepository, PLPUPurchaseOverviewReportRepository>();
             
             // Sale Report
             services.AddScoped<IMerchandiseOrderReportRepositorys, MerchandiseOrderReportRepository>();

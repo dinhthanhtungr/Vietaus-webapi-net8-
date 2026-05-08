@@ -70,11 +70,8 @@ public class MerchandiseOrderReportRepository : IMerchandiseOrderReportRepositor
 
     /// <summary>
     /// Lấy số liệu tổng quan theo tiêu chí lọc để vẽ biểu đồ và dashboard báo cáo đơn hàng hàng hóa.
+    /// ĐÃ CẬP NHẬT: Tính doanh thu theo ngày giao hàng thực tế.
     /// </summary>
-    /// <param name="query"></param>
-    /// <param name="viewerScope"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
     public async Task<MerchandiseOrderReportHeaderDto> GetMerchandiseOrderHeaderReportAsync(
         MerchandiseOrderReportQuery query,
         ViewerScope viewerScope,
@@ -88,9 +85,9 @@ public class MerchandiseOrderReportRepository : IMerchandiseOrderReportRepositor
             .ThenBy(x => x.MerchandiseOrderCode)
             .ToListAsync(cancellationToken);
 
-        var items = await EnrichMerchandiseOrderRowsAsync(orders, cancellationToken);
+        var items = await EnrichMerchandiseOrderRowsAsync(orders, query, cancellationToken);
 
-        return BuildMerchandiseOrderHeaderSummary(items);
+        return await BuildMerchandiseOrderHeaderSummaryAsync(items, query, viewerScope, cancellationToken);
     }
 
     /// <summary>
@@ -123,7 +120,8 @@ public class MerchandiseOrderReportRepository : IMerchandiseOrderReportRepositor
             return (pageOrders, totalCount);
         }
 
-        var items = await EnrichMerchandiseOrderRowsAsync(pageOrders, cancellationToken);
+        // ✅ THAY ĐỔI: Truyền thêm query parameter
+        var items = await EnrichMerchandiseOrderRowsAsync(pageOrders, query, cancellationToken);
 
         return (items, totalCount);
     }
@@ -137,6 +135,7 @@ public class MerchandiseOrderReportRepository : IMerchandiseOrderReportRepositor
     /// </summary>
     private async Task<IReadOnlyList<MerchandiseOrderReportRowDto>> EnrichMerchandiseOrderRowsAsync(
         IReadOnlyList<MerchandiseOrderReportRowDto> orders,
+        MerchandiseOrderReportQuery query,
         CancellationToken cancellationToken)
     {
         if (orders.Count == 0)
@@ -144,21 +143,11 @@ public class MerchandiseOrderReportRepository : IMerchandiseOrderReportRepositor
             return orders;
         }
 
-        var orderIds = orders
-            .Select(x => x.MerchandiseOrderId)
-            .Distinct()
-            .ToList();
+        var orderIds = orders.Select(x => x.MerchandiseOrderId).Distinct().ToList();
+        var customerIds = orders.Select(x => x.CustomerId).Distinct().ToList();
+        var managerIds = orders.Select(x => x.ManagerById).Distinct().ToList();
 
-        var customerIds = orders
-            .Select(x => x.CustomerId)
-            .Distinct()
-            .ToList();
-
-        var managerIds = orders
-            .Select(x => x.ManagerById)
-            .Distinct()
-            .ToList();
-
+        // Lấy thông tin order details
         var orderAmounts = await _context.MerchandiseOrderDetails
             .AsNoTracking()
             .Where(x => x.IsActive && orderIds.Contains(x.MerchandiseOrderId))
@@ -174,20 +163,40 @@ public class MerchandiseOrderReportRepository : IMerchandiseOrderReportRepositor
             })
             .ToListAsync(cancellationToken);
 
-        var deliveryInfo =
+        // ✅ MỚI: Query delivery với khả năng filter theo ngày giao
+        var deliveryInfoQuery = 
             from dod in _context.DeliveryOrderDetails.AsNoTracking()
             join doo in _context.DeliveryOrders.AsNoTracking() on dod.DeliveryOrderId equals doo.Id
             where dod.IsActive
                   && !dod.IsAttach
                   && doo.IsActive
                   && dod.MerchandiseOrderDetailId.HasValue
-            group new { dod, doo } by dod.MerchandiseOrderDetailId.Value into g
-            select new
+            select new { dod, doo };
+
+        // ✅ Apply filter theo ngày giao hàng nếu có
+        if (query.From.HasValue)
+        {
+            var fromDate = query.From.Value.Date;
+            deliveryInfoQuery = deliveryInfoQuery.Where(x => x.doo.CreatedDate >= fromDate);
+        }
+
+        if (query.To.HasValue)
+        {
+            var toExclusive = query.To.Value.Date.AddDays(1);
+            deliveryInfoQuery = deliveryInfoQuery.Where(x => x.doo.CreatedDate < toExclusive);
+        }
+
+        var deliveryInfo =
+            deliveryInfoQuery
+            .GroupBy(x => x.dod.MerchandiseOrderDetailId!.Value)
+            .Select(g => new
             {
                 MerchandiseOrderDetailId = g.Key,
                 DeliveredQuantity = (decimal?)g.Sum(x => x.dod.Quantity),
-                LastDeliveryDate = g.Max(x => (DateTime?)x.doo.CreatedDate)
-            };
+                FirstDeliveryDate = g.Min(x => (DateTime?)x.doo.CreatedDate),
+                LastDeliveryDate = g.Max(x => (DateTime?)x.doo.CreatedDate),
+                DeliveryCount = g.Select(x => x.doo.Id).Distinct().Count()
+            });
 
         var deliveryAmounts = await (
             from mod in _context.MerchandiseOrderDetails.AsNoTracking()
@@ -200,16 +209,15 @@ public class MerchandiseOrderReportRepository : IMerchandiseOrderReportRepositor
                 MerchandiseOrderId = g.Key,
                 DeliveredQuantity = g.Sum(x => (decimal?)x.di.DeliveredQuantity) ?? 0m,
                 ActualSoldAmount = g.Sum(x => (decimal?)(x.di.DeliveredQuantity * x.mod.UnitPriceAgreed)) ?? 0m,
-                LastActualDeliveryDate = g.Max(x => x.di.LastDeliveryDate)
+                FirstDeliveryDate = g.Min(x => x.di.FirstDeliveryDate),
+                LastActualDeliveryDate = g.Max(x => x.di.LastDeliveryDate),
+                DeliveryCount = g.Sum(x => x.di.DeliveryCount)
             })
             .ToListAsync(cancellationToken);
 
         var assignmentRows = await _context.CustomerAssignments
             .AsNoTracking()
-            .Where(x =>
-                x.IsActive
-                && customerIds.Contains(x.CustomerId)
-                && managerIds.Contains(x.EmployeeId))
+            .Where(x => x.IsActive && customerIds.Contains(x.CustomerId) && managerIds.Contains(x.EmployeeId))
             .OrderByDescending(x => x.CreatedDate)
             .Select(x => new
             {
@@ -255,11 +263,8 @@ public class MerchandiseOrderReportRepository : IMerchandiseOrderReportRepositor
             order.TotalOrderAmount = totalOrderAmount;
             order.ActualSoldAmount = actualSoldAmount;
             order.RemainingAmount = totalOrderAmount - actualSoldAmount;
-            order.FulfillmentRate =
-                MerchandiseOrderReportFormula.CalculateFulfillmentRate(deliveredQuantity, orderedQuantity);
-
-            order.ActualSoldRate =
-                MerchandiseOrderReportFormula.CalculateActualSoldRate(actualSoldAmount, totalOrderAmount);
+            order.FulfillmentRate = MerchandiseOrderReportFormula.CalculateFulfillmentRate(deliveredQuantity, orderedQuantity);
+            order.ActualSoldRate = MerchandiseOrderReportFormula.CalculateActualSoldRate(actualSoldAmount, totalOrderAmount);
             order.UnpaidAmount = order.IsPaid ? 0m : actualSoldAmount;
             order.OrderAgeDays = Math.Max(0, (today - order.OrderDate.Date).Days);
             order.IsOverdue = isOverdue;
@@ -282,21 +287,69 @@ public class MerchandiseOrderReportRepository : IMerchandiseOrderReportRepositor
     }
 
     /// <summary>
-    /// Gom danh sách đơn hàng đã enrich thành dữ liệu tổng quan dashboard.
-    /// Tính tổng đơn, tổng tiền, tổng số lượng, tỉ lệ giao hàng,
-    /// tỉ lệ thực bán và build dữ liệu biểu đồ.
+    /// ✅ MỚI: Build summary với logic tính theo ngày giao hàng và so sánh kỳ trước.
     /// </summary>
-    private static MerchandiseOrderReportHeaderDto BuildMerchandiseOrderHeaderSummary(
-        IReadOnlyList<MerchandiseOrderReportRowDto> rows)   
+    private async Task<MerchandiseOrderReportHeaderDto> BuildMerchandiseOrderHeaderSummaryAsync(
+        IReadOnlyList<MerchandiseOrderReportRowDto> rows,
+        MerchandiseOrderReportQuery query,
+        ViewerScope viewerScope,
+        CancellationToken cancellationToken)
     {
         var orderedQuantity = rows.Sum(x => x.OrderedQuantity);
         var deliveredQuantity = rows.Sum(x => x.DeliveredQuantity);
         var totalOrderAmount = rows.Sum(x => x.TotalOrderAmount);
         var actualSoldAmount = rows.Sum(x => x.ActualSoldAmount);
 
+        var deliveredInPeriod = rows
+            .Where(x => x.DeliveredQuantity > 0m && x.LastActualDeliveryDate.HasValue)
+            .ToList();
+
+        var deliveryDates = deliveredInPeriod
+            .Select(x => x.LastActualDeliveryDate!.Value.Date)
+            .Distinct()
+            .OrderBy(x => x)
+            .ToList();
+
+        var deliveryDaysCount = deliveryDates.Count;
+        var revenueInPeriod = deliveredInPeriod.Sum(x => x.ActualSoldAmount);
+
+        decimal previousPeriodRevenue = 0m;
+        if (query.From.HasValue && query.To.HasValue)
+        {
+            var currentFrom = query.From.Value.Date;
+            var currentToExclusive = query.To.Value.Date.AddDays(1);
+            var periodDays = (currentToExclusive - currentFrom).Days;
+
+            var previousFrom = currentFrom.AddDays(-periodDays);
+            var previousToExclusive = currentFrom;
+
+            previousPeriodRevenue = await CalculatePreviousPeriodRevenueAsync(
+                previousFrom,
+                previousToExclusive,
+                query,
+                viewerScope,
+                cancellationToken);
+        }
+
+        var revenueGrowthAmount = revenueInPeriod - previousPeriodRevenue;
+        var revenueGrowthRate = previousPeriodRevenue > 0m
+            ? (revenueGrowthAmount / previousPeriodRevenue) * 100m
+            : 0m;
+
+        var collectedAmount = rows.Where(x => x.IsPaid).Sum(x => x.ActualSoldAmount);
+        var collectionRate = actualSoldAmount > 0m ? collectedAmount / actualSoldAmount : 0m;
+
+        var createdFromDate = query.From?.Date;
+        var createdToExclusive = query.To?.Date.AddDays(1);
+        var ordersCreatedInPeriod = rows.Count(x =>
+            (!createdFromDate.HasValue || x.OrderDate >= createdFromDate.Value) &&
+            (!createdToExclusive.HasValue || x.OrderDate < createdToExclusive.Value));
+
         return new MerchandiseOrderReportHeaderDto
         {
             TotalOrderCount = rows.Count,
+            OrdersCreatedInPeriod = ordersCreatedInPeriod,
+            OrdersDeliveredInPeriod = deliveredInPeriod.Count,
             PaidOrderCount = rows.Count(x => x.IsPaid),
             UnpaidOrderCount = rows.Count(x => !x.IsPaid),
             OverdueOrderCount = rows.Count(x => x.IsOverdue),
@@ -307,64 +360,33 @@ public class MerchandiseOrderReportRepository : IMerchandiseOrderReportRepositor
             OrderedQuantity = orderedQuantity,
             DeliveredQuantity = deliveredQuantity,
             RemainingQuantity = rows.Sum(x => x.RemainingQuantity),
+            FulfillmentRate = MerchandiseOrderReportFormula.CalculateFulfillmentRate(deliveredQuantity, orderedQuantity),
+
             TotalOrderAmount = totalOrderAmount,
             ActualSoldAmount = actualSoldAmount,
             RemainingAmount = rows.Sum(x => x.RemainingAmount),
             UnpaidAmount = rows.Sum(x => x.UnpaidAmount),
-            FulfillmentRate =
-    MerchandiseOrderReportFormula.CalculateFulfillmentRate(deliveredQuantity, orderedQuantity),
+            ActualSoldRate = MerchandiseOrderReportFormula.CalculateActualSoldRate(actualSoldAmount, totalOrderAmount),
 
-            ActualSoldRate =
-    MerchandiseOrderReportFormula.CalculateActualSoldRate(actualSoldAmount, totalOrderAmount),
+            PreviousPeriodRevenue = previousPeriodRevenue,
+            RevenueGrowthRate = revenueGrowthRate,
+            RevenueGrowthAmount = revenueGrowthAmount,
 
-            RevenueByMonth = rows
-                .GroupBy(x => x.OrderDate.ToString("yyyy-MM"))
-                .OrderBy(x => x.Key)
-                .Select(ToChartPoint)
-                .ToList(),
-            RevenueByManager = rows
-                .GroupBy(x => string.IsNullOrWhiteSpace(x.ManagerName) ? "Không xác định" : x.ManagerName)
-                .OrderByDescending(x => x.Sum(row => row.ActualSoldAmount))
-                .Take(10)
-                .Select(ToChartPoint)
-                .ToList(),
-            RevenueByCustomer = rows
-                .GroupBy(x => string.IsNullOrWhiteSpace(x.CustomerName) ? "Không xác định" : x.CustomerName)
-                .OrderByDescending(x => x.Sum(row => row.ActualSoldAmount))
-                .Take(10)
-                .Select(ToChartPoint)
-                .ToList(),
-            QuantityByManager = rows
-                .GroupBy(x => string.IsNullOrWhiteSpace(x.ManagerName) ? "Không xác định" : x.ManagerName)
-                .OrderByDescending(x => x.Sum(row => row.DeliveredQuantity))
-                .Take(10)
-                .Select(ToChartPoint)
-                .ToList(),
-            QuantityByCustomer = rows
-                .GroupBy(x => string.IsNullOrWhiteSpace(x.CustomerName) ? "Không xác định" : x.CustomerName)
-                .OrderByDescending(x => x.Sum(row => row.DeliveredQuantity))
-                .Take(10)
-                .Select(ToChartPoint)
-                .ToList()
-        };
-    }
+            AverageOrderValue = deliveredInPeriod.Count > 0 ? revenueInPeriod / deliveredInPeriod.Count : 0m,
+            AverageDailyRevenue = deliveryDaysCount > 0 ? revenueInPeriod / deliveryDaysCount : 0m,
+            DeliveryDaysCount = deliveryDaysCount,
+            FirstDeliveryDate = deliveryDates.FirstOrDefault(),
+            LastDeliveryDate = deliveryDates.LastOrDefault(),
 
-    /// <summary>
-    /// Chuyển một nhóm dữ liệu đơn hàng thành một điểm dữ liệu cho chart.
-    /// Dùng cho chart theo tháng, theo sale hoặc theo khách hàng.
-    /// </summary>
-    private static MerchandiseOrderReportChartPointDto ToChartPoint(
-        IGrouping<string, MerchandiseOrderReportRowDto> group)
-    {
-        return new MerchandiseOrderReportChartPointDto
-        {
-            Label = group.Key,
-            OrderCount = group.Count(),
-            OrderedQuantity = group.Sum(x => x.OrderedQuantity),
-            DeliveredQuantity = group.Sum(x => x.DeliveredQuantity),
-            TotalOrderAmount = group.Sum(x => x.TotalOrderAmount),
-            ActualSoldAmount = group.Sum(x => x.ActualSoldAmount),
-            RemainingAmount = group.Sum(x => x.RemainingAmount)
+            CollectedAmount = collectedAmount,
+            CollectionRate = collectionRate,
+
+            RevenueByMonth = BuildRevenueByMonthChart(deliveredInPeriod),
+            RevenueByWeek = BuildRevenueByWeekChart(deliveredInPeriod),
+            RevenueByManager = BuildRevenueByManagerChart(rows),
+            RevenueByCustomer = BuildRevenueByCustomerChart(rows),
+            QuantityByManager = BuildQuantityByManagerChart(rows),
+            QuantityByCustomer = BuildQuantityByCustomerChart(rows)
         };
     }
 
@@ -551,6 +573,237 @@ public class MerchandiseOrderReportRepository : IMerchandiseOrderReportRepositor
             .ToList();
     }
 
+
+
+    /// <summary>
+    /// ✅ MỚI: Tính doanh thu kỳ trước để so sánh.
+    /// </summary>
+    private async Task<decimal> CalculatePreviousPeriodRevenueAsync(
+        DateTime fromDate,
+        DateTime toDate,
+        MerchandiseOrderReportQuery query,
+        ViewerScope viewerScope,
+        CancellationToken cancellationToken)
+    {
+        var merchandiseOrders = ApplyReportVisibility(
+            _context.MerchandiseOrders
+                .AsNoTracking()
+                .Where(x =>
+                    x.IsActive
+                    && x.OrderType == OrderType.Merchandise
+                    && x.CustomerExternalIdSnapshot != "KH_VIETAUS"),
+            viewerScope);
+
+        if (query.EmployeeId.HasValue)
+        {
+            var employeeId = query.EmployeeId.Value;
+            merchandiseOrders = merchandiseOrders.Where(x => x.ManagerById == employeeId);
+        }
+
+        if (query.GroupId.HasValue)
+        {
+            var groupId = query.GroupId.Value;
+            merchandiseOrders = merchandiseOrders.Where(mo =>
+                _context.CustomerAssignments.Any(ca =>
+                    ca.IsActive
+                    && ca.CustomerId == mo.CustomerId
+                    && ca.GroupId == groupId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Keyword))
+        {
+            var keyword = query.Keyword.Trim().ToLower();
+
+            merchandiseOrders = merchandiseOrders.Where(mo =>
+                (mo.ExternalId ?? "").ToLower().Contains(keyword) ||
+                (mo.PONo ?? "").ToLower().Contains(keyword) ||
+                (mo.CustomerExternalIdSnapshot ?? "").ToLower().Contains(keyword) ||
+                (mo.CustomerNameSnapshot ?? "").ToLower().Contains(keyword) ||
+                (mo.ManagerByNameSnapshot ?? "").ToLower().Contains(keyword) ||
+                mo.MerchandiseOrderDetails.Any(d =>
+                    d.IsActive &&
+                    ((d.ProductExternalIdSnapshot ?? "").ToLower().Contains(keyword) ||
+                     (d.ProductNameSnapshot ?? "").ToLower().Contains(keyword))));
+        }
+
+        var revenueQuery =
+            from mo in merchandiseOrders
+            join mod in _context.MerchandiseOrderDetails.AsNoTracking()
+                on mo.MerchandiseOrderId equals mod.MerchandiseOrderId
+            join dod in _context.DeliveryOrderDetails.AsNoTracking()
+                on mod.MerchandiseOrderDetailId equals dod.MerchandiseOrderDetailId!.Value
+            join doo in _context.DeliveryOrders.AsNoTracking()
+                on dod.DeliveryOrderId equals doo.Id
+            where mod.IsActive
+                  && dod.IsActive
+                  && !dod.IsAttach
+                  && doo.IsActive
+                  && doo.CreatedDate >= fromDate
+                  && doo.CreatedDate < toDate
+            select (decimal?)(dod.Quantity * mod.UnitPriceAgreed);
+
+        return await revenueQuery.SumAsync(cancellationToken) ?? 0m;
+    }
+
+    /// <summary>
+    /// ✅ MỚI: Build chart doanh thu theo tháng GIAO HÀNG.
+    /// </summary>
+    private static List<MerchandiseOrderReportChartPointDto> BuildRevenueByMonthChart(
+        IReadOnlyList<MerchandiseOrderReportRowDto> rows)
+    {
+        return rows
+            .Where(x => x.LastActualDeliveryDate.HasValue)
+            .GroupBy(x => x.LastActualDeliveryDate!.Value.ToString("yyyy-MM"))
+            .OrderBy(x => x.Key)
+            .Select(g => new MerchandiseOrderReportChartPointDto
+            {
+                Label = g.Key,
+                OrderCount = g.Select(x => x.MerchandiseOrderId).Distinct().Count(),
+                DeliveryCount = g.Count(),
+                OrderedQuantity = g.Sum(x => x.OrderedQuantity),
+                DeliveredQuantity = g.Sum(x => x.DeliveredQuantity),
+                TotalOrderAmount = g.Sum(x => x.TotalOrderAmount),
+                ActualSoldAmount = g.Sum(x => x.ActualSoldAmount),
+                RemainingAmount = g.Sum(x => x.RemainingAmount),
+                AverageDeliveryAmount = g.Count() > 0 ? g.Sum(x => x.ActualSoldAmount) / g.Count() : 0m,
+                PeriodStart = g.Min(x => x.LastActualDeliveryDate),
+                PeriodEnd = g.Max(x => x.LastActualDeliveryDate)
+            })
+            .ToList();
+    }
+
+    /// <summary>
+    /// ✅ MỚI: Build chart doanh thu theo tuần GIAO HÀNG.
+    /// </summary>
+    private static List<MerchandiseOrderReportChartPointDto> BuildRevenueByWeekChart(
+        IReadOnlyList<MerchandiseOrderReportRowDto> rows)
+    {
+        return rows
+            .Where(x => x.LastActualDeliveryDate.HasValue)
+            .GroupBy(x =>
+            {
+                var date = x.LastActualDeliveryDate!.Value;
+                var year = date.Year;
+                var weekOfYear = System.Globalization.CultureInfo.CurrentCulture.Calendar
+                    .GetWeekOfYear(date, System.Globalization.CalendarWeekRule.FirstDay, DayOfWeek.Monday);
+                return $"{year}-W{weekOfYear:D2}";
+            })
+            .OrderBy(x => x.Key)
+            .Select(g => new MerchandiseOrderReportChartPointDto
+            {
+                Label = g.Key,
+                OrderCount = g.Select(x => x.MerchandiseOrderId).Distinct().Count(),
+                DeliveryCount = g.Count(),
+                OrderedQuantity = g.Sum(x => x.OrderedQuantity),
+                DeliveredQuantity = g.Sum(x => x.DeliveredQuantity),
+                TotalOrderAmount = g.Sum(x => x.TotalOrderAmount),
+                ActualSoldAmount = g.Sum(x => x.ActualSoldAmount),
+                RemainingAmount = g.Sum(x => x.RemainingAmount),
+                AverageDeliveryAmount = g.Count() > 0 ? g.Sum(x => x.ActualSoldAmount) / g.Count() : 0m,
+                PeriodStart = g.Min(x => x.LastActualDeliveryDate),
+                PeriodEnd = g.Max(x => x.LastActualDeliveryDate)
+            })
+            .ToList();
+    }
+
+    /// <summary>
+    /// ✅ MỚI: Build chart doanh thu theo sale/manager.
+    /// </summary>
+    private static List<MerchandiseOrderReportChartPointDto> BuildRevenueByManagerChart(
+        IReadOnlyList<MerchandiseOrderReportRowDto> rows)
+    {
+        return rows
+            .GroupBy(x => string.IsNullOrWhiteSpace(x.ManagerName) ? "Không xác định" : x.ManagerName)
+            .OrderByDescending(x => x.Sum(row => row.ActualSoldAmount))
+            .Take(10)
+            .Select(g => new MerchandiseOrderReportChartPointDto
+            {
+                Label = g.Key,
+                OrderCount = g.Count(),
+                DeliveryCount = g.Count(x => x.DeliveredQuantity > 0),
+                OrderedQuantity = g.Sum(x => x.OrderedQuantity),
+                DeliveredQuantity = g.Sum(x => x.DeliveredQuantity),
+                TotalOrderAmount = g.Sum(x => x.TotalOrderAmount),
+                ActualSoldAmount = g.Sum(x => x.ActualSoldAmount),
+                RemainingAmount = g.Sum(x => x.RemainingAmount),
+                AverageDeliveryAmount = g.Count() > 0 ? g.Sum(x => x.ActualSoldAmount) / g.Count() : 0m
+            })
+            .ToList();
+    }
+
+    /// <summary>
+    /// ✅ MỚI: Build chart doanh thu theo khách hàng.
+    /// </summary>
+    private static List<MerchandiseOrderReportChartPointDto> BuildRevenueByCustomerChart(
+        IReadOnlyList<MerchandiseOrderReportRowDto> rows)
+    {
+        return rows
+            .GroupBy(x => string.IsNullOrWhiteSpace(x.CustomerName) ? "Không xác định" : x.CustomerName)
+            .OrderByDescending(x => x.Sum(row => row.ActualSoldAmount))
+            .Take(10)
+            .Select(g => new MerchandiseOrderReportChartPointDto
+            {
+                Label = g.Key,
+                OrderCount = g.Count(),
+                DeliveryCount = g.Count(x => x.DeliveredQuantity > 0),
+                OrderedQuantity = g.Sum(x => x.OrderedQuantity),
+                DeliveredQuantity = g.Sum(x => x.DeliveredQuantity),
+                TotalOrderAmount = g.Sum(x => x.TotalOrderAmount),
+                ActualSoldAmount = g.Sum(x => x.ActualSoldAmount),
+                RemainingAmount = g.Sum(x => x.RemainingAmount),
+                AverageDeliveryAmount = g.Count() > 0 ? g.Sum(x => x.ActualSoldAmount) / g.Count() : 0m
+            })
+            .ToList();
+    }
+
+    /// <summary>
+    /// ✅ MỚI: Build chart số lượng giao theo sale/manager.
+    /// </summary>
+    private static List<MerchandiseOrderReportChartPointDto> BuildQuantityByManagerChart(
+        IReadOnlyList<MerchandiseOrderReportRowDto> rows)
+    {
+        return rows
+            .GroupBy(x => string.IsNullOrWhiteSpace(x.ManagerName) ? "Không xác định" : x.ManagerName)
+            .OrderByDescending(x => x.Sum(row => row.DeliveredQuantity))
+            .Take(10)
+            .Select(g => new MerchandiseOrderReportChartPointDto
+            {
+                Label = g.Key,
+                OrderCount = g.Count(),
+                DeliveryCount = g.Count(x => x.DeliveredQuantity > 0),
+                OrderedQuantity = g.Sum(x => x.OrderedQuantity),
+                DeliveredQuantity = g.Sum(x => x.DeliveredQuantity),
+                TotalOrderAmount = g.Sum(x => x.TotalOrderAmount),
+                ActualSoldAmount = g.Sum(x => x.ActualSoldAmount),
+                RemainingAmount = g.Sum(x => x.RemainingAmount)
+            })
+            .ToList();
+    }
+
+    /// <summary>
+    /// ✅ MỚI: Build chart số lượng giao theo khách hàng.
+    /// </summary>
+    private static List<MerchandiseOrderReportChartPointDto> BuildQuantityByCustomerChart(
+        IReadOnlyList<MerchandiseOrderReportRowDto> rows)
+    {
+        return rows
+            .GroupBy(x => string.IsNullOrWhiteSpace(x.CustomerName) ? "Không xác định" : x.CustomerName)
+            .OrderByDescending(x => x.Sum(row => row.DeliveredQuantity))
+            .Take(10)
+            .Select(g => new MerchandiseOrderReportChartPointDto
+            {
+                Label = g.Key,
+                OrderCount = g.Count(),
+                DeliveryCount = g.Count(x => x.DeliveredQuantity > 0),
+                OrderedQuantity = g.Sum(x => x.OrderedQuantity),
+                DeliveredQuantity = g.Sum(x => x.DeliveredQuantity),
+                TotalOrderAmount = g.Sum(x => x.TotalOrderAmount),
+                ActualSoldAmount = g.Sum(x => x.ActualSoldAmount),
+                RemainingAmount = g.Sum(x => x.RemainingAmount)
+            })
+            .ToList();
+    }
+
     /// <summary>
     /// Build query nền cho báo cáo kế hoạch giao hàng.
     /// Query này join MerchandiseOrder, MerchandiseOrderDetail,
@@ -707,16 +960,13 @@ public class MerchandiseOrderReportRepository : IMerchandiseOrderReportRepositor
                     && x.CustomerExternalIdSnapshot != "KH_VIETAUS"),
             viewerScope);
 
-        if (query.From.HasValue)
-        {
-            var fromDate = query.From.Value.Date;
-            merchandiseOrders = merchandiseOrders.Where(x => x.CreateDate >= fromDate);
-        }
+        var fromDate = query.From?.Date;
+        var toExclusive = query.To?.Date.AddDays(1);
 
-        if (query.To.HasValue)
+        if (fromDate.HasValue || toExclusive.HasValue)
         {
-            var toExclusive = query.To.Value.Date.AddDays(1);
-            merchandiseOrders = merchandiseOrders.Where(x => x.CreateDate < toExclusive);
+            var deliveredOrderIds = BuildDeliveredOrderIdsQuery(fromDate, toExclusive);
+            merchandiseOrders = merchandiseOrders.Where(x => deliveredOrderIds.Contains(x.MerchandiseOrderId));
         }
 
         if (query.EmployeeId.HasValue)
@@ -780,6 +1030,40 @@ public class MerchandiseOrderReportRepository : IMerchandiseOrderReportRepositor
                 mo.Status == "Completed" ? "Hoàn thành" :
                 "Không xác định"
         });
+    }
+
+    private IQueryable<Guid> BuildDeliveredOrderIdsQuery(DateTime? fromDate, DateTime? toExclusive)
+    {
+        var query =
+            from dod in _context.DeliveryOrderDetails.AsNoTracking()
+            join doo in _context.DeliveryOrders.AsNoTracking()
+                on dod.DeliveryOrderId equals doo.Id
+            join mod in _context.MerchandiseOrderDetails.AsNoTracking()
+                on dod.MerchandiseOrderDetailId equals mod.MerchandiseOrderDetailId
+            where dod.IsActive
+                  && !dod.IsAttach
+                  && dod.MerchandiseOrderDetailId.HasValue
+                  && doo.IsActive
+                  && mod.IsActive
+            select new
+            {
+                mod.MerchandiseOrderId,
+                doo.CreatedDate
+            };
+
+        if (fromDate.HasValue)
+        {
+            query = query.Where(x => x.CreatedDate >= fromDate.Value);
+        }
+
+        if (toExclusive.HasValue)
+        {
+            query = query.Where(x => x.CreatedDate < toExclusive.Value);
+        }
+
+        return query
+            .Select(x => x.MerchandiseOrderId)
+            .Distinct();
     }
 
     /// <summary>
