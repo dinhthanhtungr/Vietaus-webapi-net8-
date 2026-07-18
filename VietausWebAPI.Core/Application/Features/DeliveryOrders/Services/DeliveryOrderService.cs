@@ -15,6 +15,8 @@ using VietausWebAPI.Core.Application.Features.DeliveryOrders.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Labs.DTOs.FormulaFeatures;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTOs;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.EventLogDtos;
+using VietausWebAPI.Core.Application.Features.TimelineFeature.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadServices;
 using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper;
@@ -25,6 +27,7 @@ using VietausWebAPI.Core.Domain.Entities.DeliverySchema;
 using VietausWebAPI.Core.Domain.Entities.WarehouseSchema;
 using VietausWebAPI.Core.Domain.Enums.Category;
 using VietausWebAPI.Core.Domain.Enums.Deliveries;
+using VietausWebAPI.Core.Domain.Enums.Logs;
 using VietausWebAPI.Core.Domain.Enums.Manufacturings;
 using VietausWebAPI.Core.Domain.Enums.Merchadises;
 using VietausWebAPI.Core.Domain.Enums.WareHouses;
@@ -39,18 +42,21 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
         private readonly IExternalIdService _idService; 
         private readonly ICurrentUser _currentUser;
         private readonly IWarehouseReservationService _warehouseReservationService;
+        private readonly ITimelineService _timeLineService;
 
         public DeliveryOrderService(IUnitOfWork unitOfWork
             , IMapper mapper
             , IExternalIdService idService
             , ICurrentUser currentUser
-            , IWarehouseReservationService warehouseReservationService)
+            , IWarehouseReservationService warehouseReservationService
+            , ITimelineService timelineService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _idService = idService;
             _currentUser = currentUser;
             _warehouseReservationService = warehouseReservationService;
+            _timeLineService = timelineService;
         }
 
         // ======================================================================== Get ======================================================================== 
@@ -307,6 +313,14 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                     DeliveryAddress = mo.DeliveryAddress,
                     PaymentType = mo.PaymentType,
 
+                    IsDeliveryPaused = mo.IsDeliveryPaused,
+                    DeliveryPausedFrom = mo.DeliveryPausedFrom,
+                    DeliveryPausedTo = mo.DeliveryPausedTo,
+                    DeliveryPauseReason = mo.DeliveryPauseReason,
+                    DeliveryPauseType = mo.DeliveryPauseType,
+                    DeliveryPausedName = mo.DeliveryPausedByNavigation != null
+                        ? mo.DeliveryPausedByNavigation.FullName
+                        : string.Empty,
                     Status = mo.Status,
                     Currency = mo.Currency,
 
@@ -791,9 +805,12 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                     var after = Math.Max(0m, (d.RealQuantity ?? 0m) - minus);
                     d.RealQuantity = after;
 
-                    d.Status = (after >= d.ExpectedQuantity && d.ExpectedQuantity > 0)
-                        ? MerchadiseStatus.Delivered.ToString()
-                        : MerchadiseStatus.Delivering.ToString();
+                    if (after <= 0)
+                        d.Status = MerchadiseStatus.Processing.ToString();
+                    else if (after >= d.ExpectedQuantity && d.ExpectedQuantity > 0)
+                        d.Status = MerchadiseStatus.Delivered.ToString();
+                    else
+                        d.Status = MerchadiseStatus.Delivering.ToString();
 
                 }
 
@@ -820,13 +837,15 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                     var ds = po.MerchandiseOrderDetails.Where(x => x.IsActive).ToList();
 
                     bool allCompleted = ds.Count > 0 &&
-                                        ds.All(d => (d.RealQuantity ?? 0m) >= d.ExpectedQuantity && d.ExpectedQuantity > 0m);
+                        ds.All(d => (d.RealQuantity ?? 0m) >= d.ExpectedQuantity && d.ExpectedQuantity > 0m);
 
                     bool anyHasQty = ds.Any(d => (d.RealQuantity ?? 0m) > 0m);
 
                     po.Status = allCompleted
                         ? MerchadiseStatus.Delivered.ToString()
-                        : MerchadiseStatus.Delivering.ToString();
+                        : anyHasQty
+                            ? MerchadiseStatus.Delivering.ToString()
+                            : MerchadiseStatus.Processing.ToString();
 
                     po.UpdatedBy = userId;
                     po.UpdatedDate = now;
@@ -884,18 +903,71 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
             }
         }
 
+        public async Task<OperationResult<PatchFinishDelivery>> FinishAsync(PatchFinishDelivery request, CancellationToken ct = default)
+        {
+            var userId = _currentUser.EmployeeId;
+            var now = DateTime.Now;
+            try
+            {
+                var existingOrder = await _unitOfWork.MerchandiseOrderRepository.Query(track: true)
+                    .Where(p => p.MerchandiseOrderId == request.Id && p.IsActive == true)
+                    .FirstOrDefaultAsync(ct);
+
+                if (existingOrder == null)
+                    return OperationResult<PatchFinishDelivery>.Fail("Đơn hàng không tồn tại.");
+
+                if (existingOrder.Status == MerchadiseStatus.Delivered.ToString())
+                    return OperationResult<PatchFinishDelivery>.Fail("Đơn hàng đã ở trạng thái đã giao hàng.");
+
+                if (existingOrder.Status != MerchadiseStatus.Delivering.ToString())
+                    return OperationResult<PatchFinishDelivery>.Fail("Đơn hàng cần ở trạng thái đang giao hàng.");
+
+                existingOrder.Status = MerchadiseStatus.Delivered.ToString();
+                existingOrder.UpdatedBy = userId;
+                existingOrder.UpdatedDate = now;
+
+                await _timeLineService.AddEventLogAsync(new EventLogModels
+                {
+                    employeeId = userId,
+                    eventType = EventType.MerchadiseStatus,
+                    sourceCode = existingOrder.ExternalId ?? string.Empty,
+                    sourceId = existingOrder.MerchandiseOrderId,
+                    status = existingOrder.Status,
+                    note = $"Xác nhận giao đủ bởi {_currentUser.personName} vào {now}"
+                }, ct);
+
+                await _unitOfWork.SaveChangesAsync(ct);
+
+                var result = new PatchFinishDelivery
+                {
+                    Id = existingOrder.MerchandiseOrderId,
+                    Status = existingOrder.Status
+                };
+
+
+                return OperationResult<PatchFinishDelivery>.Ok(result, "Xác nhận giao hàng thành công");
+
+            }
+
+            catch (Exception ex)
+            {
+                return OperationResult<PatchFinishDelivery>.Fail($"Lỗi khi xác nhận giao hàng: {ex.InnerException?.Message ?? ex.Message}");
+            }
+        }
+
+
 
 
         // ======================================================================== Helper ======================================================================== 
 
-        /// <summary>
-        /// Record lưu thông tin phân bổ tồn kho trên kệ
-        /// </summary>
-        /// <param name="SlotId"></param>
-        /// <param name="ProductCode"></param>
-        /// <param name="LotKey"></param>
-        /// <param name="Qty"></param>
-        /// <param name="StockType"></param>
+            /// <summary>
+            /// Record lưu thông tin phân bổ tồn kho trên kệ
+            /// </summary>
+            /// <param name="SlotId"></param>
+            /// <param name="ProductCode"></param>
+            /// <param name="LotKey"></param>
+            /// <param name="Qty"></param>
+            /// <param name="StockType"></param>
         private sealed record ShelfAlloc(
             int SlotId,
             string ProductCode,
@@ -904,161 +976,161 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
             StockType StockType
         );
 
-        /// <summary>
-        /// Tìm và cấp phát tồn kho FIFO cho các sản phẩm trong needsByProductCode,
-        /// </summary>
-        /// <param name="companyId"></param>
-        /// <param name="vaCode"></param>
-        /// <param name="createdBy"></param>
-        /// <param name="needsByProductCode"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        private async Task<Dictionary<string, List<ShelfAlloc>>> AllocateReserveFifoAsync(
-            Guid companyId,
-            string vaCode,
-            Guid createdBy,
-            Dictionary<string, decimal> needsByProductCode,
-            CancellationToken ct)
-        {
-            static string Norm(string? s) => (s ?? "").Trim().ToUpperInvariant();
-            // Kết quả: { Code -> [các phân bổ theo lô] }
-            var result = needsByProductCode.Keys.ToDictionary(k => Norm(k), _ => new List<ShelfAlloc>());
+        ///// <summary>
+        ///// Tìm và cấp phát tồn kho FIFO cho các sản phẩm trong needsByProductCode,
+        ///// </summary>
+        ///// <param name="companyId"></param>
+        ///// <param name="vaCode"></param>
+        ///// <param name="createdBy"></param>
+        ///// <param name="needsByProductCode"></param>
+        ///// <param name="ct"></param>
+        ///// <returns></returns>
+        //private async Task<Dictionary<string, List<ShelfAlloc>>> AllocateReserveFifoAsync(
+        //    Guid companyId,
+        //    string vaCode,
+        //    Guid createdBy,
+        //    Dictionary<string, decimal> needsByProductCode,
+        //    CancellationToken ct)
+        //{
+        //    static string Norm(string? s) => (s ?? "").Trim().ToUpperInvariant();
+        //    // Kết quả: { Code -> [các phân bổ theo lô] }
+        //    var result = needsByProductCode.Keys.ToDictionary(k => Norm(k), _ => new List<ShelfAlloc>());
 
-            var codes = needsByProductCode
-                .Where(kv => kv.Value > 0 && !string.IsNullOrWhiteSpace(kv.Key))
-                .Select(kv => kv.Key)
-                .Distinct()
-                .ToList();
-            if (codes.Count == 0) return result;
-            var vaCodeNorm = Norm(vaCode);
+        //    var codes = needsByProductCode
+        //        .Where(kv => kv.Value > 0 && !string.IsNullOrWhiteSpace(kv.Key))
+        //        .Select(kv => kv.Key)
+        //        .Distinct()
+        //        .ToList();
+        //    if (codes.Count == 0) return result;
+        //    var vaCodeNorm = Norm(vaCode);
 
-            // 1) Tổng Open hiện tại (đang giữ chỗ) theo Code + Lot
-            var openByLot = await _unitOfWork.WarehouseTempStockRepository.Query()
-                .Where(x => x.CompanyId == companyId
-                            && x.VaCode == vaCode
-                            && codes.Contains(x.Code))
-                .GroupBy(t => new { t.Code, t.LotKey })
-                .Select(g => new {
-                    g.Key.Code,
-                    g.Key.LotKey,
-                    QtyOpen = g.Sum(x => (decimal?)x.QtyRequest) ?? 0m
-                })
-                .ToListAsync(ct);
+        //    // 1) Tổng Open hiện tại (đang giữ chỗ) theo Code + Lot
+        //    var openByLot = await _unitOfWork.WarehouseTempStockRepository.Query()
+        //        .Where(x => x.CompanyId == companyId
+        //                    && x.VaCode == vaCode
+        //                    && codes.Contains(x.Code))
+        //        .GroupBy(t => new { t.Code, t.LotKey })
+        //        .Select(g => new {
+        //            g.Key.Code,
+        //            g.Key.LotKey,
+        //            QtyOpen = g.Sum(x => (decimal?)x.QtyRequest) ?? 0m
+        //        })
+        //        .ToListAsync(ct);
 
-            var openLookup = openByLot
-                .GroupBy(x => (Code: Norm(x.Code), Lot: x.LotKey ?? ""))
-                .ToDictionary(g => g.Key, g => g.Sum(x => x.QtyOpen));
+        //    var openLookup = openByLot
+        //        .GroupBy(x => (Code: Norm(x.Code), Lot: x.LotKey ?? ""))
+        //        .ToDictionary(g => g.Key, g => g.Sum(x => x.QtyOpen));
 
-            // 2) Cấp phát FIFO in-memory + commit bằng UPDATE có điều kiện (atomic)
-            var rawLots = await _unitOfWork.WarehouseShelfStockRepository.Query()
-                .Where(x => x.CompanyId == companyId
-                            && codes.Contains(x.Code)
-                            && x.QtyKg > 0)
-                .OrderBy(x => x.Code)
-                .ThenBy(x => x.UpdatedDate) // có ReceivedDate thì thay vào đây
-                .ThenBy(x => x.LotKey)
-                .Select(x => new
-                {
-                    x.SlotId,
-                    Code = x.Code,
-                    LotKey = x.LotKey,
-                    OnHand = x.QtyKg,
-                    x.StockType
-                })
-                .ToListAsync(ct);
+        //    // 2) Cấp phát FIFO in-memory + commit bằng UPDATE có điều kiện (atomic)
+        //    var rawLots = await _unitOfWork.WarehouseShelfStockRepository.Query()
+        //        .Where(x => x.CompanyId == companyId
+        //                    && codes.Contains(x.Code)
+        //                    && x.QtyKg > 0)
+        //        .OrderBy(x => x.Code)
+        //        .ThenBy(x => x.UpdatedDate) // có ReceivedDate thì thay vào đây
+        //        .ThenBy(x => x.LotKey)
+        //        .Select(x => new
+        //        {
+        //            x.SlotId,
+        //            Code = x.Code,
+        //            LotKey = x.LotKey,
+        //            OnHand = x.QtyKg,
+        //            x.StockType
+        //        })
+        //        .ToListAsync(ct);
 
-            var lots = new List<(int SlotId, string Code, string LotKey, decimal Available, StockType StockType)>();
-            foreach (var lot in rawLots)
-            {
-                var code = Norm(lot.Code);
-                var lotKey = lot.LotKey ?? "";
-                var open = openLookup.TryGetValue((code, lotKey), out var o) ? o : 0m;
-                var available = lot.OnHand - open;
-                if (available > 0)
-                    lots.Add((lot.SlotId, code, lotKey, available, lot.StockType));
-            }
+        //    var lots = new List<(int SlotId, string Code, string LotKey, decimal Available, StockType StockType)>();
+        //    foreach (var lot in rawLots)
+        //    {
+        //        var code = Norm(lot.Code);
+        //        var lotKey = lot.LotKey ?? "";
+        //        var open = openLookup.TryGetValue((code, lotKey), out var o) ? o : 0m;
+        //        var available = lot.OnHand - open;
+        //        if (available > 0)
+        //            lots.Add((lot.SlotId, code, lotKey, available, lot.StockType));
+        //    }
 
-            // 4) Phân bổ FIFO theo Available (KHÔNG trừ tồn thật) → CHÈN Open theo từng lô
-            //await using var tx = await _unitOfWork.BeginTransactionAsync();
+        //    // 4) Phân bổ FIFO theo Available (KHÔNG trừ tồn thật) → CHÈN Open theo từng lô
+        //    //await using var tx = await _unitOfWork.BeginTransactionAsync();
 
-            var needLeft = needsByProductCode
-                .Where(kv => kv.Value > 0 && !string.IsNullOrWhiteSpace(kv.Key))
-                .ToDictionary(kv => Norm(kv.Key), kv => kv.Value);
+        //    var needLeft = needsByProductCode
+        //        .Where(kv => kv.Value > 0 && !string.IsNullOrWhiteSpace(kv.Key))
+        //        .ToDictionary(kv => Norm(kv.Key), kv => kv.Value);
 
-            var toInsert = new List<WarehouseTempStock>();
+        //    var toInsert = new List<WarehouseTempStock>();
 
-            foreach (var lot in lots)
-            {
-                if (!needLeft.TryGetValue(lot.Code, out var need) || need <= 0) continue;
+        //    foreach (var lot in lots)
+        //    {
+        //        if (!needLeft.TryGetValue(lot.Code, out var need) || need <= 0) continue;
 
-                var take = Math.Min(need, lot.Available);
-                if (take <= 0) continue;
+        //        var take = Math.Min(need, lot.Available);
+        //        if (take <= 0) continue;
 
-                toInsert.Add(new WarehouseTempStock
-                {
-                    CompanyId = companyId,
-                    VaCode = vaCodeNorm,
-                    Code = lot.Code,
-                    LotKey = lot.LotKey,          // giữ theo lô đã cấp phát
-                    QtyRequest = take,
-                    ReserveStatus = ReserveStatus.Open.ToString(),  // trừ ảo
-                    //LinkedIssueId = lot.SlotId,
-                    CreatedBy = createdBy,
-                    CreatedDate = DateTime.Now
-                });
+        //        toInsert.Add(new WarehouseTempStock
+        //        {
+        //            CompanyId = companyId,
+        //            VaCode = vaCodeNorm,
+        //            Code = lot.Code,
+        //            LotKey = lot.LotKey,          // giữ theo lô đã cấp phát
+        //            QtyRequest = take,
+        //            ReserveStatus = ReserveStatus.Open.ToString(),  // trừ ảo
+        //            //LinkedIssueId = lot.SlotId,
+        //            CreatedBy = createdBy,
+        //            CreatedDate = DateTime.Now
+        //        });
 
-                result[lot.Code].Add(new ShelfAlloc(lot.SlotId, lot.Code, lot.LotKey, take, lot.StockType));
-                needLeft[lot.Code] = need - take;
-            }
+        //        result[lot.Code].Add(new ShelfAlloc(lot.SlotId, lot.Code, lot.LotKey, take, lot.StockType));
+        //        needLeft[lot.Code] = need - take;
+        //    }
 
-            // 5) Nếu còn thiếu → báo lỗi (hoặc backorder tùy chính sách)
-            //var shortage = needLeft.Where(kv => kv.Value > 0).ToList();
-            //if (shortage.Count > 0)
-            //{
-            //    await tx.RollbackAsync(ct);
-            //    var msg = string.Join(", ", shortage.Select(s => $"{s.Key} thiếu {s.Value}"));
-            //    throw new ApplicationException($"Không đủ tồn khả dụng (OnHand - Open) để reserve FIFO: {msg}");
-            //}
+        //    // 5) Nếu còn thiếu → báo lỗi (hoặc backorder tùy chính sách)
+        //    //var shortage = needLeft.Where(kv => kv.Value > 0).ToList();
+        //    //if (shortage.Count > 0)
+        //    //{
+        //    //    await tx.RollbackAsync(ct);
+        //    //    var msg = string.Join(", ", shortage.Select(s => $"{s.Key} thiếu {s.Value}"));
+        //    //    throw new ApplicationException($"Không đủ tồn khả dụng (OnHand - Open) để reserve FIFO: {msg}");
+        //    //}
 
-            // 6) Commit: CHỈ INSERT các dòng Open; idempotent theo VaCode + unique index
-            await _unitOfWork.WarehouseTempStockRepository.AddRangeAsync(toInsert, ct);
-            //await _unitOfWork.SaveChangesAsync();
-            //await tx.CommitAsync(ct);
+        //    // 6) Commit: CHỈ INSERT các dòng Open; idempotent theo VaCode + unique index
+        //    await _unitOfWork.WarehouseTempStockRepository.AddRangeAsync(toInsert, ct);
+        //    //await _unitOfWork.SaveChangesAsync();
+        //    //await tx.CommitAsync(ct);
 
-            return result;
-        }
+        //    return result;
+        //}
 
-        /// <summary>
-        /// Xoá các bản ghi TempStock liên quan đến các WarehouseRequestId đã cho, chỉ những bản còn Open
-        /// </summary>
-        /// <param name="wrIds"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        private async Task ReleaseTempStockByWRIdsAsync(List<string> wrIds, CancellationToken ct)
-        {
-            // wrIds thực chất là các VaCode => đổi tên cho dễ hiểu
-            if (wrIds == null || wrIds.Count == 0) return;
+        ///// <summary>
+        ///// Xoá các bản ghi TempStock liên quan đến các WarehouseRequestId đã cho, chỉ những bản còn Open
+        ///// </summary>
+        ///// <param name="wrIds"></param>
+        ///// <param name="ct"></param>
+        ///// <returns></returns>
+        //private async Task ReleaseTempStockByWRIdsAsync(List<string> wrIds, CancellationToken ct)
+        //{
+        //    // wrIds thực chất là các VaCode => đổi tên cho dễ hiểu
+        //    if (wrIds == null || wrIds.Count == 0) return;
 
-            // Chuẩn hoá input: trim, bỏ rỗng, distinct (không phân biệt hoa thường)
-            var vaCodes = wrIds
-                .Where(s => !string.IsNullOrWhiteSpace(s))
-                .Select(s => s.Trim())
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
+        //    // Chuẩn hoá input: trim, bỏ rỗng, distinct (không phân biệt hoa thường)
+        //    var vaCodes = wrIds
+        //        .Where(s => !string.IsNullOrWhiteSpace(s))
+        //        .Select(s => s.Trim())
+        //        .Distinct(StringComparer.OrdinalIgnoreCase)
+        //        .ToArray();
 
-            if (vaCodes.Length == 0) return;
+        //    if (vaCodes.Length == 0) return;
 
-            // So sánh không phân biệt HOA/thường (PostgreSQL dịch LOWER(...))
-            var vaCodesLower = vaCodes.Select(s => s.ToLower()).ToArray();
-            var rows = await _unitOfWork.WarehouseTempStockRepository.Query(track: true)
-                .Where(t => t.ReserveStatus == ReserveStatus.Open.ToString()
-                         && t.VaCode != null
-                         && vaCodesLower.Contains(t.VaCode.ToLower()))
-                .ToListAsync(ct);
+        //    // So sánh không phân biệt HOA/thường (PostgreSQL dịch LOWER(...))
+        //    var vaCodesLower = vaCodes.Select(s => s.ToLower()).ToArray();
+        //    var rows = await _unitOfWork.WarehouseTempStockRepository.Query(track: true)
+        //        .Where(t => t.ReserveStatus == ReserveStatus.Open.ToString()
+        //                 && t.VaCode != null
+        //                 && vaCodesLower.Contains(t.VaCode.ToLower()))
+        //        .ToListAsync(ct);
 
-            foreach (var r in rows)
-                r.ReserveStatus = ReserveStatus.Cancelled.ToString();
-        }
+        //    foreach (var r in rows)
+        //        r.ReserveStatus = ReserveStatus.Cancelled.ToString();
+        //}
 
         public async Task<List<DeliveryPlanRow>> BuildRowsAsync(DateTime from, DateTime to, CancellationToken ct)
         {

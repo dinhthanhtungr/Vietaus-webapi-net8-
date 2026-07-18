@@ -10,6 +10,16 @@ namespace VietausWebAPI.Infrastructure.Repositories.ReportFeatures.PLPUReports
 {
     public class PLPUPurchaseOverviewReportRepository : IPLPUPurchaseOverviewReportRepository
     {
+        private const string SupplierOrderType = "NCC";
+
+        private const string IncludedMaterialCodePrefix = "NVL";
+
+        private static readonly string[] ExcludedMaterialCodeKeywords =
+        {
+            "VPP",
+            "BB"
+        };
+
         private static readonly int[] PurchaseReceiptVoucherTypes =
         {
             (int)WareHouseRequestType.ImportRawMaterial,
@@ -61,11 +71,31 @@ namespace VietausWebAPI.Infrastructure.Repositories.ReportFeatures.PLPUReports
                 from po in _context.PurchaseOrders.AsNoTracking()
                 join pod in _context.PurchaseOrderDetails.AsNoTracking()
                     on po.PurchaseOrderId equals pod.PurchaseOrderId
+                join m in _context.Materials.AsNoTracking()
+                    on pod.MaterialId equals m.MaterialId into materialJoin
+                from m in materialJoin.DefaultIfEmpty()
                 join s in _context.Suppliers.AsNoTracking()
                     on po.SupplierId equals s.SupplierId into sJoin
                 from s in sJoin.DefaultIfEmpty()
                 where pod.IsActive
-                select new { po, pod, s };
+                select new { po, pod, m, s };
+
+            q = q.Where(x => (x.po.OrderType ?? "") == SupplierOrderType);
+
+            q = q.Where(x =>
+                EF.Functions.ILike(
+                    x.pod.MaterialExternalIDSnapshot ?? "",
+                    IncludedMaterialCodePrefix + "%"));
+
+            foreach (var keyworde in ExcludedMaterialCodeKeywords)
+            {
+                var pattern = "%" + keyworde + "%";
+
+                q = q.Where(x =>
+                    !EF.Functions.ILike(
+                        x.pod.MaterialExternalIDSnapshot ?? "",
+                        pattern));
+            } 
 
             q = q.Where(x =>
                 string.IsNullOrEmpty(x.po.ExternalId) ||
@@ -137,6 +167,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.ReportFeatures.PLPUReports
                 MaterialId = x.pod.MaterialId,
                 MaterialCode = x.pod.MaterialExternalIDSnapshot ?? string.Empty,
                 MaterialName = x.pod.MaterialNameSnapshot ?? string.Empty,
+                CategoryId = x.m != null ? x.m.CategoryId : null,
                 Package = x.pod.Package ?? string.Empty,
 
                 OrderedQuantity = x.pod.RequestQuantity ?? 0,
@@ -184,6 +215,23 @@ namespace VietausWebAPI.Infrastructure.Repositories.ReportFeatures.PLPUReports
                     })
                     .FirstOrDefault()
                 select new { po, s, wr, v, vd, ledger, qcLatest };
+
+            q = q.Where(x => (x.po.OrderType ?? "") == SupplierOrderType);
+
+            q = q.Where(x =>
+                EF.Functions.ILike(
+                    x.ledger.ProductCode ?? x.vd.ProductCode ?? "",
+                    IncludedMaterialCodePrefix + "%"));
+
+            foreach (var keyworde in ExcludedMaterialCodeKeywords)
+            {
+                var pattern = "%" + keyworde + "%";
+
+                q = q.Where(x =>
+                    !EF.Functions.ILike(
+                        x.ledger.ProductCode ?? x.vd.ProductCode ?? "",
+                        pattern));
+            }
 
             q = q.Where(x =>
                 string.IsNullOrEmpty(x.po.ExternalId) ||

@@ -1,6 +1,9 @@
 ﻿
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using System.Text;
+using VietausWebAPI.Core.Application.Features.Audits.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Attachments.RepositoriesContracts;
 using VietausWebAPI.Core.Application.Features.Attachments.RepositoriesContracts.GalleryItemFeatures;
 using VietausWebAPI.Core.Application.Features.CompanyFeatures.RepositoriesContracts;
@@ -51,6 +54,8 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             
             IMerchandiseOrderReportRepositorys merchandiseOrderReportRepositorys,
 
+            // ==== Audits ======
+            IAuditLogRepository auditLogRepository,
 
             // ==== Attachments ====
             IAttachmentCollectionRepository attachmentCollectionRepository,
@@ -160,6 +165,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             // ==== Purchase ====
             IPurchaseOrderRepository purchaseOrderRepository,
             IPurchaseOrderDetailRepository purchaseOrderDetailRepository,
+            IPurchaseOrderDocumentRepository purchaseOrderDocumentRepository,
             IPurchaseOrderSnapshotRepository purchaseOrderSnapshotRepository,
             IPurchaseOrderLinkRepository purchaseOrderLinkRepository,
 
@@ -180,6 +186,9 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             FinishPLPUReportRepository = finishPLPUReportRepository;
 
             MerchandiseOrderReportRepositorys = merchandiseOrderReportRepositorys;
+
+            // ===== Audits ====
+            AuditLogRepository = auditLogRepository;
 
             // ===== Attachments =====
             AttachmentCollectionRepository = attachmentCollectionRepository;
@@ -288,6 +297,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             // ===== Purchase =====
             PurchaseOrderRepository = purchaseOrderRepository;
             PurchaseOrderDetailRepository = purchaseOrderDetailRepository;
+            PurchaseOrderDocumentRepository = purchaseOrderDocumentRepository;
             PurchaseOrderSnapshotRepository = purchaseOrderSnapshotRepository;
             PurchaseOrderLinkRepository = purchaseOrderLinkRepository;
 
@@ -314,7 +324,36 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
             => await _context.Database.RollbackTransactionAsync(ct);
 
         public async Task<int> SaveChangesAsync(CancellationToken ct = default)
-            => await _context.SaveChangesAsync();
+        {
+            try
+            {
+                return await _context.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                var details = new StringBuilder();
+                details.AppendLine("Concurrency conflict entries:");
+
+                foreach (var entry in ex.Entries)
+                {
+                    details.Append(entry.Metadata.ClrType.Name)
+                        .Append(" State=")
+                        .Append(entry.State)
+                        .Append(" Keys=");
+
+                    var keys = entry.Metadata.FindPrimaryKey()?.Properties;
+                    if (keys != null)
+                    {
+                        var keyValues = keys.Select(x => $"{x.Name}:{entry.Property(x.Name).CurrentValue}");
+                        details.Append(string.Join(",", keyValues));
+                    }
+
+                    details.AppendLine();
+                }
+
+                throw new DbUpdateConcurrencyException(details.ToString(), ex);
+            }
+        }
 
         public void Dispose() => _context.Dispose();
     }

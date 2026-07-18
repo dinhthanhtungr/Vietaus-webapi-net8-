@@ -14,6 +14,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
         public string? Name { get; set; }
 
         public Guid CategoryId { get; set; }
+        public Guid? AttachmentCollectionId { get; set; }
 
         public double? Weight { get; set; }
 

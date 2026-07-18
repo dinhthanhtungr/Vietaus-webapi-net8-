@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadServices;
 using VietausWebAPI.Core.Domain.Enums.Formulas;
 
 namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.GetDtos
@@ -10,6 +11,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
     public class GetMaterialSummary
     {
         public Guid MaterialId { get; set; }
+        public Guid? AttachmentCollectionId { get; set; }
 
         public string? ExternalId { get; set; }
         public string? CustomCode { get; set; }
@@ -23,6 +25,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
         public double? Weight { get; set; }
         public string? Package { get; set; }
         public string? Unit { get; set; }
+        public List<LotNumberOptionDto>? LotNumber { get; set; } = new List<LotNumberOptionDto>();
 
         public List<GetDetailMaterials> DetailMaterials { get; set; } = new List<GetDetailMaterials>();
     }

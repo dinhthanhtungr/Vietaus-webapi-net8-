@@ -12,6 +12,8 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
         private const string StatusCanceled = "Canceled";
         private const string StatusClosed = "Closed";
 
+        private static readonly Guid MaterialPackagingCategoryId =
+            Guid.Parse("3bed94ed-da05-4e5f-ac04-c7647aaa63d6");
 
         private const decimal CompletionTolerancePercent = 2m;
         private const decimal OverDeliveryTolerancePercent = 2m;
@@ -23,6 +25,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
             _repository = repository;
         }
 
+        /// <summary>
+        /// Lấy toàn bộ dữ liệu tổng quan mua hàng: summary, danh sách PO cần xử lý, biểu đồ NCC.
+        /// </summary>
         public async Task<PLPUPurchaseOverviewReportDto> GetOverviewAsync(
             PLPUPurchaseOverviewQuery query,
             CancellationToken ct = default)
@@ -77,6 +82,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
             };
         }
 
+        /// <summary>
+        /// Lấy dữ liệu header dashboard cho báo cáo mua hàng.
+        /// </summary>
         public async Task<PLPUPurchaseOrderHeaderDashboardDto> GetHeaderReportAsync(
             PLPUPurchaseOverviewQuery query,
             CancellationToken ct = default)
@@ -92,6 +100,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
             return BuildHeaderDashboard(rawData.OrderLines, details, headers);
         }
 
+        /// <summary>
+        /// Lấy danh sách PO dạng phân trang cho màn hình chính.
+        /// </summary>
         public async Task<PagedResult<PLPUPurchaseOrderRowDto>> GetRowsAsync(
             PLPUPurchaseOverviewQuery query,
             CancellationToken ct = default)
@@ -125,6 +136,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                     CreatedDate = x.CreatedDate,
                     RequestDeliveryDate = x.RequestDeliveryDate,
                     RealDeliveryDate = x.RealDeliveryDate,
+                    LastReceiptDate = x.LastReceiptDate,
 
                     POStatus = x.POStatus,
                     ReportStatus = ToVietnameseStatus(x.ReportStatus),
@@ -141,6 +153,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                     RemainingToAccept = x.RemainingToAccept,
                     CompletionPercent = x.CompletionPercent,
                     TotalPurchaseValue = x.TotalPurchaseValue,
+                    ReceivedPurchaseValue = x.ReceivedPurchaseValue,
 
                     IsOverdue = x.IsOverdue,
                     DelayDays = x.DelayDays,
@@ -155,6 +168,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
             return ToPagedResult(rows, NormalizePageNumber(query.PageNumber), NormalizePageSize(query.PageSize));
         }
 
+        /// <summary>
+        /// Lấy chi tiết một PO gồm header, lines, phiếu nhập và QC.
+        /// </summary>
         public async Task<PLPUPurchaseOrderDetailDashboardDto> GetOrderDetailAsync(
             Guid purchaseOrderId,
             CancellationToken ct = default)
@@ -172,7 +188,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
             var headers = BuildHeaderRows(rawData.OrderLines, details);
             var qcRows = BuildQcRowsFromAllocatedReceipts(allocatedReceipts);
 
-            return new PLPUPurchaseOrderDetailDashboardDto
+            PLPUPurchaseOrderDetailDashboardDto temp = new PLPUPurchaseOrderDetailDashboardDto
             {
                 Header = LocalizeHeaders(headers).FirstOrDefault() ?? new PLPUPurchaseOrderHeaderReportDto(),
 
@@ -196,8 +212,13 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                         .ThenByDescending(x => x.ReceiptDate)
                 )
             };
+
+            return temp;
         }
 
+        /// <summary>
+        /// Lấy danh sách dòng chi tiết PO dạng phân trang.
+        /// </summary>
         public async Task<PagedResult<PLPUPurchaseOrderDetailReportDto>> GetDetailLinesAsync(
             PLPUPurchaseOverviewQuery query,
             CancellationToken ct = default)
@@ -224,6 +245,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 NormalizePageSize(query.PageSize));
         }
 
+        /// <summary>
+        /// Lấy danh sách phiếu nhập kho liên quan PO.
+        /// </summary>
         public async Task<PagedResult<PLPUPurchaseReceiptReportDto>> GetReceiptsAsync(
             PLPUPurchaseOverviewQuery query,
             CancellationToken ct = default)
@@ -243,6 +267,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                  NormalizePageSize(query.PageSize));
         }
 
+        /// <summary>
+        /// Lấy danh sách kết quả QC từ các phiếu nhập kho.
+        /// </summary>
         public async Task<PagedResult<PLPUPurchaseQcReportDto>> GetQcAsync(
             PLPUPurchaseOverviewQuery query,
             CancellationToken ct = default)
@@ -264,6 +291,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 NormalizePageSize(query.PageSize));
         }
 
+        /// <summary>
+        /// Lấy thống kê hiệu suất nhà cung cấp.
+        /// </summary>
         public async Task<List<PLPUSupplierPurchasePerformanceDto>> GetSupplierPerformanceAsync(
             PLPUPurchaseOverviewQuery query,
             CancellationToken ct = default)
@@ -282,6 +312,12 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 .ToList();
         }
 
+
+        // ========================================== Các hàm private chính ===========================================
+       
+        /// <summary>
+        /// Phân bổ số lượng nhập kho vào từng dòng PO theo mã PO và mã vật tư.
+        /// </summary>
         private static List<PLPUPurchaseReceiptReportDto> AllocateReceiptsToOrderLines(
             List<PLPUPurchaseOrderLineRaw> orderLines,
             List<PLPUPurchaseReceiptReportDto> receipts)
@@ -358,13 +394,16 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
             return result;
         }
 
+        /// <summary>
+        /// Clone một dòng nhập kho và gán vào đúng dòng PO với số lượng đã phân bổ.
+        /// </summary>
         private static PLPUPurchaseReceiptReportDto CloneReceiptForLine(
             PLPUPurchaseReceiptReportDto source,
             PLPUPurchaseOrderLineRaw line,
             decimal allocatedQty)
         {
             var ratio = source.QtyKg == 0 ? 0 : allocatedQty / source.QtyKg;
-
+            var autoAccept = IsAutoAcceptPackagingQc(line);
             return new PLPUPurchaseReceiptReportDto
             {
                 WarehouseRequestId = source.WarehouseRequestId,
@@ -394,16 +433,27 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
 
                 QCResult = source.QCResult,
                 QCCreatedDate = source.QCCreatedDate,
-                QCGroup = source.QCGroup,
+                QCGroup = autoAccept ? "Accepted" : source.QCGroup,
 
                 VoucherDetailType = source.VoucherDetailType,
 
-                AcceptedQty = Math.Round(source.AcceptedQty * ratio, 6),
-                PendingQcQty = Math.Round(source.PendingQcQty * ratio, 6),
-                RejectedQty = Math.Round(source.RejectedQty * ratio, 6)
+                AcceptedQty = autoAccept
+                    ? allocatedQty
+                    : Math.Round(source.AcceptedQty * ratio, 6),
+
+                                PendingQcQty = autoAccept
+                    ? 0m
+                    : Math.Round(source.PendingQcQty * ratio, 6),
+
+                                RejectedQty = autoAccept
+                    ? 0m
+                    : Math.Round(source.RejectedQty * ratio, 6),
             };
         }
 
+        /// <summary>
+        /// Tạo dữ liệu báo cáo chi tiết từng dòng PO.
+        /// </summary>
         private static List<PLPUPurchaseOrderDetailReportDto> BuildDetailRows(
             List<PLPUPurchaseOrderLineRaw> orderLines,
             List<PLPUPurchaseReceiptReportDto> allocatedReceipts)
@@ -424,6 +474,13 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                     var pendingQc = receipts.Sum(x => x.PendingQcQty);
                     var rejected = receipts.Sum(x => x.RejectedQty);
 
+                    if (IsAutoAcceptPackagingQc(line))
+                    {
+                        accepted = received;
+                        pendingQc = 0m;
+                        rejected = 0m;
+                    }
+
                     var dueDate = line.DeliveryDate ?? line.HeaderRequestDeliveryDate;
 
                     var firstReceipt = receipts.Count > 0 ? receipts.Min(x => x.ReceiptDate) : (DateTime?)null;
@@ -437,7 +494,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                     var dateWhenAcceptedEnough = GetDateWhenEnough(
                         receipts.OrderBy(x => x.ReceiptDate),
                         line.OrderedQuantity,
-                        x => x.AcceptedQty);
+                        x => IsAutoAcceptPackagingQc(line) ? x.QtyKg : x.AcceptedQty);
 
                     var deliveryDelayDays = CalculateDelayDays(
                         dueDate,
@@ -455,6 +512,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                         ? line.UnitPriceAgreed.Value - line.BaseCostSnapshot.Value
                         : (decimal?)null;
 
+                    var effectiveUnitPrice = ResolveUnitPrice(line.OrderedQuantity, line.UnitPriceAgreed, line.TotalPriceAgreed, line.BaseCostSnapshot);
+                    var receivedPurchaseValue = Math.Round(received * effectiveUnitPrice, 2, MidpointRounding.AwayFromZero);
+
                     var priceVariancePercent = priceVariance.HasValue &&
                                                line.BaseCostSnapshot.HasValue &&
                                                line.BaseCostSnapshot.Value != 0
@@ -467,7 +527,8 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                         accepted: accepted,
                         pendingQc: pendingQc,
                         rejected: rejected,
-                        dueDate: dueDate);
+                        dueDate: dueDate,
+                        dateWhenReceivedEnough: dateWhenReceivedEnough);
 
                     var status = ResolveLinePrimaryStatus(
                         isActive: line.POIsActive,
@@ -480,6 +541,8 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                         dueDate: dueDate);
 
                     var needAction = IsNeedActionLine(flags);
+
+
 
                     return new PLPUPurchaseOrderDetailReportDto
                     {
@@ -514,7 +577,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
 
                         DeliveryDelayDays = deliveryDelayDays,
                         AcceptanceDelayDays = acceptanceDelayDays,
-                        DelayDays = acceptanceDelayDays,
+                        DelayDays = deliveryDelayDays,
 
                         LineReportStatus = status,
                         AlertFlags = string.Join(",", flags),
@@ -526,6 +589,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                         BaseDateSnapshot = line.BaseDateSnapshot,
                         UnitPriceAgreed = line.UnitPriceAgreed,
                         TotalPriceAgreed = line.TotalPriceAgreed,
+                        ReceivedPurchaseValue = receivedPurchaseValue,
 
                         PriceVariance = priceVariance,
                         PriceVariancePercent = priceVariancePercent,
@@ -539,6 +603,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 .ToList();
         }
 
+        /// <summary>
+        /// Gom các dòng chi tiết thành dữ liệu header theo từng PO.
+        /// </summary>
         private static List<PLPUPurchaseOrderHeaderReportDto> BuildHeaderRows(
             List<PLPUPurchaseOrderLineRaw> orderLines,
             List<PLPUPurchaseOrderDetailReportDto> details)
@@ -565,6 +632,8 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                     var totalValue = g.Sum(x =>
                         x.TotalPriceAgreed ??
                         x.OrderedQuantity * (x.UnitPriceAgreed ?? 0));
+
+                    var receivedValue = poDetails.Sum(x => x.ReceivedPurchaseValue);
 
                     var flags = ResolveHeaderAlertFlags(poDetails);
 
@@ -595,6 +664,11 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                         ? poDetails.Max(x => x.AcceptanceDelayDays)
                         : 0;
 
+                    var lastReceiptDate = poDetails
+                        .Where(x => x.LastReceiptDate.HasValue)
+                        .Select(x => x.LastReceiptDate)
+                        .Max();
+
                     return new PLPUPurchaseOrderHeaderReportDto
                     {
                         PurchaseOrderId = first.PurchaseOrderId,
@@ -610,6 +684,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
 
                         RequestDeliveryDate = first.HeaderRequestDeliveryDate,
                         RealDeliveryDate = first.RealDeliveryDate,
+                        LastReceiptDate = lastReceiptDate,
 
                         POStatus = first.POStatus,
                         ReportStatus = reportStatus,
@@ -631,11 +706,12 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                         WarehouseReceiptPercent = Percent(received, ordered),
 
                         TotalPurchaseValue = totalValue,
+                        ReceivedPurchaseValue = receivedValue,
 
                         IsOverdue = isOverdue,
                         DeliveryDelayDays = deliveryDelayDays,
                         AcceptanceDelayDays = acceptanceDelayDays,
-                        DelayDays = acceptanceDelayDays,
+                        DelayDays = deliveryDelayDays,
 
                         HasQCFail = hasQcFail,
                         HasPendingQC = hasPendingQc,
@@ -653,6 +729,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 .ToList();
         }
 
+        /// <summary>
+        /// Tính các chỉ số tổng hợp của báo cáo mua hàng.
+        /// </summary>
         private static PLPUPurchaseOverviewSummaryDto BuildSummary(
             List<PLPUPurchaseOrderHeaderReportDto> headers,
             List<PLPUPurchaseOrderDetailReportDto> details)
@@ -686,6 +765,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 OverDeliveryPO = headers.Count(x => x.HasOverDelivery),
 
                 TotalPurchaseValue = headers.Sum(x => x.TotalPurchaseValue),
+                ReceivedPurchaseValue = headers.Sum(x => x.ReceivedPurchaseValue),
 
                 OrderedQuantity = ordered,
                 WarehouseReceivedQuantity = received,
@@ -718,16 +798,16 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 QcAcceptanceRate = Percent(accepted, received),
                 PendingQcRate = Percent(pendingQc, received),
 
-                AverageDeliveryDelayDays = details.Count > 0
-                    ? Math.Round((decimal)details.Average(x => x.DeliveryDelayDays), 2)
+                AverageDeliveryDelayDays = deliveryEvaluableDetails.Count > 0
+                    ? Math.Round((decimal)deliveryEvaluableDetails.Average(x => x.DeliveryDelayDays), 2)
                     : 0,
 
-                AverageAcceptanceDelayDays = details.Count > 0
-                    ? Math.Round((decimal)details.Average(x => x.AcceptanceDelayDays), 2)
+                AverageAcceptanceDelayDays = acceptanceEvaluableDetails.Count > 0
+                    ? Math.Round((decimal)acceptanceEvaluableDetails.Average(x => x.AcceptanceDelayDays), 2)
                     : 0,
 
-                AverageDelayDays = details.Count > 0
-                    ? Math.Round((decimal)details.Average(x => x.DelayDays), 2)
+                AverageDelayDays = deliveryEvaluableDetails.Count > 0
+                    ? Math.Round((decimal)deliveryEvaluableDetails.Average(x => x.DeliveryDelayDays), 2)
                     : 0,
 
                 MaxDeliveryDelayDays = details.Count > 0 ? details.Max(x => x.DeliveryDelayDays) : 0,
@@ -736,6 +816,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
             };
         }
 
+        /// <summary>
+        /// Tạo dữ liệu dashboard header gồm summary và các biểu đồ.
+        /// </summary>
         private static PLPUPurchaseOrderHeaderDashboardDto BuildHeaderDashboard(
             List<PLPUPurchaseOrderLineRaw> orderLines,
             List<PLPUPurchaseOrderDetailReportDto> details,
@@ -758,6 +841,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 OverDeliveryPO = summary.OverDeliveryPO,
 
                 TotalPurchaseValue = summary.TotalPurchaseValue,
+                ReceivedPurchaseValue = summary.ReceivedPurchaseValue,
 
                 OrderedQuantity = summary.OrderedQuantity,
                 WarehouseReceivedQuantity = summary.WarehouseReceivedQuantity,
@@ -791,15 +875,20 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
 
                 PurchaseValueByMonth = BuildMonthChart(headers),
                 QuantityByMonth = BuildMonthQuantityChart(headers),
-                PurchaseValueBySupplier = BuildSupplierChart(headers),
-                QuantityBySupplier = BuildSupplierQuantityChart(headers),
+                PurchaseValueBySupplier = BuildSupplierChart(headers, details),
+                QuantityBySupplier = BuildSupplierQuantityChart(headers, details),
                 QuantityByMaterial = BuildMaterialQuantityChart(details, linesByDetailId),
-                QcResultBySupplier = BuildSupplierQcChart(headers),
+                QcResultBySupplier = BuildSupplierQcChart(headers, details),
                 StatusDistribution = BuildStatusChart(headers),
                 PriceVarianceByMaterial = BuildMaterialPriceVarianceChart(details, linesByDetailId)
             };
         }
 
+        // ========================================== Các hàm chart ===========================================
+
+        /// <summary>
+        /// Tạo biểu đồ giá trị mua hàng theo tháng.
+        /// </summary>
         private static IReadOnlyList<PLPUPurchaseReportChartPointDto> BuildMonthChart(
             List<PLPUPurchaseOrderHeaderReportDto> headers)
         {
@@ -825,6 +914,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                         PendingQcQuantity = g.Sum(x => x.PendingQcQuantity),
                         RejectedQuantity = g.Sum(x => x.RejectedQuantity),
                         TotalPurchaseValue = g.Sum(x => x.TotalPurchaseValue),
+                        ReceivedPurchaseValue = g.Sum(x => x.ReceivedPurchaseValue),
                         CompletionPercent = Percent(accepted, ordered),
                         WarehouseReceiptPercent = Percent(received, ordered),
                         PeriodStart = start,
@@ -834,6 +924,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 .ToList();
         }
 
+        /// <summary>
+        /// Tạo biểu đồ số lượng mua hàng theo tháng.
+        /// </summary>
         private static IReadOnlyList<PLPUPurchaseReportChartPointDto> BuildMonthQuantityChart(
             List<PLPUPurchaseOrderHeaderReportDto> headers)
         {
@@ -846,9 +939,20 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 .ToList();
         }
 
+        /// <summary>
+        /// Tạo biểu đồ giá trị mua hàng theo nhà cung cấp.
+        /// </summary>
         private static IReadOnlyList<PLPUPurchaseReportChartPointDto> BuildSupplierChart(
-            List<PLPUPurchaseOrderHeaderReportDto> headers)
+            List<PLPUPurchaseOrderHeaderReportDto> headers,
+            List<PLPUPurchaseOrderDetailReportDto> details)
         {
+            var supplierByPo = headers.ToDictionary(x => x.PurchaseOrderId, x => x.SupplierId);
+            var detailsBySupplier = details
+                .GroupBy(x => supplierByPo.TryGetValue(x.PurchaseOrderId, out var supplierId)
+                    ? supplierId ?? Guid.Empty
+                    : Guid.Empty)
+                .ToDictionary(x => x.Key, x => x.ToList());
+
             return headers
                 .GroupBy(x => new { x.SupplierId, x.SupplierName })
                 .OrderByDescending(x => x.Sum(r => r.TotalPurchaseValue))
@@ -858,6 +962,12 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                     var ordered = g.Sum(x => x.OrderedQuantity);
                     var received = g.Sum(x => x.WarehouseReceivedQuantity);
                     var accepted = g.Sum(x => x.AcceptedQuantity);
+                    var supplierKey = g.Key.SupplierId ?? Guid.Empty;
+                    var supplierDetails = detailsBySupplier.TryGetValue(supplierKey, out var supplierDetailRows)
+                        ? supplierDetailRows
+                        : new List<PLPUPurchaseOrderDetailReportDto>();
+                    var deliveryEvaluable = supplierDetails.Where(IsDeliveryOtdEvaluable).ToList();
+                    var acceptanceEvaluable = supplierDetails.Where(IsAcceptanceOtdEvaluable).ToList();
 
                     return new PLPUPurchaseReportChartPointDto
                     {
@@ -872,36 +982,45 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                         PendingQcQuantity = g.Sum(x => x.PendingQcQuantity),
                         RejectedQuantity = g.Sum(x => x.RejectedQuantity),
                         TotalPurchaseValue = g.Sum(x => x.TotalPurchaseValue),
+                        ReceivedPurchaseValue = g.Sum(x => x.ReceivedPurchaseValue),
                         CompletionPercent = Percent(accepted, ordered),
                         WarehouseReceiptPercent = Percent(received, ordered),
                         QcFailRate = Percent(g.Sum(x => x.RejectedQuantity), received),
                         QcAcceptanceRate = Percent(accepted, received),
-                        AverageDelayDays = g.Any()
-                            ? Math.Round((decimal)g.Average(x => x.DelayDays), 2)
+                        AverageDelayDays = deliveryEvaluable.Count > 0
+                            ? Math.Round((decimal)deliveryEvaluable.Average(x => x.DeliveryDelayDays), 2)
                             : 0,
-                        AverageDeliveryDelayDays = g.Any()
-                            ? Math.Round((decimal)g.Average(x => x.DeliveryDelayDays), 2)
+                        AverageDeliveryDelayDays = deliveryEvaluable.Count > 0
+                            ? Math.Round((decimal)deliveryEvaluable.Average(x => x.DeliveryDelayDays), 2)
                             : 0,
-                        AverageAcceptanceDelayDays = g.Any()
-                            ? Math.Round((decimal)g.Average(x => x.AcceptanceDelayDays), 2)
+                        AverageAcceptanceDelayDays = acceptanceEvaluable.Count > 0
+                            ? Math.Round((decimal)acceptanceEvaluable.Average(x => x.AcceptanceDelayDays), 2)
                             : 0
                     };
                 })
                 .ToList();
         }
 
+        /// <summary>
+        /// Tạo biểu đồ số lượng mua hàng theo nhà cung cấp.
+        /// </summary>
         private static IReadOnlyList<PLPUPurchaseReportChartPointDto> BuildSupplierQuantityChart(
-            List<PLPUPurchaseOrderHeaderReportDto> headers)
+            List<PLPUPurchaseOrderHeaderReportDto> headers,
+            List<PLPUPurchaseOrderDetailReportDto> details)
         {
-            return BuildSupplierChart(headers)
+            return BuildSupplierChart(headers, details)
                 .OrderByDescending(x => x.OrderedQuantity)
                 .ToList();
         }
 
+        /// <summary>
+        /// Tạo biểu đồ QC theo nhà cung cấp.
+        /// </summary>
         private static IReadOnlyList<PLPUPurchaseReportChartPointDto> BuildSupplierQcChart(
-            List<PLPUPurchaseOrderHeaderReportDto> headers)
+            List<PLPUPurchaseOrderHeaderReportDto> headers,
+            List<PLPUPurchaseOrderDetailReportDto> details)
         {
-            return BuildSupplierChart(headers)
+            return BuildSupplierChart(headers, details)
                 .Where(x => x.WarehouseReceivedQuantity > 0 ||
                             x.PendingQcQuantity > 0 ||
                             x.RejectedQuantity > 0)
@@ -910,6 +1029,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 .ToList();
         }
 
+        /// <summary>
+        /// Tạo biểu đồ phân bố trạng thái PO.
+        /// </summary>
         private static IReadOnlyList<PLPUPurchaseReportChartPointDto> BuildStatusChart(
             List<PLPUPurchaseOrderHeaderReportDto> headers)
         {
@@ -932,6 +1054,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                         PendingQcQuantity = g.Sum(x => x.PendingQcQuantity),
                         RejectedQuantity = g.Sum(x => x.RejectedQuantity),
                         TotalPurchaseValue = g.Sum(x => x.TotalPurchaseValue),
+                        ReceivedPurchaseValue = g.Sum(x => x.ReceivedPurchaseValue),
                         CompletionPercent = Percent(accepted, ordered),
                         WarehouseReceiptPercent = Percent(received, ordered)
                     };
@@ -939,6 +1062,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 .ToList();
         }
 
+        /// <summary>
+        /// Tạo biểu đồ số lượng mua theo vật tư.
+        /// </summary>
         private static IReadOnlyList<PLPUPurchaseReportChartPointDto> BuildMaterialQuantityChart(
             List<PLPUPurchaseOrderDetailReportDto> details,
             Dictionary<Guid, PLPUPurchaseOrderLineRaw> linesByDetailId)
@@ -970,6 +1096,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                         TotalPurchaseValue = g.Sum(x =>
                             x.TotalPriceAgreed ??
                             x.OrderedQuantity * (x.UnitPriceAgreed ?? 0)),
+                        ReceivedPurchaseValue = g.Sum(x => x.ReceivedPurchaseValue),
                         CompletionPercent = Percent(accepted, ordered),
                         WarehouseReceiptPercent = Percent(received, ordered),
                         QcFailRate = Percent(g.Sum(x => x.RejectedQuantity), received),
@@ -979,6 +1106,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 .ToList();
         }
 
+        /// <summary>
+        /// Tạo biểu đồ chênh lệch giá theo vật tư.
+        /// </summary>
         private static IReadOnlyList<PLPUPurchaseReportChartPointDto> BuildMaterialPriceVarianceChart(
             List<PLPUPurchaseOrderDetailReportDto> details,
             Dictionary<Guid, PLPUPurchaseOrderLineRaw> linesByDetailId)
@@ -997,6 +1127,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                     TotalPurchaseValue = g.Sum(x =>
                         x.TotalPriceAgreed ??
                         x.OrderedQuantity * (x.UnitPriceAgreed ?? 0)),
+                    ReceivedPurchaseValue = g.Sum(x => x.ReceivedPurchaseValue),
                     PriceVarianceAmount = g.Sum(x => x.PriceImpactAmount ?? 0)
                 })
                 .OrderByDescending(x => Math.Abs(x.PriceVarianceAmount))
@@ -1004,6 +1135,11 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 .ToList();
         }
 
+        // ========================================== Các hàm logic nhỏ ===========================================
+
+        /// <summary>
+        /// Tính hiệu suất nhà cung cấp dựa trên giao hàng, QC, thiếu hàng và giao vượt.
+        /// </summary>
         private static List<PLPUSupplierPurchasePerformanceDto> BuildSupplierPerformance(
             List<PLPUPurchaseOrderLineRaw> orderLines,
             List<PLPUPurchaseOrderDetailReportDto> details,
@@ -1031,18 +1167,13 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                         x.TotalPriceAgreed ??
                         x.OrderedQuantity * (x.UnitPriceAgreed ?? 0));
 
+                    var receivedValue = g.Sum(x => x.ReceivedPurchaseValue);
                     var priceVarianceAmount = g.Sum(x => x.PriceImpactAmount ?? 0);
 
                     var deliveryEvaluable = g.Where(IsDeliveryOtdEvaluable).ToList();
                     var acceptanceEvaluable = g.Where(IsAcceptanceOtdEvaluable).ToList();
 
-                    var overdueCount = poIds.Count(id =>
-                        headerByPo.TryGetValue(id, out var h) && h.IsOverdue);
-
-                    var qcFailCount = g.Count(x => x.RejectedQuantity > 0);
-                    var shortageCount = g.Count(x => HasFlag(x.AlertFlags, "Shortage"));
-                    var pendingCount = g.Count(x => x.PendingQcQuantity > 0);
-                    var overDeliveryCount = g.Count(x => x.OverReceivedQuantity > 0);
+                    var riskReasons = BuildSupplierRiskReasons(g.ToList(), headerByPo);
 
                     var supplierDeliveryOtd = Percent(
                         deliveryEvaluable.Count(IsDeliveryOnTime),
@@ -1061,6 +1192,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                         TotalLines = g.Count(),
 
                         TotalPurchaseValue = totalValue,
+                        ReceivedPurchaseValue = receivedValue,
 
                         OrderedQuantity = ordered,
                         WarehouseReceivedQuantity = received,
@@ -1076,16 +1208,16 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                         SupplierAcceptanceRate = Percent(accepted, received),
                         SupplierQcFailRate = Percent(rejected, received),
 
-                        AverageDeliveryDelayDays = g.Any()
-                            ? Math.Round((decimal)g.Average(x => x.DeliveryDelayDays), 2)
+                        AverageDeliveryDelayDays = deliveryEvaluable.Count > 0
+                            ? Math.Round((decimal)deliveryEvaluable.Average(x => x.DeliveryDelayDays), 2)
                             : 0,
 
-                        AverageAcceptanceDelayDays = g.Any()
-                            ? Math.Round((decimal)g.Average(x => x.AcceptanceDelayDays), 2)
+                        AverageAcceptanceDelayDays = acceptanceEvaluable.Count > 0
+                            ? Math.Round((decimal)acceptanceEvaluable.Average(x => x.AcceptanceDelayDays), 2)
                             : 0,
 
-                        AverageDelayDays = g.Any()
-                            ? Math.Round((decimal)g.Average(x => x.DelayDays), 2)
+                        AverageDelayDays = deliveryEvaluable.Count > 0
+                            ? Math.Round((decimal)deliveryEvaluable.Average(x => x.DeliveryDelayDays), 2)
                             : 0,
 
                         AverageUnitPrice = ordered == 0
@@ -1094,29 +1226,121 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
 
                         PriceVarianceAmount = priceVarianceAmount,
 
-                        RiskScore =
-                            overdueCount * 30 +
-                            qcFailCount * 25 +
-                            shortageCount * 20 +
-                            pendingCount * 10 +
-                            overDeliveryCount * 5
+                        RiskScore = riskReasons.Sum(x => x.ImpactScore),
+                        RiskReasons = riskReasons
                     };
                 })
                 .ToList();
         }
 
+        private static List<PLPUSupplierRiskReasonDto> BuildSupplierRiskReasons(
+            List<PLPUPurchaseOrderDetailReportDto> details,
+            Dictionary<Guid, PLPUPurchaseOrderHeaderReportDto> headerByPo)
+        {
+            var reasons = new List<PLPUSupplierRiskReasonDto>();
+
+            foreach (var poGroup in details.GroupBy(x => x.PurchaseOrderId))
+            {
+                if (!headerByPo.TryGetValue(poGroup.Key, out var header) || !header.IsOverdue)
+                    continue;
+
+                var detail = poGroup
+                    .OrderByDescending(x => x.DeliveryDelayDays)
+                    .ThenByDescending(x => x.RemainingToReceive)
+                    .FirstOrDefault();
+
+                reasons.Add(new PLPUSupplierRiskReasonDto
+                {
+                    PurchaseOrderId = header.PurchaseOrderId,
+                    POExternalId = header.POExternalId,
+                    PurchaseOrderDetailId = detail?.PurchaseOrderDetailId,
+                    LineNo = detail?.LineNo,
+                    MaterialCode = detail?.MaterialCode ?? string.Empty,
+                    MaterialName = detail?.MaterialName ?? string.Empty,
+                    ReasonCode = "Overdue",
+                    ReasonText = "PO quá hạn giao theo lượng nhập kho",
+                    ImpactScore = 30,
+                    OrderedQuantity = detail?.OrderedQuantity ?? header.OrderedQuantity,
+                    WarehouseReceivedQuantity = detail?.WarehouseReceivedQuantity ?? header.WarehouseReceivedQuantity,
+                    AcceptedQuantity = detail?.AcceptedQuantity ?? header.AcceptedQuantity,
+                    PendingQcQuantity = detail?.PendingQcQuantity ?? header.PendingQcQuantity,
+                    RejectedQuantity = detail?.RejectedQuantity ?? header.RejectedQuantity,
+                    DelayDays = header.DeliveryDelayDays,
+                    RequestDeliveryDate = header.RequestDeliveryDate,
+                    ActualDate = detail?.DateWhenReceivedEnough ?? detail?.LastReceiptDate
+                });
+            }
+
+            foreach (var detail in details)
+            {
+                if (detail.RejectedQuantity > 0)
+                    reasons.Add(CreateRiskReason(detail, "HasQCFail", "Có hàng QC fail", 25, detail.RejectedQuantity, detail.LastReceiptDate));
+
+                if (HasFlag(detail.AlertFlags, "Shortage"))
+                    reasons.Add(CreateRiskReason(detail, "Shortage", "Thiếu hàng so với số lượng đặt", 20, detail.RemainingToReceive, detail.LastReceiptDate));
+
+                if (detail.PendingQcQuantity > 0)
+                    reasons.Add(CreateRiskReason(detail, "WaitingQC", "Có hàng nhập kho đang chờ QC", 10, detail.PendingQcQuantity, detail.LastReceiptDate));
+
+                if (detail.OverReceivedQuantity > 0)
+                    reasons.Add(CreateRiskReason(detail, "OverDelivered", "Giao vượt số lượng đặt vượt ngưỡng cho phép", 5, detail.OverReceivedQuantity, detail.LastReceiptDate));
+            }
+
+            return reasons
+                .OrderByDescending(x => x.ImpactScore)
+                .ThenByDescending(x => x.DelayDays)
+                .ThenBy(x => x.POExternalId)
+                .ThenBy(x => x.LineNo ?? int.MaxValue)
+                .ToList();
+        }
+
+        private static PLPUSupplierRiskReasonDto CreateRiskReason(
+            PLPUPurchaseOrderDetailReportDto detail,
+            string reasonCode,
+            string reasonText,
+            decimal impactScore,
+            decimal quantity,
+            DateTime? actualDate)
+        {
+            return new PLPUSupplierRiskReasonDto
+            {
+                PurchaseOrderId = detail.PurchaseOrderId,
+                POExternalId = detail.POExternalId,
+                PurchaseOrderDetailId = detail.PurchaseOrderDetailId,
+                LineNo = detail.LineNo,
+                MaterialCode = detail.MaterialCode,
+                MaterialName = detail.MaterialName,
+                ReasonCode = reasonCode,
+                ReasonText = reasonText,
+                ImpactScore = impactScore,
+                OrderedQuantity = detail.OrderedQuantity,
+                WarehouseReceivedQuantity = detail.WarehouseReceivedQuantity,
+                AcceptedQuantity = detail.AcceptedQuantity,
+                PendingQcQuantity = detail.PendingQcQuantity,
+                RejectedQuantity = detail.RejectedQuantity,
+                DelayDays = detail.DeliveryDelayDays,
+                RequestDeliveryDate = detail.RequestDeliveryDate,
+                ActualDate = actualDate
+            };
+        }
+
+        /// <summary>
+        /// Tạo danh sách dòng QC từ các phiếu nhập đã phân bổ.
+        /// </summary>
         private static List<PLPUPurchaseQcReportDto> BuildQcRowsFromAllocatedReceipts(
             List<PLPUPurchaseReceiptReportDto> receipts)
         {
             return receipts
                 .Select(receipt =>
                 {
-                    var qcGroup = receipt.QCResult is VietausWebAPI.Core.Domain.Enums.Devandqa.QcDecision.QCPass
-                        or VietausWebAPI.Core.Domain.Enums.Devandqa.QcDecision.Special
-                            ? "Accepted"
-                            : receipt.QCResult == VietausWebAPI.Core.Domain.Enums.Devandqa.QcDecision.QCFail
-                                ? "Rejected"
-                                : "Pending";
+                    var qcGroup = !string.IsNullOrWhiteSpace(receipt.QCGroup)
+                        ? receipt.QCGroup
+                        : receipt.QCResult is VietausWebAPI.Core.Domain.Enums.Devandqa.QcDecision.QCPass
+                            or VietausWebAPI.Core.Domain.Enums.Devandqa.QcDecision.Special
+                                ? "Accepted"
+                                : receipt.QCResult == VietausWebAPI.Core.Domain.Enums.Devandqa.QcDecision.QCFail
+                                    ? "Rejected"
+                                    : "Pending";
 
                     return new PLPUPurchaseQcReportDto
                     {
@@ -1156,6 +1380,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 .ToList();
         }
 
+        /// <summary>
+        /// Tìm ngày mà số lượng cộng dồn đã đủ theo số lượng đặt.
+        /// </summary>
         private static DateTime? GetDateWhenEnough(
             IEnumerable<PLPUPurchaseReceiptReportDto> receipts,
             decimal orderedQuantity,
@@ -1177,6 +1404,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
             return null;
         }
 
+        /// <summary>
+        /// Tính số ngày trễ so với ngày yêu cầu.
+        /// </summary>
         private static int CalculateDelayDays(
             DateTime? dueDate,
             DateTime? actualEnoughDate,
@@ -1190,9 +1420,15 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 ? actualEnoughDate.Value.Date
                 : DateTime.Today;
 
+            if (actualEnoughDate.HasValue && IsBeforeNextDay(actualEnoughDate.Value, dueDate.Value))
+                return 0;
+
             return Math.Max((comparisonDate - dueDate.Value.Date).Days, 0);
         }
 
+        /// <summary>
+        /// Xác định trạng thái chính của một dòng PO.
+        /// </summary>
         private static string ResolveLinePrimaryStatus(
             bool isActive,
             string poStatus,
@@ -1238,23 +1474,31 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
             return "NotDelivered";
         }
 
+        /// <summary>
+        /// Xác định các cảnh báo của một dòng PO.
+        /// </summary>
         private static List<string> ResolveLineAlertFlags(
             decimal ordered,
             decimal received,
             decimal accepted,
             decimal pendingQc,
             decimal rejected,
-            DateTime? dueDate)
+            DateTime? dueDate,
+            DateTime? dateWhenReceivedEnough)
         {
             var flags = new List<string>();
 
             if (ordered <= 0)
                 return flags;
 
-            if (dueDate.HasValue && DateTime.Today > dueDate.Value.Date && !IsQuantityEnough(accepted, ordered))
+            if (dueDate.HasValue &&
+                ((DateTime.Today > dueDate.Value.Date && !IsQuantityEnough(received, ordered)) ||
+                 (dateWhenReceivedEnough.HasValue && dateWhenReceivedEnough.Value.Date > dueDate.Value.Date)))
             {
                 flags.Add("Overdue");
-                flags.Add("Shortage");
+
+                if (!IsQuantityEnough(received, ordered))
+                    flags.Add("Shortage");
             }
 
             if (rejected > 0)
@@ -1269,6 +1513,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
             return flags.Distinct().ToList();
         }
 
+        /// <summary>
+        /// Gom cảnh báo từ các dòng chi tiết lên header PO.
+        /// </summary>
         private static List<string> ResolveHeaderAlertFlags(
             List<PLPUPurchaseOrderDetailReportDto> details)
         {
@@ -1278,6 +1525,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                 .ToList();
         }
 
+        /// <summary>
+        /// Xác định trạng thái chính của header PO.
+        /// </summary>
         private static string ResolveHeaderPrimaryStatus(
             bool isActive,
             string poStatus,
@@ -1329,6 +1579,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
             return "NotDelivered";
         }
 
+        /// <summary>
+        /// Kiểm tra PO có cần buyer xử lý không.
+        /// </summary>
         private static bool IsNeedActionHeader(List<string> flags, string reportStatus)
         {
             if (reportStatus is "Cancelled" or "Closed" or "Completed")
@@ -1342,6 +1595,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                    reportStatus == "ClosedWithShortage";
         }
 
+        /// <summary>
+        /// Kiểm tra dòng PO có cần buyer xử lý không.
+        /// </summary>
         private static bool IsNeedActionLine(List<string> flags)
         {
             return flags.Contains("Overdue") ||
@@ -1351,6 +1607,9 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
                    flags.Contains("OverDelivered");
         }
 
+        /// <summary>
+        /// Đề xuất hành động buyer cần làm dựa trên cảnh báo.
+        /// </summary>
         private static string ResolveBuyerAction(IEnumerable<string> flags)
         {
             var flagSet = flags.ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -1372,13 +1631,25 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
             return string.Join("; ", actions);
         }
 
+        /// <summary>
+        /// Nếu là vật tư đóng gói và PO được tạo trước ngày cutoff,
+        /// tự động xem số lượng QC đạt bằng số lượng nhập kho.
+        /// </summary>
+        private static bool IsAutoAcceptPackagingQc(PLPUPurchaseOrderLineRaw line)
+        {
+
+            var result =
+                line.CategoryId == MaterialPackagingCategoryId
+                && line.CreatedDate.HasValue;
+
+            return result;
+        }
         private static bool IsDeliveryOtdEvaluable(PLPUPurchaseOrderDetailReportDto detail)
         {
             if (detail.OrderedQuantity <= 0 || !detail.RequestDeliveryDate.HasValue)
                 return false;
 
-            return detail.DateWhenReceivedEnough.HasValue ||
-                   DateTime.Today > detail.RequestDeliveryDate.Value.Date;
+            return detail.DateWhenReceivedEnough.HasValue;
         }
 
         private static bool IsAcceptanceOtdEvaluable(PLPUPurchaseOrderDetailReportDto detail)
@@ -1386,22 +1657,26 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
             if (detail.OrderedQuantity <= 0 || !detail.RequestDeliveryDate.HasValue)
                 return false;
 
-            return detail.DateWhenAcceptedEnough.HasValue ||
-                   DateTime.Today > detail.RequestDeliveryDate.Value.Date;
+            return detail.DateWhenAcceptedEnough.HasValue;
         }
 
         private static bool IsDeliveryOnTime(PLPUPurchaseOrderDetailReportDto detail)
         {
             return detail.DateWhenReceivedEnough.HasValue &&
                    detail.RequestDeliveryDate.HasValue &&
-                   detail.DateWhenReceivedEnough.Value.Date <= detail.RequestDeliveryDate.Value.Date;
+                   IsBeforeNextDay(detail.DateWhenReceivedEnough.Value, detail.RequestDeliveryDate.Value);
         }
 
         private static bool IsAcceptanceOnTime(PLPUPurchaseOrderDetailReportDto detail)
         {
             return detail.DateWhenAcceptedEnough.HasValue &&
                    detail.RequestDeliveryDate.HasValue &&
-                   detail.DateWhenAcceptedEnough.Value.Date <= detail.RequestDeliveryDate.Value.Date;
+                   IsBeforeNextDay(detail.DateWhenAcceptedEnough.Value, detail.RequestDeliveryDate.Value);
+        }
+
+        private static bool IsBeforeNextDay(DateTime actualDate, DateTime dueDate)
+        {
+            return actualDate < dueDate.Date.AddDays(1);
         }
 
         private static bool IsOverDelivered(decimal received, decimal ordered)
@@ -1456,6 +1731,21 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.PLPURe
         private static decimal Positive(decimal value)
         {
             return value > 0 ? value : 0;
+        }
+
+        private static decimal ResolveUnitPrice(
+            decimal orderedQuantity,
+            decimal? unitPriceAgreed,
+            decimal? totalPriceAgreed,
+            decimal? baseCostSnapshot)
+        {
+            if (unitPriceAgreed.HasValue)
+                return unitPriceAgreed.Value;
+
+            if (totalPriceAgreed.HasValue && orderedQuantity > 0)
+                return totalPriceAgreed.Value / orderedQuantity;
+
+            return baseCostSnapshot ?? 0;
         }
 
         private static decimal Percent(decimal numerator, decimal denominator)

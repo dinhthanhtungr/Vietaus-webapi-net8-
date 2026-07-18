@@ -42,6 +42,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.ProductFeatures
         public double? Weight { get; set; }
         public string? Unit { get; set; }
         public bool? IsRecycle { get; set; }
+        public string? Status { get; set; }
 
         public List<GetSampleFormula>? SampleFormula { get; set; }
     }

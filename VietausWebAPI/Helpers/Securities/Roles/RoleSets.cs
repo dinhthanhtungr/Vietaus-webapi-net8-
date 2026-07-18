@@ -92,7 +92,7 @@
         public const string Manufacturing = $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.ManufactureUser},{AppRoles.President}";
 
         /// <summary>Bán hàng: Admin, Dev, SaleUser.</summary>
-        public const string Sales = $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.SaleUser},{AppRoles.President}";
+        public const string Sales = $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.SaleAdmin},{AppRoles.SaleUser},{AppRoles.President}";
 
         /// <summary>Mua hàng: Admin, Dev, Purchaser.</summary>
         public const string Purchasing = $"{AppRoles.Admin},{AppRoles.Developer},{AppRoles.Purchaser},{AppRoles.President}";

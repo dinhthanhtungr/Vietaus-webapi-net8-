@@ -12,7 +12,7 @@ public partial class ProductInspection
 
     public string? ProductCode { get; set; }
 
-    public int? Weight { get; set; }
+    public decimal? Weight { get; set; }
 
     public DateTime? ManufacturingDate { get; set; }
 

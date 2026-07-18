@@ -12,6 +12,7 @@ using VietausWebAPI.Core.Application.Features.Notifications.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.EventLogDtos;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadServices;
 using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseWriteServices;
 using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
@@ -225,9 +226,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                             ManufacturingFormulaMaterialId = Guid.CreateVersion7(),
                             ManufacturingFormulaId = mf.ManufacturingFormulaId,
 
-                            itemType = m.ItemType,
-                            MaterialId = m.ItemType == ItemType.Material ? m.ItemId : (Guid?)null,
-                            ProductId = m.ItemType == ItemType.Product ? m.ItemId : (Guid?)null,
+                            itemType = ResolveItemTypeForSave(m.ItemType, m.LotNumber),
+                            MaterialId = IsMaterialItemType(m.ItemType) ? m.ItemId : (Guid?)null,
+                            ProductId = IsProductItemType(m.ItemType) ? m.ItemId : (Guid?)null,
 
                             CategoryId = m.CategoryId,
                             LineNo = index + 1,
@@ -238,6 +239,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
 
                             MaterialNameSnapshot = m.MaterialNameSnapshot,
                             MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot,
+                            LotNo = NormalizeLotNumberForSave(m.LotNumber),
                             Unit = m.Unit,
                             IsActive = m.IsActive
                         })
@@ -445,7 +447,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                 Qcstatus = null,
                 Area = null,
                 BTPStatus = null,
-                StepOfProduct = null
+                StepOfProduct = mpo.StepOfProduct
             };
 
             await _unitOfWork.SchedualMfgRepository.AddAsync(schedual, ct);
@@ -561,6 +563,57 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
             catch
             {
             }
+        }
+
+        /// <summary>
+        /// Chuẩn hóa số lot người dùng chọn trước khi lưu vào ManufacturingFormulaMaterial.LotNo.
+        /// Giá trị N/A hoặc chuỗi rỗng được xem là chưa chọn lot và lưu null.
+        /// </summary>
+        private static string? NormalizeLotNumberForSave(LotNumberOptionDto? lotNumber)
+        {
+            if (lotNumber == null || string.IsNullOrWhiteSpace(lotNumber.LotNo))
+                return null;
+
+            var normalized = lotNumber.LotNo.Trim();
+            return string.Equals(normalized, "N/A", StringComparison.OrdinalIgnoreCase)
+                ? null
+                : normalized;
+        }
+
+        /// <summary>
+        /// Chuẩn hóa ItemType trước khi lưu dòng công thức.
+        /// Nếu người dùng chọn lot lỗi thì Material/Product được lưu thành MaterialFailure/ProductFailure.
+        /// </summary>
+        private static ItemType ResolveItemTypeForSave(ItemType itemType, LotNumberOptionDto? lotNumber)
+        {
+            var isDefective = lotNumber?.IsDefective == true;
+
+            return itemType switch
+            {
+                ItemType.Material or ItemType.MaterialFailure => isDefective
+                    ? ItemType.MaterialFailure
+                    : ItemType.Material,
+                ItemType.Product or ItemType.ProductFailure => isDefective
+                    ? ItemType.ProductFailure
+                    : ItemType.Product,
+                _ => itemType
+            };
+        }
+
+        /// <summary>
+        /// Xác định itemType đang trỏ tới bảng Material, bao gồm cả dòng MaterialFailure.
+        /// </summary>
+        private static bool IsMaterialItemType(ItemType itemType)
+        {
+            return itemType == ItemType.Material || itemType == ItemType.MaterialFailure;
+        }
+
+        /// <summary>
+        /// Xác định itemType đang trỏ tới bảng Product, bao gồm cả dòng ProductFailure.
+        /// </summary>
+        private static bool IsProductItemType(ItemType itemType)
+        {
+            return itemType == ItemType.Product || itemType == ItemType.ProductFailure;
         }
 
     }

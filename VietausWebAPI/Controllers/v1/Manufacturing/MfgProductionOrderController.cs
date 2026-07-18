@@ -92,6 +92,33 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Manufacturing
             }
         }
 
+        [HttpPatch("check")]
+        public async Task<IActionResult> CheckMfgProductionOrderAsync([FromBody] PatchCheckMfgProductionOrder response, CancellationToken cancellationToken)
+        {
+            if (response == null || response.mfgProductionOrderId == Guid.Empty)
+            {
+                return BadRequest("Invalid request data.");
+            }
+            try
+            {
+                var result = await _mfgProductionOrderService.CheckMfgProductionOrderAsync(response, cancellationToken);
+                if (!result.Success)
+                {
+                    return BadRequest(result.Message);
+                }
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
         [HttpPost("create")]
         public async Task<IActionResult> CreateMfgProductionOrder([FromBody] CreateMfgProductionOrderInternal request)
         {

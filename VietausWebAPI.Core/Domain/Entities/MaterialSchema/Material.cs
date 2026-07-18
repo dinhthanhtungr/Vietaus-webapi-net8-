@@ -55,11 +55,13 @@ public partial class Material
 
     public virtual Employee? CreatedByNavigation { get; set; }
     public virtual Employee? UpdatedByNavigation { get; set; }
+    public virtual AttachmentCollection? AttachmentCollection { get; set; }
     public virtual ICollection<FormulaMaterial> FormulaMaterials { get; set; } = new List<FormulaMaterial>();
     public virtual ICollection<MaterialGroupName> MaterialGroupNames { get; set; } = new List<MaterialGroupName>();
 
     public virtual ICollection<ManufacturingFormulaMaterial> ManufacturingFormulaMaterials { get; set; } = new List<ManufacturingFormulaMaterial>();
     public virtual ICollection<ManufacturingFormulaVersionItem> Items { get; set; } = new List<ManufacturingFormulaVersionItem>();
+    public virtual ICollection<ManufacturingFormulaAdjustmentItem> ManufacturingFormulaAdjustmentItems { get; set; } = new List<ManufacturingFormulaAdjustmentItem>();
 
     public virtual ICollection<MaterialsSupplier> MaterialsSuppliers { get; set; } = new List<MaterialsSupplier>();
 

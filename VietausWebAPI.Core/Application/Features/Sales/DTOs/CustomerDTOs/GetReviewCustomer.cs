@@ -18,11 +18,15 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs
         public string? Group { get; set; }
         public string? Address { get; set; }
         public string? DeliveryName { get; set; }
+        public bool? HasNote { get; set; } = null;
+        public DateTime? endLeadTime { get; set; }
 
         public string? CustomerSpectialRequirement { get; set; }
         public string? paymentType { get; set; }
         public string? delivieryType { get; set; }
 
+        public List<string> Addresses { get; set; } = new();
+        public List<string> Contacts { get; set; } = new();
 
         public bool IsLead { get; set; }                  // có phải Lead-only không
         public bool IsManagedByCurrent { get; set; }      // lead này có thuộc mình (hoặc group mình – nếu là leader) không

@@ -33,6 +33,16 @@ namespace VietausWebAPI.Core.Application.Features.Sales.DTOs.MerchandiseOrderDTO
         public string? Status { get; set; }
         public string? Currency { get; set; }
 
+        // Tạm dừng 
+        public bool IsDeliveryPaused { get; set; } = false;
+        public DateTime? DeliveryPausedFrom { get; set; }
+        public DateTime? DeliveryPausedTo { get; set; }
+        public string? DeliveryPauseReason { get; set; }
+        public string? DeliveryPauseType { get; set; }
+        public Guid? DeliveryPausedBy { get; set; }
+
+        // ===========================================
+
         public Guid? CompanyId { get; set; }
         public bool? IsPaid { get; set; }
 

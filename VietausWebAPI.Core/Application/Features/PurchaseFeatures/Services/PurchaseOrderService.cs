@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using ClosedXML.Excel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,9 +22,11 @@ using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
 using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
 using VietausWebAPI.Core.Domain.Enums.Category;
+using VietausWebAPI.Core.Domain.Enums.Devandqa;
 using VietausWebAPI.Core.Domain.Enums.Logs;
 using VietausWebAPI.Core.Domain.Enums.Orders;
 using VietausWebAPI.Core.Domain.Enums.WareHouses;
@@ -90,10 +93,16 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                     poQ = poQ.Where(po => po.OrderType == query.OrderType);
 
                 if (query.From.HasValue)
-                    poQ = poQ.Where(po => po.CreateDate >= query.From.Value);
+                {
+                    var fromDate = query.From.Value.Date;
+                    poQ = poQ.Where(po => po.CreateDate >= fromDate);
+                }
 
                 if (query.To.HasValue)
-                    poQ = poQ.Where(po => po.CreateDate <= query.To.Value);
+                {
+                    var toExclusive = query.To.Value.Date.AddDays(1);
+                    poQ = poQ.Where(po => po.CreateDate < toExclusive);
+                }
 
                 if (!string.IsNullOrWhiteSpace(query.Keyword))
                 {
@@ -129,6 +138,11 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                         po.OrderType,
                         po.IsActive,
                         po.Comment,
+                        //po.AttachmentCollectionId,
+                        //po.HasSupplierDeliveryNote,
+                        //po.HasCOA,
+                        //po.HasPOConfirmation,
+                        //po.HasInvoice,
                         po.RequestDeliveryDate,
                         po.RealDeliveryDate,
                         po.CreateDate,
@@ -152,9 +166,59 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                             UnitPriceAgreed = d.UnitPriceAgreed,
                             RequestQuantity = d.RequestQuantity,
                             RealQuantity = d.RealQuantity
-                        }).OrderBy(d => d.LineNo).ToList()
+                        }).OrderBy(d => d.LineNo).ToList(),
+
+                        RealTotalAmount = po.PurchaseOrderDetails
+                        .Where(d => d.IsActive)
+                        .Sum(d =>
+                            (d.RealQuantity ?? 0m) *
+                            (d.UnitPriceAgreed
+                                ?? (
+                                    d.RequestQuantity.HasValue &&
+                                    d.RequestQuantity.Value != 0m &&
+                                    d.TotalPriceAgreed.HasValue
+                                        ? d.TotalPriceAgreed.Value / d.RequestQuantity.Value
+                                        : 0m
+                                ))),
+                        })
+                        .ToListAsync(ct);
+
+
+                var pagePoCodes = poPage
+                    .Where(x => !string.IsNullOrWhiteSpace(x.ExternalId))
+                    .Select(x => x.ExternalId!.Trim())
+                    .Distinct()
+                    .ToList();
+
+                                var purchaseReceiptVoucherTypes = new[]
+                                {
+                    (int)WareHouseRequestType.ImportRawMaterial,
+                    (int)WareHouseRequestType.ImportOther,
+                    (int)WareHouseRequestType.ImportMaterial
+                };
+
+                var realDeliveryDateRows = await (
+                    from wr in _unitOfWork.WarehouseRequestRepository.Query(track: false)
+                    join v in _unitOfWork.WarehouseVoucherReadRepository.Query(track: false)
+                        on wr.RequestId equals v.RequestId
+                    join vd in _unitOfWork.WarehouseVoucherDetailReadRepository.Query(track: false)
+                        on v.VoucherId equals vd.VoucherId
+                    join ledger in _unitOfWork.WarehouseShelfLedgerReadRepository.Query(track: false)
+                        on (long?)vd.VoucherDetailId equals ledger.VoucherDetailId
+                    where wr.IsActive
+                          && pagePoCodes.Contains((wr.codeFromRequest ?? "").Trim())
+                          && purchaseReceiptVoucherTypes.Contains(v.VoucherType)
+                          && ledger.DeltaKg > 0m
+                    group ledger by (wr.codeFromRequest ?? "").Trim() into g
+                    select new
+                    {
+                        POExternalId = g.Key,
+                        RealDeliveryDate = (DateTime?)g.Max(x => x.CreatedAt)
                     })
                     .ToListAsync(ct);
+
+                var realDeliveryDateMap = realDeliveryDateRows
+                    .ToDictionary(x => x.POExternalId, x => x.RealDeliveryDate);
 
                 // Map ra DTO cuối + string.Join ở memory (không làm trong SQL)
                 var items = poPage.Select(x => new GetSamplePurchaseOrder
@@ -166,11 +230,20 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                     OrderType = x.OrderType,
                     SupplierName = x.SupplierName,
                     SupplierExternalId = x.SupplierExternalId,
+                    //AttachmentCollectionId = x.AttachmentCollectionId,
                     TotalAmount = x.TotalAmount,
+                    RealTotalAmount = x.RealTotalAmount,
                     Comment = x.Comment,
+                    //HasSupplierDeliveryNote = x.HasSupplierDeliveryNote,
+                    //HasCOA = x.HasCOA,
+                    //HasPOConfirmation = x.HasPOConfirmation,
+                    //HasInvoice = x.HasInvoice,
                     IsActive = x.IsActive ?? false,
                     RequestDeliveryDate = x.RequestDeliveryDate,
-                    RealDeliveryDate = x.RealDeliveryDate,
+                    RealDeliveryDate = !string.IsNullOrWhiteSpace(x.ExternalId)
+                                  && realDeliveryDateMap.TryGetValue(x.ExternalId.Trim(), out var realDeliveryDate)
+                    ? realDeliveryDate
+                    : null,
                     CreateDate = x.CreateDate,
                     Details = x.Details
                 }).ToList();
@@ -185,6 +258,147 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                 return OperationResult<PagedResult<GetSamplePurchaseOrder>>.Fail(
                     $"Lỗi khi lấy danh sách đơn mua hàng. {ex.Message}");
             }
+        }
+
+        public async Task<byte[]> ExportPurchaseOrdersToExcelAsync(PurchaseOrderQuery query, CancellationToken ct = default)
+        {
+            query ??= new PurchaseOrderQuery();
+
+            var poQ = _unitOfWork.PurchaseOrderRepository.Query(track: false);
+
+            if (query.SupplierId.HasValue)
+                poQ = poQ.Where(po => po.SupplierId == query.SupplierId.Value);
+
+            if (!string.IsNullOrWhiteSpace(query.Status))
+                poQ = poQ.Where(po => po.Status == query.Status);
+
+            if (!string.IsNullOrWhiteSpace(query.OrderType))
+                poQ = poQ.Where(po => po.OrderType == query.OrderType);
+
+            if (query.From.HasValue)
+            {
+                var fromDate = query.From.Value.Date;
+                poQ = poQ.Where(po => po.CreateDate >= fromDate);
+            }
+
+            if (query.To.HasValue)
+            {
+                var toExclusive = query.To.Value.Date.AddDays(1);
+                poQ = poQ.Where(po => po.CreateDate < toExclusive);
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.Keyword))
+            {
+                var kw = query.Keyword.Trim();
+
+                poQ = poQ.Where(po =>
+                    ((po.Supplier.SupplierName ?? "").Contains(kw)) ||
+                    ((po.Supplier.ExternalId ?? "").Contains(kw)) ||
+                    ((po.ExternalId ?? "").Contains(kw)) ||
+                    po.PurchaseOrderLinks.Any(l =>
+                        (l.MerchandiseOrder.ExternalId ?? "").Contains(kw)) ||
+                    po.PurchaseOrderDetails.Any(d =>
+                        (d.MaterialExternalIDSnapshot ?? "").Contains(kw) ||
+                        (d.MaterialNameSnapshot ?? "").Contains(kw)));
+            }
+
+            var orderLines = await poQ
+                .SelectMany(po => po.PurchaseOrderDetails
+                    .Where(d => d.IsActive)
+                    .Select(d => new PurchaseOrderExportLine
+                    {
+                        PurchaseOrderId = po.PurchaseOrderId,
+                        POExternalId = po.ExternalId ?? string.Empty,
+                        Status = po.Status ?? string.Empty,
+                        OrderType = po.OrderType ?? string.Empty,
+                        CreatedDate = po.CreateDate,
+                        HeaderRequestDeliveryDate = po.RequestDeliveryDate,
+                        SupplierExternalId = po.Supplier != null ? po.Supplier.ExternalId : null,
+                        SupplierName = po.Supplier != null ? po.Supplier.SupplierName : null,
+                        PurchaseOrderDetailId = d.PurchaseOrderDetailId,
+                        LineNo = d.LineNo,
+                        MaterialCode = d.MaterialExternalIDSnapshot ?? string.Empty,
+                        MaterialName = d.MaterialNameSnapshot ?? string.Empty,
+                        Unit = d.Package ?? string.Empty,
+                        OrderedQuantity = d.RequestQuantity ?? 0m,
+                        UnitPriceAgreed = d.UnitPriceAgreed,
+                        TotalPriceAgreed = d.TotalPriceAgreed,
+                        DeliveryDate = d.DeliveryDate
+                    }))
+                .OrderBy(x => x.CreatedDate)
+                .ThenBy(x => x.POExternalId)
+                .ThenBy(x => x.LineNo)
+                .ToListAsync(ct);
+
+            var poExternalIds = orderLines
+                .Where(x => !string.IsNullOrWhiteSpace(x.POExternalId))
+                .Select(x => x.POExternalId.Trim())
+                .Distinct()
+                .ToList();
+
+            var receiptRows = poExternalIds.Count == 0
+                ? new List<PurchaseOrderReceiptExportRow>()
+                : await BuildPurchaseOrderReceiptRowsAsync(poExternalIds, ct);
+
+            var allocatedReceipts = AllocatePurchaseOrderReceipts(orderLines, receiptRows);
+            var receiptsByDetailId = allocatedReceipts
+                .Where(x => x.PurchaseOrderDetailId.HasValue)
+                .GroupBy(x => x.PurchaseOrderDetailId!.Value)
+                .ToDictionary(x => x.Key, x => x.ToList());
+
+            var rows = orderLines.Select(line =>
+            {
+                receiptsByDetailId.TryGetValue(line.PurchaseOrderDetailId, out var receipts);
+                receipts ??= new List<PurchaseOrderReceiptExportRow>();
+
+                var receivedQuantity = receipts.Sum(x => x.ReceivedQuantity);
+                var acceptedQuantity = receipts.Sum(x => x.AcceptedQuantity);
+                var pendingQcQuantity = receipts.Sum(x => x.PendingQcQuantity);
+                var rejectedQuantity = receipts.Sum(x => x.RejectedQuantity);
+                var actualDeliveryDate = receipts.Count > 0
+                    ? receipts.Max(x => x.ReceiptDate)
+                    : (DateTime?)null;
+                var requestDeliveryDate = line.DeliveryDate ?? line.HeaderRequestDeliveryDate;
+                var lateDays = CalculateLateDays(requestDeliveryDate, actualDeliveryDate);
+                var unitPrice = ResolvePurchaseOrderUnitPrice(
+                    line.OrderedQuantity,
+                    line.UnitPriceAgreed,
+                    line.TotalPriceAgreed);
+
+                return new PurchaseOrderExcelRow
+                {
+                    OrderDate = line.CreatedDate,
+                    PurchaseOrderCode = line.POExternalId,
+                    Status = line.Status,
+                    OrderType = line.OrderType,
+                    ActualDeliveryDate = actualDeliveryDate,
+                    RequestDeliveryDate = requestDeliveryDate,
+                    LateDays = lateDays,
+                    DeliveryResult = ResolveDeliveryResult(actualDeliveryDate, lateDays),
+                    SupplierExternalId = line.SupplierExternalId,
+                    SupplierName = line.SupplierName,
+                    MaterialCode = line.MaterialCode,
+                    MaterialName = line.MaterialName,
+                    Unit = line.Unit,
+                    OrderedQuantity = line.OrderedQuantity,
+                    ReceivedQuantity = receivedQuantity,
+                    AcceptedQuantity = acceptedQuantity,
+                    PendingQcQuantity = pendingQcQuantity,
+                    RejectedQuantity = rejectedQuantity,
+                    UnitPrice = unitPrice,
+
+                    RealTotalAmount = Math.Round(
+                        ResolveRealTotalAmount(
+                            line.OrderType,
+                            line.OrderedQuantity,
+                            acceptedQuantity,
+                            unitPrice),
+                        2,
+                        MidpointRounding.AwayFromZero)
+                };
+            }).ToList();
+
+            return RenderPurchaseOrderExcel(rows);
         }
 
         /// <summary>
@@ -266,10 +480,15 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                     SupplierId = result.PO.SupplierId,
                     PLPUComment = result.PO.PLPUComment,
                     Comment = result.PO.Comment,
+                    //HasSupplierDeliveryNote = result.PO.HasSupplierDeliveryNote,
+                    //HasCOA = result.PO.HasCOA,
+                    //HasPOConfirmation = result.PO.HasPOConfirmation,
+                    //HasInvoice = result.PO.HasInvoice,
                     Status = result.PO.Status,
                     RequestDeliveryDate = result.PO.RequestDeliveryDate,
                     RealDeliveryDate = result.PO.RealDeliveryDate,
                     CompanyId = result.PO.CompanyId,
+                    //AttachmentCollectionId = result.PO.AttachmentCollectionId,
                     CreateDate = result.PO.CreateDate,
                     CreatedBy = result.PO.CreatedBy,
                     UpdatedDate = result.PO.UpdatedDate,
@@ -308,7 +527,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
         /// <param name="req"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<OperationResult> CreateAsync(PostPurchaseOrder req, CancellationToken ct = default)
+        public async Task<OperationResult<Guid>> CreateAsync(PostPurchaseOrder req, CancellationToken ct = default)
         {
             try
             {
@@ -321,6 +540,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                 var now = DateTime.Now;
                 var userId = _CurrentUser.EmployeeId;
                 var companyId = _CurrentUser.CompanyId;
+                //var attachmentCollectionId = await EnsureAttachmentCollectionAsync(req.AttachmentCollectionId, ct);
 
                 await using var transaction = await _unitOfWork.BeginTransactionAsync();
 
@@ -365,6 +585,10 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                     OrderType = req.OrderType,
                     Comment = req.Comment,
                     PLPUComment = req.PLPUComment,
+                    //HasSupplierDeliveryNote = req.HasSupplierDeliveryNote,
+                    //HasCOA = req.HasCOA,
+                    //HasPOConfirmation = req.HasPOConfirmation,
+                    //HasInvoice = req.HasInvoice,
                     RequestDeliveryDate = req.RequestDeliveryDate,
                     RealDeliveryDate = req.RealDeliveryDate,
                     CompanyId = companyId,
@@ -372,6 +596,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                     CreateDate = now,
                     CreatedBy = userId,
                     PurchaseOrderSnapshot = snapshot,
+                    //AttachmentCollectionId = attachmentCollectionId,
                     
                 };
                 await _unitOfWork.PurchaseOrderRepository.AddAsync(po, ct);
@@ -501,12 +726,12 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                 await _unitOfWork.SaveChangesAsync();
                 await transaction.CommitAsync(ct);
 
-                return OperationResult.Ok("Purchase Order created successfully.");
+                return OperationResult<Guid>.Ok(po.PurchaseOrderId, "Purchase Order created successfully.");
             }
             catch (Exception)
             {
                 // (nên log ex ở đây)
-                return OperationResult.Fail("Có lỗi xảy ra khi tạo Đơn mua hàng. Vui lòng thử lại hoặc liên hệ IT.");
+                return OperationResult<Guid>.Fail("Có lỗi xảy ra khi tạo Đơn mua hàng. Vui lòng thử lại hoặc liên hệ IT.");
             }
         }
 
@@ -540,6 +765,33 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                 PatchHelper.SetIfRef(patchPurchaseOrder.Comment, () => existingPO.Comment, v => existingPO.Comment = v);
                 PatchHelper.SetIfRef(patchPurchaseOrder.PLPUComment, () => existingPO.PLPUComment, v => existingPO.PLPUComment = v);
 
+                //if (patchPurchaseOrder.AttachmentCollectionId.HasValue)
+                //{
+                //    existingPO.AttachmentCollectionId =
+                //        await EnsureAttachmentCollectionAsync(patchPurchaseOrder.AttachmentCollectionId, ct);
+                //}
+
+                //PatchHelper.SetIfNullable(
+                //    patchPurchaseOrder.HasSupplierDeliveryNote,
+                //    () => existingPO.HasSupplierDeliveryNote,
+                //    v => existingPO.HasSupplierDeliveryNote = v);
+
+                //PatchHelper.SetIfNullable(
+                //    patchPurchaseOrder.HasCOA,
+                //    () => existingPO.HasCOA,
+                //    v => existingPO.HasCOA = v);
+
+                //PatchHelper.SetIfNullable(
+                //    patchPurchaseOrder.HasPOConfirmation,
+                //    () => existingPO.HasPOConfirmation,
+                //    v => existingPO.HasPOConfirmation = v);
+
+                //PatchHelper.SetIfNullable(
+                //    patchPurchaseOrder.HasInvoice,
+                //    () => existingPO.HasInvoice,
+                //    v => existingPO.HasInvoice = v);
+
+
                 if (patchPurchaseOrder.IsActive == false)
                 {
                     existingPO.IsActive = false;
@@ -563,6 +815,63 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                 await _unitOfWork.SaveChangesAsync();
                 await transaction.CommitAsync(ct);
                 return OperationResult.Ok("Hoàn thành");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(ct);
+                return OperationResult.Fail($"Lỗi api: {ex.InnerException?.Message ?? ex.Message}");
+            }
+        }
+
+        public async Task<OperationResult> CompleteAsync(Guid purchaseOrderId, CancellationToken ct = default)
+        {
+            if (purchaseOrderId == Guid.Empty)
+                return OperationResult.Fail("PurchaseOrderId không hợp lệ.");
+
+            await using var transaction = await _unitOfWork.BeginTransactionAsync();
+
+            try
+            {
+                var now = DateTime.Now;
+                var userId = _CurrentUser.EmployeeId;
+
+                var purchaseOrder = await _unitOfWork.PurchaseOrderRepository.Query(track: true)
+                    .FirstOrDefaultAsync(x =>
+                        x.PurchaseOrderId == purchaseOrderId &&
+                        x.IsActive == true, ct);
+
+                if (purchaseOrder == null)
+                    return OperationResult.Fail("Không tìm thấy đơn mua hàng.");
+
+                if (string.IsNullOrWhiteSpace(purchaseOrder.ExternalId))
+                    return OperationResult.Fail("Đơn mua hàng chưa có mã để liên kết với lệnh kho.");
+
+                var purchaseOrderExternalId = purchaseOrder.ExternalId.Trim();
+                var warehouseRequests = await _unitOfWork.WarehouseRequestRepository.Query(track: true)
+                    .Where(x =>
+                        x.IsActive &&
+                        x.codeFromRequest != null &&
+                        x.codeFromRequest.Trim() == purchaseOrderExternalId)
+                    .ToListAsync(ct);
+
+                if (warehouseRequests.Count == 0)
+                    return OperationResult.Fail("Không tìm thấy lệnh kho liên kết với đơn mua hàng.");
+
+                purchaseOrder.Status = PurchaseOrderStatus.Completed.ToString();
+                purchaseOrder.UpdatedDate = now;
+                purchaseOrder.UpdatedBy = userId;
+
+                foreach (var warehouseRequest in warehouseRequests)
+                {
+                    warehouseRequest.ReqStatus = WarehouseRequestStatus.Completed;
+                    warehouseRequest.UpdatedDate = now;
+                    warehouseRequest.UpdatedBy = userId;
+                }
+
+                await _unitOfWork.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
+
+                return OperationResult.Ok("Đã xác nhận đơn mua hàng hoàn thành.");
             }
             catch (Exception ex)
             {
@@ -727,6 +1036,448 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
         //        throw new Exception("An error occurred while retrieving material stock.", ex);
         //    }
         //}
+
+        private async Task<List<PurchaseOrderReceiptExportRow>> BuildPurchaseOrderReceiptRowsAsync(
+            List<string> poExternalIds,
+            CancellationToken ct)
+        {
+            var purchaseReceiptVoucherTypes = new[]
+            {
+                (int)WareHouseRequestType.ImportRawMaterial,
+                (int)WareHouseRequestType.ImportOther,
+                (int)WareHouseRequestType.ImportMaterial
+            };
+
+            var rawRows = await (
+                from wr in _unitOfWork.WarehouseRequestRepository.Query(false)
+                join v in _unitOfWork.WarehouseVoucherReadRepository.Query(false)
+                    on wr.RequestId equals v.RequestId
+                join vd in _unitOfWork.WarehouseVoucherDetailReadRepository.Query(false)
+                    on v.VoucherId equals vd.VoucherId
+                join ledger in _unitOfWork.WarehouseShelfLedgerReadRepository.Query(false)
+                    on (long?)vd.VoucherDetailId equals ledger.VoucherDetailId
+                let qcLatest = _unitOfWork.QCInputByQCRepository.Query(false)
+                    .Where(qc => qc.VoucherDetailId == vd.VoucherDetailId)
+                    .OrderByDescending(qc => qc.CreatedDate)
+                    .Select(qc => new
+                    {
+                        qc.ImportWarehouseType,
+                        qc.CreatedDate
+                    })
+                    .FirstOrDefault()
+                where wr.IsActive
+                      && purchaseReceiptVoucherTypes.Contains(v.VoucherType)
+                      && ledger.DeltaKg > 0m
+                      && poExternalIds.Contains((wr.codeFromRequest ?? "").Trim())
+                select new PurchaseOrderReceiptExportRow
+                {
+                    POExternalId = (wr.codeFromRequest ?? "").Trim(),
+                    VoucherDetailId = ledger.VoucherDetailId ?? vd.VoucherDetailId,
+                    ProductCode = ledger.ProductCode ?? vd.ProductCode ?? string.Empty,
+                    ProductName = vd.ProductName ?? string.Empty,
+                    LotNumber = ledger.LotNumber ?? vd.LotNumber ?? string.Empty,
+                    ReceiptDate = ledger.CreatedAt,
+                    ReceivedQuantity = ledger.DeltaKg,
+                    QCResult = qcLatest != null ? qcLatest.ImportWarehouseType : null,
+                    VoucherDetailType = vd.VoucherType
+                })
+                .ToListAsync(ct);
+
+            return rawRows
+                .GroupBy(x => new
+                {
+                    POExternalId = NormalizePurchaseOrderKey(x.POExternalId),
+                    x.VoucherDetailId,
+                    ProductCode = NormalizePurchaseOrderKey(x.ProductCode),
+                    ProductName = NormalizePurchaseOrderKey(x.ProductName),
+                    LotNumber = NormalizePurchaseOrderKey(x.LotNumber),
+                    x.QCResult,
+                    x.VoucherDetailType
+                })
+                .Select(g =>
+                {
+                    var first = g.First();
+                    var row = new PurchaseOrderReceiptExportRow
+                    {
+                        POExternalId = first.POExternalId,
+                        VoucherDetailId = g.Key.VoucherDetailId,
+                        ProductCode = first.ProductCode,
+                        ProductName = first.ProductName,
+                        LotNumber = first.LotNumber,
+                        ReceiptDate = g.Min(x => x.ReceiptDate),
+                        ReceivedQuantity = g.Sum(x => x.ReceivedQuantity),
+                        QCResult = g.Key.QCResult,
+                        VoucherDetailType = g.Key.VoucherDetailType
+                    };
+
+                    ApplyPurchaseOrderReceiptQcQuantities(row);
+                    return row;
+                })
+                .ToList();
+        }
+
+        private static List<PurchaseOrderReceiptExportRow> AllocatePurchaseOrderReceipts(
+            List<PurchaseOrderExportLine> orderLines,
+            List<PurchaseOrderReceiptExportRow> receipts)
+        {
+            var result = new List<PurchaseOrderReceiptExportRow>();
+
+            var linesByPoAndMaterial = orderLines
+                .GroupBy(x => ReceiptMatchKey(x.POExternalId, x.MaterialCode))
+                .ToDictionary(
+                    x => x.Key,
+                    x => x
+                        .OrderBy(r => r.LineNo)
+                        .ThenBy(r => r.PurchaseOrderDetailId)
+                        .ToList());
+
+            var allocatedPhysicalQtyByLine = orderLines.ToDictionary(
+                x => x.PurchaseOrderDetailId,
+                _ => 0m);
+
+            foreach (var receiptGroup in receipts
+                         .OrderBy(x => x.ReceiptDate)
+                         .ThenBy(x => x.VoucherDetailId)
+                         .GroupBy(x => ReceiptMatchKey(x.POExternalId, x.ProductCode)))
+            {
+                if (!linesByPoAndMaterial.TryGetValue(receiptGroup.Key, out var candidateLines) ||
+                    candidateLines.Count == 0)
+                {
+                    result.AddRange(receiptGroup);
+                    continue;
+                }
+
+                foreach (var receipt in receiptGroup)
+                {
+                    var remainingReceiptQty = receipt.ReceivedQuantity;
+
+                    if (remainingReceiptQty <= 0)
+                        continue;
+
+                    while (remainingReceiptQty > 0)
+                    {
+                        var targetLine = candidateLines.FirstOrDefault(line =>
+                        {
+                            var allocated = allocatedPhysicalQtyByLine[line.PurchaseOrderDetailId];
+                            return allocated < line.OrderedQuantity;
+                        });
+
+                        targetLine ??= candidateLines.Last();
+
+                        var targetAllocated = allocatedPhysicalQtyByLine[targetLine.PurchaseOrderDetailId];
+                        var targetRemaining = Math.Max(targetLine.OrderedQuantity - targetAllocated, 0m);
+                        var allocatedQty = targetRemaining > 0
+                            ? Math.Min(remainingReceiptQty, targetRemaining)
+                            : remainingReceiptQty;
+
+                        if (allocatedQty <= 0)
+                            allocatedQty = remainingReceiptQty;
+
+                        result.Add(ClonePurchaseOrderReceiptForLine(receipt, targetLine, allocatedQty));
+                        allocatedPhysicalQtyByLine[targetLine.PurchaseOrderDetailId] += allocatedQty;
+                        remainingReceiptQty -= allocatedQty;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private static PurchaseOrderReceiptExportRow ClonePurchaseOrderReceiptForLine(
+            PurchaseOrderReceiptExportRow source,
+            PurchaseOrderExportLine line,
+            decimal allocatedQuantity)
+        {
+            var ratio = source.ReceivedQuantity == 0m
+                ? 0m
+                : allocatedQuantity / source.ReceivedQuantity;
+
+            return new PurchaseOrderReceiptExportRow
+            {
+                POExternalId = line.POExternalId,
+                PurchaseOrderDetailId = line.PurchaseOrderDetailId,
+                VoucherDetailId = source.VoucherDetailId,
+                ProductCode = source.ProductCode,
+                ProductName = source.ProductName,
+                LotNumber = source.LotNumber,
+                ReceiptDate = source.ReceiptDate,
+                ReceivedQuantity = allocatedQuantity,
+                QCResult = source.QCResult,
+                VoucherDetailType = source.VoucherDetailType,
+                AcceptedQuantity = Math.Round(source.AcceptedQuantity * ratio, 6),
+                PendingQcQuantity = Math.Round(source.PendingQcQuantity * ratio, 6),
+                RejectedQuantity = Math.Round(source.RejectedQuantity * ratio, 6)
+            };
+        }
+
+        private static void ApplyPurchaseOrderReceiptQcQuantities(PurchaseOrderReceiptExportRow receipt)
+        {
+            var decision = receipt.QCResult;
+
+            if (!decision.HasValue)
+            {
+                decision = receipt.VoucherDetailType == VoucherDetailType.QCPass ? QcDecision.QCPass
+                    : receipt.VoucherDetailType == VoucherDetailType.Special ? QcDecision.Special
+                    : receipt.VoucherDetailType == VoucherDetailType.QCFail ? QcDecision.QCFail
+                    : receipt.VoucherDetailType == VoucherDetailType.Waiter ? QcDecision.Waiter
+                    : null;
+            }
+
+            receipt.QCResult = decision;
+            receipt.AcceptedQuantity = decision is QcDecision.QCPass or QcDecision.Special
+                ? receipt.ReceivedQuantity
+                : 0m;
+            receipt.PendingQcQuantity = !decision.HasValue || decision == QcDecision.Waiter
+                ? receipt.ReceivedQuantity
+                : 0m;
+            receipt.RejectedQuantity = decision == QcDecision.QCFail
+                ? receipt.ReceivedQuantity
+                : 0m;
+        }
+
+        private static byte[] RenderPurchaseOrderExcel(List<PurchaseOrderExcelRow> rows)
+        {
+            using var wb = new XLWorkbook();
+            var ws = wb.Worksheets.Add("Purchase Orders");
+
+            var headers = new[]
+            {
+                "Ngày đặt hàng",
+                "Số đơn hàng",
+                "Trạng thái",
+                "Phân loại",
+                "Ngày giao hàng",
+                "Ngày Y/c giao hàng",
+                "Số ngày giao muộn",
+                "Đạt/Không đạt",
+                "Mã NCC",
+                "Tên NCC",
+                "Mã hàng",
+                "Tên hàng",
+                "ĐVT",
+                "Số lượng đặt",
+                "Số lượng nhập kho",
+                "Số lượng QC đạt",
+                "Số lượng chờ QC",
+                "Số lượng QC fail",
+                "Đơn giá",
+                "Thành tiền thực nhận"
+            };
+
+            for (var c = 1; c <= headers.Length; c++)
+                ws.Cell(1, c).Value = headers[c - 1];
+
+            var header = ws.Range(1, 1, 1, headers.Length);
+            header.Style.Font.Bold = true;
+            header.Style.Fill.BackgroundColor = XLColor.Yellow;
+            header.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            header.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            header.Style.Alignment.WrapText = true;
+            header.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            header.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+
+            for (var i = 0; i < rows.Count; i++)
+            {
+                var r = i + 2;
+                var item = rows[i];
+
+                SetDateCell(ws.Cell(r, 1), item.OrderDate);
+                ws.Cell(r, 2).Value = item.PurchaseOrderCode;
+                ws.Cell(r, 3).Value = item.Status;
+                ws.Cell(r, 4).Value = item.OrderType;
+                SetDateCell(ws.Cell(r, 5), item.ActualDeliveryDate);
+                SetDateCell(ws.Cell(r, 6), item.RequestDeliveryDate);
+                ws.Cell(r, 7).Value = item.LateDays;
+                ws.Cell(r, 8).Value = item.DeliveryResult;
+                ws.Cell(r, 9).Value = item.SupplierExternalId;
+                ws.Cell(r, 10).Value = item.SupplierName;
+                ws.Cell(r, 11).Value = item.MaterialCode;
+                ws.Cell(r, 12).Value = item.MaterialName;
+                ws.Cell(r, 13).Value = item.Unit;
+                ws.Cell(r, 14).Value = item.OrderedQuantity;
+                ws.Cell(r, 15).Value = item.ReceivedQuantity;
+                ws.Cell(r, 16).Value = item.AcceptedQuantity;
+                ws.Cell(r, 17).Value = item.PendingQcQuantity;
+                ws.Cell(r, 18).Value = item.RejectedQuantity;
+                ws.Cell(r, 19).Value = item.UnitPrice;
+                ws.Cell(r, 20).Value = item.RealTotalAmount;
+            }
+
+            var lastRow = Math.Max(1, rows.Count + 1);
+            var table = ws.Range(1, 1, lastRow, headers.Length);
+            table.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            table.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+            table.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+            ws.Columns(14, 20).Style.NumberFormat.Format = "#,##0.##";
+            ws.Columns(1, 8).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            ws.Columns(9, 13).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            ws.Column(10).Style.Alignment.WrapText = true;
+            ws.Column(12).Style.Alignment.WrapText = true;
+
+            ws.Columns(1, 11).AdjustToContents();
+            ws.Columns(13, 20).AdjustToContents();
+            ws.Column(12).Width = 36;
+            ws.SheetView.FreezeRows(1);
+
+            using var ms = new MemoryStream();
+            wb.SaveAs(ms);
+            return ms.ToArray();
+        }
+
+        private static void SetDateCell(IXLCell cell, DateTime? value)
+        {
+            if (!value.HasValue)
+                return;
+
+            cell.Value = value.Value;
+            cell.Style.DateFormat.Format = "dd/MM/yyyy";
+        }
+
+        private static decimal ResolvePurchaseOrderUnitPrice(
+            decimal orderedQuantity,
+            decimal? unitPriceAgreed,
+            decimal? totalPriceAgreed)
+        {
+            if (unitPriceAgreed.HasValue)
+                return unitPriceAgreed.Value;
+
+            if (totalPriceAgreed.HasValue && orderedQuantity != 0m)
+                return totalPriceAgreed.Value / orderedQuantity;
+
+            return 0m;
+        }
+
+        private static int? CalculateLateDays(DateTime? requestDeliveryDate, DateTime? actualDeliveryDate)
+        {
+            if (!requestDeliveryDate.HasValue || !actualDeliveryDate.HasValue)
+                return null;
+
+            return Math.Max((actualDeliveryDate.Value.Date - requestDeliveryDate.Value.Date).Days, 0);
+        }
+
+        private static string ResolveDeliveryResult(DateTime? actualDeliveryDate, int? lateDays)
+        {
+            if (!actualDeliveryDate.HasValue)
+                return "Chưa giao";
+
+            return (lateDays ?? 0) > 0 ? "Không đạt" : "Đạt";
+        }
+
+        private static string ReceiptMatchKey(string? poExternalId, string? materialCode)
+        {
+            return $"{NormalizePurchaseOrderKey(poExternalId)}|{NormalizePurchaseOrderKey(materialCode)}";
+        }
+
+        private static string NormalizePurchaseOrderKey(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? string.Empty
+                : value.Trim().ToUpperInvariant();
+        }
+
+        private static decimal ResolveRealTotalAmount(
+            string? orderType,
+            decimal orderedQuantity,
+            decimal receivedQuantity,
+            decimal unitPrice)
+        {
+            // Nếu phân loại là PO thì lấy số lượng đặt * đơn giá
+            if (string.Equals(orderType?.Trim(), "PO", StringComparison.OrdinalIgnoreCase))
+                return orderedQuantity * unitPrice;
+
+            // Còn lại giữ logic cũ: số lượng thực nhận * đơn giá
+            return receivedQuantity * unitPrice;
+        }
+
+        private sealed class PurchaseOrderExportLine
+        {
+            public Guid PurchaseOrderId { get; set; }
+            public string POExternalId { get; set; } = string.Empty;
+            public string Status { get; set; } = string.Empty;
+            public string OrderType { get; set; } = string.Empty;
+            public DateTime? CreatedDate { get; set; }
+            public DateTime? HeaderRequestDeliveryDate { get; set; }
+            public string? SupplierExternalId { get; set; }
+            public string? SupplierName { get; set; }
+            public Guid PurchaseOrderDetailId { get; set; }
+            public int LineNo { get; set; }
+            public string MaterialCode { get; set; } = string.Empty;
+            public string MaterialName { get; set; } = string.Empty;
+            public string Unit { get; set; } = string.Empty;
+            public decimal OrderedQuantity { get; set; }
+            public decimal? UnitPriceAgreed { get; set; }
+            public decimal? TotalPriceAgreed { get; set; }
+            public DateTime? DeliveryDate { get; set; }
+        }
+
+        private sealed class PurchaseOrderReceiptExportRow
+        {
+            public string POExternalId { get; set; } = string.Empty;
+            public Guid? PurchaseOrderDetailId { get; set; }
+            public long VoucherDetailId { get; set; }
+            public string ProductCode { get; set; } = string.Empty;
+            public string ProductName { get; set; } = string.Empty;
+            public string LotNumber { get; set; } = string.Empty;
+            public DateTime ReceiptDate { get; set; }
+            public decimal ReceivedQuantity { get; set; }
+            public QcDecision? QCResult { get; set; }
+            public VoucherDetailType VoucherDetailType { get; set; }
+            public decimal AcceptedQuantity { get; set; }
+            public decimal PendingQcQuantity { get; set; }
+            public decimal RejectedQuantity { get; set; }
+        }
+
+        private sealed class PurchaseOrderExcelRow
+        {
+            public DateTime? OrderDate { get; set; }
+            public string PurchaseOrderCode { get; set; } = string.Empty;
+            public string Status { get; set; } = string.Empty;
+            public string OrderType { get; set; } = string.Empty;
+            public DateTime? ActualDeliveryDate { get; set; }
+            public DateTime? RequestDeliveryDate { get; set; }
+            public int? LateDays { get; set; }
+            public string DeliveryResult { get; set; } = string.Empty;
+            public string? SupplierExternalId { get; set; }
+            public string? SupplierName { get; set; }
+            public string MaterialCode { get; set; } = string.Empty;
+            public string MaterialName { get; set; } = string.Empty;
+            public string Unit { get; set; } = string.Empty;
+            public decimal OrderedQuantity { get; set; }
+            public decimal ReceivedQuantity { get; set; }
+            public decimal AcceptedQuantity { get; set; }
+            public decimal PendingQcQuantity { get; set; }
+            public decimal RejectedQuantity { get; set; }
+            public decimal UnitPrice { get; set; }
+            public decimal RealTotalAmount { get; set; }
+        }
+
+        private async Task<Guid> EnsureAttachmentCollectionAsync(Guid? attachmentCollectionId, CancellationToken ct = default)
+        {
+            if (attachmentCollectionId.HasValue && attachmentCollectionId.Value != Guid.Empty)
+            {
+                var exists = await _unitOfWork.AttachmentCollectionRepository.Query()
+                    .AnyAsync(x => x.AttachmentCollectionId == attachmentCollectionId.Value, ct);
+
+                if (!exists)
+                {
+                    await _unitOfWork.AttachmentCollectionRepository.AddAsync(new AttachmentCollection
+                    {
+                        AttachmentCollectionId = attachmentCollectionId.Value
+                    }, ct);
+                }
+
+                return attachmentCollectionId.Value;
+            }
+
+            var newCollection = new AttachmentCollection
+            {
+                AttachmentCollectionId = Guid.CreateVersion7()
+            };
+
+            await _unitOfWork.AttachmentCollectionRepository.AddAsync(newCollection, ct);
+            return newCollection.AttachmentCollectionId;
+        }
 
     }
 }

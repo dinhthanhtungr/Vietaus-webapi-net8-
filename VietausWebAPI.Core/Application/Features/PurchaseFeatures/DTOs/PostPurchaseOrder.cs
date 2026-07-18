@@ -19,8 +19,14 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.DTOs
         public DateTime? RealDeliveryDate { get; set; }
         public string? Comment { get; set; }
         public string? PLPUComment { get; set; }
+        //public bool? HasSupplierDeliveryNote { get; set; }
+        //public bool? HasCOA { get; set; }
+        //public bool? HasPOConfirmation { get; set; }
+        //public bool? HasInvoice { get; set; }
+
         public Guid? CompanyId { get; set; }
         public Guid? CreatedBy { get; set; }
+        //public Guid? AttachmentCollectionId { get; set; }
 
         public List<Guid> MerchadiseOrderIds { get; set; } = new List<Guid>();
         public List<PostPurchaseOrderDetail> PurchaseOrderDetails { get; set; } = new List<PostPurchaseOrderDetail>();

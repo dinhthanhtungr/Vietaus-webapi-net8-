@@ -30,7 +30,9 @@ using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Helper.PriceHelpers;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
+using VietausWebAPI.Core.Domain.Entities.AuditSchema;
 using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
+using VietausWebAPI.Core.Domain.Enums.Audits;
 using VietausWebAPI.Core.Domain.Enums.Formulas;
 using VietausWebAPI.Core.Domain.Enums.Notifications;
 using VietausWebAPI.Core.Domain.Enums.Products;
@@ -88,6 +90,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                         CustomerName = x.Customer.CustomerName,
                         CustomerCode = x.Customer.ExternalId,
                         ManagerName = x.ManagerByNavigation.FullName,
+                        x.BagWeight,
                         x.ProductId,
                         x.AttachmentCollectionId,
                         x.RealDeliveryDate,
@@ -242,6 +245,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     SampleQuantity = dto.SampleQuantity,
                     OtherComment = dto.OtherComment,
                     InfoType = dto.InfoType,
+                    BagWeight = dto.BagWeight,
 
                     Formula = dto.Formula != null
                         ? new GetSampleFormula
@@ -349,20 +353,41 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 }
 
                 // Keyword
-                if (hasKeyword)
-                {
-                    var keyword = query.Keyword!.Trim();
 
-                    result = result.Where(x =>
-                        (x.ExternalId ?? "").Contains(keyword)
-                        || ((x.CreatedByNavigation != null ? x.CreatedByNavigation.ExternalId : "") ?? "").Contains(keyword)
-                        || ((x.CreatedByNavigation != null ? x.CreatedByNavigation.FullName : "") ?? "").Contains(keyword)
-                        || ((x.Product != null ? x.Product.ColourCode : "") ?? "").Contains(keyword)
-                        || ((x.Customer != null ? x.Customer.ExternalId : "") ?? "").Contains(keyword)
-                        || ((x.Customer != null ? x.Customer.CustomerName : "") ?? "").Contains(keyword)
-                        || ((x.Product != null ? x.Product.Name : "") ?? "").Contains(keyword)
-                    );
+
+                if (!string.IsNullOrWhiteSpace(query.Keyword))
+                {
+                    var keyword = query.Keyword!.Trim() ?? string.Empty;
+
+                    bool searchColourCodeOnly = keyword.StartsWith('"');
+                    if (searchColourCodeOnly)
+                    {
+                        keyword = keyword[1..].Trim();
+
+                        result = result.Where(x =>
+                            x.Product != null &&
+                            x.Product.ColourCode != null &&
+                            x.Product.ColourCode.Contains(keyword));
+                    }
+                    else
+                    {
+                        result = result.Where(x =>
+                            (x.ExternalId ?? "").Contains(keyword)
+                            || ((x.CreatedByNavigation != null ? x.CreatedByNavigation.ExternalId : "") ?? "").Contains(keyword)
+                            || ((x.CreatedByNavigation != null ? x.CreatedByNavigation.FullName : "") ?? "").Contains(keyword)
+                            || ((x.Product != null ? x.Product.ColourCode : "") ?? "").Contains(keyword)
+                            || (x.Product != null &&
+                                x.Product.SampleRequests.Any(sr =>
+                                    sr.ExternalId != null &&
+                                    sr.ExternalId.Contains(keyword)))
+                            || ((x.Customer != null ? x.Customer.ExternalId : "") ?? "").Contains(keyword)
+                            || ((x.Customer != null ? x.Customer.CustomerName : "") ?? "").Contains(keyword)
+                            || ((x.Product != null ? x.Product.Name : "") ?? "").Contains(keyword)
+                        );
+                    }
+
                 }
+
 
                 // Status
                 if (query.Statuses is { Count: > 0 })
@@ -525,8 +550,12 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                                         UnitPrice = mf.UnitPrice,
                                         TotalPrice = mf.TotalPrice,
 
-                                        MaterialNameSnapshot = mf.MaterialNameSnapshot,
-                                        MaterialExternalIdSnapshot = mf.MaterialExternalIdSnapshot,
+                                        MaterialNameSnapshot = mf.itemType == ItemType.Material
+                                            ? (mf.Material != null ? mf.Material.Name : "")
+                                            : (mf.Product != null ? mf.Product.Name : ""),
+                                        MaterialExternalIdSnapshot = mf.itemType == ItemType.Material
+                                            ? (mf.Material != null ? mf.Material.ExternalId : "")
+                                            : (mf.Product != null ? mf.Product.ColourCode : ""),
                                         Unit = mf.Unit
                                     })
                                     .ToList()
@@ -710,14 +739,21 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             try
             {
                 var now = DateTime.Now;
-
+                var correlationId = Guid.CreateVersion7();
                 // 1) Lấy entity hiện có (track) + Product để patch
                 var existing = await _unitOfWork.SampleRequestRepository.Query(track: true)
                     .Include(x => x.Product)
                     .FirstOrDefaultAsync(x => x.SampleRequestId == req.SampleRequestId, ct);
 
                 if (existing == null)
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
                     return OperationResult.Fail($"Không tìm thấy yêu cầu phối mẫu với ID {req.SampleRequestId}");
+
+                }
+
+                var oldSampleSnapshot = BuildSampleRequestAuditSnapshot(existing);
+                var oldProductSnapshot = BuildProductAuditSnapshot(existing.Product);
 
                 var userId = _currentUser.EmployeeId;           // hoặc EmployeeId
                 existing.UpdatedDate = now;
@@ -765,6 +801,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 PatchHelper.SetIfNullable(req.FormulaId, () => existing.FormulaId, v => existing.FormulaId = v);
                 PatchHelper.SetIfRef(req.SaleComment, () => existing.SaleComment, v => existing.SaleComment = v);
                 PatchHelper.SetIfRef(req.Package, () => existing.Package, v => existing.Package = v);
+                PatchHelper.SetIf(req.BagWeight, () => existing.BagWeight, v => existing.BagWeight = v);
 
                 PatchHelper.SetIfGuid(req.BranchId, () => existing.BranchId, v => existing.BranchId = v);
 
@@ -781,6 +818,11 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
 
                     if (product != null)
                         existing.Product = product;
+                }
+
+                if (oldProductSnapshot.Count == 0 && product != null)
+                {
+                    oldProductSnapshot = BuildProductAuditSnapshot(product);
                 }
 
                 if (product != null && req.Product != null )
@@ -848,7 +890,40 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                             p.ColourCode == req.Product.ColourCode, ct);
 
                     if (duplicated)
+                    {
+                        await _unitOfWork.RollbackTransactionAsync();
                         return OperationResult.Fail("Mã ColourCode vừa sinh đã tồn tại. Vui lòng nhấn Lưu lại lần nữa.");
+                    }
+                }
+
+
+                await AddAuditIfChangedAsync(
+                    schemaName: "SampleRequests",
+                    tableName: "SampleRequests",
+                    recordId: existing.SampleRequestId,
+                    companyId: existing.CompanyId,
+                    changedBy: userId,
+                    changedAt: now,
+                    correlationId: correlationId,
+                    oldValues: oldSampleSnapshot,
+                    newValues: BuildSampleRequestAuditSnapshot(existing),
+                    reason: "UpdateSampleRequestAsync",
+                    ct: ct);
+
+                if (product != null)
+                {
+                    await AddAuditIfChangedAsync(
+                        schemaName: "SampleRequests",
+                        tableName: "Products",
+                        recordId: product.ProductId,
+                        companyId: existing.CompanyId,
+                        changedBy: userId,
+                        changedAt: now,
+                        correlationId: correlationId,
+                        oldValues: oldProductSnapshot,
+                        newValues: BuildProductAuditSnapshot(product),
+                        reason: "UpdateSampleRequestAsync",
+                        ct: ct);
                 }
 
                 // 5) Lưu thay đổi entity đã track
@@ -888,7 +963,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
 
         public async Task<OperationResult<string>> UpdateColourCodeName(
             Guid sampleRequestId,
-            string newLastPrefix,
+            string? newLastPrefix,
             CancellationToken ct = default)
         {
 
@@ -920,8 +995,6 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             if (sampleRequestId == Guid.Empty)
                 return OperationResult<string>.Fail("Dữ liệu không hợp lệ.");
 
-            if (string.IsNullOrWhiteSpace(newLastPrefix))
-                return OperationResult<string>.Fail("Suffix không được để trống.");
 
             await _unitOfWork.BeginTransactionAsync();
 
@@ -932,13 +1005,22 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     .SingleOrDefaultAsync(sr => sr.SampleRequestId == sampleRequestId && sr.IsActive, ct);
 
                 if (sampleRequest == null)
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
                     return OperationResult<string>.Fail("Yêu cầu mẫu không tồn tại.");
+                }
 
                 if (sampleRequest.Product == null)
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
                     return OperationResult<string>.Fail("SampleRequest chưa có sản phẩm.");
+                }
 
                 if (string.IsNullOrWhiteSpace(sampleRequest.Product.ColourCode))
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
                     return OperationResult<string>.Fail("Sản phẩm chưa có ColourCode.");
+                }
 
                 var allowedStatuses = new[]
                 {
@@ -948,37 +1030,69 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 };
 
                 if (!allowedStatuses.Contains(sampleRequest.Status))
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
                     return OperationResult<string>.Fail(
                         "Chỉ được đổi ColourCode khi SampleRequest đang New, SampleReceived hoặc InProgress.");
+                }
 
                 var oldColourCode = sampleRequest.Product.ColourCode?.Trim().ToUpper();
                 if (string.IsNullOrWhiteSpace(oldColourCode))
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
                     return OperationResult<string>.Fail("Product chưa có ColourCode.");
+                }
 
                 var parsed = ParseColourCode(oldColourCode);
                 if (parsed == null)
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
                     return OperationResult<string>.Fail("ColourCode hiện tại không đúng định dạng.");
+                }
 
-                var suffix = newLastPrefix.Trim().ToUpper();
-                if (!Regex.IsMatch(suffix, "^[A-Z]$"))
-                    return OperationResult<string>.Fail("Suffix phải là đúng 1 ký tự chữ cái.");
+                var oldProductSnapshot = BuildProductAuditSnapshot(sampleRequest.Product);
+                var isRemoveSuffix = string.IsNullOrWhiteSpace(newLastPrefix);
 
-                var additiveItem = AdditiveItems
-                    .FirstOrDefault(x => string.Equals(x.Code, suffix, StringComparison.OrdinalIgnoreCase));
+                string suffix = "";
 
-                if (additiveItem == null)
-                    return OperationResult<string>.Fail("Không tìm thấy Additive tương ứng với ký tự được gửi lên.");
+                if (!isRemoveSuffix)
+                {
+                    suffix = newLastPrefix.Trim().ToUpper();
 
-                sampleRequest.Product.Additive = additiveItem.Code;
+                    if (!Regex.IsMatch(suffix, "^[A-Z]$"))
+                    {
+                        await _unitOfWork.RollbackTransactionAsync();
+                        return OperationResult<string>.Fail("Suffix phải là đúng 1 ký tự chữ cái.");
+                    }
+
+                    var additiveItem = AdditiveItems
+                        .FirstOrDefault(x => string.Equals(x.Code, suffix, StringComparison.OrdinalIgnoreCase));
+
+                    if (additiveItem == null)
+                    {
+                        await _unitOfWork.RollbackTransactionAsync();
+                        return OperationResult<string>.Fail("Không tìm thấy Additive tương ứng với ký tự được gửi lên.");
+                    }
+
+                    sampleRequest.Product.Additive = additiveItem.Code;
+                }
+                else
+                {
+                    // Gửi null/rỗng nghĩa là bỏ additive/suffix
+                    sampleRequest.Product.Additive = null;
+                }
 
 
                 var prefix = parsed.Value.Prefix;
                 var runningNumber = parsed.Value.Number;
 
                 string candidate;
+
                 do
                 {
-                    candidate = $"{prefix}{runningNumber}{suffix}";
+                    candidate = isRemoveSuffix
+                        ? $"{prefix}{runningNumber}"
+                        : $"{prefix}{runningNumber}{suffix}";
 
                     var exists = await _unitOfWork.ProductRepository.Query()
                         .AnyAsync(p =>
@@ -996,6 +1110,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
 
                 var oldCode = sampleRequest.Product.ColourCode;
                 var now = DateTime.Now;
+                var correlationId = Guid.CreateVersion7();
 
                 sampleRequest.Product.ColourCode = candidate;
                 sampleRequest.Product.UpdatedBy = _currentUser.EmployeeId;
@@ -1024,6 +1139,19 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     .Where(x => x != Guid.Empty)
                     .Distinct()
                     .ToList();
+
+                await AddAuditIfChangedAsync(
+                    schemaName: "SampleRequests",
+                    tableName: "Products",
+                    recordId: sampleRequest.Product.ProductId,
+                    companyId: sampleRequest.CompanyId,
+                    changedBy: _currentUser.EmployeeId,
+                    changedAt: now,
+                    correlationId: correlationId,
+                    oldValues: oldProductSnapshot,
+                    newValues: BuildProductAuditSnapshot(sampleRequest.Product),
+                    reason: "UpdateColourCodeName",
+                    ct: ct);
 
                 await _unitOfWork.SaveChangesAsync();
 
@@ -1069,6 +1197,161 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                 Number: int.Parse(match.Groups[2].Value),
                 OldSuffix: string.IsNullOrWhiteSpace(match.Groups[3].Value) ? null : match.Groups[3].Value
             );
+        }
+
+
+        // ======================================================================== Helpers ======================================================================== 
+
+        private static Dictionary<string, object?> BuildSampleRequestAuditSnapshot(SampleRequest entity)
+        {
+            return new Dictionary<string, object?>
+            {
+                ["CustomerId"] = entity.CustomerId,
+                ["ProductId"] = entity.ProductId,
+                ["FormulaId"] = entity.FormulaId,
+                ["Status"] = entity.Status,
+                ["RequestType"] = entity.RequestType,
+                ["ExpectedQuantity"] = entity.ExpectedQuantity,
+                ["ExpectedPrice"] = entity.ExpectedPrice,
+                ["SampleQuantity"] = entity.SampleQuantity,
+                ["Package"] = entity.Package,
+                ["BagWeight"] = entity.BagWeight,
+                ["InfoType"] = entity.InfoType,
+                ["CustomerProductCode"] = entity.CustomerProductCode,
+                ["AdditionalComment"] = entity.AdditionalComment,
+                ["SaleComment"] = entity.SaleComment,
+                ["OtherComment"] = entity.OtherComment,
+                ["RealDeliveryDate"] = entity.RealDeliveryDate,
+                ["RequestTestSampleDate"] = entity.RequestTestSampleDate,
+                ["ExpectedDeliveryDate"] = entity.ExpectedDeliveryDate,
+                ["RequestDeliveryDate"] = entity.RequestDeliveryDate,
+                ["ResponseDeliveryDate"] = entity.ResponseDeliveryDate,
+                ["RealPriceQuoteDate"] = entity.RealPriceQuoteDate,
+                ["ExpectedPriceQuoteDate"] = entity.ExpectedPriceQuoteDate,
+                ["NumberDeliverySampleDate"] = entity.NumberDeliverySampleDate,
+                ["BranchId"] = entity.BranchId
+            };
+        }
+        private static Dictionary<string, object?> BuildProductAuditSnapshot(Product? product)
+        {
+            if (product == null)
+                return new Dictionary<string, object?>();
+
+            return new Dictionary<string, object?>
+            {
+                ["Name"] = product.Name,
+                ["ColourCode"] = product.ColourCode,
+                ["ColourName"] = product.ColourName,
+                ["Requirement"] = product.Requirement,
+                ["ExpiryType"] = product.ExpiryType,
+                ["LabComment"] = product.LabComment,
+                ["Procedure"] = product.Procedure,
+                ["Application"] = product.Application,
+                ["ProductUsage"] = product.ProductUsage,
+                ["PolymerMatchedIn"] = product.PolymerMatchedIn,
+                ["Code"] = product.Code,
+                ["EndUser"] = product.EndUser,
+                ["OtherComment"] = product.OtherComment,
+                ["Unit"] = product.Unit,
+                ["StorageCondition"] = product.StorageCondition,
+                ["UsageRate"] = product.UsageRate,
+                ["DeltaE"] = product.DeltaE,
+                ["RecycleRate"] = product.RecycleRate,
+                ["TaicalRate"] = product.TaicalRate,
+                ["MaxTemp"] = product.MaxTemp,
+                ["Weight"] = product.Weight,
+                ["FoodSafety"] = product.FoodSafety,
+                ["RohsStandard"] = product.RohsStandard,
+                ["WeatherResistance"] = product.WeatherResistance,
+                ["LightCondition"] = product.LightCondition,
+                ["VisualTest"] = product.VisualTest,
+                ["ReturnSample"] = product.ReturnSample,
+                ["CategoryId"] = product.CategoryId,
+                ["IsRecycle"] = product.IsRecycle,
+                ["ReachStandard"] = product.ReachStandard,
+                ["Additive"] = product.Additive
+            };
+        }
+        private static Dictionary<string, object?> MergeSnapshots(
+            Dictionary<string, object?> first,
+            Dictionary<string, object?> second)
+        {
+            foreach (var item in second)
+                first[item.Key] = item.Value;
+
+            return first;
+        }
+
+        private async Task AddAuditIfChangedAsync(
+            string schemaName,
+            string tableName,
+            Guid recordId,
+            Guid? companyId,
+            Guid? changedBy,
+            DateTime changedAt,
+            Guid correlationId,
+            Dictionary<string, object?> oldValues,
+            Dictionary<string, object?> newValues,
+            string reason,
+            CancellationToken ct)
+        {
+            var changedValues = BuildChangedValues(oldValues, newValues);
+
+            if (changedValues.Count == 0)
+                return;
+
+            await _unitOfWork.AuditLogRepository.AddAsync(new AuditLog
+            {
+                AuditLogId = Guid.CreateVersion7(),
+                CompanyId = companyId,
+                SchemaName = schemaName,
+                TableName = tableName,
+                RecordId = recordId,
+                ActionType = AuditActionType.Update,
+                ChangedBy = changedBy,
+                ChangedAt = changedAt,
+                OldValues = JsonSerializer.SerializeToDocument(oldValues),
+                NewValues = JsonSerializer.SerializeToDocument(newValues),
+                ChangedValues = JsonSerializer.SerializeToDocument(changedValues),
+                Reason = reason,
+                CorrelationId = correlationId
+            }, ct);
+        }
+
+
+        private static Dictionary<string, object?> BuildChangedValues(
+            Dictionary<string, object?> oldValues,
+            Dictionary<string, object?> newValues)
+        {
+            var result = new Dictionary<string, object?>();
+
+            foreach (var key in oldValues.Keys.Union(newValues.Keys))
+            {
+                oldValues.TryGetValue(key, out var oldValue);
+                newValues.TryGetValue(key, out var newValue);
+
+                if (!AuditValueEquals(oldValue, newValue))
+                {
+                    result[key] = new
+                    {
+                        Old = oldValue,
+                        New = newValue
+                    };
+                }
+            }
+
+            return result;
+        }
+
+        private static bool AuditValueEquals(object? oldValue, object? newValue)
+        {
+            if (oldValue == null && newValue == null)
+                return true;
+
+            if (oldValue == null || newValue == null)
+                return false;
+
+            return JsonSerializer.Serialize(oldValue) == JsonSerializer.Serialize(newValue);
         }
 
     }

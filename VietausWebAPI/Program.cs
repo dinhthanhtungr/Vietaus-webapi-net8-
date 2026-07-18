@@ -19,6 +19,7 @@ using VietausWebAPI.Core.Application.Features.Manufacturing;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures;
 using VietausWebAPI.Core.Application.Features.Planning;
 using VietausWebAPI.Core.Application.Features.Sales;
+using VietausWebAPI.Core.Application.Features.Sales.Helpers.CustomerCrmFeatures;
 using VietausWebAPI.Core.Application.Features.Shared.Service;
 using VietausWebAPI.Core.Application.Features.Shared.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper.FileStorage;
@@ -114,7 +115,8 @@ builder.Services.AddAutoMapper(
 
 // ===== DbContext (đăng ký MỘT LẦN) =====
 builder.Services.AddDbContext<ApplicationDbContext>(opt => opt
-    .UseNpgsql(builder.Configuration.GetConnectionString("AppDbConnectionString"))
+    .UseNpgsql(
+        builder.Configuration.GetConnectionString("AppDbConnectionString"))
     .EnableDetailedErrors()
     .EnableSensitiveDataLogging()
     .LogTo(Console.WriteLine, LogLevel.Information));
@@ -180,6 +182,9 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 // File storage
 builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("Storage"));
 builder.Services.AddSingleton<IFileShareStorage, FileShareStorage>();
+
+// Gemini
+builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection("Gemini"));
 
 // Upload lớn
 builder.Services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = 50_000_000);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords;
 using VietausWebAPI.Core.Domain.Entities.CompanySchema;
 using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 using VietausWebAPI.Core.Domain.Entities.HrSchema;
@@ -46,7 +47,11 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         public string? PlpuNote { get; set; }
 
         public string BagType { get; set; } = string.Empty;
-        public bool IsActive { get; set; }
+        public bool IsActive { get; set; } = true;
+
+        public bool? IsPrintedStock { get; set; } = false; // Đã lưu trữ công thức
+        public Guid? Checker { get; set; } // Người kiểm tra công thức
+        public DateTime? CheckedDate { get; set; } // Ngày kiểm tra công thức
 
         public string? QcCheck { get; set; }
         public StepOfProduct? StepOfProduct { get; set; }
@@ -64,10 +69,12 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         public virtual Company? Company { get; set; }
         public virtual Employee? CreatedByNavigation { get; set; }
         public virtual Employee? UpdatedByNavigation { get; set; }
+        public virtual Employee? CheckerNavigation { get; set; }
 
 
         //public virtual ICollection<ManufacturingFormula> ManufacturingFormulas { get; set; } = new List<ManufacturingFormula>();
         public virtual ICollection<ProductionSelectVersion> ProductionSelectVersions { get; set; } = new List<ProductionSelectVersion>();
+        public virtual ICollection<ManufacturingFormulaAdjustment> ManufacturingFormulaAdjustments { get; set; } = new List<ManufacturingFormulaAdjustment>();
         public virtual ICollection<SchedualMfg> SchedualMfgs { get; set; } = new List<SchedualMfg>();
     }
 }

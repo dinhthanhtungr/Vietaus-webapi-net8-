@@ -82,6 +82,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
             changed |= PatchHelper.SetIfEnum(request.LogoType, () => entity.LogoType, v => entity.LogoType = v);
             changed |= PatchHelper.SetIfEnum(request.FormStyle, () => entity.FormStyle, v => entity.FormStyle = v);
 
+            changed |= PatchHelper.SetIfRefNullable(request.ColorCode, () => entity.colorCode, v => entity.colorCode = v);
+            changed |= PatchHelper.SetIfRefNullable(request.ProductName, () => entity.ProductName, v => entity.ProductName = v);
+
             changed |= PatchHelper.SetIfNullable(request.MfgProductionOrderId, () => entity.MfgProductionOrderId, v => entity.MfgProductionOrderId = v);
             changed |= PatchHelper.SetIfNullable(request.ManufacturingFormulaId, () => entity.ManufacturingFormulaId, v => entity.ManufacturingFormulaId = v);
 

@@ -64,7 +64,15 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.Manufactur
                   .HasDefaultValue(true)
                   .IsRequired();
 
+            entity.Property(e => e.IsPrintedStock)
+                  .HasColumnName("is_printed_stock")
+                  .HasDefaultValue(false)
+                  .IsRequired();
+
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
+
+            entity.Property(e => e.Checker).HasColumnName("checker");
+            entity.Property(e => e.CheckedDate).HasColumnName("checked_date");
 
             entity.Property(e => e.CreatedDate).HasColumnName("created_date");
             entity.Property(e => e.CreatedBy).HasColumnName("created_by");
@@ -110,6 +118,11 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.Manufactur
                   .HasForeignKey(d => d.CompanyId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK__Mpo__companyId");
+
+            entity.HasOne(d => d.CheckerNavigation).WithMany(p => p.MfgProductionOrderCheckedByNavigations)
+                  .HasForeignKey(d => d.Checker)
+                  .OnDelete(DeleteBehavior.Restrict)
+                  .HasConstraintName("FK__Mpo__checker");
 
             entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.MfgProductionOrderCreatedByNavigations)
                   .HasForeignKey(d => d.CreatedBy)

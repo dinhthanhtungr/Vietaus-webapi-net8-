@@ -96,6 +96,28 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
                  .HasColumnName("PONo")
                  .HasColumnType("citext");
 
+            entity.Property(e => e.IsDeliveryPaused)
+                 .HasColumnName("IsDeliveryPaused")
+                 .HasDefaultValue(false);
+
+            entity.Property(e => e.DeliveryPausedFrom)
+                 .HasColumnName("DeliveryPausedFrom");
+
+            entity.Property(e => e.DeliveryPausedTo)
+                 .HasColumnName("DeliveryPausedTo");
+
+            entity.Property(e => e.DeliveryPauseReason)
+                 .HasColumnName("DeliveryPauseReason")
+                 .HasColumnType("text");
+
+            entity.Property(e => e.DeliveryPauseType)
+                 .HasColumnName("DeliveryPauseType")
+                 .HasColumnType("citext")
+                 .HasMaxLength(50);
+
+            entity.Property(e => e.DeliveryPausedBy)
+                 .HasColumnName("DeliveryPausedBy");
+
             entity.Property(e => e.CreateDate)
                  .HasColumnName("CreateDate");
 
@@ -111,6 +133,8 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
             entity.HasIndex(e => e.CustomerId).HasDatabaseName("IX_MerchandiseOrders_CustomerId");
             entity.HasIndex(e => e.ManagerById).HasDatabaseName("IX_MerchandiseOrders_ManagerById");
             entity.HasIndex(e => e.AttachmentCollectionId).HasDatabaseName("IX_Order_AttachmentCollection");
+            entity.HasIndex(e => new { e.CompanyId, e.IsDeliveryPaused })
+                 .HasDatabaseName("IX_MO_Company_DeliveryPaused");
 
             // EF Core 8: sort index (CreateDate DESC, PK DESC) + filter Active
             entity.HasIndex(e => new { e.CompanyId, e.CreateDate, e.MerchandiseOrderId })
@@ -148,6 +172,11 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
                  .WithMany(p => p.MerchandiseOrders)
                  .HasForeignKey(d => d.CustomerId)
                  .HasConstraintName("FK_MerchandiseOrders_Customer");
+
+            entity.HasOne(d => d.DeliveryPausedByNavigation)
+                 .WithMany(p => p.MerchandiseOrderDeliveryPausedBies)
+                 .HasForeignKey(d => d.DeliveryPausedBy)
+                 .HasConstraintName("FK_MerchandiseOrders_DeliveryPausedBy");
 
             entity.HasOne(d => d.ManagerBy)
                  .WithMany(p => p.MerchandiseOrderManagerBies)

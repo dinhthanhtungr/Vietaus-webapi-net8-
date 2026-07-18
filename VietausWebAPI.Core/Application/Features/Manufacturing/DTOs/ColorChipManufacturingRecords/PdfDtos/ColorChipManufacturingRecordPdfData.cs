@@ -10,6 +10,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.ColorChipMa
     public class ColorChipManufacturingRecordPdfData
     {
         public Guid ColorChipMfgRecordId { get; set; }
+        public string? ColorCode { get; set; }
+        public string? Name { get; set; }
 
         public ResinType ResinType { get; set; }
         public LogoType LogoType { get; set; }

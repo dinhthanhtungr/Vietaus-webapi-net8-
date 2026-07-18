@@ -28,9 +28,20 @@ namespace VietausWebAPI.Core.Domain.Enums.Notifications
         PriceOverSellCreated,
         WarehouseStockLost,
 
+        // ==================== Customer CRM ====================
+        CustomerLeadAssigned,
+        CustomerFollowUpTaskAssigneeAdded,
+        CustomerFollowUpTaskDue,
+
+        // ==================== Work Management ====================
+        WorkTaskAssigneeAdded,
+        WorkTaskDue,
+        WorkPlanAssigneeAdded,
+
         // ==================== MfgProduction Orders ====================
         MfgProductionOrderChangeExpectiveDate,
         MfgProductionOrderUpdated,
-        MfgProductionOrderDeleted
+        MfgProductionOrderDeleted,
+        ManufacturingFormulaAdjustmentCreated
     }
 }

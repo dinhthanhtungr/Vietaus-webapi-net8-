@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProductionOrders
 {
-    public class GetSummaryMfgProductionOrder
+    public class   GetSummaryMfgProductionOrder
     {
 
         public Guid MfgProductionOrderId { get; set; }
@@ -18,10 +18,19 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProducti
         public string? ProductNameSnapshot { get; set; }
         public string? CustomerNameSnapshot { get; set; }
         public string? CustomerExternalIdSnapshot { get; set; }
-        public decimal? TotalQuantity { get; set; }
+        public decimal RequestedQuantity { get; set; } // Khối lượng yêu cầu
+        public decimal? TotalQuantity { get; set; } // Khối lượng sản xuất
         public string? Status { get; set; }
         public DateTime? CreatedDate { get; set; }
         public string? BagType { get; set; }
+
+        // ======================================================================== CheckName ========================================================================
+        public bool? IsPrintedStock { get; set; } = false; // Đã lưu trữ công thức
+        public string? CheckName { get; set; } // Người kiểm tra công thức
+        public DateTime? CheckedDate { get; set; } // Ngày kiểm tra công thức
+
+
+        // ======================================================================== History ========================================================================
 
         public List<GetMFGFormulaHistories> MFGFormulaHistories { get; set; } = new List<GetMFGFormulaHistories>();
     }

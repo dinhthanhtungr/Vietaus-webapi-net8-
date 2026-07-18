@@ -12,6 +12,7 @@ using VietausWebAPI.Core.Application.Features.DevandqaFeatures.DTOs.ProductInspe
 using VietausWebAPI.Core.Application.Features.DevandqaFeatures.Queries.ProductInspectionFeature;
 using VietausWebAPI.Core.Application.Features.DevandqaFeatures.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Labs.Helpers;
+using VietausWebAPI.Core.Application.Features.PrintectFeatures.RepositoryContracts;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
@@ -19,6 +20,7 @@ using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Domain.Entities.DevandqaSchema;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
+using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
 using VietausWebAPI.Core.Domain.Enums.Category;
 
 namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
@@ -29,16 +31,19 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
         private readonly IMapper _mapper;
         private readonly IExternalIdService _externalId;
         private readonly ICurrentUser _currentUser;
+        private readonly IHistoryPrintLabelForAllRepository _printectHistory;
 
         public ProductInspectionService(IUnitOfWork unitOfWork
                                       , IMapper mapper
                                       , IExternalIdService externalId
-                                      , ICurrentUser currentUser)
+                                      , ICurrentUser currentUser
+                                      , IHistoryPrintLabelForAllRepository printectHistory)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _externalId = externalId;
             _currentUser = currentUser;
+            _printectHistory = printectHistory;
         }
 
 
@@ -56,6 +61,7 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
             var versions = _unitOfWork.ProductionSelectVersionRepository.Query().AsNoTracking();
             var mfgOrders = _unitOfWork.MfgProductionOrderRepository.Query().AsNoTracking();
             var products = _unitOfWork.ProductRepository.Query().AsNoTracking();
+            var printects = _printectHistory.Query().AsNoTracking();
 
             var formulaBase =
                 from mf in formulas
@@ -121,6 +127,24 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                 .GroupBy(t => t.ExternalId)
                 .ToDictionary(g => g.Key!, g => g.First());
 
+            var printDateRows = await printects
+                .Where(x => x.ExternalId != null && allLookupIds.Contains(x.ExternalId))
+                .Select(g => new
+                {
+                    ExternalId = g.ExternalId!,
+                    g.CreatedAt
+                })
+                .ToListAsync(ct);
+
+            var printDateDict = printDateRows
+                .GroupBy(x => x.ExternalId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g
+                        .OrderByDescending(x => x.CreatedAt)
+                        .Select(x => x.CreatedAt)
+                        .ToList());
+
             var items = pageItems.Select(x =>
             {
                 var normalizedExternalId = x.ExternalId != null && x.ExternalId.StartsWith("VA")
@@ -129,14 +153,25 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
 
                 ptDict.TryGetValue(x.ExternalId ?? "", out var pt);
                 pt ??= normalizedExternalId != null && ptDict.TryGetValue(normalizedExternalId, out var pt2) ? pt2 : null;
+                printDateDict.TryGetValue(x.ExternalId ?? "", out var labelPrintDates);
+
+                if ((labelPrintDates == null || labelPrintDates.Count == 0) &&
+                    normalizedExternalId != null)
+                {
+                    printDateDict.TryGetValue(normalizedExternalId, out labelPrintDates);
+                }
 
                 return new GetProductCOA
                 {
                     id = x.MfgProductionOrderId,
                     externalId = pt?.ExternalId ?? x.ExternalId,
 
-                    manufacturingDate = pt?.ManufacturingDate,
-                    expiryDate = pt?.ExpiryDate,
+                    labelPrintDates = labelPrintDates ?? new List<DateTime>(),
+                    expiryDate = products
+                    .Where(p => p.ColourCode == x.ColourCode)
+                    .Select(p => p.ExpiryType)
+                    .FirstOrDefault(),
+
 
                     productPackage = x.ProductPackage,
                     ProductWeight = (float?)x.TotalQuantityRequest,
@@ -149,8 +184,6 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                     ColourCode = x.ColourCode
                 };
             })
-            .OrderByDescending(x => x.manufacturingDate)
-            .ThenByDescending(x => x.expiryDate)
             .ToList();
 
             var result = new PagedResult<GetProductCOA>(items, total, page, pageSize);
@@ -164,6 +197,8 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
             var q = _unitOfWork.ProductInspectionRepository.Query()
                 .Where(x => x.Id == id);
 
+            var products = _unitOfWork.ProductRepository.Query().AsNoTracking();
+
             var dto = await q.Select(x => new ProductInspectionInformation
             {
                 ExternalId = x.ExternalId,
@@ -173,7 +208,11 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                 ProductCode = x.ProductCode,
                 Weight = x.Weight,
                 ManufacturingDate = x.ManufacturingDate,
-                ExpiryDate = x.ExpiryDate,
+                ExpiryDate = products
+                    .Where(p => p.ColourCode == x.ProductCode)
+                    .Select(p => p.ExpiryType)
+                    .FirstOrDefault(),
+
 
                 // I. KIỂM TRA NGOẠI QUAN
                 Shape = x.Shape,
@@ -435,6 +474,97 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
 
         // ======================================================================== Patch ========================================================================
 
+        public async Task<OperationResult> PatchProductInspectionServiceAsync(
+            Guid id,
+            PatchProductInspectionRequest request,
+            CancellationToken ct)
+        {
+            if (id == Guid.Empty)
+                return OperationResult.Fail("Id không hợp lệ.");
+
+            if (request is null)
+                return OperationResult.Fail("Dữ liệu cập nhật bị null.");
+
+            var entity = await _unitOfWork.ProductInspectionRepository.GetByIdForUpdateAsync(id, ct);
+            if (entity is null)
+                return OperationResult.Fail("Không tìm thấy phiếu kiểm tra (ProductInspection).");
+
+            PatchString(request.BatchId, v => entity.BatchId = v);
+            PatchNullable(request.ProductStandardId, v => entity.ProductStandardId = v);
+            PatchString(request.ProductName, v => entity.ProductName = v);
+            PatchString(request.ProductCode, v => entity.ProductCode = v);
+            PatchNullable(request.Weight, v => entity.Weight = v);
+            PatchNullable(request.ManufacturingDate, v => entity.ManufacturingDate = v);
+            PatchNullable(request.ExpiryDate, v => entity.ExpiryDate = v);
+
+            PatchString(request.Shape, v => entity.Shape = v);
+            PatchNullable(request.IsShapePass, v => entity.IsShapePass = v);
+            PatchString(request.ParticleSize, v => entity.ParticleSize = v);
+            PatchNullable(request.IsParticleSizePass, v => entity.IsParticleSizePass = v);
+            PatchString(request.PackingSpec, v => entity.PackingSpec = v);
+            PatchNullable(request.IsPackingSpecPass, v => entity.IsPackingSpecPass = v);
+            PatchNullable(request.VisualCheck, v => entity.VisualCheck = v);
+
+            PatchString(request.ColorDeltaE, v => entity.ColorDeltaE = v);
+            PatchNullable(request.IsColorDeltaEPass, v => entity.IsColorDeltaEpass = v);
+
+            PatchString(request.Moisture, v => entity.Moisture = v);
+            PatchNullable(request.IsMoisturePass, v => entity.IsMoisturePass = v);
+            PatchString(request.MFR, v => entity.Mfr = v);
+            PatchNullable(request.IsMFRPass, v => entity.IsMfrpass = v);
+
+            PatchString(request.FlexuralStrength, v => entity.FlexuralStrength = v);
+            PatchNullable(request.IsFlexuralStrengthPass, v => entity.IsFlexuralStrengthPass = v);
+            PatchString(request.Elongation, v => entity.Elongation = v);
+            PatchNullable(request.IsElongationPass, v => entity.IsElongationPass = v);
+            PatchString(request.Hardness, v => entity.Hardness = v);
+            PatchNullable(request.IsHardnessPass, v => entity.IsHardnessPass = v);
+            PatchString(request.Density, v => entity.Density = v);
+            PatchNullable(request.IsDensityPass, v => entity.IsDensityPass = v);
+            PatchString(request.TensileStrength, v => entity.TensileStrength = v);
+            PatchNullable(request.IsTensileStrengthPass, v => entity.IsTensileStrengthPass = v);
+            PatchString(request.FlexuralModulus, v => entity.FlexuralModulus = v);
+            PatchNullable(request.IsFlexuralModulusPass, v => entity.IsFlexuralModulusPass = v);
+            PatchString(request.ImpactResistance, v => entity.ImpactResistance = v);
+            PatchNullable(request.IsImpactResistancePass, v => entity.IsImpactResistancePass = v);
+            PatchString(request.Antistatic, v => entity.Antistatic = v);
+            PatchNullable(request.IsAntistaticPass, v => entity.IsAntistaticPass = v);
+            PatchString(request.StorageCondition, v => entity.StorageCondition = v);
+            PatchNullable(request.IsStorageConditionPass, v => entity.IsStorageConditionPass = v);
+            PatchString(request.IntrinsicViscosity, v => entity.IntrinsicViscosity = v);
+            PatchNullable(request.IsIntrinsicViscosity, v => entity.IsIntrinsicViscosity = v);
+            PatchString(request.MeshType, v => entity.MeshType = v);
+            PatchNullable(request.IsMeshAttached, v => entity.IsMeshAttached = v);
+            PatchNullable(request.DwellTime, v => entity.DwellTime = v);
+
+            PatchString(request.BlackDots, v => entity.BlackDots = v);
+            PatchNullable(request.MigrationTest, v => entity.MigrationTest = v);
+            PatchNullable(request.Defect_Impurity, v => entity.DefectImpurity = v);
+            PatchNullable(request.Defect_BlackDot, v => entity.DefectBlackDot = v);
+            PatchNullable(request.Defect_ShortFiber, v => entity.DefectShortFiber = v);
+            PatchNullable(request.Defect_Moist, v => entity.DefectMoist = v);
+            PatchNullable(request.Defect_Dusty, v => entity.DefectDusty = v);
+            PatchNullable(request.Defect_WrongColor, v => entity.DefectWrongColor = v);
+
+            PatchString(request.Types, v => entity.Types = v);
+            PatchNullable(request.DeliveryAccepted, v => entity.DeliveryAccepted = v);
+            PatchString(request.Notes, v => entity.Notes = v);
+
+            try
+            {
+                await _unitOfWork.SaveChangesAsync(ct);
+                return OperationResult.Ok("Đã cập nhật ProductInspection.");
+            }
+            catch (DbUpdateException)
+            {
+                return OperationResult.Fail("Cập nhật ProductInspection thất bại (DbUpdateException).");
+            }
+            catch (Exception)
+            {
+                return OperationResult.Fail("Cập nhật ProductInspection thất bại (Exception).");
+            }
+        }
+
         public Task<OperationResult> DeleteCOAService(Guid id, CancellationToken ct)
         {
             throw new NotImplementedException();
@@ -460,6 +590,44 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
                 if (inspection is null)
                     return OperationResult<byte[]>.Fail("Không tìm thấy ProductInspection để in COA.");
 
+                var batchId = inspection.BatchId?.Trim();
+
+                var batchLookupIds = new List<string>();
+
+                if (!string.IsNullOrWhiteSpace(batchId))
+                {
+                    batchLookupIds.Add(batchId);
+
+                    if (batchId.StartsWith("VA", StringComparison.OrdinalIgnoreCase))
+                        batchLookupIds.Add(batchId.Substring(2));
+                    else
+                        batchLookupIds.Add("VA" + batchId);
+                }
+
+                batchLookupIds = batchLookupIds
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(x => x.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                var productInfo = await (
+                    from mf in _unitOfWork.ManufacturingFormulaRepository.Query().AsNoTracking()
+                    join psv in _unitOfWork.ProductionSelectVersionRepository.Query().AsNoTracking()
+                        on mf.ManufacturingFormulaId equals psv.ManufacturingFormulaId
+                    join mpo in _unitOfWork.MfgProductionOrderRepository.Query().AsNoTracking()
+                        on psv.MfgProductionOrderId equals mpo.MfgProductionOrderId
+                    join p in _unitOfWork.ProductRepository.Query().AsNoTracking()
+                        on mpo.ProductId equals p.ProductId
+                    where mf.IsActive
+                          && mf.ExternalId != null
+                          && batchLookupIds.Contains(mf.ExternalId)
+                    orderby psv.ValidTo == null descending
+                    select new
+                    {
+                        p.ExpiryType,
+                    }
+                ).FirstOrDefaultAsync(ct);
+
                 // 2) Map -> PDFResultValue (đủ field)
                 var result = new PDFResultValue
                 {
@@ -471,7 +639,7 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
 
                     Weight = inspection.Weight,
                     ManufacturingDate = inspection.ManufacturingDate,
-                    ExpiryDate = inspection.ExpiryDate,
+                    ExpiryDate = productInfo?.ExpiryType ?? "_",
 
                     Shape = inspection.Shape,
                     ParticleSize = inspection.ParticleSize,
@@ -564,7 +732,19 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services
         {
             throw new NotImplementedException();
         }
-        
+
+        private static void PatchString(string? value, Action<string?> set)
+        {
+            if (value is not null)
+                set(string.IsNullOrWhiteSpace(value) ? null : value.Trim());
+        }
+
+        private static void PatchNullable<T>(T? value, Action<T?> set)
+            where T : struct
+        {
+            if (value.HasValue)
+                set(value.Value);
+        }
 
 
     }

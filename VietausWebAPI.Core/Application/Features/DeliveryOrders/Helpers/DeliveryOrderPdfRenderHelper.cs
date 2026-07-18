@@ -4,6 +4,7 @@ using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -41,7 +42,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                 c.Page(page =>
                 {
                     page.Size(PageSizes.A4);
-                    page.Margin(10);
+                    page.Margin(12);
                     page.DefaultTextStyle(t => t.FontFamily("Open Sans").FontSize(9));
 
                     page.Header().Component(new HeaderComponent());
@@ -225,7 +226,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                                     .Text("Kg");
 
                                 quantityCellStyle(table.Cell()).PaddingVertical(4).PaddingHorizontal(6).AlignRight()
-                                    .Text($"{(r?.WeightKg ?? 0m):0.00}");
+                                    .Text($"{Quantity(r?.WeightKg ?? 0m)}");
 
                                 borderStyle(table.Cell()).PaddingVertical(4).PaddingHorizontal(6).AlignRight()
                                     .Text($"{(r?.BagNumber ?? 0)}");
@@ -295,6 +296,13 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers
                     SignCol(r, "Người nhận hàng", "Receiver");
                 });
             });
+        }
+
+        private static string Quantity(decimal? value)
+        {
+            return value.HasValue
+                ? value.Value.ToString("0.###", CultureInfo.InvariantCulture)
+                : "-";
         }
     }
 }

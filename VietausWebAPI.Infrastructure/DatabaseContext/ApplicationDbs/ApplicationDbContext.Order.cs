@@ -14,6 +14,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
         public virtual DbSet<MerchandiseOrderDetail> MerchandiseOrderDetails { get; set; } = default!;
         public virtual DbSet<PurchaseOrder> PurchaseOrders { get; set; } = default!;
         public virtual DbSet<PurchaseOrderDetail> PurchaseOrderDetails { get; set; } = default!;
+        public virtual DbSet<PurchaseOrderDocument> PurchaseOrderDocuments { get; set; } = default!;
         public virtual DbSet<PurchaseOrderSnapshot> PurchaseOrderSnapshots { get; set; } = default!;
         public virtual DbSet<PurchaseOrderLink> PurchaseOrderLinks { get; set; } = default!;
     }

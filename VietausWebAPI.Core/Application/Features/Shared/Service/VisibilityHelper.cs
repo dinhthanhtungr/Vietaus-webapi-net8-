@@ -51,6 +51,7 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service
                   _currentUser.IsInRole(AppRoles.CustomerViewAll)
                || _currentUser.IsInRole(AppRoles.President)
                || _currentUser.IsInRole(AppRoles.LabUser)
+               || _currentUser.IsInRole(AppRoles.SaleAdmin)
                || _currentUser.IsInRole(AppRoles.Developer);
 
             var scopeType = hasFullView ? ViewerScopeType.AdminFull

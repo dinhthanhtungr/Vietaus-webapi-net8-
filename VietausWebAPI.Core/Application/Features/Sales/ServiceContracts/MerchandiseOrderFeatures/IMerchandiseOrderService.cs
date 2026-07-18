@@ -68,5 +68,6 @@ namespace VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.Merchan
         /// <returns></returns>
         Task<OperationResult> CancelMerchadiseOrder(PatchMerchandiseOrderInformation query, CancellationToken ct = default);
 
+        Task<OperationResult<PatchPauseDeliveryOrder>> UpdatePauseDeliveryStatus(PatchPauseDeliveryOrder query, CancellationToken ct = default);
     }
 }

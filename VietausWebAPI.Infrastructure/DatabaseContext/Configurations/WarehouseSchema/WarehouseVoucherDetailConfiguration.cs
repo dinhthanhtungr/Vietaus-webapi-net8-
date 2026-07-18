@@ -60,8 +60,17 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.WarehouseS
             entity.Property(x => x.Note)
                   .HasColumnName("note");
 
+            entity.Property(x => x.IsApplied)
+                  .HasColumnName("isApplied")
+                  .HasDefaultValue(false);
+
+            entity.Property(x => x.UnitName)
+                  .HasDefaultValueSql("'Kg'::text");
+
             entity.Property(x => x.ExpiryDate)
-                  .HasColumnName("expirydate");
+                  .HasColumnName("expirydate")
+                  .HasDefaultValueSql("'-infinity'::timestamp without time zone")
+                  .IsRequired(false);
 
             entity.Property(x => x.VoucherType)
                   .HasColumnName("voucherType")
@@ -83,7 +92,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.WarehouseS
                   .HasConstraintName("FK_WarehouseVoucherDetails_Voucher");
 
             entity.HasOne(x => x.Slot)
-                  .WithMany()
+                  .WithMany(x => x.WarehouseVoucherDetails)
                   .HasForeignKey(x => x.SlotId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_WarehouseVoucherDetails_Slot");

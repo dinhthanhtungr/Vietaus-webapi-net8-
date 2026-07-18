@@ -171,7 +171,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
              .Column(col =>
              {
                  AddInfoRowUnderline(col, "BATCH NO", templateOnly ? "SAMPLE" : m.BatchNo);
-                 AddInfoRowUnderline(col, "DATE", templateOnly ? "" : FormatDate(m.Date));
+                 AddInfoRowUnderline(col, "DATE", templateOnly ? "" : FormatDate(DateTime.Now));
                  AddInfoRowUnderline(col, "CUSTOMER", templateOnly ? "" : m.Customer);
                  AddInfoRowUnderline(col, "CODE", templateOnly ? "" : m.Code);
                  AddInfoRowUnderline(col, "COLOR", templateOnly ? "" : m.Color, minHeight: 24);
@@ -246,11 +246,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
                     .PaddingVertical(4)
                     .AlignCenter()
                     .AlignMiddle()
-                    .Text(templateOnly
-                        ? ""
-                        : string.IsNullOrWhiteSpace(m.ApprovalText)
-                            ? "PLEASE RETURN ONE/TWO SETS TO VIET UC POLYMER\nUPON APPROVAL"
-                            : m.ApprovalText)
+                    .Text(templateOnly ? "" : ColorChipRecordPdfTextHelper.ResolveApprovalText(m, lineBreak: true))
                     .FontSize(labelFontSize);
 
                  col.Item()

@@ -92,6 +92,16 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 {
                     var kw = query.Keyword.Trim();
 
+                    var sampleProductColourCodes =
+                        from sr in _unitOfWork.SampleRequestRepository.Query().AsNoTracking()
+                        join p in _unitOfWork.ProductRepository.Query().AsNoTracking()
+                            on sr.ProductId equals p.ProductId
+                        where sr.IsActive
+                           && sr.ExternalId.Contains(kw)
+                           && p.ColourCode != null
+                           && p.ColourCode != ""
+                        select p.ColourCode;
+
                     headerQuery = headerQuery.Where(x =>
                         (!string.IsNullOrEmpty(x.VoucherCode) && x.VoucherCode.Contains(kw)) ||
                         (!string.IsNullOrEmpty(x.RequestCode) && x.RequestCode.Contains(kw)) ||
@@ -102,7 +112,8 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                             (
                                 (d.ProductCode != null && d.ProductCode.Contains(kw)) ||
                                 (d.ProductName != null && d.ProductName.Contains(kw)) ||
-                                (d.LotNumber != null && d.LotNumber.Contains(kw))
+                                (d.LotNumber != null && d.LotNumber.Contains(kw)) ||
+                                (d.ProductCode != null && sampleProductColourCodes.Contains(d.ProductCode))
                             ))
                     );
                 }
@@ -207,7 +218,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                     .ToDictionary(g => g.Key, g => g.ToList());
 
                 var requestExternalIds = headers
-                    .Where(x => x.ReqType == WareHouseRequestType.ImportOther) // sửa theo enum thật của bạn
+                    .Where(x => x.ReqType == WareHouseRequestType.ImportOther)
                     .Select(x => x.CodeFromRequest)
                     .Where(x => !string.IsNullOrWhiteSpace(x))
                     .Distinct()
@@ -222,14 +233,16 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                     {
                         po.ExternalId,
                         pos.SupplierNameSnapshot,
-                        pos.SupplierExternalIdSnapshot
+                        pos.SupplierExternalIdSnapshot,
+                        po.Comment,
                     })
                     .ToDictionaryAsync(
                         x => x.ExternalId!,
                         x => new
                         {
                             x.SupplierNameSnapshot,
-                            x.SupplierExternalIdSnapshot
+                            x.SupplierExternalIdSnapshot,
+                            Comment = x.Comment ?? string.Empty
                         });
 
                 var items = headers.Select(x =>
@@ -263,6 +276,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 
                         SupplierName = supplierInfo?.SupplierNameSnapshot ?? string.Empty,
                         SupplierExternalId = supplierInfo?.SupplierExternalIdSnapshot ?? string.Empty,
+                        Comments = supplierInfo?.Comment ?? string.Empty,
 
                         Details = detailMap.TryGetValue(x.VoucherId, out var voucherDetails)
                             ? voucherDetails

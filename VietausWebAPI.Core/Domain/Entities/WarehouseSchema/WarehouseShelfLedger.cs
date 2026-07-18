@@ -35,6 +35,8 @@ namespace VietausWebAPI.Core.Domain.Entities.WarehouseSchema
         public int? PurposeId { get; set; }               // FK (nếu có bảng Purpose)
         public string? RequestCode { get; set; }
         public string? AppSource { get; set; }
+        public string UnitName { get; set; } = string.Empty;
+        public DateOnly? ExpiryDate { get; set; }
 
         // Navigations (đủ dùng hiện tại)
         public virtual WarehouseShelves Shelf { get; set; } = default!;

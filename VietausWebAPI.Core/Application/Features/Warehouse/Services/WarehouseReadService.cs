@@ -21,6 +21,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
     public class WarehouseReadService : IWarehouseReadService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private const string MixingShelfCode = "CT.0.1";
         private readonly IMapper _mapper;
         public WarehouseReadService(IUnitOfWork unitOfWork, IMapper mapper)
         {
@@ -87,6 +88,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 
             var onHand = await _unitOfWork.WarehouseShelfStockRepository.Query()
                 .Where(s => s.Code != null && s.Code != "")
+                .Where(IsActiveShelfStock())
                 .Where(s => mats.Contains(s.Code))
                 .GroupBy(s => s.Code)
                 .Select(g => new { Code = g.Key, OnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m })
@@ -102,8 +104,6 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 .GroupBy(t => t.Code)
                 .Select(g => new { Code = g.Key, ReservedOpenKg = g.Sum(x => (decimal?)x.QtyRequest) ?? 0m })
                 .ToDictionaryAsync(x => x.Code, x => x.ReservedOpenKg, ct);
-
-            //var reservedMap = reserved.ToDictionary(x => x.Code, x => x.ReservedOpenKg);
 
             // Ghép vào VM (lấy luôn tên NVL + định mức của công thức)
             var rows = await mfm
@@ -222,6 +222,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 
                     var onHand = await _unitOfWork.WarehouseShelfStockRepository.Query()
                         .Where(s => s.Code != null && s.Code != "")
+                        .Where(IsActiveShelfStock())
                         .Where(s => mats.Contains(s.Code!.Trim().ToUpper()))
                         .GroupBy(s => s.Code!.Trim().ToUpper())
                         .Select(g => new { Code = g.Key, OnHandKg = g.Sum(x => (decimal?)x.QtyKg) ?? 0m })
@@ -275,9 +276,12 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 .Where(x =>
                     x.Code != null &&
                     codeList.Contains(x.Code) &&
+                    x.WarehouseShelves != null &&
+                    x.WarehouseShelves.IsActive &&
                     x.StockType == StockType.RawMaterial &&
                     x.LotNo != null &&
-                    x.LotNo != "")
+                    x.LotNo != "" &&
+                    x.QtyKg > 0)
                 .Select(x => new
                 {
                     Code = x.Code!,
@@ -301,6 +305,90 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             return map;
         }
 
+        /// <summary>
+        /// Lấy dictionary mapping giữa code hàng hóa và danh sách lotNo còn tồn trong kho để người dùng chọn.
+        /// Có phân biệt trạng thái chất lượng đạt/lỗi theo StockType.
+        /// </summary>
+        /// <param name="codes">Danh sách mã hàng hóa cần lấy lotNo.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>Dictionary có key là mã hàng hóa đã chuẩn hóa và value là danh sách lotNo kèm trạng thái mới nhất trước.</returns>
+        public async Task<Dictionary<string, List<LotNumberOptionDto>>> GetLotNoListMapByCodesAsync(IEnumerable<string> codes, CancellationToken ct = default)
+        {
+            var codeList = codes
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct()
+                .ToList();
+
+            if (codeList.Count == 0)
+                return new Dictionary<string, List<LotNumberOptionDto>>();
+
+            var rows = await _unitOfWork.WarehouseShelfStockRepository.Query()
+                .Where(x =>
+                    x.Code != null &&
+                    codeList.Contains(x.Code) &&
+                    x.WarehouseShelves != null &&
+                    x.WarehouseShelves.IsActive &&
+                    x.WarehouseShelves.SlotCode != MixingShelfCode &&
+                    x.LotNo != null &&
+                    x.LotNo != "")
+                .Select(x => new
+                {
+                    Code = x.Code!,
+                    LotNo = x.LotNo!,
+                    x.StockType,
+                    x.QtyKg,
+                    x.Bags,
+                    x.UpdatedDate,
+                    x.ShelfStockId
+                })
+                .ToListAsync(ct);
+
+            var map = rows
+                .GroupBy(x => x.Code.Trim().ToUpperInvariant())
+                .ToDictionary(
+                    g => g.Key,
+                    g => g
+                        .GroupBy(x => new { LotNo = x.LotNo.Trim(), x.StockType })
+                        .Where(x => x.Key.LotNo != string.Empty)
+                        .Select(x => new LotNumberOptionDto
+                        {
+                            LotNo = x.Key.LotNo,
+                            StockType = x.Key.StockType,
+                            IsDefective = IsDefectiveStockType(x.Key.StockType),
+                            QualityStatus = IsDefectiveStockType(x.Key.StockType) ? "Fail" : "Pass",
+                            QualityStatusName = IsDefectiveStockType(x.Key.StockType) ? "Lỗi" : "Đạt",
+                            QuantityKg = x.Sum(s => s.QtyKg),
+                            Bags = x.Sum(s => s.Bags ?? 0)
+                        })
+                        .OrderBy(x => x.IsDefective)
+                        .ThenBy(x => rows
+                            .Where(r =>
+                                r.Code.Trim().ToUpperInvariant() == g.Key &&
+                                r.LotNo.Trim() == x.LotNo &&
+                                r.StockType == x.StockType)
+                            .Min(r => r.UpdatedDate))
+                        .ThenBy(x => rows
+                            .Where(r =>
+                                r.Code.Trim().ToUpperInvariant() == g.Key &&
+                                r.LotNo.Trim() == x.LotNo &&
+                                r.StockType == x.StockType)
+                            .Min(r => r.ShelfStockId))
+                        .ToList()
+                );
+
+            return map;
+        }
+
+        private static bool IsDefectiveStockType(StockType stockType)
+        {
+            return stockType == StockType.DefectiveRawMaterial ||
+                   stockType == StockType.DefectiveFinishedGood;
+        }
+
+        private static Expression<Func<WarehouseShelfStock, bool>> IsActiveShelfStock()
+            => x => x.WarehouseShelves != null && x.WarehouseShelves.IsActive;
+
         private IQueryable<WarehouseShelfStock> BuildShelfStockQuery(WarehouseReadServiceQuery query)
         {
             var shelfQuery = _unitOfWork.WarehouseShelfStockRepository.Query()
@@ -309,6 +397,16 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             if (!string.IsNullOrWhiteSpace(query.KeyWord))
             {
                 var kw = query.KeyWord.Trim();
+
+                var sampleProductColourCodes =
+                    from sr in _unitOfWork.SampleRequestRepository.Query()
+                    join p in _unitOfWork.ProductRepository.Query()
+                        on sr.ProductId equals p.ProductId
+                    where sr.IsActive
+                       && sr.ExternalId.Contains(kw)
+                       && p.ColourCode != null
+                       && p.ColourCode != ""
+                    select p.ColourCode;
 
                 shelfQuery =
                     from s in _unitOfWork.WarehouseShelfStockRepository.Query()
@@ -321,6 +419,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                     where (s.Code ?? "").Contains(kw)
                        || (m.Name ?? "").Contains(kw)
                        || (p.Name ?? "").Contains(kw)
+                       || sampleProductColourCodes.Contains(s.Code!)
                     select s;
             }
 
@@ -328,6 +427,10 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             {
                 shelfQuery = shelfQuery.Where(x => x.StockType == query.StockTypes.Value);
             }
+
+            shelfQuery = shelfQuery
+                .Where(s => s.Code != null && s.Code != "")
+                .Where(IsActiveShelfStock());
 
             return shelfQuery;
         }
@@ -449,15 +552,56 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                 from t in _unitOfWork.WarehouseTempStockRepository.Query()
                 where codes.Contains(t.Code)
                    && t.ReserveStatus == ReserveStatus.Open.ToString()
-                group t by t.Code into g
+                let remainQty = (t.QtyRequest ?? 0m) - (t.QtyUsed ?? 0m)
+                where remainQty > 0m
+                group remainQty by t.Code into g
                 select new
                 {
                     Code = g.Key,
-                    ReservedOpenKg = g.Sum(x => (decimal?)((x.QtyRequest ?? 0m) - (x.QtyUsed ?? 0m))) ?? 0m
+                    ReservedOpenKg = g.Sum()
                 }
             ).ToListAsync();
 
-            var reservedMap = reservedRows.ToDictionary(x => x.Code, x => x.ReservedOpenKg);
+            var reservedMap = reservedRows.ToDictionary(
+                x => NormalizeCode(x.Code),
+                x => x.ReservedOpenKg);
+
+            var reservedVaRows = await (
+                from t in _unitOfWork.WarehouseTempStockRepository.Query()
+                where codes.Contains(t.Code)
+                    && t.ReserveStatus == ReserveStatus.Open.ToString()
+                let remainQty = (t.QtyRequest ?? 0m) - (t.QtyUsed ?? 0m)
+                where remainQty > 0m
+                group remainQty by new
+                {
+                    t.Code,
+                    t.VaCode,
+                    t.CreatedDate
+                }
+                into g
+                select new
+                {
+                    Code = g.Key.Code,
+                    VaCode = g.Key.VaCode,
+                    ReservedKg = g.Sum(),
+                    CreatedDate = g.Key.CreatedDate,
+                }
+            ).ToListAsync();
+
+            var reservedVaMap = reservedVaRows
+                .GroupBy(x => NormalizeCode(x.Code))
+                .ToDictionary(
+                    g => g.Key,
+                    g => g
+                        .OrderBy(x => x.VaCode)
+                        .Select(x => new ReservedVaCodeInfo
+                        {
+                            VaCode = x.VaCode,
+                            ReservedKg = x.ReservedKg,
+                            CreatedDate = x.CreatedDate
+                        })
+                        .ToList()
+                );
             static string NormalizeCode(string? code)
                 => (code ?? string.Empty).Trim().ToUpperInvariant();
 
@@ -504,9 +648,14 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                     it.StockType == StockType.DefectiveFinishedGood;
 
                 var reserved = 0m;
-                if (!isDefective && reservedMap.TryGetValue(it.Code, out var rv))
+                if (!isDefective && reservedMap.TryGetValue(NormalizeCode(it.Code), out var rv))
                 {
                     reserved = rv;
+                }
+
+                if (!isDefective && reservedVaMap.TryGetValue(NormalizeCode(it.Code), out var reservedVaCodes))
+                {
+                    it.ReservedVaCodes = reservedVaCodes;
                 }
 
                 it.ReservedOpenAllKg = isDefective ? 0m : reserved;

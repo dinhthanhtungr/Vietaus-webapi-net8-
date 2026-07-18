@@ -16,6 +16,7 @@ using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
+using VietausWebAPI.Core.Domain.Enums.Manufacturings;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
 {
@@ -53,7 +54,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                         x.LabNote,
 
                         x.Requirement,
-
+                        x.status,
                         ProductId = x.Formula.Product.ProductId,
                         ColourCode = x.Formula.Product.ColourCode,
                         Name = x.Formula.Product.Name,
@@ -100,6 +101,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                     QcCheck = formula.QcCheck,
                     ColourCode = formula.ColourCode,
                     Name = formula.Name,
+                    Status = formula.status,
                     CustomerCode = customer?.ExternalId,
                     CustomerName = customer?.CustomerName,
                     LabNote = formula.LabNote,
@@ -163,7 +165,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
 
                     ProductName = x.Formula.Product.Name,
                     ColourCode = x.Formula.Product.ColourCode,
-
+                    Status = x.status,
                     TotalProductionQuantity = x.TotalProductionQuantity,
                     NumOfBatches = x.NumOfBatches,
                     CreatedByName = x.CreatedByNavigation != null
@@ -238,7 +240,16 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
 
                 if (existingFormula == null) return OperationResult.Fail("Manufacturing VU Formula not found.");
 
+
                 var changed = false;
+
+
+
+                changed |= PatchHelper.SetIfEnum<ManufacturingProductOrder>(
+                    req.Status,
+                    current: () => existingFormula.status,
+                    apply: v => existingFormula.status = v
+                    );
 
                 // Fix: Handle nullable decimal? to decimal conversion and null check
                 changed |= PatchHelper.SetIf<decimal>(

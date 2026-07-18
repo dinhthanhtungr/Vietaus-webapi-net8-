@@ -16,6 +16,8 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         // 1. Identity
         // =========================================================
         public Guid ColorChipMfgRecordId { get; set; }
+        public string? colorCode { get; set; } // Mã màu, ví dụ: RAL 9005
+        public string? ProductName { get; set; } // Tên sản phẩm, ví dụ: Sơn tĩnh điện đen mờ
 
         // =========================================================
         // 2. Classification / Business Type

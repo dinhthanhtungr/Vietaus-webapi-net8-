@@ -10,6 +10,7 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.Merchadis
     {
         public string DOExternalId { get; set; } = string.Empty;
         public string? LotNoList { get; set; }
+        public decimal? QuantityDelivery { get; set; }
         public DateTime? CreatedDate { get; set; }
     }
 }

@@ -46,6 +46,9 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.WarehouseS
             entity.Property(e => e.ReserveStatus)
                   .HasColumnName("reserveStatus"); // enum -> int mặc định
 
+            entity.Property(e => e.QtyUsed).HasColumnName("QtyUsed");
+            entity.Property(e => e.UnitName).HasDefaultValueSql("'Kg'::text");
+
             entity.HasIndex(x => new { x.CompanyId, x.VaCode })
                   .HasDatabaseName("IX_WarehouseTempStock_company_va");
 

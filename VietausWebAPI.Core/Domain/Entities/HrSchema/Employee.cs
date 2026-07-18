@@ -7,6 +7,7 @@ using VietausWebAPI.Core.Domain.Entities.AuditSchema;
 using VietausWebAPI.Core.Domain.Entities.CompanySchema;
 using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 using VietausWebAPI.Core.Domain.Entities.DeliverySchema;
+using VietausWebAPI.Core.Domain.Entities.InternalMailSchema;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 using VietausWebAPI.Core.Domain.Entities.MROSchema;
@@ -15,6 +16,7 @@ using VietausWebAPI.Core.Domain.Entities.OrderSchema;
 using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
 using VietausWebAPI.Core.Domain.Entities.SupplyRequestSchema;
 using VietausWebAPI.Core.Domain.Entities.WarehouseSchema;
+using VietausWebAPI.Core.Domain.Entities.WorkTaskSchema;
 using VietausWebAPI.Core.Identity;
 
 namespace VietausWebAPI.Core.Domain.Entities.HrSchema;
@@ -107,6 +109,9 @@ public partial class Employee
     public virtual ICollection<CustomerAssignment> CustomerAssignmentUpdatedByNavigations { get; set; } = new List<CustomerAssignment>();
 
     public virtual ICollection<Customer> CustomerCreatedByNavigations { get; set; } = new List<Customer>();
+    public virtual ICollection<CustomerInteractionAiSummary> CustomerInteractionAiSummarySaleEmployees { get; set; } = new List<CustomerInteractionAiSummary>();
+    public virtual ICollection<CustomerInteractionAiSummary> CustomerInteractionAiSummaryCreatedByNavigations { get; set; } = new List<CustomerInteractionAiSummary>();
+    public virtual ICollection<CustomerInteractionAiSummary> CustomerInteractionAiSummaryUpdatedByNavigations { get; set; } = new List<CustomerInteractionAiSummary>();
 
     public virtual ICollection<CustomerTransferLog> CustomerTransferLogCreatedByNavigations { get; set; } = new List<CustomerTransferLog>();
 
@@ -148,6 +153,7 @@ public partial class Employee
     public virtual ICollection<MerchandiseOrder> MerchandiseOrderCreatedByNavigations { get; set; } = new List<MerchandiseOrder>();
 
     public virtual ICollection<MerchandiseOrder> MerchandiseOrderManagerBies { get; set; } = new List<MerchandiseOrder>();
+    public virtual ICollection<MerchandiseOrder> MerchandiseOrderDeliveryPausedBies{ get; set; } = new List<MerchandiseOrder>();
 
     public virtual ICollection<MerchandiseOrder> MerchandiseOrderUpdatedByNavigations { get; set; } = new List<MerchandiseOrder>();
     //public virtual ICollection<MerchandiseOrderLog> MerchandiseOrderLogCreatedByNavigations { get; set; } = new List<MerchandiseOrderLog>();
@@ -172,6 +178,14 @@ public partial class Employee
     //public virtual ICollection<PurchaseOrderStatusHistory> PurchaseOrderStatusHistories { get; set; } = new List<PurchaseOrderStatusHistory>();
 
     public virtual ICollection<PurchaseOrder> PurchaseOrderUpdatedByNavigations { get; set; } = new List<PurchaseOrder>();
+    public virtual ICollection<PurchaseOrderDocument> PurchaseOrderDocumentCreatedByNavigations { get; set; } = new List<PurchaseOrderDocument>();
+    public virtual ICollection<PurchaseOrderDocument> PurchaseOrderDocumentUpdatedByNavigations { get; set; } = new List<PurchaseOrderDocument>();
+    public virtual ICollection<PurchaseOrderDocument> PurchaseOrderDocumentVerifiedByNavigations { get; set; } = new List<PurchaseOrderDocument>();
+
+    public virtual ICollection<Quotation> QuotationSaleEmployeeNavigations { get; set; } = new List<Quotation>();
+    public virtual ICollection<Quotation> QuotationCreatedByNavigations { get; set; } = new List<Quotation>();
+    public virtual ICollection<Quotation> QuotationUpdatedByNavigations { get; set; } = new List<Quotation>();
+    public virtual ICollection<QuotationStatusHistory> QuotationStatusHistoryChangedByNavigations { get; set; } = new List<QuotationStatusHistory>();
 
     public virtual ICollection<SampleRequest> SampleRequestCreatedByNavigations { get; set; } = new List<SampleRequest>();
 
@@ -206,10 +220,13 @@ public partial class Employee
     /// <summary>
     /// ==================================== MRO Module ==================================== 
     /// </summary>
+    public virtual ICollection<MfgProductionOrder> MfgProductionOrderCheckedByNavigations { get; set; } = new List<MfgProductionOrder>();
     public virtual ICollection<MfgProductionOrder> MfgProductionOrderCreatedByNavigations { get; set; } = new List<MfgProductionOrder>();
     public virtual ICollection<MfgProductionOrder> MfgProductionOrderUpdatedByNavigations { get; set; } = new List<MfgProductionOrder>();
     public virtual ICollection<ManufacturingFormula> ManufacturingFormulaCreatedByNavigations { get; set; } = new List<ManufacturingFormula>();
     public virtual ICollection<ManufacturingFormula> ManufacturingFormulaUpdatedByNavigations { get; set; } = new List<ManufacturingFormula>();
+    public virtual ICollection<ManufacturingFormulaAdjustment> ManufacturingFormulaAdjustmentCreatedByNavigations { get; set; } = new List<ManufacturingFormulaAdjustment>();
+    public virtual ICollection<ManufacturingFormulaAdjustment> ManufacturingFormulaAdjustmentUpdatedByNavigations { get; set; } = new List<ManufacturingFormulaAdjustment>();
     public virtual ICollection<ProductionSelectVersion> ProductionSelectVersionCreatedByNavigations { get; set; } = new List<ProductionSelectVersion>();
     public virtual ICollection<ProductionSelectVersion> ProductionSelectVersionClosedByNavigations { get; set; } = new List<ProductionSelectVersion>();
     public virtual ICollection<ProductStandardFormula> ProductStandardFormulaCreatedByNavigations { get; set; } = new List<ProductStandardFormula>();
@@ -227,5 +244,32 @@ public partial class Employee
     /// </summary>
     /// 
     public virtual ICollection<Notification> CreatedByEmployeeNavigations { get; set; } = new List<Notification>();
+    public virtual ICollection<WebPushSubscription> WebPushSubscriptions { get; set; } = new List<WebPushSubscription>();
 
+    /// <summary>
+    /// ==================================== Work Task Module ==================================== 
+    /// </summary>
+    public virtual ICollection<WorkTask> WorkTaskCompletedByNavigations { get; set; } = new List<WorkTask>();
+    public virtual ICollection<WorkTask> WorkTaskAssignedToEmployeeNavigations { get; set; } = new List<WorkTask>();
+    public virtual ICollection<WorkTask> WorkTaskCreatedByNavigations { get; set; } = new List<WorkTask>();
+    public virtual ICollection<WorkTask> WorkTaskUpdatedByNavigations { get; set; } = new List<WorkTask>();
+    public virtual ICollection<WorkTaskAssignee> WorkTaskAssigneeEmployees { get; set; } = new List<WorkTaskAssignee>();
+    public virtual ICollection<WorkTaskAssignee> WorkTaskAssigneeCreatedByNavigations { get; set; } = new List<WorkTaskAssignee>();
+
+    public virtual ICollection<WorkPlan> WorkPlanAssignedToEmployeeNavigations { get; set; } = new List<WorkPlan>();
+    public virtual ICollection<WorkPlan> WorkPlanCreatedByNavigations { get; set; } = new List<WorkPlan>();
+    public virtual ICollection<WorkPlan> WorkPlanUpdatedByNavigations { get; set; } = new List<WorkPlan>();
+    public virtual ICollection<WorkPlanAssignee> WorkPlanAssigneeEmployees { get; set; } = new List<WorkPlanAssignee>();
+    public virtual ICollection<WorkPlanAssignee> WorkPlanAssigneeCreatedByNavigations { get; set; } = new List<WorkPlanAssignee>();
+
+    /// <summary>
+    /// ==================================== Internal Mail Module ====================================
+    /// </summary>
+    public virtual ICollection<InternalConversation> InternalConversationCreatedByNavigations { get; set; } = new List<InternalConversation>();
+    public virtual ICollection<InternalConversation> InternalConversationDeletedByNavigations { get; set; } = new List<InternalConversation>();
+    public virtual ICollection<InternalConversationParticipant> InternalConversationParticipants { get; set; } = new List<InternalConversationParticipant>();
+    public virtual ICollection<InternalMessage> InternalMessageSenderNavigations { get; set; } = new List<InternalMessage>();
+    public virtual ICollection<InternalMessage> InternalMessageEditedByNavigations { get; set; } = new List<InternalMessage>();
+    public virtual ICollection<InternalMessage> InternalMessageDeletedByNavigations { get; set; } = new List<InternalMessage>();
+    public virtual ICollection<InternalMessageReadState> InternalMessageReadStates { get; set; } = new List<InternalMessageReadState>();
 }

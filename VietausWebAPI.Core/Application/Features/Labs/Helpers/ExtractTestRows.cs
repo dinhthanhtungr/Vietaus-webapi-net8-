@@ -48,11 +48,11 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
             Add("MI/Chỉ số chảy", result.MFR, "-", specs?.MeltIndex, "ASTM D1238", "g/10min");
             Add("Dwell Time/Thời gian lưu máy", result.DwellTime == true ? "YES" : null, "-", specs?.DwellTime, "Vietaus std", "-");
             Add("Density/Tỷ trọng", result.Density, "-", specs?.Density, "ASTM D792", "g/cm³");
-            Add("Tensile Strength/Độ bền kéo", result.TensileStrength, "-", specs?.TensileStrength, "Vietaus std", "MPa");
-            Add("Elongation/Độ giãn dài", result.Elongation, "-", specs?.ElongationAtBreak, "Vietaus std", "%");
-            Add("Flexural Strength/Độ bền uốn", result.FlexuralStrength, "-", specs?.FlexuralStrength, "Vietaus std", "MPa");
-            Add("Flexural Modulus/Mô đun uốn", result.FlexuralModulus, "-", specs?.FlexuralModulus, "Vietaus std", "MPa");
-            Add("Impact Resistance/Chịu va đập", result.ImpactResistance, "-", specs?.IzodImpactStrength, "Vietaus std", "kJ/m²");
+            Add("Tensile Strength/Độ bền kéo", result.TensileStrength, "-", specs?.TensileStrength, "ASTM D638", "MPa");
+            Add("Elongation/Độ giãn dài", result.Elongation, "-", specs?.ElongationAtBreak, "ASTM D638", "%");
+            Add("Flexural Strength/Độ bền uốn", result.FlexuralStrength, "-", specs?.FlexuralStrength, "ASTM D790", "MPa");
+            Add("Flexural Modulus/Mô đun uốn", result.FlexuralModulus, "-", specs?.FlexuralModulus, "ASTM D790", "MPa");
+            Add("Impact Resistance/Chịu va đập", result.ImpactResistance, "-", specs?.IzodImpactStrength, "ASTM D256", "kJ/m²");
             Add("Hardness/Độ cứng", result.Hardness, "-", specs?.Hardness, "Vietaus std", "Shore D");
             Add("IV/Độ nhớt", result.IntrinsicViscosity, "-", "-", "Vietaus std", "dL/g");
 

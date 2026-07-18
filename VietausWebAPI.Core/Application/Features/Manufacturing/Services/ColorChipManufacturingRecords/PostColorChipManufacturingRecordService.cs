@@ -44,6 +44,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
                 var entity = new ColorChipManufacturingRecord
                 {
                     ColorChipMfgRecordId = Guid.CreateVersion7(),
+                    colorCode = request.ColorCode,
+                    ProductName = request.ProductName,
                     ResinType = request.ResinType,
                     LogoType = request.LogoType,
                     FormStyle = request.FormStyle,
@@ -81,6 +83,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
                     .Select(x => new GetColorChipManufacturingRecord
                     {
                         ColorChipMfgRecordId = x.ColorChipMfgRecordId,
+                        ColorCode = x.colorCode,
+                        ProductName = x.ProductName,
                         ResinType = x.ResinType,
                         LogoType = x.LogoType,
                         FormStyle = x.FormStyle,

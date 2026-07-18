@@ -32,6 +32,8 @@ namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing.ColorChipManuf
                  .Select(x => new ColorChipManufacturingRecordPdfData
                  {
                      ColorChipMfgRecordId = x.ColorChipMfgRecordId,
+                     ColorCode = x.colorCode,
+                     Name = x.ProductName,
 
                      ResinType = x.ResinType,
                      LogoType = x.LogoType,
@@ -61,13 +63,17 @@ namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing.ColorChipManuf
                          ? x.MfgProductionOrder.CustomerNameSnapshot
                          : null,
 
-                     ProductExternalId = x.MfgProductionOrder != null
-                         ? x.MfgProductionOrder.ProductExternalIdSnapshot
-                         : null,
+                     ProductExternalId = !string.IsNullOrWhiteSpace(x.colorCode)
+                         ? x.colorCode
+                         : x.MfgProductionOrder != null
+                             ? x.MfgProductionOrder.ProductExternalIdSnapshot
+                             : null,
 
-                     ProductName = x.MfgProductionOrder != null
-                         ? x.MfgProductionOrder.ProductNameSnapshot
-                         : null,
+                     ProductName = !string.IsNullOrWhiteSpace(x.ProductName)
+                         ? x.ProductName
+                         : x.MfgProductionOrder != null
+                             ? x.MfgProductionOrder.ProductNameSnapshot
+                             : null,
 
                      ColorName = x.MfgProductionOrder != null
                          ? x.MfgProductionOrder.ColorName
@@ -114,6 +120,8 @@ namespace VietausWebAPI.Infrastructure.Repositories.Manufacturing.ColorChipManuf
                 .Select(x => new GetColorChipManufacturingRecord
                 {
                     ColorChipMfgRecordId = x.ColorChipMfgRecordId,
+                    ColorCode = x.colorCode,
+                    ProductName = x.ProductName,
                     ResinType = x.ResinType,
                     LogoType = x.LogoType,
                     FormStyle = x.FormStyle,

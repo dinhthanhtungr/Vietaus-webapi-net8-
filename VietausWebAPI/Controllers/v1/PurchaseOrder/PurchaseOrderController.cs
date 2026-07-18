@@ -42,6 +42,18 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.PurchaseOrder
             return Ok(result);
         }
 
+        [HttpGet("ExportExcel")]
+        public async Task<IActionResult> ExportPurchaseOrdersExcel([FromQuery] PurchaseOrderQuery query, CancellationToken ct)
+        {
+            var bytes = await _purchaseOrderService.ExportPurchaseOrdersToExcelAsync(query, ct);
+            var fileName = $"PurchaseOrders_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+
+            return File(
+                bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                fileName);
+        }
+
         [HttpGet("{purchaseOrderId}")]
         public async Task<IActionResult> GetPurchaseOrderById(Guid purchaseOrderId)
         {
@@ -87,6 +99,13 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.PurchaseOrder
             {
                 return BadRequest(result);
             }
+        }
+
+        [HttpPatch("{purchaseOrderId:guid}/complete")]
+        public async Task<IActionResult> CompletePurchaseOrder(Guid purchaseOrderId, CancellationToken ct)
+        {
+            var result = await _purchaseOrderService.CompleteAsync(purchaseOrderId, ct);
+            return result.Success ? Ok(result) : BadRequest(result);
         }
 
         [HttpGet("GeneratePdf")]

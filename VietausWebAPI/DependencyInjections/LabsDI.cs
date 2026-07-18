@@ -63,6 +63,8 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
             services.AddScoped<IColorChipRecordPortraitPdf, ColorChipRecordPortraitPdf>();
             services.AddScoped<IColorChipRecordTanPhuPdf, ColorChipRecordTanPhuPdf>();
             services.AddScoped<IColorChipRecordTanPhuBacNinhPdf, ColorChipRecordTanPhuBacNinhPdf>();
+            services.AddScoped<IColorChipRecordFiveOptionPdf, ColorChipRecordFiveOptionPdf>();
+            services.AddScoped<IColorChipRecordTanPhuBacNinh3ThresholdPdf, ColorChipRecordTanPhuBacNinh3ThresholdPdf>();
 
             //Helpers
             services.AddScoped<IFormulaPDF, FormulaPDF>();

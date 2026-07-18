@@ -15,8 +15,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.WarehouseS
         {
             entity.ToTable("WarehouseShelfStock", "Warehouse");
 
-            entity.HasKey(e => e.SlotId)
-                  .HasName("PK__WarehouseShelfStock__slotId");
+            entity.HasKey(e => e.ShelfStockId);
 
             entity.Property(e => e.ShelfStockId)
                   .UseIdentityAlwaysColumn()
@@ -50,6 +49,10 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.WarehouseS
 
             entity.Property(e => e.CompanyId).HasColumnName("companyId");
             entity.Property(e => e.UpdatedBy).HasColumnName("updatedBy");
+            entity.Property(e => e.UnitName).HasDefaultValueSql("'Kg'::text");
+            entity.Property(e => e.ExpiryDate).HasColumnName("ExpiryDate");
+
+            entity.HasIndex(e => e.SlotId, "IX_WarehouseShelfStock_SlotId");
 
             entity.HasIndex(x => new { x.CompanyId, x.Code })
                   .HasDatabaseName("IX_WarehouseShelfStock_company_code");

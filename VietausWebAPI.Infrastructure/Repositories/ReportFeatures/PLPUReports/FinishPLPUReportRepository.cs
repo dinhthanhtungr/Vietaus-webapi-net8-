@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Shared.Enums;
 using VietausWebAPI.Core.Application.Features.ReportFeatures.DTOs.PLPUReports;
 using VietausWebAPI.Core.Application.Features.ReportFeatures.Queries.PLPUReports;
 using VietausWebAPI.Core.Application.Features.ReportFeatures.RepositoriesContracts.PLPUReports;
@@ -25,8 +26,11 @@ namespace VietausWebAPI.Infrastructure.Repositories.ReportFeatures.PLPUReports
                 join d in _context.DeliveryOrders.AsNoTracking()
                     on dod.DeliveryOrderId equals d.Id
                 join mod in _context.MerchandiseOrderDetails.AsNoTracking()
+                .Where(x => x.IsActive &&
+                x.DeliveryRequestDate >= fromDate && x.DeliveryRequestDate < toDate)
                     on dod.MerchandiseOrderDetailId equals mod.MerchandiseOrderDetailId
                 join mo in _context.MerchandiseOrders.AsNoTracking()
+                .Where(x => x.IsActive && x.CustomerExternalIdSnapshot != "KH_VIETAUS" && x.Status != MerchadiseStatus.Cancelled)
                     on mod.MerchandiseOrderId equals mo.MerchandiseOrderId
                 join mop in _context.MfgOrderPOs.AsNoTracking().Where(x => x.IsActive)
                     on mod.MerchandiseOrderDetailId equals mop.MerchandiseOrderDetailId into mopJoin
@@ -38,8 +42,6 @@ namespace VietausWebAPI.Infrastructure.Repositories.ReportFeatures.PLPUReports
                       && d.IsActive
                       && mod.IsActive
                       && mo.IsActive
-                      && d.CreatedDate >= fromDate
-                      && d.CreatedDate < toDate
                 select new
                 {
                     DeliveryOrderCode = d.ExternalId,
@@ -61,6 +63,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.ReportFeatures.PLPUReports
                     OrderReceivedDate = mfg != null ? mfg.CreatedDate : (DateTime?)null,
                     DeliveryRequestDate = mod.DeliveryRequestDate,
                     ActualDeliveryDate = d.CreatedDate,
+                    ExpectedDeliveryDate = mfg.ExpectedDate,
 
                     OrderedQuantity = mod.ExpectedQuantity,
                     DeliveredQuantity = dod.Quantity,
@@ -90,6 +93,8 @@ namespace VietausWebAPI.Infrastructure.Repositories.ReportFeatures.PLPUReports
                     OrderReceivedDate = x.OrderReceivedDate,
                     DeliveryRequestDate = x.DeliveryRequestDate,
                     ActualDeliveryDate = x.ActualDeliveryDate,
+                    ExpectedDeliveryDate = x.ExpectedDeliveryDate,
+
                     LateDays = x.ActualDeliveryDate.HasValue
                         ? (x.ActualDeliveryDate.Value.Date - x.DeliveryRequestDate.Date).Days
                         : null,

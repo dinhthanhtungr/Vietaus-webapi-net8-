@@ -22,6 +22,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
             entity.HasIndex(e => e.CreatedBy, "IX_PurchaseOrders_CreatedBy");
             entity.HasIndex(e => e.SupplierId, "IX_PurchaseOrders_SupplierId");
             entity.HasIndex(e => e.UpdatedBy, "IX_PurchaseOrders_UpdatedBy");
+            //entity.HasIndex(e => e.AttachmentCollectionId, "IX_PurchaseOrders_AttachmentCollectionId");
 
             // theo code gốc: không gen tự động
             entity.Property(e => e.PurchaseOrderId)
@@ -31,6 +32,28 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
             entity.Property(e => e.OrderType).HasMaxLength(50);
             entity.Property(e => e.Status).HasMaxLength(50);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+
+            //entity.Property(e => e.HasDeliveryNote)
+            //      .IsRequired(false);
+
+            //entity.Property(e => e.HasContract)
+            //      .IsRequired(false);
+
+            //entity.Property(e => e.HasAcceptance)
+            //      .IsRequired(false);
+
+            //entity.Property(e => e.HasInvoice)
+            //      .IsRequired(false);
+
+            //entity.Property(e => e.AttachmentCollectionId)
+            //      .HasColumnName("AttachmentCollectionId");
+
+            //entity.HasOne(d => d.AttachmentCollection)
+            //      .WithMany()
+            //      .HasForeignKey(d => d.AttachmentCollectionId)
+            //      .OnDelete(DeleteBehavior.Restrict)
+            //      .HasConstraintName("FK_PurchaseOrders_AttachmentCollection");
 
             entity.HasOne(d => d.PurchaseOrderSnapshot)
                   .WithMany()

@@ -195,11 +195,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                 var totalItems = await shapedQuery.CountAsync(ct);
 
                 var pageCustomers = await shapedQuery
-                    .OrderBy(x => x.SortBucket)
-                    .ThenBy(x => x.GroupIdScope == null ? 1 : 0)
-                    .ThenBy(x => x.GroupIdScope)
-                    .ThenBy(x => x.ManagerEmpNameScope)
-                    .ThenByDescending(x => x.LatestClaimExpiresAt ?? x.Entity.CreatedDate)
+                    .OrderByDescending(x => x.Entity.CreatedDate)
                     .ThenByDescending(x => x.Entity.CustomerId)
                     .Skip((query.PageNumber - 1) * query.PageSize)
                     .Take(query.PageSize)
@@ -236,7 +232,15 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                             .OrderByDescending(o => o.CreateDate)
                             .Select(o => new { o.Note, o.PaymentType, o.ShippingMethod })
                             .FirstOrDefault(),
-
+                        endLeadTime = x.IsLead
+                            ? x.Entity.CustomerClaims
+                                .Where(cl => cl.IsActive
+                                             && cl.Type == ClaimType.Work
+                                             && cl.ExpiresAt > now)
+                                .OrderByDescending(cl => cl.ExpiresAt)
+                                .Select(cl => (DateTime?)cl.ExpiresAt)
+                                .FirstOrDefault()
+                            : null,
                         IsLeadOnly = x.IsLead,
                         ManagedByCurrentScope = x.ManagedByCurrentScope
                     })
@@ -261,10 +265,76 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                         PaymentType = x.LatestOrder != null ? x.LatestOrder.PaymentType : null,
                         DeliveryType = x.LatestOrder != null ? x.LatestOrder.ShippingMethod : null,
 
+                        x.endLeadTime,
                         x.IsLeadOnly,
                         x.ManagedByCurrentScope
                     })
                     .ToListAsync(ct);
+
+
+          var customerIds = pageCustomers
+              .Select(x => x.CustomerId)
+              .Distinct()
+              .ToList();
+
+          var interactionCustomerIds = await _unitOfWork.CustomerRepository.Query()
+              .Where(c => customerIds.Contains(c.CustomerId))
+              .SelectMany(c => c.CustomerInteractions
+                  .Where(i => i.CompanyId == viewer.CompanyId && i.IsActive)
+                  .Select(i => i.CustomerId))
+              .Distinct()
+              .ToListAsync(ct);
+
+          var interactionCustomerIdSet = interactionCustomerIds.ToHashSet();
+
+          var addressRows = await _unitOfWork.CustomerRepository.Query()
+              .Where(c => customerIds.Contains(c.CustomerId))
+                    .SelectMany(c => c.Addresses
+                        .OrderByDescending(a => a.IsPrimary)
+                        .Select(a => new
+                        {
+                            c.CustomerId,
+                            a.AddressLine
+                        }))
+                    .ToListAsync(ct);
+
+                var contactRows = await _unitOfWork.CustomerRepository.Query()
+                    .Where(c => customerIds.Contains(c.CustomerId))
+                    .SelectMany(c => c.Contacts
+                        .OrderByDescending(co => co.IsPrimary)
+                        .Select(co => new
+                        {
+                            c.CustomerId,
+                            co.FirstName,
+                            co.LastName,
+                            co.Phone
+                        }))
+                    .ToListAsync(ct);
+
+                var addressMap = addressRows
+                    .Where(x => !string.IsNullOrWhiteSpace(x.AddressLine))
+                    .GroupBy(x => x.CustomerId)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(x => x.AddressLine!).Distinct().ToList()
+                    );
+
+                var contactMap = contactRows
+                    .Select(x => new
+                    {
+                        x.CustomerId,
+                        Contact = string.Join(" - ", new[]
+                        {
+                            $"{x.FirstName} {x.LastName}".Trim(),
+                            x.Phone
+                        }.Where(v => !string.IsNullOrWhiteSpace(v)))
+                    })
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Contact))
+                    .GroupBy(x => x.CustomerId)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(x => x.Contact).Distinct().ToList()
+                    );
 
                 var leadIds = pageCustomers
                     .Where(p => p.IsLeadOnly)
@@ -301,15 +371,26 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                         ? string.Join(", ", leadClaimNamesMap.TryGetValue(x.CustomerId, out var names) ? names : Array.Empty<string>())
                         : (x.AssigneeEmpName_Ind ?? x.ClaimEmpName_Ind ?? string.Empty),
 
+                    Addresses = addressMap.TryGetValue(x.CustomerId, out var addresses)
+                        ? addresses
+                        : new List<string>(),
+
+                    Contacts = contactMap.TryGetValue(x.CustomerId, out var contacts)
+                        ? contacts
+                        : new List<string>(),
+
                     Phone = x.PhoneFromContact,
                     Address = x.AddressFromAddress,
                     DeliveryName = x.ReceiverFromContact,
                     CustomerSpectialRequirement = x.CustomerSpecialRequirement ?? string.Empty,
                     paymentType = x.PaymentType ?? string.Empty,
                     delivieryType = x.DeliveryType ?? string.Empty,
-                    IsLead = x.IsLeadOnly,
-                    IsManagedByCurrent = x.ManagedByCurrentScope,
-                    CanOpenDetail = !x.IsLeadOnly || (x.IsLeadOnly && x.ManagedByCurrentScope)
+
+                    endLeadTime = x.endLeadTime,
+                    HasNote = interactionCustomerIdSet.Contains(x.CustomerId),
+                      IsLead = x.IsLeadOnly,
+                      IsManagedByCurrent = x.ManagedByCurrentScope,
+                      CanOpenDetail = !x.IsLeadOnly || (x.IsLeadOnly && x.ManagedByCurrentScope)
                 }).ToList();
 
                 return OperationResult<PagedResult<GetReviewCustomer>>.Ok(
@@ -383,7 +464,6 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                 .Where(cl => cl.CustomerId == CustomerId
                           && cl.IsActive
                           && cl.Type == ClaimType.Work
-                          && cl.ExpiresAt > now
                           && cl.CompanyId == companyId)
                 .Select(cl => new GetCustomerLeadOwner
                 {
@@ -478,175 +558,206 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
         /// <param name="customer"></param>
         /// <returns></returns>
         public async Task<OperationResult<AddCustomerResultDto>> AddNewCustomer(PostCustomer customer)
+        {
+            // 0) Context & thời gian UTC
+            var now = DateTime.Now;
+            var companyId = _CurrentUser.CompanyId;
+            var userId = _CurrentUser.EmployeeId;
+
+            // 1) ExternalId
+            if (string.IsNullOrWhiteSpace(customer.ExternalId))
             {
-                // 0) Context & thời gian UTC
-                var now = DateTime.Now;
-                var companyId = _CurrentUser.CompanyId;
-                var userId = _CurrentUser.EmployeeId;
-
-                // 1) ExternalId
-                if (string.IsNullOrWhiteSpace(customer.ExternalId))
-                {
-                    customer.ExternalId = await _externalIdService.GenerateCodeAsync("KH");
-                }
+                customer.ExternalId = await _externalIdService.GenerateCodeAsync("KH");
+            }
 
 
 
-                // 2) Validate tối thiểu: kiểm tra MST trùng (giữ code của bạn)
-                var taxNorm = NormalizeTaxCode(customer.TaxNumber);
-                //if (!string.IsNullOrEmpty(taxNorm))
-                //{
-                //    var existedInfo = await _unitOfWork.CustomerRepository.Query()
-                //        .Where(c =>
-                //            ((c.TaxNumber ?? "")
-                //                .Replace("-", "")
-                //                .Replace(".", "")
-                //                .Replace(" ", "")
-                //                .ToUpper()) == taxNorm
-                //            && c.CompanyId == companyId)
-                //        .Select(c => new
-                //        {
-                //            c.ExternalId,
-                //            c.CustomerId,
-                //            c.CustomerName,
-                //            c.TaxNumber,
-                //            Assignment = c.CustomerAssignments
-                //                .Where(a => a.IsActive)
-                //                .OrderByDescending(a => a.CreatedDate)
-                //                .Select(a => new
-                //                {
-                //                    a.EmployeeId,
-                //                    EmployeeName = a.Employee.FullName,
-                //                    a.GroupId,
-                //                    GroupName = a.Group.Name
-                //                })
-                //                .FirstOrDefault()
-                //        })
-                //        .FirstOrDefaultAsync();
+            // 2) Validate tối thiểu: kiểm tra MST trùng (giữ code của bạn)
+            var taxNorm = NormalizeTaxCode(customer.TaxNumber);
+            var merchandiseOrderQuery = _unitOfWork.MerchandiseOrderRepository.Query();
 
-                //    if (existedInfo != null)
-                //    {
-                //        var dto = new AddCustomerResultDto(
-                //            existedInfo.CustomerId,
-                //            existedInfo.ExternalId,
-                //            existedInfo.CustomerName,
-                //            existedInfo.TaxNumber ?? string.Empty,
-                //            existedInfo.Assignment?.EmployeeId ?? Guid.Empty,
-                //            existedInfo.Assignment?.EmployeeName ?? string.Empty,
-                //            existedInfo.Assignment?.GroupId ?? Guid.Empty,
-                //            existedInfo.Assignment?.GroupName ?? string.Empty
-                //        );
+            if (!string.IsNullOrEmpty(taxNorm))
+            {
+                var existedInfo = await _unitOfWork.CustomerRepository.Query()
+                    .Where(c =>
+                        ((c.TaxNumber ?? "")
+                            .Replace("-", "")
+                            .Replace(".", "")
+                            .Replace(" ", "")
+                            .ToUpper()) == taxNorm
+                        && c.CompanyId == companyId
+                        && c.IsActive == true)
+                    .Select(c => new
+                    {
+                        c.CustomerId,
+                        c.ExternalId,
+                        c.CustomerName,
+                        c.TaxNumber,
 
-                //        return OperationResult<AddCustomerResultDto>.Fail(dto,
-                //            $"Mã số thuế {customer.TaxNumber} đã tồn tại cho khách hàng \"{dto.Name}\" " +
-                //            $"và hiện đang do {(dto.EmployeeName ?? "chưa gán")} quản lý" +
-                //            $"{(dto.GroupName is null ? "" : $" ({dto.GroupName})")}."
-                //        );
-                //    }
-                //}
+                        HasOrder = merchandiseOrderQuery
+                            .Any(o => o.CustomerId == c.CustomerId
+                                        && o.CompanyId == companyId
+                                        && o.IsActive == true),
 
-                // 3) Lấy group hiện tại của người tạo (để auto-claim / assign)
-                var groupId = await _unitOfWork.MemberInGroupRepository.Query()
-                    .Where(m => m.Profile == userId && m.IsActive == true)
-                    .Select(m => (Guid?)m.GroupId)
+                        Assignment = c.CustomerAssignments
+                            .Where(a => a.IsActive)
+                            .OrderByDescending(a => a.CreatedDate)
+                            .Select(a => new
+                            {
+                                a.EmployeeId,
+                                EmployeeName = a.Employee.FullName,
+                                a.GroupId,
+                                GroupName = a.Group.Name
+                            })
+                            .FirstOrDefault(),
+
+                        LastOrderManager = merchandiseOrderQuery
+                            .Where(o => o.CustomerId == c.CustomerId
+                                        && o.CompanyId == companyId
+                                        && o.IsActive == true)
+                            .OrderByDescending(o => o.CreateDate)
+                            .Select(o => new
+                            {
+                                EmployeeId = o.ManagerById,
+                                EmployeeName = o.ManagerByNameSnapshot
+                            })
+                            .FirstOrDefault()
+                    })
                     .FirstOrDefaultAsync();
 
-                if (groupId is null)
-                    return OperationResult<AddCustomerResultDto>.Fail("Nhân viên sale chưa thuộc nhóm nào (Group).");
-
-                // 4) Transaction – bắt đầu ghi
-                await _unitOfWork.BeginTransactionAsync();
-                try
+                if (existedInfo != null && existedInfo.HasOrder)
                 {
-                    // 4.1) Tạo Customer (lead-first by default)
-                    var customerEntity = new Customer
-                    {
-                        CustomerId = Guid.CreateVersion7(),
-                        CustomerName = customer.CustomerName,
-                        ExternalId = customer.ExternalId,
-                        TaxNumber = customer.TaxNumber,
-                        RegistrationNumber = customer.RegistrationNumber,
-                        RegistrationAddress = customer.RegistrationAddress,
-                        CustomerGroup = customer.CustomerGroup,
-                        CompanyId = companyId,
-                        IsActive = true,
+                    var employeeId = existedInfo.Assignment?.EmployeeId
+                        ?? existedInfo.LastOrderManager?.EmployeeId
+                        ?? Guid.Empty;
 
-                        CreatedBy = userId,
-                        CreatedDate = now,
-                        UpdatedBy = userId,
-                        UpdatedDate = now,
+                    var employeeName = existedInfo.Assignment?.EmployeeName
+                        ?? existedInfo.LastOrderManager?.EmployeeName
+                        ?? string.Empty;
 
-                        IsLead = true,
-                        LeadStatus = LeadStatus.Claimed,
+                    var dto = new AddCustomerResultDto(
+                        existedInfo.CustomerId,
+                        existedInfo.ExternalId,
+                        existedInfo.CustomerName,
+                        existedInfo.TaxNumber ?? string.Empty,
+                        employeeId,
+                        employeeName,
+                        existedInfo.Assignment?.GroupId ?? Guid.Empty,
+                        existedInfo.Assignment?.GroupName ?? string.Empty
+                    );
 
-                        Addresses = customer.Addresses.Select(a => new Address
-                        {
-                            AddressLine = a.AddressLine,
-                            City = a.City,
-                            District = a.District,
-                            PostalCode = a.PostalCode,
-                            Country = a.Country,
-                            IsPrimary = a.IsPrimary,
-                            IsActive = true,
-                        }).ToList(),
-
-                        Contacts = customer.Contacts.Select(c => new Contact
-                        {
-                            FirstName = c.FirstName,
-                            LastName = c.LastName,
-                            Email = c.Email,
-                            Phone = c.Phone,
-                            IsPrimary = c.IsPrimary,
-                            IsActive = true,
-                        }).ToList(),
-                    };
-
-                    await _unitOfWork.CustomerRepository.AddNewCustomer(customerEntity);
-                    if (!string.IsNullOrWhiteSpace(customer.Notes))
-                    {
-                        var authorGroupId = groupId.Value; // group của người tạo (đã lấy trước đó)
-                        await AddCustomerNoteAsync(customerEntity.CustomerId, customer.Notes.Trim());
-                    }
-
-
-                    await _unitOfWork.SaveChangesAsync(); // => có CustomerId
-
-                    // 4.3) Nếu KHÔNG assign ngay → auto-claim TTL cho người tạo
-                    if (!customer.AssignNow)
-                    {
-                        // Chặn tranh chấp: DB có unique partial 1 claim Work active / Customer
-                        var claim = new CustomerClaim
-                        {
-                            Id = Guid.CreateVersion7(),
-                            CustomerId = customerEntity.CustomerId,
-                            EmployeeId = userId,
-                            GroupId = groupId.Value,
-                            Type = ClaimType.Work,
-                            ExpiresAt = now.AddYears(1),
-                            IsActive = true,
-                            CompanyId = companyId
-                        };
-                        await _unitOfWork.CustomerClaimRepository.AddAsync(claim);
-                        await _unitOfWork.SaveChangesAsync();
-
-                        // Đồng bộ trạng thái “Claimed” cho funnel (tùy policy bạn giữ)
-                        customerEntity.LeadStatus = LeadStatus.Claimed;
-                        await _unitOfWork.SaveChangesAsync();
-                    }
-
-                    await _unitOfWork.CommitTransactionAsync();
-
-                    return OperationResult<AddCustomerResultDto>.Ok(
-                        customer.AssignNow ? "Tạo khách hàng & giao quản lý thành công."
-                                  : $"Tạo khách hàng tìm năng thành công và đã cho {customer.ClaimTtlHours} giờ."
+                    return OperationResult<AddCustomerResultDto>.Fail(dto,
+                        $"Mã số thuế {customer.TaxNumber} đã thuộc khách hàng {dto.ExternalId} - \"{dto.Name}\" " +
+                        $"và khách hàng này đã từng lên đơn hàng. Sale đang quản lý: " +
+                        $"{(string.IsNullOrWhiteSpace(dto.EmployeeName) ? "chưa xác định" : dto.EmployeeName)}" +
+                        $"{(string.IsNullOrWhiteSpace(dto.GroupName) ? "" : $" ({dto.GroupName})")}."
                     );
                 }
-                catch (Exception ex)
-                {
-                    await _unitOfWork.RollbackTransactionAsync();
-                    return OperationResult<AddCustomerResultDto>.Fail($"Lỗi khi tạo khách hàng: {ex.Message}");
-                }
             }
+
+
+            // 3) Lấy group hiện tại của người tạo (để auto-claim / assign)
+            var groupId = await _unitOfWork.MemberInGroupRepository.Query()
+                .Where(m => m.Profile == userId && m.IsActive == true)
+                .Select(m => (Guid?)m.GroupId)
+                .FirstOrDefaultAsync();
+
+            if (groupId is null)
+                return OperationResult<AddCustomerResultDto>.Fail("Nhân viên sale chưa thuộc nhóm nào (Group).");
+
+            // 4) Transaction – bắt đầu ghi
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                // 4.1) Tạo Customer (lead-first by default)
+                var customerEntity = new Customer
+                {
+                    CustomerId = Guid.CreateVersion7(),
+                    CustomerName = customer.CustomerName,
+                    ExternalId = customer.ExternalId,
+                    TaxNumber = customer.TaxNumber,
+                    RegistrationNumber = customer.RegistrationNumber,
+                    RegistrationAddress = customer.RegistrationAddress,
+                    CustomerGroup = customer.CustomerGroup,
+                    CompanyId = companyId,
+                    IsActive = true,
+
+                    CreatedBy = userId,
+                    CreatedDate = now,
+                    UpdatedBy = userId,
+                    UpdatedDate = now,
+
+                    IsLead = true,
+                    LeadStatus = LeadStatus.Claimed,
+
+                    Addresses = customer.Addresses.Select(a => new Address
+                    {
+                        AddressLine = a.AddressLine,
+                        City = a.City,
+                        District = a.District,
+                        PostalCode = a.PostalCode,
+                        Country = a.Country,
+                        IsPrimary = a.IsPrimary,
+                        IsActive = true,
+                    }).ToList(),
+
+                    Contacts = customer.Contacts.Select(c => new Contact
+                    {
+                        FirstName = c.FirstName,
+                        LastName = c.LastName,
+                        Email = c.Email,
+                        Phone = c.Phone,
+                        IsPrimary = c.IsPrimary,
+                        IsActive = true,
+                    }).ToList(),
+                };
+
+                await _unitOfWork.CustomerRepository.AddNewCustomer(customerEntity);
+                if (!string.IsNullOrWhiteSpace(customer.Notes))
+                {
+                    var authorGroupId = groupId.Value; // group của người tạo (đã lấy trước đó)
+                    await AddCustomerNoteAsync(customerEntity.CustomerId, customer.Notes.Trim());
+                }
+
+
+                await _unitOfWork.SaveChangesAsync(); // => có CustomerId
+
+                // 4.3) Nếu KHÔNG assign ngay → auto-claim TTL cho người tạo
+                if (!customer.AssignNow)
+                {
+                    // Chặn tranh chấp: DB có unique partial 1 claim Work active / Customer
+                    var claim = new CustomerClaim
+                    {
+                        Id = Guid.CreateVersion7(),
+                        CustomerId = customerEntity.CustomerId,
+                        EmployeeId = userId,
+                        GroupId = groupId.Value,
+                        Type = ClaimType.Work,
+                        ExpiresAt = now.AddYears(1),
+                        IsActive = true,
+                        CompanyId = companyId
+                    };
+                    await _unitOfWork.CustomerClaimRepository.AddAsync(claim);
+                    await _unitOfWork.SaveChangesAsync();
+
+                    // Đồng bộ trạng thái “Claimed” cho funnel (tùy policy bạn giữ)
+                    customerEntity.LeadStatus = LeadStatus.Claimed;
+                    await _unitOfWork.SaveChangesAsync();
+                }
+
+                await _unitOfWork.CommitTransactionAsync();
+
+                return OperationResult<AddCustomerResultDto>.Ok(
+                    customer.AssignNow ? "Tạo khách hàng & giao quản lý thành công."
+                                : $"Tạo khách hàng tìm năng thành công và đã cho {customer.ClaimTtlHours} giờ."
+                );
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return OperationResult<AddCustomerResultDto>.Fail($"Lỗi khi tạo khách hàng: {ex.Message}");
+            }
+        }
       
         /// <summary>
         /// Thêm Note cho Customer.
@@ -800,6 +911,95 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                     return OperationResult.Fail($"Không tìm thấy khách hàng với ID {req.CustomerId}");
                 }
 
+
+                // Check trùng mã số thuế khi cập nhật
+                if (req.TaxNumber != null)
+                {
+                    var newTaxNumber = req.TaxNumber;
+                    var newTaxNorm = NormalizeTaxCode(newTaxNumber);
+                    var oldTaxNorm = NormalizeTaxCode(existing.TaxNumber);
+
+                    // Chỉ check khi MST mới khác MST cũ
+                    if (!string.Equals(newTaxNorm, oldTaxNorm, StringComparison.Ordinal))
+                    {
+                        var merchandiseOrderQuery = _unitOfWork.MerchandiseOrderRepository.Query();
+
+                        if (!string.IsNullOrWhiteSpace(newTaxNorm))
+                        {
+                            var existedInfo = await _unitOfWork.CustomerRepository.Query()
+                                .Where(c =>
+                                    c.CustomerId != existing.CustomerId &&
+                                    ((c.TaxNumber ?? "")
+                                        .Replace("-", "")
+                                        .Replace(".", "")
+                                        .Replace(" ", "")
+                                        .ToUpper()) == newTaxNorm
+                                    && c.CompanyId == companyId
+                                    && c.IsActive == true)
+                                .Select(c => new
+                                {
+                                    c.CustomerId,
+                                    c.ExternalId,
+                                    c.CustomerName,
+                                    c.TaxNumber,
+
+                                    HasOrder = merchandiseOrderQuery
+                                        .Any(o => o.CustomerId == c.CustomerId
+                                                  && o.CompanyId == companyId
+                                                  && o.IsActive == true),
+
+                                    Assignment = c.CustomerAssignments
+                                        .Where(a => a.IsActive)
+                                        .OrderByDescending(a => a.CreatedDate)
+                                        .Select(a => new
+                                        {
+                                            a.EmployeeId,
+                                            EmployeeName = a.Employee.FullName,
+                                            a.GroupId,
+                                            GroupName = a.Group.Name
+                                        })
+                                        .FirstOrDefault(),
+
+                                    LastOrderManager = merchandiseOrderQuery
+                                        .Where(o => o.CustomerId == c.CustomerId
+                                                    && o.CompanyId == companyId
+                                                    && o.IsActive == true)
+                                        .OrderByDescending(o => o.CreateDate)
+                                        .Select(o => new
+                                        {
+                                            EmployeeId = o.ManagerById,
+                                            EmployeeName = o.ManagerByNameSnapshot
+                                        })
+                                        .FirstOrDefault()
+                                })
+                                .FirstOrDefaultAsync(ct);
+
+                            if (existedInfo != null && existedInfo.HasOrder)
+                            {
+                                var employeeName = existedInfo.Assignment?.EmployeeName
+                                    ?? existedInfo.LastOrderManager?.EmployeeName
+                                    ?? string.Empty;
+
+                                var groupName = existedInfo.Assignment?.GroupName ?? string.Empty;
+
+                                await _unitOfWork.RollbackTransactionAsync();
+
+                                return OperationResult.Fail(
+                                    $"Mã số thuế {newTaxNumber} đã thuộc khách hàng {existedInfo.ExternalId} - \"{existedInfo.CustomerName}\" " +
+                                    $"và khách hàng này đã từng lên đơn hàng. Sale đang quản lý: " +
+                                    $"{(string.IsNullOrWhiteSpace(employeeName) ? "chưa xác định" : employeeName)}" +
+                                    $"{(string.IsNullOrWhiteSpace(groupName) ? "" : $" ({groupName})")}."
+                                );
+                            }
+                        }
+
+                        // Cho phép xóa trắng MST nếu người dùng cố tình cập nhật rỗng
+                        existing.TaxNumber = string.IsNullOrWhiteSpace(newTaxNumber)
+                            ? null
+                            : newTaxNumber.Trim();
+                    }
+                }
+
                 // 2) Patch basic fields
                 existing.UpdatedDate = now;
                 existing.UpdatedBy = userId;
@@ -811,7 +1011,7 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                 PatchHelper.SetIfRef(req.ApplicationName, () => existing.ApplicationName, v => existing.ApplicationName = v);
                 PatchHelper.SetIfRef(req.RegistrationNumber, () => existing.RegistrationNumber, v => existing.RegistrationNumber = v);
                 PatchHelper.SetIfRef(req.RegistrationAddress, () => existing.RegistrationAddress, v => existing.RegistrationAddress = v);
-                PatchHelper.SetIfRef(req.TaxNumber, () => existing.TaxNumber, v => existing.TaxNumber = v);
+                
                 PatchHelper.SetIfNullable(req.IssueDate, () => existing.IssueDate, v => existing.IssueDate = v);
                 PatchHelper.SetIfRef(req.IssuedPlace, () => existing.IssuedPlace, v => existing.IssuedPlace = v);
                 PatchHelper.SetIfRef(req.FaxNumber, () => existing.FaxNumber, v => existing.FaxNumber = v);

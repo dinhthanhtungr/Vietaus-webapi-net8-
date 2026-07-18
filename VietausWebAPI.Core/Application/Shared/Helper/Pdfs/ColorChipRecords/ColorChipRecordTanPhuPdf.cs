@@ -45,7 +45,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
             return doc.GeneratePdf();
         }
 
-        private void BuildContent(IContainer c, ColorChipRecordPdfModel m, bool templateOnly)
+        protected virtual void BuildContent(IContainer c, ColorChipRecordPdfModel m, bool templateOnly)
         {
             c.Column(col =>
             {
@@ -106,7 +106,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
             var standard = ResinStandardSpecHelper.GetByResinType(resinType);
 
             var batchNo = templateOnly ? "SAMPLE" : m.BatchNo;
-            var dateText = templateOnly ? "" : FormatDate(m.Date);
+            var dateText = templateOnly ? "" : FormatDate(DateTime.Now);
             var customerText = templateOnly ? "" : m.Customer;
             var codeText = templateOnly ? "" : m.Code;
             var colorText = templateOnly ? "" : m.Color;
@@ -141,7 +141,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
                 ? ""
                 : standard.AntiStaticType == AntiStaticType.None ? "Không có" : "Có";
 
-            var approvalCompanyName = GetApprovalCompanyName(logoType);
+            var approvalCompanyName = ColorChipRecordPdfTextHelper.GetApprovalCompanyName(logoType);
 
             var approvalText = $"PLEASE RETURN ONE/TWO SETS TO {approvalCompanyName} UPON APPROVAL";
 
@@ -312,7 +312,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
         }
 
 
-        private void BuildBottomSection(IContainer c, ColorChipRecordPdfModel m, bool templateOnly)
+        protected virtual void BuildBottomSection(IContainer c, ColorChipRecordPdfModel m, bool templateOnly)
         {
             var rightText = m.StandardText ?? string.Empty;
 
@@ -421,18 +421,6 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
                 return string.Empty;
 
             return dt.Value.ToString("dd MMM yy", CultureInfo.InvariantCulture);
-        }
-
-        private string GetApprovalCompanyName(LogoType logoType)
-        {
-            return logoType switch
-            {
-                LogoType.Vietaus => "VIET UC POLYMER",
-                LogoType.AChau => "A CHAU",
-                LogoType.LongGiang => "LONG GIANG",
-                LogoType.Others => "COMPANY",
-                _ => "VIET UC POLYMER"
-            };
         }
 
         protected virtual string GetSizeStandardText(ResinStandardSpec standard)

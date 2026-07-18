@@ -60,7 +60,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
                 join v in _context.WarehouseVouchers.AsNoTracking()
                     on vd.VoucherId equals v.VoucherId
                 where v.VoucherType == requiredHeaderType
-                   && allowedDetailTypes.Contains(vd.VoucherType)   // ✅ CHỈ 4 loại
+                   && allowedDetailTypes.Contains(vd.VoucherType)  
                 select new { vd, v };
 
             if (query.VoucherDetailId > 0)
@@ -189,7 +189,8 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
                     {
                         qc.QCInputByQCId,
                         qc.CreatedDate,
-                        qc.CreatedBy
+                        qc.CreatedBy,
+                        qc.ImportWarehouseType
                     })
                     .FirstOrDefault()
 
@@ -208,7 +209,7 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
                     VoucherType = vd.VoucherType,
 
                     CategoryName = c != null ? (c.Name ?? "") : "",
-
+                    InputDate = v.CreatedDate,
                     HasQC = qcLatest != null,
                     QCInputByQCId = qcLatest != null ? qcLatest.QCInputByQCId : null,
                     QCCreatedDate = qcLatest != null ? qcLatest.CreatedDate : null,
@@ -218,6 +219,10 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
             var items = await itemsQuery
                 .OrderByDescending(x => x.VoucherDetailId)
                 .ToListAsync(ct);
+            foreach (var item in items)
+            {
+                item.QCDescription = ToVietnamese(item.VoucherType);
+            }
 
             return new PagedResult<GetSummaryQCInput>(items, total, pageNumber, pageSize);
         }
@@ -664,5 +669,22 @@ namespace VietausWebAPI.Infrastructure.Repositories.Devandqas.QCInputByQCFeature
 
             return items;
         }
+
+
+
+        //===
+        public string ToVietnamese(VoucherDetailType? type)
+        {
+            return type switch
+            {
+                VoucherDetailType.Special => "Chấp nhận đặc biệt",
+                VoucherDetailType.QCPass => "Chấp nhận",
+                VoucherDetailType.Waiter => "Tạm giữ",
+                VoucherDetailType.QCFail => "Từ chối",
+                _ => "Không xác định"
+            };
+        }
+
+
     }
 }

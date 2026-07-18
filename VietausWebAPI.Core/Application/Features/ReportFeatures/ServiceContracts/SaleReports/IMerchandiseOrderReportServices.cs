@@ -15,6 +15,14 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.ServiceContract
             MerchandiseOrderReportQuery query,
             CancellationToken cancellationToken = default);
 
+        Task<PagedResult<InactiveCustomerReportDto>> GetInactiveCustomersReportAsync(
+            MerchandiseOrderReportQuery query,
+            CancellationToken cancellationToken = default);
+
+        Task<PagedResult<MerchandiseOrderReportRowDto>> GetDeliveryShortageReportAsync(
+            MerchandiseOrderReportQuery query,
+            CancellationToken cancellationToken = default);
+
         Task<byte[]> ExportSummaryMOReportExcelAsync(
             MerchandiseOrderReportQuery query,
             CancellationToken ct = default);
@@ -27,8 +35,17 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.ServiceContract
             MerchandiseOrderReportQuery query,
             CancellationToken cancellationToken = default);
 
+        Task<PagedResult<MerchandiseOrderSaleDetailReportDto>> GetSaleDetailReportAsync(
+            MerchandiseOrderReportQuery query,
+            CancellationToken cancellationToken = default);
+
+        Task<MerchandiseOrderProductCategoryAnalyticsDto> GetProductCategoryReportAsync(
+            MerchandiseOrderReportQuery query,
+            CancellationToken cancellationToken = default);
+
         Task<IReadOnlyList<MerchandiseOrderReportDetailDto>> GetMerchandiseOrderDetailReportAsync(
             Guid merchandiseOrderId,
+            MerchandiseOrderReportQuery query,
             CancellationToken cancellationToken = default);
     }
 }

@@ -4,6 +4,7 @@
     {
         public const string Admin = "Admin";
         public const string Developer = "Developer";
+        public const string SaleAdmin = "SaleAdmin";
         public const string SaleUser = "SaleUser";
         public const string MaintenanceUser = "MaintenanceUser";
         public const string ManufactureUser = "ManufactureUser";
@@ -11,6 +12,7 @@
         public const string Leader = "Leader";
         public const string President = "President";
         public const string Purchaser = "Purchaser";
+        public const string DispatchUser = "DispatchUser";
         public const string User = "User";
         public const string IMSUser = "IMSUser";
         public const string DIANUser = "DIANUser";
@@ -32,8 +34,8 @@
 
         public static readonly string[] All =
         {
-            Admin, Developer, SaleUser, MaintenanceUser, ManufactureUser, LabUser, Leader, President,
-            Purchaser, User, IMSUser, DIANUser, KHOUser, HCHRUser, PLPUUser, PriceView, CustomerViewAll,
+            Admin, Developer, SaleAdmin, SaleUser, MaintenanceUser, ManufactureUser, LabUser, Leader, President,
+            Purchaser, DispatchUser, User, IMSUser, DIANUser, KHOUser, HCHRUser, PLPUUser, PriceView, CustomerViewAll,
             Delete, Edit,
 
             LabNotify, SaleNotify, PLPUNotify

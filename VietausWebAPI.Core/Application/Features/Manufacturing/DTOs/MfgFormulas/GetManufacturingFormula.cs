@@ -31,6 +31,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas
         public Guid MerchadiseOrderId { get; set; } 
         public string? CustomerNameSnapshot { get; set; }
 
+        public int? NumOfBatches { get; set; }
         public decimal? SaleTotalPrice { get; set; } // từ MerchandiseOrder.TotalPrice qua MfgProductionOrder giá sale lên
         public decimal TotalQuantityRequest { get; set; }
         public decimal? TotalQuantityProduced { get; set; }

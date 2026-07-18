@@ -12,6 +12,9 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
         public virtual DbSet<ManufacturingFormula> ManufacturingFormulas { get; set; } = default!;
         public virtual DbSet<ManufacturingFormulaVersion> ManufacturingFormulaVersions { get; set; } = default!;
         public virtual DbSet<ManufacturingFormulaVersionItem> ManufacturingFormulaVersionItems { get; set; } = default!;
+        public virtual DbSet<ManufacturingFormulaAdjustment> ManufacturingFormulaAdjustments { get; set; } = default!;
+        public virtual DbSet<ManufacturingFormulaAdjustmentBatch> ManufacturingFormulaAdjustmentBatches { get; set; } = default!;
+        public virtual DbSet<ManufacturingFormulaAdjustmentItem> ManufacturingFormulaAdjustmentItems { get; set; } = default!;
         public virtual DbSet<ProductionSelectVersion> ProductionSelectVersions { get; set; } = default!;
         public virtual DbSet<ProductStandardFormula> ProductStandardFormulas { get; set; } = default!;
         public virtual DbSet<MfgOrderPO> MfgOrderPOs { get; set; } = default!;

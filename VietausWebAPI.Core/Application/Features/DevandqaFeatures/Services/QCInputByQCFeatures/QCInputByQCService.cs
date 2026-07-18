@@ -32,7 +32,7 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
             _uow = uow;
             _currentUser = currentUser;
         }
-       
+
         public async Task<OperationResult<PagedResult<GetSummaryQCInput>>> GetPagedSummaryAsync(QCInputQuery query, CancellationToken ct)
         {
             try
@@ -521,7 +521,7 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.Services.QCIn
         /// - tồn kho theo loại stock sau QC
         /// - đơn mua liên quan và trạng thái nhận hàng
         /// </remarks>
-        private async Task SyncAfterQcChangedAsync( WarehouseVoucherDetail voucherDetail, QcDecision? importWarehouseType, Guid userId, CancellationToken ct)
+        private async Task SyncAfterQcChangedAsync(WarehouseVoucherDetail voucherDetail, QcDecision? importWarehouseType, Guid userId, CancellationToken ct)
         {
             await SyncWarehouseStockByQcAsync(voucherDetail, importWarehouseType, userId, ct);
             await SyncPurchaseOrderByQcAsync(voucherDetail, importWarehouseType, userId, ct);

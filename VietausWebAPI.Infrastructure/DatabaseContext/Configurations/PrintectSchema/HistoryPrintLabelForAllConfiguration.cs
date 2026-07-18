@@ -27,7 +27,9 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.PrintectSc
              .HasColumnName("numberofcopies");
 
             entity.Property(x => x.CreatedAt)
-             .HasColumnName("created_at");
+             .HasColumnName("created_at")
+             .HasColumnType("timestamp without time zone")
+             .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.Property(x => x.ShiftId)
              .HasColumnName("shiftid");

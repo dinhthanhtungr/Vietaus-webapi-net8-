@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Enums.Devandqa;
 using VietausWebAPI.Core.Domain.Enums.WareHouses;
 
 namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.DTOs.QCInputByQCFeatures
@@ -28,6 +29,8 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.DTOs.QCInputB
         public Guid? QCInputByQCId { get; set; }      // nullable cho đúng nghĩa "chưa QC"
         public string QCEmployeeName { get; set; } = string.Empty;
         public DateTime? QCCreatedDate { get; set; } // nullable
+        public DateTime? InputDate { get; set; }
+        public string? QCDescription { get; set; }
     }
 
 }

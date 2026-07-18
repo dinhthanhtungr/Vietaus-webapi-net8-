@@ -4,6 +4,7 @@
     {
         public const string Admin = "Admin";
         public const string Developer = "Developer";
+        public const string SaleAdmin = "SaleAdmin";
         public const string SaleUser = "SaleUser";
         public const string MaintenanceUser = "MaintenanceUser";   // ảnh bị cắt chữ, mình đoán là "...User"
         public const string ManufactureUser = "ManufactureUser";   // ảnh bị cắt chữ, mình đoán là "...User"
@@ -25,7 +26,7 @@
         public static readonly string[] All =
         {
 
-        Admin, Developer, SaleUser, MaintenanceUser, ManufactureUser, LabUser, Leader, President,
+        Admin, Developer, SaleAdmin, SaleUser, MaintenanceUser, ManufactureUser, LabUser, Leader, President,
         Purchaser, User, IMSUser, DIANUser, KHOUser, HCHRUser, PLPUUser, PriceView, CustomerViewAll,
         Delete, Edit
     };

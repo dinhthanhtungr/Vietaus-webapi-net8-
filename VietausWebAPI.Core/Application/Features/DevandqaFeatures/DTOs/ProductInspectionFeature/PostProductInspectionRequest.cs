@@ -15,7 +15,7 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.DTOs.ProductI
         public Guid? ProductStandardId { get; set; } // Mã tiêu chuẩn sản phẩm
         public string? ProductName { get; set; } // Tên sản phẩm (VD: HẠT COMPOUND...)
         public string? ProductCode { get; set; }
-        public int? Weight { get; set; }
+        public decimal? Weight { get; set; }
         public DateTime? ManufacturingDate { get; set; }
         public DateTime? ExpiryDate { get; set; }
 

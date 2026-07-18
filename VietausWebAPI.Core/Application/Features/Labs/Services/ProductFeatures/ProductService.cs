@@ -15,6 +15,7 @@ using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
+using VietausWebAPI.Core.Domain.Enums.Products;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.Services.ProductFeatures
 {
@@ -96,6 +97,9 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.ProductFeatures
 
                 var q = _unitOfWork.ProductRepository.Query();
                 var sampleRequestQ = _unitOfWork.SampleRequestRepository.Query();
+                var ignoredCustomerId = Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75");
+                var customerFilterId = query.CustomerId.GetValueOrDefault();
+                var hasCustomerFilter = customerFilterId != Guid.Empty && customerFilterId != ignoredCustomerId;
 
                 // 1) Ẩn product không có tên HOẶC không có colour code
                 q = q.Where(x => !string.IsNullOrWhiteSpace(x.Name)
@@ -121,10 +125,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.ProductFeatures
                 if (query.ProductId is Guid productId && productId != Guid.Empty)
                     q = q.Where(p => p.ProductId == productId);
 
-                if (query.CustomerId is Guid customerId && customerId != Guid.Empty && query.CustomerId!= Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75"))
+                if (hasCustomerFilter)
                 {
                     q = q.Where(p => sampleRequestQ
-                        .Any(sr => sr.ProductId == p.ProductId && (sr.CustomerId == customerId || sr.Customer.IsLead)));
+                        .Any(sr => sr.ProductId == p.ProductId && (sr.CustomerId == customerFilterId || sr.Customer.IsLead)));
                 }
 
                 // 4) Count sau khi đã filter
@@ -169,11 +173,17 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.ProductFeatures
                         Weight = p.Weight,
                         Unit = p.Unit,
                         IsRecycle = p.IsRecycle,
+                        Status = sampleRequestQ
+                            .Where(sr => sr.IsActive
+                                      && sr.ProductId == p.ProductId)
+                            .OrderByDescending(sr => sr.CreatedDate)
+                            .Select(sr => sr.Status)
+                            .FirstOrDefault(),
 
                         // Map formulas -> List<GetSampleFormula>
                         // (Nếu muốn nhẹ hơn: chỉ lấy Top N hoặc chỉ lấy formula "current/latest" — xem phần dưới)
                         SampleFormula = p.Formulas
-                            .Where(f => f.Status != "Draft" && f.Status != "Inprocess")   // hoặc "InProcess"
+                            .Where(f => f.Status == FormulaStatus.SampleSent.ToString())   // hoặc "InProcess"
                             .OrderByDescending(f => f.CreatedDate)
                             .Select(f => new GetSampleFormula
                             {

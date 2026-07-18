@@ -5,6 +5,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.ColorChipMa
 {
     public class PostColorChipManufacturingRecordRequest
     {
+        public string? ColorCode { get; set; }
+        public string? ProductName { get; set; }
+
         public ResinType ResinType { get; set; }
         public LogoType LogoType { get; set; }
         public FormStyle FormStyle { get; set; }

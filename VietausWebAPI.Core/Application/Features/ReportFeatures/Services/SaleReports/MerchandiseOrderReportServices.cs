@@ -37,6 +37,45 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.SaleRe
             return new PagedResult<SummaryMOReportDto>(items, totalCount, pageNumber, pageSize);
         }
 
+        public async Task<PagedResult<InactiveCustomerReportDto>> GetInactiveCustomersReportAsync(
+            MerchandiseOrderReportQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            query ??= new MerchandiseOrderReportQuery();
+
+            var viewerScope = await _visibilityHelper.BuildViewerScopeAsync(cancellationToken);
+
+            var (items, totalCount) = await _repository.GetInactiveCustomersReportAsync(
+                query,
+                viewerScope,
+                cancellationToken);
+
+            var pageNumber = query.PageNumber <= 0 ? 1 : query.PageNumber;
+            var pageSize = Math.Min(query.PageSize <= 0 ? 10 : query.PageSize, 50);
+
+            return new PagedResult<InactiveCustomerReportDto>(
+                items,
+                totalCount,
+                pageNumber,
+                pageSize);
+        }
+
+        public async Task<PagedResult<MerchandiseOrderReportRowDto>> GetDeliveryShortageReportAsync(
+            MerchandiseOrderReportQuery query,
+            CancellationToken ct = default)
+        {
+            query ??= new MerchandiseOrderReportQuery();
+
+            var viewerScope = await _visibilityHelper.BuildViewerScopeAsync(ct);
+
+            var (items, totalCount) = await _repository.GetDeliveryShortageReportAsync(query, viewerScope, ct);
+
+            var pageNumber = query.PageNumber <= 0 ? 1 : query.PageNumber;
+            var pageSize = query.PageSize <= 0 ? 20 : query.PageSize;
+
+            return new PagedResult<MerchandiseOrderReportRowDto>(items, totalCount, pageNumber, pageSize);
+        }
+
         public async Task<byte[]> ExportSummaryMOReportExcelAsync(
             MerchandiseOrderReportQuery query,
             CancellationToken ct = default)
@@ -75,12 +114,44 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Services.SaleRe
             return new PagedResult<MerchandiseOrderReportRowDto>(items, totalCount, pageNumber, pageSize);
         }
 
-        public async Task<IReadOnlyList<MerchandiseOrderReportDetailDto>> GetMerchandiseOrderDetailReportAsync(
-            Guid merchandiseOrderId,
+        public async Task<PagedResult<MerchandiseOrderSaleDetailReportDto>> GetSaleDetailReportAsync(
+            MerchandiseOrderReportQuery query,
             CancellationToken cancellationToken = default)
         {
+            query ??= new MerchandiseOrderReportQuery();
+
             var viewerScope = await _visibilityHelper.BuildViewerScopeAsync(cancellationToken);
-            return await _repository.GetMerchandiseOrderDetailReportAsync(merchandiseOrderId, viewerScope, cancellationToken);
+            var (items, totalCount) = await _repository.GetSaleDetailReportAsync(query, viewerScope, cancellationToken);
+            var pageNumber = query.PageNumber <= 0 ? 1 : query.PageNumber;
+            var pageSize = Math.Min(query.PageSize <= 0 ? 20 : query.PageSize, 100);
+
+            return new PagedResult<MerchandiseOrderSaleDetailReportDto>(items, totalCount, pageNumber, pageSize);
+        }
+
+        public async Task<MerchandiseOrderProductCategoryAnalyticsDto> GetProductCategoryReportAsync(
+            MerchandiseOrderReportQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            query ??= new MerchandiseOrderReportQuery();
+
+            var viewerScope = await _visibilityHelper.BuildViewerScopeAsync(cancellationToken);
+            return await _repository.GetProductCategoryReportAsync(query, viewerScope, cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<MerchandiseOrderReportDetailDto>> GetMerchandiseOrderDetailReportAsync(
+            Guid merchandiseOrderId,
+            MerchandiseOrderReportQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            query ??= new MerchandiseOrderReportQuery();
+
+            var viewerScope = await _visibilityHelper.BuildViewerScopeAsync(cancellationToken);
+
+            return await _repository.GetMerchandiseOrderDetailReportAsync(
+                merchandiseOrderId,
+                query,
+                viewerScope,
+                cancellationToken);
         }
     }
 }

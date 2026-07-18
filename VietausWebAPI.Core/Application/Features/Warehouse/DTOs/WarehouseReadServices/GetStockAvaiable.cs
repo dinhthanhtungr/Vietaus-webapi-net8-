@@ -19,6 +19,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadSe
         public decimal? ReservedOpenAllKg { get; set; } // tổng giữ chỗ theo code
         public decimal? AvailableKg { get; set; }       // tổng khả dụng theo code
 
+        public List<ReservedVaCodeInfo> ReservedVaCodes { get; set; } = new();
         public List<StockDetailAvaiable> StockDetailAvaiables { get; set; } = new();
     }
 }

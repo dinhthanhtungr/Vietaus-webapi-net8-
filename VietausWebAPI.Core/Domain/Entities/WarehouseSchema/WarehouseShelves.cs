@@ -23,5 +23,6 @@ namespace VietausWebAPI.Core.Domain.Entities.WarehouseSchema
         public virtual Company Company { get; set; } = default!;
         public virtual ICollection<WarehouseShelfLedger> Ledgers { get; set; } = new List<WarehouseShelfLedger>();
         public virtual ICollection<WarehouseShelfStock> WarehouseShelfStocks { get; set; } = new List<WarehouseShelfStock>();
+        public virtual ICollection<WarehouseVoucherDetail> WarehouseVoucherDetails { get; set; } = new List<WarehouseVoucherDetail>();
     }
 }

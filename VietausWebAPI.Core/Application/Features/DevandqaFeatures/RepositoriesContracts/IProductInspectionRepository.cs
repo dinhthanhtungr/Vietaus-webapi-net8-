@@ -14,6 +14,6 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.RepositoriesC
 {
     public interface IProductInspectionRepository : IRepository<ProductInspection>
     {
-
+        Task<ProductInspection?> GetByIdForUpdateAsync(Guid id, CancellationToken ct = default);
     }
 }

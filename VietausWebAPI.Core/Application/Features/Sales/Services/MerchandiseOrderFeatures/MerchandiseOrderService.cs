@@ -82,6 +82,8 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrde
         {
             try
             {
+                var now = DateTime.Now;
+
                 if (query.PageNumber <= 0) query.PageNumber = 1;
                 if (query.PageSize <= 0) query.PageSize = 15;
 
@@ -118,17 +120,43 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrde
                     result = result.Where(p => p.MerchandiseOrderId == query.MerchandiseOrderId.Value);
                 }
 
+                result = result.Where(f => f.IsActive == true);
+
                 int totalCount = await result.CountAsync(ct);
 
                 var items = await result
-                    .Where(f => f.IsActive == true)
-                    .OrderByDescending(c => c.CreateDate) // "F1" -> "F0000000001"
+                    .OrderByDescending(c => c.CreateDate)
                     .Skip((query.PageNumber - 1) * query.PageSize)
                     .Take(query.PageSize)
                     .ProjectTo<GetMerchadiseOrder>(_mapper.ConfigurationProvider)
                     .ToListAsync(ct);
+                foreach (var item in items)
+                {
+                    var shouldPause =
+                        item.Status != MerchadiseStatus.Cancelled.ToString() &&
+                        item.IsDeliveryPaused &&
+                        (
+                            item.DeliveryPausedFrom == null ||
+                            item.DeliveryPausedFrom.Value.Date <= now.Date
+                        ) &&
+                        (
+                            item.DeliveryPausedTo == null ||
+                            item.DeliveryPausedTo.Value.Date >= now.Date
+                        );
 
-                return new PagedResult<GetMerchadiseOrder>(items, totalCount, query.PageNumber, query.PageSize);
+                    if (shouldPause)
+                    {
+                        item.Status = MerchadiseStatus.Paused.ToString();
+                    }
+                }
+
+                return new PagedResult<GetMerchadiseOrder>(
+                    items,
+                    totalCount,
+                    query.PageNumber,
+                    query.PageSize
+                );
+
             }
 
             catch (Exception ex)
@@ -278,11 +306,42 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrde
                         .Select(m => (Guid?)m.GroupId)
                         .FirstOrDefaultAsync(ct) ?? Guid.Empty;
 
+
+                    if (groupId == Guid.Empty)
+                        return OperationResult<Guid>.Fail("Không tìm thấy nhóm của nhân viên tạo đơn, không thể gán khách hàng.");
+
                     // 1) Set khách không còn là Lead
                     customer.IsLead =false;
+                    customer.LeadStatus = LeadStatus.Open;
+
                     if (customer.CustomerId == Guid.Parse("019bd983-28a1-7231-810a-14c03e090b75"))
                     {
                         customer.IsLead = true;
+                    }
+
+                    var hasActiveAssignment = await _unitOfWork.CustomerAssignmentRepository.Query()
+                        .AnyAsync(a =>
+                            a.CustomerId == merchandiseOrder.CustomerId &&
+                            a.CompanyId == merchandiseOrder.CompanyId &&
+                            a.IsActive == true,
+                            ct);
+
+                    if (!hasActiveAssignment && groupId != Guid.Empty)
+                    {
+                        await _unitOfWork.CustomerAssignmentRepository.PostCustomerAssignment(
+                            new CustomerAssignment
+                            {
+                                Id = Guid.CreateVersion7(),
+                                CustomerId = merchandiseOrder.CustomerId,
+                                EmployeeId = merchandiseOrder.CreatedBy,
+                                GroupId = groupId,
+                                CompanyId = merchandiseOrder.CompanyId,
+                                IsActive = true,
+                                CreatedDate = now,
+                                CreatedBy = merchandiseOrder.CreatedBy,
+                                UpdatedDate = now,
+                                UpdatedBy = merchandiseOrder.CreatedBy
+                            });
                     }
 
 
@@ -745,6 +804,207 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.MerchandiseOrde
                 await _unitOfWork.RollbackTransactionAsync();
                 return OperationResult.Fail(ex.Message);
             }
+        }
+
+        public async Task<OperationResult<PatchPauseDeliveryOrder>> UpdatePauseDeliveryStatus(PatchPauseDeliveryOrder query, CancellationToken ct = default)
+        {
+            try
+            {
+                var userId = _CurrentUser.EmployeeId;
+                var now = DateTime.Now;
+
+                var current = _unitOfWork.MerchandiseOrderRepository.Query(track: true)
+                    .FirstOrDefault(m => m.MerchandiseOrderId == query.MerchandiseOrderId && m.IsActive);
+
+                if (current == null)
+                {
+                    return OperationResult<PatchPauseDeliveryOrder>.Fail("Không tìm thấy đơn hàng.");
+                }
+
+                await _unitOfWork.BeginTransactionAsync();
+
+                PatchHelper.SetIf(query.IsDeliveryPaused, () => current.IsDeliveryPaused, v => current.IsDeliveryPaused = v);
+                PatchHelper.SetIfNullable(query.DeliveryPausedFrom, () => current.DeliveryPausedFrom, v => current.DeliveryPausedFrom = v);
+                PatchHelper.SetIfNullable(query.DeliveryPausedTo, () => current.DeliveryPausedTo, v => current.DeliveryPausedTo = v);
+                PatchHelper.SetIfRef(query.DeliveryPauseReason, () => current.DeliveryPauseReason, v => current.DeliveryPauseReason = v);
+                PatchHelper.SetIfRef(query.DeliveryPauseType, () => current.DeliveryPauseType, v => current.DeliveryPauseType = v);
+               
+                
+                PatchHelper.SetIfNullable(userId, () => current.DeliveryPausedBy, v => current.DeliveryPausedBy = v);
+                
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
+
+                if (IsAccountingUser() && current.ManagerById != Guid.Empty && current.ManagerById != userId)
+                {
+                    await NotifySaleAboutPausedDeliveryAsync(current, now, ct);
+                }
+
+                var response = new PatchPauseDeliveryOrder
+                {
+                    MerchandiseOrderId = current.MerchandiseOrderId,
+                    IsDeliveryPaused = current.IsDeliveryPaused,
+                    DeliveryPausedFrom = current.DeliveryPausedFrom,
+                    DeliveryPausedTo = current.DeliveryPausedTo,
+                    DeliveryPauseReason = current.DeliveryPauseReason,
+                    DeliveryPauseType = current.DeliveryPauseType
+                };
+
+                return OperationResult<PatchPauseDeliveryOrder>.Ok(
+                    response,
+                    "Cập nhật trạng thái tạm dừng giao hàng thành công"
+                );
+            }
+
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return OperationResult<PatchPauseDeliveryOrder>.Fail($"Lỗi khi cập nhật trạng thái tạm dừng giao hàng: {ex.Message}");
+            }
+        }
+
+        private bool IsAccountingUser()
+        {
+            return _CurrentUser.IsInRole(AppRoles.ACUser)
+                || _CurrentUser.IsInRole(AppRoles.President)
+                || _CurrentUser.IsInRole(AppRoles.Admin)
+                || _CurrentUser.IsInRole(AppRoles.Purchaser);
+        }
+
+        private async Task NotifySaleAboutPausedDeliveryAsync(
+            MerchandiseOrder merchandiseOrder,
+            DateTime now,
+            CancellationToken ct)
+        {
+            try
+            {
+                var pauseStatus = merchandiseOrder.IsDeliveryPaused ? "Tạm dừng giao hàng" : "Mở lại giao hàng";
+                var pauseRange = BuildDeliveryPauseRangeText(merchandiseOrder);
+                var leaderIds = await GetResponsibleTeamManagerIdsAsync(merchandiseOrder, ct);
+
+                var targetUserIds = leaderIds
+                    .Append(merchandiseOrder.ManagerById)
+                    .Where(x => x != Guid.Empty)
+                    .Distinct()
+                    .ToList();
+
+                await _notificationService.PublishAsync(new PublishNotificationRequest
+                {
+                    CompanyId = merchandiseOrder.CompanyId,
+                    CreatedBy = _CurrentUser.EmployeeId,
+                    CreatedByNameSnapshot = _CurrentUser.personName,
+                    Topic = TopicNotifications.MerchandiseOrderUpdated,
+                    Severity = merchandiseOrder.IsDeliveryPaused
+                        ? NotificationSeverity.Error
+                        : NotificationSeverity.Info,
+                    Title = $"{pauseStatus} {merchandiseOrder.ExternalId}",
+                    Message = $"{_CurrentUser.personName} đã cập nhật {pauseStatus} cho đơn hàng {merchandiseOrder.ExternalId}{pauseRange}.",
+                    Link = $"/sales/merchandise-orders?q={merchandiseOrder.ExternalId}",
+                    PayloadJson = JsonSerializer.Serialize(new
+                    {
+                        merchandiseOrderId = merchandiseOrder.MerchandiseOrderId,
+                        merchandiseOrderCode = merchandiseOrder.ExternalId,
+                        customerId = merchandiseOrder.CustomerId,
+                        customerCode = merchandiseOrder.CustomerExternalIdSnapshot,
+                        customerName = merchandiseOrder.CustomerNameSnapshot,
+                        isDeliveryPaused = merchandiseOrder.IsDeliveryPaused,
+                        deliveryPausedFrom = merchandiseOrder.DeliveryPausedFrom,
+                        deliveryPausedTo = merchandiseOrder.DeliveryPausedTo,
+                        deliveryPauseReason = merchandiseOrder.DeliveryPauseReason,
+                        deliveryPauseType = merchandiseOrder.DeliveryPauseType,
+                        updatedAt = now,
+                        updatedBy = _CurrentUser.EmployeeId
+                    }),
+                    TargetUserIds = targetUserIds,
+                    TargetRoles = new List<string>
+                    {
+                        AppRoles.President,
+                        AppRoles.ACUser,
+                        AppRoles.DispatchUser
+                    }
+                }, ct);
+            }
+            catch
+            {
+            }
+        }
+
+        private static string BuildDeliveryPauseRangeText(MerchandiseOrder merchandiseOrder)
+        {
+            if (!merchandiseOrder.DeliveryPausedFrom.HasValue && !merchandiseOrder.DeliveryPausedTo.HasValue)
+                return string.Empty;
+
+            if (merchandiseOrder.DeliveryPausedFrom.HasValue && merchandiseOrder.DeliveryPausedTo.HasValue)
+                return $" từ {merchandiseOrder.DeliveryPausedFrom.Value:dd/MM/yyyy} đến {merchandiseOrder.DeliveryPausedTo.Value:dd/MM/yyyy}";
+
+            if (merchandiseOrder.DeliveryPausedFrom.HasValue)
+                return $" từ {merchandiseOrder.DeliveryPausedFrom.Value:dd/MM/yyyy}";
+
+            return $" đến {merchandiseOrder.DeliveryPausedTo!.Value:dd/MM/yyyy}";
+        }
+
+        /// <summary>
+        /// Gets the leader and SaleAdmin employee IDs belonging to the team responsible
+        /// for the merchandise order's customer.
+        /// </summary>
+        private async Task<List<Guid>> GetResponsibleTeamManagerIdsAsync(
+            MerchandiseOrder merchandiseOrder,
+            CancellationToken ct)
+        {
+            var groupIds = await _unitOfWork.CustomerAssignmentRepository
+                .Query(track: false)
+                .Where(x =>
+                    x.IsActive &&
+                    x.CompanyId == merchandiseOrder.CompanyId &&
+                    x.CustomerId == merchandiseOrder.CustomerId &&
+                    x.EmployeeId == merchandiseOrder.ManagerById)
+                .Select(x => x.GroupId)
+                .Distinct()
+                .ToListAsync(ct);
+
+            if (groupIds.Count == 0)
+                return new List<Guid>();
+
+            //var teamMemberIds = await _unitOfWork.MemberInGroupRepository
+            //    .Query()
+            //    .Where(x =>
+            //        x.IsActive &&
+            //        x.Profile.HasValue &&
+            //        groupIds.Contains(x.GroupId))
+            //    .Select(x => x.Profile!.Value)
+            //    .Distinct()
+            //    .ToListAsync(ct);
+
+            var leaderIds = await _unitOfWork.MemberInGroupRepository
+                .Query()
+                .Where(x =>
+                    x.IsActive &&
+                    x.IsAdmin == true &&
+                    x.Profile.HasValue &&
+                    groupIds.Contains(x.GroupId))
+                .Select(x => x.Profile!.Value)
+                .Distinct()
+                .ToListAsync(ct);
+
+            //var saleAdminIds = await (
+            //    from role in _unitOfWork.ApplicationRoleRepository.Query(track: false)
+            //    join userRole in _unitOfWork.ApplicationUserRoleRepository.Query(track: false)
+            //        on role.Id equals userRole.RoleId
+            //    join user in _unitOfWork.ApplicationUserRepository.Query(track: false)
+            //        on userRole.UserId equals user.Id
+            //    where role.NormalizedName == AppRoles.SaleAdmin.ToUpper()
+            //          && userRole.IsActive
+            //          && user.EmployeeId.HasValue
+            //          && teamMemberIds.Contains(user.EmployeeId.Value)
+            //    select user.EmployeeId!.Value
+            //)
+            //.Distinct()
+            //.ToListAsync(ct);
+
+            return leaderIds
+                //.Concat(saleAdminIds)
+                .Distinct()
+                .ToList();
         }
     }
 }

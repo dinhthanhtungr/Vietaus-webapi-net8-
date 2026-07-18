@@ -11,5 +11,6 @@ namespace VietausWebAPI.Core.Domain.Enums.Merchadises
         Internal = 0,
         Merchandise = 1,
         Complaint = 2,
+        SampleRequest = 3,
     }
 }

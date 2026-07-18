@@ -27,6 +27,16 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs
         public string? PaymentType { get; set; }
         public decimal? DeliveryPrice { get; set; }
 
+        // Tạm dừng 
+        public bool IsDeliveryPaused { get; set; } = false;
+        public DateTime? DeliveryPausedFrom { get; set; }
+        public DateTime? DeliveryPausedTo { get; set; }
+        public string? DeliveryPauseReason { get; set; }
+        public string? DeliveryPauseType { get; set; }
+        public string? DeliveryPausedName { get; set; }
+
+        // ===========================================
+
         public string? Status { get; set; }
         public string? Currency { get; set; }
 

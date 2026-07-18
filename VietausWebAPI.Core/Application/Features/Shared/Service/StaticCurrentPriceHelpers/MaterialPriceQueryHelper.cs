@@ -4,6 +4,7 @@ using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
 using VietausWebAPI.Core.Domain.Enums;
 using VietausWebAPI.Core.Domain.Enums.Formulas;
+using VietausWebAPI.Core.Domain.Enums.Orders;
 
 namespace VietausWebAPI.Core.Application.Features.Shared.Service.StaticCurrentPriceHelpers
 {
@@ -58,6 +59,8 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service.StaticCurrentPr
             var latestPoRows = await purchaseOrderSource
                 .AsNoTracking()
                 .Where(x =>
+                    x.IsActive &&
+                    x.PurchaseOrder.Status != PurchaseOrderStatus.Canceled.ToString() &&
                     ids.Contains(x.MaterialId) &&
                     x.PurchaseOrder != null &&
                     (x.PurchaseOrder.IsActive ?? true))
@@ -160,6 +163,7 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service.StaticCurrentPr
             var latestPoRows = await purchaseOrderSource
                 .AsNoTracking()
                 .Where(x =>
+                    x.IsActive &&
                     ids.Contains(x.MaterialId) &&
                     x.PurchaseOrder != null &&
                     x.PurchaseOrder.SupplierId == supplierId &&
@@ -372,26 +376,12 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Service.StaticCurrentPr
 
                 if (hasValidPo && hasValidSupplier)
                 {
-                    // Cả 2 đều có giá hợp lệ -> lấy nguồn có ngày mới hơn
-                    if (poInfo!.PriceDate.HasValue && supplierInfo!.PriceDate.HasValue)
-                    {
-                        result[id] = poInfo.PriceDate.Value >= supplierInfo.PriceDate.Value
-                            ? poInfo
-                            : supplierInfo;
-                    }
-                    else if (poInfo!.PriceDate.HasValue)
-                    {
-                        result[id] = poInfo;
-                    }
-                    else if (supplierInfo!.PriceDate.HasValue)
-                    {
-                        result[id] = supplierInfo;
-                    }
-                    else
-                    {
-                        // Cả 2 đều không có ngày -> ưu tiên PO hoặc chọn rule khác nếu muốn
-                        result[id] = poInfo;
-                    }
+                    var poPriceDate = poInfo!.PriceDate ?? DateTime.MinValue;
+                    var supplierPriceDate = supplierInfo!.PriceDate ?? DateTime.MinValue;
+
+                    result[id] = supplierPriceDate >= poPriceDate
+                        ? supplierInfo
+                        : poInfo;
 
                     continue;
                 }

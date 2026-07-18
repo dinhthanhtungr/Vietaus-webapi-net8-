@@ -26,7 +26,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.DevandqaSc
             entity.Property(x => x.ProductCode).HasColumnName("product_code").HasColumnType("citext");
             entity.Property(x => x.ProductName).HasColumnName("product_name").HasColumnType("citext");
             entity.Property(x => x.ProductStandardId).HasColumnName("product_standard_id");
-            entity.Property(x => x.Weight).HasColumnName("weight");
+            entity.Property(x => x.Weight).HasPrecision(16, 3).HasColumnName("weight");
 
             // Ngày tháng
             entity.Property(x => x.ManufacturingDate).HasColumnName("manufacturing_date");

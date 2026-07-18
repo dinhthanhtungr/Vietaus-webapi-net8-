@@ -28,6 +28,7 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
             services.AddScoped<IMfgUpsertInformationService, MfgUpsertInformationService>();
 
             services.AddScoped<IMfgFormulaService, MfgFormulaService>();
+            services.AddScoped<IMfgAdjustmentService, MfgAdjustmenService>();
 
 
             services.AddScoped<IGetColorChipManufacturingRecordService, GetColorChipManufacturingRecordService>();
@@ -37,6 +38,8 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
 
             services.AddScoped<IManufacturingFormulaRepository, ManufacturingFormulaRepository>();
             services.AddScoped<IManufacturingFormulaMaterialRepository, ManufacturingFormulaMaterialRepository>();
+            services.AddScoped<IManufacturingFormulaAdjustmentRepository, ManufacturingFormulaAdjustmentRepository>();
+            services.AddScoped<IManufacturingFormulaVersionRepository, ManufacturingFormulaVersionRepository>();
 
             services.AddScoped<IColorChipManufacturingRecordReadRepository, ColorChipManufacturingRecordReadRepository>();
             services.AddScoped<IColorChipManufacturingRecordWriteRepository, ColorChipManufacturingRecordWriteRepository>();

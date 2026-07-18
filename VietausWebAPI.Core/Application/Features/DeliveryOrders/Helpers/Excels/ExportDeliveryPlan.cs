@@ -233,10 +233,10 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Helpers.Excels
             var headerRow = 4;
             string[] headers =
             {
-        "Mã số", "Đơn hàng", "Ngày nhận đơn hàng", "Ngày yêu cầu giao hàng",
-        "Ngày hứa giao hàng", "Ngày thực tế giao hàng", "Khách hàng", "Người giao",
-        "Sản phẩm", "Kho", "Batch #", "Số lượng (kg)", "Số bao", "Số PO", "Ghi chú"
-    };
+                "Mã số", "Đơn hàng", "Ngày nhận đơn hàng", "Ngày yêu cầu giao hàng",
+                "Ngày hứa giao hàng", "Ngày thực tế giao hàng", "Khách hàng", "Người giao",
+                "Sản phẩm", "Kho", "Batch #", "Số lượng (kg)", "Số bao", "Số PO", "Ghi chú"
+            };
 
             for (int c = 0; c < headers.Length; c++)
             {

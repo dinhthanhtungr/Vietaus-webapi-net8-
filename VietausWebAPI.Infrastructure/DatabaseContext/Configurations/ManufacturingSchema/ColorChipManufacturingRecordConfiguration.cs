@@ -20,6 +20,14 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.Manufactur
                 .HasColumnName("color_chip_mfg_record_id")
                 .HasDefaultValueSql("gen_random_uuid()");
 
+            b.Property(x => x.colorCode)
+                .HasColumnName("color_code")
+                .HasMaxLength(255);
+
+            b.Property(x => x.ProductName)
+                .HasColumnName("product_name")
+                .HasMaxLength(255);
+
             // =========================================================
             // 1. Classification / Business Type
             // =========================================================

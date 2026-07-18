@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace VietausWebAPI.Core.Domain.Enums.Merchadises
 {
-    enum MerchadiseStatus
+    public enum MerchadiseStatus
     {
         New = 0,          // Mới
         Approved = 1,     // Duyệt

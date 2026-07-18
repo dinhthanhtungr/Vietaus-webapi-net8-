@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.Drawing;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration.UserSecrets;
 using System;
@@ -70,7 +72,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
         // ======================================================================== Get ========================================================================
 
         /// <summary>
-        /// Lấy danh sách đơn hàng với phân trang và lọc
+        /// Lay danh sách don hàng vi phân trang và lc
         /// </summary>
         /// <param name="query"></param>
         /// <param name="ct"></param>
@@ -189,8 +191,16 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         ProductExternalIdSnapshot = o.ProductExternalIdSnapshot,
                         CustomerExternalIdSnapshot = o.CustomerExternalIdSnapshot,
                         CustomerNameSnapshot = o.CustomerNameSnapshot,
+
+                        RequestedQuantity = o.TotalQuantityRequest,
                         TotalQuantity = o.TotalQuantity,
                         Status = o.Status,
+
+                        IsPrintedStock = o.IsPrintedStock,
+                        // With this null-safe version:
+                        CheckName = o.CheckerNavigation != null ? o.CheckerNavigation.FullName ?? "" : "",
+                        CheckedDate = o.CheckedDate,
+
                         CreatedDate = o.CreatedDate,
                         BagType = o.BagType,
                     })
@@ -210,17 +220,17 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
             catch (OperationCanceledException)
             {
-                return OperationResult<PagedResult<GetSummaryMfgProductionOrder>>.Fail("Yêu cầu đã bị hủy.");
+                return OperationResult<PagedResult<GetSummaryMfgProductionOrder>>.Fail("Yeu cau da bi huy.");
             }
             catch (Exception ex)
             {
-                return OperationResult<PagedResult<GetSummaryMfgProductionOrder>>.Fail($"Lỗi hệ thống: {ex.Message}");
+                return OperationResult<PagedResult<GetSummaryMfgProductionOrder>>.Fail($"Loi he thong: {ex.Message}");
             }
 
         }
 
         /// <summary>
-        /// Lấy danh sách công thức theo lệnh sản xuất với phân trang và lọc
+        /// Lay danh sách cong thuc theo lenh san xuat vi phân trang và lc
         /// </summary>
         /// <param name="query"></param>
         /// <param name="ct"></param>
@@ -272,7 +282,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
                 var totalCount = await q.CountAsync(ct);
 
-                // === Subquery: chuẩn theo Product (bản hiệu lực tại 'now') ===
+                // === Subquery: chuan theo Product (bn hieu luc tai 'now') ===
                 var validPSF = _unitOfWork.ProductStandardFormulaRepository.Query()
                     .Where(psf => psf.ValidFrom <= now
                                && (psf.ValidTo == null || psf.ValidTo >= now));
@@ -288,8 +298,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                       equals new { md.ProductId, ValidFrom = md.MaxValidFrom }
                     select new { psf.ProductId, psf.ManufacturingFormulaId };
 
-                // === Left-join 1 PSV gần nhất của mỗi formula để lấy Product (nếu có) ===
-                // sels & orders đã có bên trên:
+                // === Left-join 1 PSV gn nht cua moi formula d ly Product (nu có) ===
+                // sels & orders dã có bên trên:
                 var sels = _unitOfWork.ProductionSelectVersionRepository.Query();
                 var orders = _unitOfWork.MfgProductionOrderRepository.Query();
 
@@ -297,7 +307,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 var itemsQuery =
                     from f in q
 
-                        // 1) Lấy 1 bản PSV gần nhất theo ValidFrom cho từng formula (left-join)
+                        // 1) Lay 1 bn PSV gn nht theo ValidFrom cho tng formula (left-join)
                     join s in sels on f.ManufacturingFormulaId equals s.ManufacturingFormulaId into gsel
                     from sel in gsel
                         .OrderByDescending(s => s.ValidFrom)
@@ -309,7 +319,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     join o0 in orders on sel.MfgProductionOrderId equals o0.MfgProductionOrderId into go
                     from o in go.DefaultIfEmpty()
 
-                        // 3) Dựng anonymous để tiếp tục xử lý
+                        // 3) Dng anonymous d tip tc x lý
                     select new
                     {
                         f,
@@ -317,14 +327,14 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         o,
                         productId = (Guid?)(o != null ? o.ProductId : (Guid?)null),
 
-                        // chuẩn khi bestPSF trùng công thức hiện tại
+                        // chuan khi bestPSF trùng cong thuc hien tai
                         isStandard =
                             bestPSF.Any(psf =>
                                 psf.ProductId == o.ProductId &&
                                 psf.ManufacturingFormulaId == f.ManufacturingFormulaId
                             ),
 
-                        // đang được chọn hiện hành nếu tồn tại PSV.ValidTo == null cho công thức này
+                        // dang duoc chon hin hành nu tn tai PSV.ValidTo == null cho cong thuc này
                         isSelectedNow =
                             sels.Any(s =>
                                 s.ManufacturingFormulaId == f.ManufacturingFormulaId &&
@@ -352,19 +362,19 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 var pagedItems = await items
                     .Skip((query.PageNumber - 1) * query.PageSize)
                     .Take(query.PageSize)
-                    .ToListAsync(ct);  // lỗi sẽ dừng ngay đây
+                    .ToListAsync(ct);  // Loi su dung ngay day.
 
                 return new PagedResult<GetSampleMfgFormula>(pagedItems, totalCount, query.PageNumber, query.PageSize);
             }
             catch (Exception ex)
             {
-                throw new Exception($"Lỗi khi lấy danh sách: {ex.Message}", ex);
+                throw new Exception($"Loi khi lay danh sach: {ex.Message}", ex);
             }
 
         }
 
         /// <summary>
-        /// Lấy thông tin của cụ thể một lệnh sản xuất 
+        /// Lay thông tin cua c th mot lenh san xuat 
         /// </summary>
         /// <param name="query"></param>
         /// <param name="ct"></param>
@@ -372,7 +382,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
         public async Task<OperationResult<GetMfgProductionOrder>> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
             if (id == Guid.Empty)
-                return OperationResult<GetMfgProductionOrder>.Fail("Id không hợp lệ.");
+                return OperationResult<GetMfgProductionOrder>.Fail("Id không hop le.");
 
             try
             {
@@ -393,15 +403,15 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     .Where(d => d.IsActive == true);
                 var mos = _unitOfWork.MerchandiseOrderRepository.Query();
 
-                // Chọn một công thức đã được cho phép sản xuất nếu có trong bảng ProductionSelectVersionRepository
-                // ✅ THAY BẰNG projection với correlated subqueries (EF dịch tốt)
+                // Chn mot cong thuc dã duoc cho phép san xuat nu có trong bang ProductionSelectVersionRepository
+                //  THAY BANG projection vi correlated subqueries (EF dch tt)
                 var vm = await orders
                     .Select(o => new GetMfgProductionOrder
                     {
                         MfgProductionOrderId = o.MfgProductionOrderId,
                         ExternalId = o.ExternalId,
 
-                        // Link MfgOrderPO -> MODetail -> MerchandiseOrder (chọn 1 bản ghi gần nhất)
+                        // Link MfgOrderPO -> MODetail -> MerchandiseOrder (chon 1 bn ghi gn nht)
                         MerchandiseOrderId = (
                             from l in links
                             join d in dets
@@ -424,7 +434,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             select mo.ExternalId
                         ).FirstOrDefault(),
 
-                        // PSV hiện hành -> ManufacturingFormulaId
+                        // PSV hin hành -> ManufacturingFormulaId
                         ManufacturingFormulaIdIsSelect = (
                             from s in isSelect
                             where s.MfgProductionOrderId == o.MfgProductionOrderId && s.ValidTo == null
@@ -432,7 +442,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             select (Guid?)s.ManufacturingFormulaId
                         ).FirstOrDefault(),
 
-                        // PSV hiện hành -> ManufacturingFormula.ExternalId
+                        // PSV hin hành -> ManufacturingFormula.ExternalId
                         ManufacturingFormulaExternalIdIsSelect = (
                             from s in isSelect
                             join f in manFormula
@@ -454,7 +464,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             .Select(sr => sr.ExternalId)
                             .FirstOrDefault(),
 
-                        // VU khách chọn (snapshot trên Order)
+                        // VU khách chon (snapshot trên Order)
                         FormulaCustomerSelect = o.FormulaId ?? Guid.Empty,
                         FormulaCustomerExternalIdSelect = o.FormulaExternalIdSnapshot ?? string.Empty,
 
@@ -478,33 +488,33 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     .FirstOrDefaultAsync(ct);
 
                 if (vm == null)
-                    return OperationResult<GetMfgProductionOrder>.Fail("Không tìm thấy lệnh sản xuất hoặc đã bị vô hiệu hóa.");
+                    return OperationResult<GetMfgProductionOrder>.Fail("Khong tim thay lenh san xuat hoac da bi vo hieu hoa.");
 
-                // (Tùy chọn) cảnh báo dữ liệu lỗi: có >1 PSV current
+                // Tuy chon: canh bao du lieu loi neu co hon 1 PSV current
                 var currentPsvCount = await _unitOfWork.ProductionSelectVersionRepository.Query()
                     .Where(s => s.MfgProductionOrderId == id && s.ValidTo == null)
                     .CountAsync(ct);
 
                 if (currentPsvCount > 1)
                 {
-                    // chỉ log cảnh báo, vẫn trả data (đã chọn bản gần nhất theo ValidFrom)
-                    return OperationResult<GetMfgProductionOrder>.Fail("Order {OrderId} có {Count} PSV.ValidTo == null. Vui lòng sửa dữ liệu (chỉ nên có 1).");
+                    // Chi log canh bao, van tra data neu da chon ban gan nhat theo ValidFrom.
+                    return OperationResult<GetMfgProductionOrder>.Fail("Order {OrderId} co {Count} PSV.ValidTo == null. Vui long sua du lieu (chi nen co 1).");
                 }
 
-                return OperationResult<GetMfgProductionOrder>.Ok(vm, "Lấy lệnh sản xuất thành công.");
+                return OperationResult<GetMfgProductionOrder>.Ok(vm, "Lay lenh san xuat thành công.");
             }
             catch (OperationCanceledException)
             {
-                return OperationResult<GetMfgProductionOrder>.Fail("Yêu cầu đã bị hủy.");
+                return OperationResult<GetMfgProductionOrder>.Fail("Yeu cau da bi huy.");
             }
             catch (Exception ex)
             {
-                return OperationResult<GetMfgProductionOrder>.Fail($"Lỗi hệ thống: {ex.Message}");
+                return OperationResult<GetMfgProductionOrder>.Fail($"Loi he thong: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Lấy danh sách công thức và lệnh sản xuất với phân trang và lọc
+        /// Lay danh sách cong thuc và lenh san xuat vi phân trang và lc
         /// </summary>
         /// <param name="query"></param>
         /// <param name="ct"></param>
@@ -526,11 +536,11 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             //    if (!string.IsNullOrWhiteSpace(query.Keyword))
             //    {
             //        var keyword = query.Keyword.Trim();
-            //        // Tìm theo tên/mã NV hoặc tên/mã khách trong batch
+            //        // Tìm theo tên/mã NV hoc tên/mã khách trong batch
             //        q = q.Where(x =>
-            //            (x.Name ?? "").Contains(keyword) ||
-            //            (x.Product.ColourCode ?? "").Contains(keyword) ||
-            //            (x.Product.Name ?? "").Contains(keyword)
+            //            (x.Name  "").Contains(keyword) ||
+            //            (x.Product.ColourCode  "").Contains(keyword) ||
+            //            (x.Product.Name  "").Contains(keyword)
             //        );
             //    }
 
@@ -549,7 +559,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
             //catch (Exception ex)
             //{
-            //    throw new Exception($"Lỗi khi lấy danh sách: {ex.Message}", ex);
+            //    throw new Exception($"Loi khi lay danh sach: {ex.Message}", ex);
             //}
 
             throw new ApplicationException("An error occurred while fetching manufacturing formulas.");
@@ -567,17 +577,17 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 var userId = _currentUser.EmployeeId;
                 var companyId = _currentUser.CompanyId;
 
-                // 0) Validate cơ bản
+                // 0) Validate co bn
                 if (req.ProductId == Guid.Empty)
-                    return OperationResult<Guid>.Fail("ProductId không hợp lệ.");
+                    return OperationResult<Guid>.Fail("ProductId không hop le.");
 
                 if (req.TotalQuantityRequest <= 0)
-                    return OperationResult<Guid>.Fail("TotalQuantityRequest phải > 0.");
+                    return OperationResult<Guid>.Fail("TotalQuantityRequest phai > 0.");
 
                 if (string.IsNullOrWhiteSpace(req.BagType))
-                    return OperationResult<Guid>.Fail("BagType không được rỗng.");
+                    return OperationResult<Guid>.Fail("BagType khong duoc rong.");
 
-                // 1) Load snapshot cần thiết (Product / Customer / Formula)
+                // 1) Load snapshot cn thit (Product / Customer / Formula)
                 var productSnap = await _unitOfWork.ProductRepository.Query(track: false)
                     .Where(p => p.ProductId == req.ProductId)
                     .Select(p => new
@@ -590,7 +600,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     .FirstOrDefaultAsync(ct);
 
                 if (productSnap == null)
-                    return OperationResult<Guid>.Fail($"Không tìm thấy ProductId={req.ProductId}");
+                    return OperationResult<Guid>.Fail($"Khong tim thay ProductId={req.ProductId}");
 
                 var customerSnap = req.CustomerId.HasValue
                     ? await _unitOfWork.CustomerRepository.Query(false)
@@ -606,14 +616,14 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         .FirstOrDefaultAsync(ct)
                     : null;
 
-                // 2) Build ExternalId (tuỳ bạn thay bằng generator chuẩn hệ thống)
+                // 2) Build ExternalId (tu bn thay bang generator chuan h thng)
                 var externalId = await _externalId.NextAsync(DocumentPrefix.MFG.ToString(), ct);
 
                 var status = string.IsNullOrWhiteSpace(req.InitialStatus)
                     ? ManufacturingProductOrder.New.ToString()
                     : req.InitialStatus!.Trim();
 
-                // 3) Tạo MfgProductionOrder
+                // 3) Tao MfgProductionOrder
                 var mpo = new MfgProductionOrder
                 {
                     MfgProductionOrderId = Guid.NewGuid(),
@@ -670,25 +680,25 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     sourceCode = mpo.ExternalId ?? string.Empty,
                     sourceId = mpo.MfgProductionOrderId,
                     status = mpo.Status,
-                    note = $"Tạo lệnh sản xuất nội bộ vào {now} bởi {_currentUser.personName}"
+                    note = $"Tao lenh san xuat noi bo vào {now} boi {_currentUser.personName}"
                 }, ct);
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
-                return OperationResult<Guid>.Ok(mpo.MfgProductionOrderId, "Tạo lệnh sản xuất nội bộ thành công");
+                return OperationResult<Guid>.Ok(mpo.MfgProductionOrderId, "Tao lenh san xuat noi bo thành công");
             }
             catch (Exception)
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                return OperationResult<Guid>.Fail("Có lỗi xảy ra trong quá trình tạo lệnh sản xuất nội bộ.");
+                return OperationResult<Guid>.Fail("Co loi xay ra trong qua trinh tao lenh san xuat noi bo.");
             }
         }
 
         // ======================================================================== Update ========================================================================
 
         /// <summary>
-        /// Cập nhật thông tin của lệnh sản xuất
+        /// Cap nhat thông tin cua lenh san xuat
         /// </summary>
         /// <param name="req"></param>
         /// <param name="ct"></param>
@@ -712,19 +722,19 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     .FirstOrDefaultAsync(ct);
 
                 if (existingMfgOrderPO == null)
-                    return OperationResult.Fail($"Không tìm thấy lệnh sản xuất với ID {req.MfgProductionOrderId}");
+                    return OperationResult.Fail($"Khong tim thay lenh san xuat voi ID {req.MfgProductionOrderId}");
 
 
                 var existing = existingMfgOrderPO.ProductionOrder;
 
 
-                // Chỉ được phép sửa những field sau:
+                // Ch duoc phép sa nhng field sau:
                 existing.UpdatedDate = now;
                 existing.UpdatedBy = userId;
 
                 existing.StepOfProduct = req.StepOfProduct;
 
-                // Lưu thay đổi
+                // Luu thay di
                 PatchHelper.SetIfRef(req.PlpuNote, () => existing.PlpuNote, v => existing.PlpuNote = v);
                 PatchHelper.SetIfRef(req.LabNote, () => existing.LabNote, v => existing.LabNote = v);
                 PatchHelper.SetIfRef(req.Requirement, () => existing.Requirement, v => existing.Requirement = v);
@@ -739,7 +749,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
                 var statusChanged = PatchHelper.SetIfRef(req.Status, () => existing.Status, v => existing.Status = v);
 
-                // 1) Kiểm tra xem Status có đổi sang Scheduling không
+                // 1) Kim tra xem Status có di sang Scheduling không
                 var statusChangedToScheduling =
                     statusChanged && existing.Status == ManufacturingProductOrder.Scheduling.ToString();
                 if (statusChanged)
@@ -751,13 +761,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         sourceCode = existing.ExternalId ?? string.Empty,
                         sourceId = existing.MfgProductionOrderId,
                         status = existing.Status,
-                        note = $"Cập nhật bởi hệ thống vào {now} bởi {_currentUser.personName}"
+                        note = $"Cap nhat boi he thong vào {now} boi {_currentUser.personName}"
                     }, ct);
                 }
 
                 if (statusChangedToScheduling)
                 {
-                    // Tránh tạo trùng nếu đã có schedule cho lệnh này
+                    // Tránh to trùng nu dã có schedule cho lenh này
                     var scheduleExists = await _unitOfWork.SchedualMfgRepository
                         .Query(track: false)
                         .AnyAsync(s => s.MfgProductionOrderId == existing.MfgProductionOrderId, ct);
@@ -766,12 +776,12 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
                     if (!scheduleExists)
                     {
-                        // ===== 1) Lấy thông tin Product =====
+                        // ===== 1) Lay thông tin Product =====
                         var productInfo = await _unitOfWork.ProductRepository.Query(false)
                             .Where(p => p.ProductId == existing.ProductId)
                             .Select(p => new
                             {
-                                // ĐỔI TÊN PROPERTY NÀY CHO ĐÚNG VỚI ENTITY Product CỦA BẠN
+                                // DOI TÊN PROPERTY NÀY CHO ÐÚNG VOI ENTITY Product CUA BAN
                                 p.ExpiryType,
                                 p.RohsStandard,
                                 p.ReachStandard,
@@ -782,7 +792,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             })
                             .FirstOrDefaultAsync(ct);
 
-                        // ===== 2) Tạo bản ghi SchedualMfg =====
+                        // ===== 2) Tao bn ghi SchedualMfg =====
                         var schedual = new SchedualMfg
                         {
                             MfgProductionOrderId = existing.MfgProductionOrderId,
@@ -800,7 +810,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         };
                         await _unitOfWork.SchedualMfgRepository.AddAsync(schedual, ct);
 
-                        //Tạo WarehouseRequest để tạo đơn đề xuất xuất nguyên vật liệu ngay khi lên lịch sản xuất
+                        //Tao WarehouseRequest d to don d xut xut nguyen vat lieu ngay khi lên lch san xuat
                         //await _warehouseReservationService.EnsureWarehouseIssueRequestAsync (existing, now, userId, companyId, ct);
 
                     }
@@ -815,7 +825,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     schedule.DeliveryPlanDate = existing.ExpectedDate;
                 }
 
-                // 2. Đồng bộ status sang MerchandiseOrder 
+                // 2. Dong b status sang MerchandiseOrder 
                 var detail = existingMfgOrderPO.Detail;
                 if (statusChanged && detail != null)
                 {
@@ -825,11 +835,11 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
                     if (relatedOrder != null)
                     {
-                        // Parse enum an toàn, mặc định về trạng thái hiện tại nếu parse thất bại
+                        // Parse enum an toan, mac dinh ve trang thai hien tai neu parse that bai.
                         if (!Enum.TryParse<MerchadiseStatus>(relatedOrder.Status, ignoreCase: true, out var roStatus))
-                            roStatus = MerchadiseStatus.New; // tuỳ bạn, hoặc return/skip
+                            roStatus = MerchadiseStatus.New; // tuy ban, hoac return/skip
 
-                        // Chỉ đổi sang Processing nếu hiện tại là Approved hoặc New
+                        // Chi doi sang Processing neu hien tai la Approved hoac New.
                         if (roStatus == MerchadiseStatus.Approved || roStatus == MerchadiseStatus.New)
                         {
                             relatedOrder.Status = MerchadiseStatus.Processing.ToString();
@@ -843,7 +853,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                                 sourceCode = relatedOrder.ExternalId ?? string.Empty,
                                 sourceId = relatedOrder.MerchandiseOrderId,
                                 status = relatedOrder.Status,
-                                note = $"Cập nhật bởi hệ thống vào {now} bởi {_currentUser.personName}"
+                                note = $"Cap nhat boi he thong vào {now} boi {_currentUser.personName}"
                             }, ct);
                         }
                     }
@@ -851,17 +861,17 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
-                return OperationResult.Ok("Cập nhật thành công");
+                return OperationResult.Ok("Cap nhat thanh cong");
             }
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                return OperationResult.Fail("Có lỗi xảy ra trong quá trình cập nhật lệnh sản xuất.");
+                return OperationResult.Fail("Co loi xay ra trong qua trinh cap nhat lenh san xuat.");
             }
         }
 
         /// <summary>
-        /// Cập nhật trạng thái lệnh sản xuất khi lệnh sản xuất hoàn thành, nằm ở service merchadiseOrder
+        /// Cap nhat trang thái lenh san xuat khi lenh san xuat hoàn thành, nm  service merchadiseOrder
         /// </summary>
         /// <param name="mfgProductionOrderId"></param>
         /// <param name="ct"></param>
@@ -886,7 +896,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 if (existingMfgOrderPO == null || existingMfgOrderPO.ProductionOrder == null)
                 {
                     await _unitOfWork.RollbackTransactionAsync();
-                    return OperationResult.Fail($"Không tìm thấy lệnh sản xuất với ID {mfgProductionOrderId}");
+                    return OperationResult.Fail($"Khong tim thay lenh san xuat voi ID {mfgProductionOrderId}");
                 }
 
                 var mpo = existingMfgOrderPO.ProductionOrder;
@@ -894,14 +904,14 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 if (mpo.CompanyId != companyId)
                 {
                     await _unitOfWork.RollbackTransactionAsync();
-                    return OperationResult.Fail("Bạn không có quyền cập nhật lệnh sản xuất này.");
+                    return OperationResult.Fail("Ban khong co quyen cap nhat lenh san xuat nay.");
                 }
 
-                // Nếu đã Finished rồi thì không cần update nữa
+                // Neu da Finished roi thi khong can update nua.
                 if (string.Equals(mpo.Status, finishedStatus, StringComparison.OrdinalIgnoreCase))
                 {
                     await _unitOfWork.RollbackTransactionAsync();
-                    return OperationResult.Ok("Lệnh sản xuất đã ở trạng thái Finished.");
+                    return OperationResult.Ok("Lenh san xuat da o trang thai Finished.");
                 }
 
                 var oldStatus = mpo.Status;
@@ -911,7 +921,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 mpo.UpdatedDate = now;
                 mpo.UpdatedBy = userId;
 
-                // 2) Update SchedualMfg nếu có
+                // 2) Update SchedualMfg nu có
                 var schedule = await _unitOfWork.SchedualMfgRepository.Query(track: true)
                     .FirstOrDefaultAsync(s => s.MfgProductionOrderId == mpo.MfgProductionOrderId, ct);
 
@@ -921,13 +931,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 }
 
                 // 3) Ghi EventLog
-                // nếu bạn muốn chống log trùng giống SQL thì check trước
+                // nu bn mun chong log trùng ging SQL thì check truoc
                 var existedLog = await _unitOfWork.EventLogRepository.Query(track: false)
                     .AnyAsync(e =>
                         e.SourceId == mpo.MfgProductionOrderId &&
                         e.EventType == EventType.ManufacturingProductOrder &&
                         e.Status == finishedStatus &&
-                        e.Note == "Kết thúc lệnh sản xuất automation 25/03/2026", ct);
+                        e.Note == "Ket thuc lenh san xuat automation 25/03/2026", ct);
 
                 if (!existedLog)
                 {
@@ -938,26 +948,59 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         sourceCode = mpo.ExternalId ?? string.Empty,
                         sourceId = mpo.MfgProductionOrderId,
                         status = finishedStatus,
-                        note = $"Kết thúc lệnh sản xuất automation vào {now:dd/MM/yyyy HH:mm:ss} bởi {_currentUser.personName}"
+                        note = $"Ket thuc lenh san xuat automation vào {now:dd/MM/yyyy HH:mm:ss} boi {_currentUser.personName}"
                     }, ct);
                 }
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
-                return OperationResult.Ok("Cập nhật trạng thái Finished thành công.");
+                return OperationResult.Ok("Cap nhat trang thai Finished thanh cong.");
             }
             catch (Exception)
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                return OperationResult.Fail("Có lỗi xảy ra trong quá trình kết thúc lệnh sản xuất.");
+                return OperationResult.Fail("Co loi xay ra trong qua trinh ket thuc lenh san xuat.");
+            }
+        }
+
+        public async Task<OperationResult> CheckMfgProductionOrderAsync(PatchCheckMfgProductionOrder mfgProductionOrder, CancellationToken ct = default)
+        {
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var now = DateTime.Now;
+                var userId = _currentUser.EmployeeId;
+
+                var existingManufacturingOrder = await _unitOfWork.MfgProductionOrderRepository.Query(track: true)
+                    .Where(m => m.MfgProductionOrderId == mfgProductionOrder.mfgProductionOrderId && m.IsActive == true)
+                    .FirstOrDefaultAsync(ct);
+
+                if (existingManufacturingOrder == null)
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
+                    return OperationResult.Fail($"Khong tim thay lenh san xuat voi ID {mfgProductionOrder.mfgProductionOrderId}");
+                }
+
+                PatchHelper.SetIfNullable(mfgProductionOrder.IsPrintedStock, () => existingManufacturingOrder.IsPrintedStock, v => existingManufacturingOrder.IsPrintedStock = v);
+                PatchHelper.SetIfNullable(now, () => existingManufacturingOrder.CheckedDate, v => existingManufacturingOrder.CheckedDate = v);
+                PatchHelper.SetIfNullable(userId, () => existingManufacturingOrder.Checker, v => existingManufacturingOrder.Checker = v);
+
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
+                return OperationResult.Ok("Cap nhat thanh cong");
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return OperationResult.Fail("Co loi xay ra trong qua trinh kiem tra lenh san xuat.");
             }
         }
 
         // ======================================================================== Helper ======================================================================== 
 
         /// <summary>
-        /// Phương thưc tạo lệnh sản xuất khi đơn hàng được duyệt, nằm ở service merchadiseOrder
+        /// Phuong thuc to lenh san xuat khi don hàng duoc duyt, nm  service merchadiseOrder
         /// </summary>
         /// <param name="mo"></param>
         /// <param name="ct"></param>
@@ -981,13 +1024,13 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         x => new ProductRow(x.ProductId, x.ColourCode, x.Name, x.CategoryId, x.ColourName),
                         ct);
 
-                // 1) Lọc các PSF đang hiệu lực tại 'now'
+                // 1) Lc các PSF dang hieu luc tai 'now'
                 var validPSF = _unitOfWork.ProductStandardFormulaRepository.Query()
                     .Where(psf => productIds.Contains(psf.ProductId)
                                && psf.ValidFrom <= now
                                && (psf.ValidTo == null || psf.ValidTo >= now));
 
-                // 2) Lấy ValidFrom mới nhất theo ProductId
+                // 2) Lay ValidFrom moi nht theo ProductId
                 var latestPerProduct = validPSF
                     .GroupBy(psf => psf.ProductId)
                     .Select(g => new
@@ -996,7 +1039,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         MaxValidFrom = g.Max(x => x.ValidFrom)
                     });
 
-                // 3) Join lại để lấy đúng hàng mới nhất
+                // 3) Join loi d ly dung hàng moi nht
                 var latestPsfRows =
                     from psf in validPSF
                     join lp in latestPerProduct
@@ -1008,7 +1051,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         psf.ManufacturingFormulaId
                     };
 
-                // 4) Join sang ManufacturingFormula để lấy thông tin VA
+                // 4) Join sang ManufacturingFormula d ly thông tin VA
                 var standardVaByProduct = await
                     (from x in latestPsfRows
                      join mf in _unitOfWork.ManufacturingFormulaRepository.Query()
@@ -1026,14 +1069,14 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         x => (x.VaId, x.VaCode, x.SourceVuId, x.SourceVuCode),
                         ct);
 
-                // VU đã từng có VA chưa
+                // VU dã tng có VA chua
                 var vuHasAnyVa = await _unitOfWork.ManufacturingFormulaRepository.Query()
                     .Where(mf => mf.IsActive && mf.SourceVUFormulaId != null && vuIds.Contains(mf.SourceVUFormulaId.Value))
                     .GroupBy(mf => mf.SourceVUFormulaId!.Value)
                     .Select(g => new { VU = g.Key, Cnt = g.Count() })
                     .ToDictionaryAsync(x => x.VU, x => x.Cnt > 0, ct);
 
-                // Vật tư theo VU
+                // Vat tu theo VU
                 var fmItemsByVu = await _unitOfWork.FormulaMaterialRepository.Query()
                     .Where(x => vuIds.Contains(x.FormulaId))
                     .Select(x => new
@@ -1041,7 +1084,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         x.FormulaId,
                         Row = new FmItemRow
                         {
-                            ItemId = x.itemType == ItemType.Material
+                            ItemId = (x.itemType == ItemType.Material || x.itemType == ItemType.MaterialFailure)
                                     ? x.MaterialId ?? Guid.Empty
                                     : x.ProductId ?? Guid.Empty,
                             CategoryId = x.CategoryId,
@@ -1055,7 +1098,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                     .GroupBy(x => x.FormulaId)
                     .ToDictionaryAsync(g => g.Key, g => g.Select(z => z.Row).ToList(), ct);
 
-                // Vật tư theo VA chuẩn (nếu có)
+                // Vat tu theo VA chuan (nu có)
                 var standardVaIds = standardVaByProduct.Values.Select(v => v.VaId).Distinct().ToList();
                 var fmItemsByVa = standardVaIds.Count == 0
                     ? new Dictionary<Guid, List<FmItemRow>>()
@@ -1066,7 +1109,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                             m.ManufacturingFormulaId,
                             Row = new FmItemRow
                             {
-                                ItemId = m.itemType == ItemType.Material
+                                ItemId = (m.itemType == ItemType.Material || m.itemType == ItemType.MaterialFailure)
                                     ? m.MaterialId ?? Guid.Empty
                                     : m.ProductId ?? Guid.Empty,
                                 CategoryId = m.CategoryId,
@@ -1081,7 +1124,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                         .ToDictionaryAsync(g => g.Key, g => g.Select(z => z.Row).ToList(), ct);
 
 
-                // Price map: lấy bản ghi giá mới nhất cho mỗi MaterialId (đúng như cách bạn đang làm)
+                // Price map: ly bn ghi giá moi nht cho moi MaterialId (dung nhu cách bn dang làm)
                 var allMatIds = new HashSet<Guid>();
                 foreach (var list in fmItemsByVu.Values) foreach (var it in list) allMatIds.Add(it.ItemId);
                 foreach (var list in fmItemsByVa.Values) foreach (var it in list) allMatIds.Add(it.ItemId);
@@ -1098,7 +1141,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 var bestByMaterial = msRaw
                 .GroupBy(ms => ms.MaterialId)
                 .Select(g => g
-                    .OrderByDescending(ms => ms.IsPreferred)                          // 1) ưu tiên preferred
+                    .OrderByDescending(ms => ms.IsPreferred)                          // 1) uu tiên preferred
                     .ThenByDescending(ms => ms.UpdatedDate ?? ms.CreateDate)
                     .First())
                 .ToList();
@@ -1118,14 +1161,14 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
             }
             catch (Exception ex)
             {
-                throw; // GIỮ nguyên stack!
+                throw; // Giu nguyen stack!
             }
 
         }
 
         /// <summary>
-        /// Gom toàn bộ dữ liệu <b>read-only</b> cần thiết để tạo <b>nhiều</b> lệnh sản xuất cho một đơn hàng,
-        /// nhằm tránh N+1 queries và đảm bảo nhất quán trong cùng transaction.
+        /// Gom toàn b du lieu <b>read-only</b> cn thit d to <b>nhiu</b> lenh san xuat cho mot don hàng,
+        /// nhm tránh N+1 queries và dam bao nht quán trong cùng transaction.
         /// </summary>
         /// <param name="mo"></param>
         /// <param name="detail"></param>
@@ -1140,12 +1183,12 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
             // a) Product
             if (!ctx.Products.TryGetValue(detail.ProductId, out var product))
-                throw new InvalidOperationException($"Product {detail.ProductId} không tồn tại.");
+                throw new InvalidOperationException($"Product {detail.ProductId} khong ton tai.");
 
-            // b) Ưu tiên VA chuẩn theo Product (nếu đang hiệu lực)
+            // b) Uu tiên VA chuan theo Product (nu dang hieu luc)
             var hasStandardForProduct = ctx.StandardVaByProduct.TryGetValue(detail.ProductId, out var stdVaForProduct);
 
-            // c) Items nguồn
+            // c) Items ngun
             List<FmItemRow>? fmItems = null;
             if (hasStandardForProduct)
                 ctx.FmItemsByVa.TryGetValue(stdVaForProduct!.VaId, out fmItems);
@@ -1153,7 +1196,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 ctx.FmItemsByVu.TryGetValue(detail.FormulaId, out fmItems);
             fmItems ??= new List<FmItemRow>();
 
-            // === Tạo MFG order ===
+            // === Tao MFG order ===
             var mfgId = Guid.CreateVersion7();
             var mfgExternalId = await _externalId.NextAsync(DocumentPrefix.MFG.ToString(), ct: ct);
 
@@ -1162,7 +1205,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
                 MfgProductionOrderId = mfgId,
                 ExternalId = mfgExternalId,
 
-                //ProductionType = null, // nếu bạn có rule thì set ở đây
+                //ProductionType = null, // nu bn có rule thì set  dây
                 ProductId = product.ProductId,
                 ProductExternalIdSnapshot = product.ColourCode,
                 ProductNameSnapshot = product.Name,
@@ -1206,7 +1249,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
 
 
 
-            // 7) Liên kết Order với chi tiết đơn hàng (MfgOrderPO)
+            // 7) Liên kt Order vi chi tit don hàng (MfgOrderPO)
             var link = new MfgOrderPO
             {
                 MerchandiseOrderDetailId = detail.MerchandiseOrderDetailId,
@@ -1219,7 +1262,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services
         }
 
         /// <summary>
-        /// Lọc và gán lịch sử công thức sản xuất (MFGFormulaHistories) cho mỗi lệnh sản xuất trong danh sách, dựa trên MfgProductionOrderId và ExternalId.
+        /// Lc và gán lich su cong thuc san xuat (MFGFormulaHistories) cho moi lenh san xuat trong danh sách, da trên MfgProductionOrderId và ExternalId.
         /// </summary>
         /// <param name="items"></param>
         /// <param name="ct"></param>

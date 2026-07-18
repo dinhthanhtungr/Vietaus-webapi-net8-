@@ -73,6 +73,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.ServiceContracts
         /// <returns></returns>
         Task<OperationResult> FinishMfgProductionOrderAsync(Guid mfgProductionOrderId, CancellationToken ct = default);
 
+        Task<OperationResult> CheckMfgProductionOrderAsync(PatchCheckMfgProductionOrder mfgProductionOrder, CancellationToken ct = default);
+
         // ======================================================================== Helper ======================================================================== 
 
         /// <summary>

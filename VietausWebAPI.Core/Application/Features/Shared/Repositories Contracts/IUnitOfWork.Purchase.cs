@@ -11,6 +11,7 @@ namespace VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts
     {
         IPurchaseOrderRepository PurchaseOrderRepository { get; }
         IPurchaseOrderDetailRepository PurchaseOrderDetailRepository { get; }
+        IPurchaseOrderDocumentRepository PurchaseOrderDocumentRepository { get; }
         IPurchaseOrderSnapshotRepository PurchaseOrderSnapshotRepository { get; }
         IPurchaseOrderLinkRepository PurchaseOrderLinkRepository { get; }
     }

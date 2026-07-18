@@ -9,10 +9,13 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Queries.SaleRep
 {
     public class MerchandiseOrderReportQuery : PaginationQuery
     {
+        public bool IncludeVat { get; set; } = false;
         public Guid? GroupId { get; set; }
         public Guid? EmployeeId { get; set; }
         public string? Keyword { get; set; }
         public DateTime? From { get; set; }
         public DateTime? To { get; set; }
+        public string? SortBy { get; set; }
+        public string? SortDirection { get; set; }
     }
 }

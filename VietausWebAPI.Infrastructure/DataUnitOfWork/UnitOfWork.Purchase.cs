@@ -11,6 +11,7 @@ namespace VietausWebAPI.Infrastructure.DataUnitOfWork
     {
         public IPurchaseOrderRepository PurchaseOrderRepository { get; }
         public IPurchaseOrderDetailRepository PurchaseOrderDetailRepository { get; }
+        public IPurchaseOrderDocumentRepository PurchaseOrderDocumentRepository { get; }
         public IPurchaseOrderSnapshotRepository PurchaseOrderSnapshotRepository { get; }
         public IPurchaseOrderLinkRepository PurchaseOrderLinkRepository { get; }
     }

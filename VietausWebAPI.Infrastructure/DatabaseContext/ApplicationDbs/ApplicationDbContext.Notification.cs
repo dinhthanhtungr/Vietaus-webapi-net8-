@@ -16,5 +16,6 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs
         public DbSet<UserNotificationSetting> UserNotificationSettings => Set<UserNotificationSetting>();
         public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
         public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+        public DbSet<WebPushSubscription> WebPushSubscriptions => Set<WebPushSubscription>();
     }
 }

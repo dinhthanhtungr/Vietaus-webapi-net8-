@@ -64,7 +64,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContra
         /// <param name="material"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<OperationResult> AddNewMaterialAsync(PostMaterial material, CancellationToken ct = default);
+        Task<OperationResult<Guid>> AddNewMaterialAsync(PostMaterial material, CancellationToken ct = default);
 
         // ======================================================================== Update ======================================================================== 
 
@@ -74,7 +74,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContra
         /// <param name="req"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<OperationResult> UpsertMaterialAsync(PatchMaterial req, CancellationToken ct = default);
+        Task<OperationResult<Guid>> UpsertMaterialAsync(PatchMaterial req, CancellationToken ct = default);
 
         /// <summary>
         /// Xóa mềm vật tư

@@ -6,27 +6,31 @@ using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
 using Microsoft.Extensions.Configuration.UserSecrets;
 using System;
 using System.Collections.Generic;
+using System.Formats.Asn1;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.GetDtos;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.PatchDtos;
+using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.PostDtos;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Supplier;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.Querys.Material;
 using VietausWebAPI.Core.Application.Features.MaterialFeatures.ServiceContracts;
+using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.Service.StaticCurrentPriceHelpers;
+using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadServices;
+using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
+using VietausWebAPI.Core.Domain.Entities.AttachmentSchema;
 using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
-using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
-using static System.Collections.Specialized.BitVector32;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using System.Formats.Asn1;
 using VietausWebAPI.Core.Domain.Enums.Formulas;
 using VietausWebAPI.Core.Domain.Enums.Products;
-using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.GetDtos;
-using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.PostDtos;
-using VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.PatchDtos;
+using static System.Collections.Specialized.BitVector32;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
 {
@@ -36,13 +40,20 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
         private readonly IMapper _mapper;
         private readonly ICurrentUser _currentUser;
         private readonly IExternalIdService _idService;
+        private readonly IWarehouseReadService _warehouseReadService;
 
-        public MaterialService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUser currentUser, IExternalIdService externalIdService)
+        public MaterialService(
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            ICurrentUser currentUser,
+            IExternalIdService externalIdService,
+            IWarehouseReadService warehouseReadService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _currentUser = currentUser;
             _idService = externalIdService;
+            _warehouseReadService = warehouseReadService;
         }
 
 
@@ -122,6 +133,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                         Category = x.Category.ExternalId,
                         Unit = x.Unit,
                         Weight = x.Weight,
+                        AttachmentCollectionId = x.AttachmentCollectionId,
                         Package = string.IsNullOrWhiteSpace(x.Package)
                             ? ""
                             : x.Weight != null
@@ -130,17 +142,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                         ItemType = ItemType.Material,
 
                         // Giá summary vẫn giữ logic cũ
-                        Price = supplierFilter.HasValue
-                            ? x.MaterialsSuppliers
-                                .Where(ms => ms.SupplierId == supplierFilter.Value && ms.IsActive == true)
-                                .OrderByDescending(ms => ms.UpdatedDate ?? ms.CreateDate)
-                                .Select(ms => ms.CurrentPrice)
-                                .FirstOrDefault()
-                            : x.MaterialsSuppliers
-                                .Where(ms => ms.IsActive == true)
-                                .OrderByDescending(ms => ms.UpdatedDate ?? ms.CreateDate)
-                                .Select(ms => ms.CurrentPrice)
-                                .FirstOrDefault(),
+                        Price = 0m,
 
                         DetailMaterials = new List<GetDetailMaterials>()
                     })
@@ -150,6 +152,34 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                     return new PagedResult<GetMaterialSummary>(items, total, query.PageNumber, query.PageSize);
 
                 var materialIds = items.Select(x => x.MaterialId).ToList();
+                var latestPriceInfoDict = supplierFilter.HasValue
+                    ? await MaterialPriceQueryHelper.LoadLatestMaterialPriceInfoBySupplierDictAsync(
+                        _unitOfWork.PurchaseOrderDetailRepository.Query(track: false),
+                        _unitOfWork.MaterialsSupplierRepository.Query(track: false),
+                        supplierFilter.Value,
+                        materialIds.Select(x => (Guid?)x),
+                        ct)
+                    : await MaterialPriceQueryHelper.LoadLatestMaterialPriceInfoDictAsync(
+                        _unitOfWork.PurchaseOrderDetailRepository.Query(track: false),
+                        _unitOfWork.MaterialsSupplierRepository.Query(track: false),
+                        materialIds.Select(x => (Guid?)x),
+                        ct);
+
+                foreach (var item in items)
+                {
+                    item.Price = MaterialPriceQueryHelper.ResolveLatestPrice(
+                        latestPriceInfoDict,
+                        item.MaterialId,
+                        item.Price ?? 0m);
+
+                }
+
+                await FillLotNumbersForMaterialSummariesAsync(
+                    items,
+                    items
+                        .Where(x => !string.IsNullOrWhiteSpace(x.ExternalId))
+                        .ToDictionary(x => x.MaterialId, x => x.ExternalId!),
+                    ct);
 
                 // B2. Lấy supplier detail của các material trong page
                 var supplierRows = await _unitOfWork.MaterialsSupplierRepository
@@ -261,7 +291,9 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
             if (query.SupplierId.HasValue)
             {
                 materialsBase = materialsBase.Where(x =>
-                    x.MaterialsSuppliers.Any(ms => ms.SupplierId == query.SupplierId.Value));
+                    x.MaterialsSuppliers.Any(ms =>
+                        ms.SupplierId == query.SupplierId.Value &&
+                        ms.IsActive == true));
             }
 
             if (!string.IsNullOrWhiteSpace(query.Keyword))
@@ -311,6 +343,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                             .Select(ms => ms.CurrentPrice)
                             .FirstOrDefault()
                 },
+                LotCode = x.ExternalId,
                 CreatedDateSort = x.CreatedDate
             });
 
@@ -394,6 +427,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                     Package = null,
                     Unit = null
                 },
+                LotCode = p.ColourCode ?? p.Code,
                 CreatedDateSort = p.CreatedDate
             });
 
@@ -402,14 +436,123 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
             var q = materialsQ.Concat(productsQ);
             var total = await q.CountAsync(ct);
 
-            var items = await q
+            var pageRows = await q
                 .OrderByDescending(x => x.CreatedDateSort)
                 .Skip(skip)
                 .Take(query.PageSize)
-                .Select(x => x.Dto)
                 .ToListAsync(ct);
 
+            var items = pageRows
+                .Select(x => x.Dto)
+                .ToList();
+
+            await FillLotNumbersForMaterialSummariesAsync(
+                items,
+                pageRows
+                    .Where(x => !string.IsNullOrWhiteSpace(x.LotCode))
+                    .GroupBy(x => x.Dto.MaterialId)
+                    .ToDictionary(x => x.Key, x => x.First().LotCode!),
+                ct);
+
+            var priceItems = items
+                .Where(x => x.MaterialId != Guid.Empty)
+                .Select(x => (
+                    x.ItemType,
+                    MaterialId: x.ItemType == ItemType.Material ? (Guid?)x.MaterialId : null,
+                    ProductId: x.ItemType == ItemType.Product ? (Guid?)x.MaterialId : null
+                ))
+                .ToList();
+
+            if (priceItems.Count > 0)
+            {
+                if (supplierFilter.HasValue)
+                {
+                    // Supplier filter chỉ có ý nghĩa với Material.
+                    // Vì phía trên bạn đang loại Product khi có SupplierId,
+                    // nên nhánh này gần như chỉ fill Material.
+                    var materialIds = priceItems
+                        .Where(x => x.ItemType == ItemType.Material && x.MaterialId.HasValue)
+                        .Select(x => x.MaterialId)
+                        .Distinct()
+                        .ToList();
+
+                    if (materialIds.Count > 0)
+                    {
+                        var latestMaterialPriceInfoDict =
+                            await MaterialPriceQueryHelper.LoadLatestMaterialPriceInfoBySupplierDictAsync(
+                                _unitOfWork.PurchaseOrderDetailRepository.Query(track: false),
+                                _unitOfWork.MaterialsSupplierRepository.Query(track: false),
+                                supplierFilter.Value,
+                                materialIds,
+                                ct);
+
+                        foreach (var item in items.Where(x => x.ItemType == ItemType.Material))
+                        {
+                            item.Price = MaterialPriceQueryHelper.ResolveLatestPrice(
+                                latestMaterialPriceInfoDict,
+                                item.MaterialId,
+                                item.Price ?? 0m);
+                        }
+                    }
+                }
+                else
+                {
+                    // Không filter Supplier thì dùng helper chung cho cả Material + Product.
+                    var latestItemPriceInfoDict =
+                        await MaterialPriceQueryHelper.LoadLatestItemPriceInfoDictAsync(
+                            _unitOfWork.PurchaseOrderDetailRepository.Query(track: false),
+                            _unitOfWork.MaterialsSupplierRepository.Query(track: false),
+                            _unitOfWork.MerchandiseOrderRepository.QueryDetail(track: false),
+                            priceItems,
+                            ct);
+
+                    foreach (var item in items)
+                    {
+                        item.Price = MaterialPriceQueryHelper.ResolveLatestItemPrice(
+                            latestItemPriceInfoDict,
+                            item.ItemType,
+                            item.MaterialId,
+                            item.Price ?? 0m);
+                    }
+                }
+            }
             return new PagedResult<GetMaterialSummary>(items, total, query.PageNumber, query.PageSize);
+
+        }
+
+        private async Task FillLotNumbersForMaterialSummariesAsync(
+            List<GetMaterialSummary> items,
+            IReadOnlyDictionary<Guid, string> lotCodeByItemId,
+            CancellationToken ct)
+        {
+            if (items.Count == 0 || lotCodeByItemId.Count == 0)
+                return;
+
+            var lotCodes = lotCodeByItemId.Values
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct()
+                .ToList();
+
+            if (lotCodes.Count == 0)
+                return;
+
+            var lotNoListMap = await _warehouseReadService.GetLotNoListMapByCodesAsync(lotCodes, ct);
+
+            foreach (var item in items)
+            {
+                if (!lotCodeByItemId.TryGetValue(item.MaterialId, out var lotCode) ||
+                    string.IsNullOrWhiteSpace(lotCode))
+                {
+                    item.LotNumber = new List<LotNumberOptionDto>();
+                    continue;
+                }
+
+                var lotCodeKey = lotCode.Trim().ToUpperInvariant();
+                item.LotNumber = lotNoListMap.TryGetValue(lotCodeKey, out var lotNumbers)
+                    ? lotNumbers
+                    : new List<LotNumberOptionDto>();
+            }
         }
 
         public async Task<OperationResult<GetMaterial>> GetMaterialByIdAsync(Guid Id, CancellationToken ct = default)
@@ -433,6 +576,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                         Weight = m.Weight,
                         Unit = m.Unit,
                         Package = m.Package,
+                        AttachmentCollectionId = m.AttachmentCollectionId,
                         Comment = m.Comment,
                         MinQuantity = m.MinQuantity,
                         CompanyId = m.CompanyId,
@@ -572,7 +716,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
         /// <param name="material"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<OperationResult> AddNewMaterialAsync(PostMaterial material, CancellationToken ct = default)
+        public async Task<OperationResult<Guid>> AddNewMaterialAsync(PostMaterial material, CancellationToken ct = default)
         {
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -598,6 +742,9 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                     );
                 }
 
+                var attachmentCollectionId = await EnsureAttachmentCollectionAsync(material.AttachmentCollectionId, ct);
+
+
                 // 2) Map scalar -> Material
                 var materialEntity = new Material
                 {
@@ -605,6 +752,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                     ExternalId = material.ExternalId,
                     CustomCode = material.CustomCode,
                     Name = material.Name,
+                    AttachmentCollectionId = attachmentCollectionId,
                     CategoryId = material.CategoryId,
                     Weight = material.Weight,
                     Unit = material.Unit,
@@ -633,7 +781,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                     if (preferredCount > 1)
                     {
                         await _unitOfWork.RollbackTransactionAsync();
-                        return OperationResult.Fail("Chỉ được chọn 1 nhà cung cấp ưu tiên.");
+                        return OperationResult<Guid>.Fail("Chỉ được chọn 1 nhà cung cấp ưu tiên.");
                     }
 
                     // distinct theo SupplierId để tránh trùng NCC cho cùng material
@@ -669,21 +817,21 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
 
                 await _unitOfWork.CommitTransactionAsync();
                 return affected > 0
-                    ? OperationResult.Ok("Thêm vật tư mới thành công")
-                    : OperationResult.Fail("Thất bại");
+                    ? OperationResult<Guid>.Ok(attachmentCollectionId, "Thêm vật tư mới thành công")
+                    : OperationResult<Guid>.Fail("Thất bại");
             }
 
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                return OperationResult.Fail($"Lỗi khi thêm vật tư mới: {ex.Message}");
+                return OperationResult<Guid>.Fail($"Lỗi khi thêm vật tư mới: {ex.Message}");
             }
         }
 
 
         // ======================================================================== Update ======================================================================== 
 
-        public async Task<OperationResult> UpsertMaterialAsync(PatchMaterial req, CancellationToken ct = default)
+        public async Task<OperationResult<Guid>> UpsertMaterialAsync(PatchMaterial req, CancellationToken ct = default)
         {
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -696,11 +844,19 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                     .Include(m => m.MaterialsSuppliers)
                     .FirstOrDefaultAsync(m => m.MaterialId == req.MaterialId, ct);
 
-                if (mat == null) return OperationResult.Fail("Không tìm thấy vật tư");
+                if (mat == null) return OperationResult<Guid>.Fail("Không tìm thấy vật tư");
 
                 // Kiểm tra nếu có nhà cung cấp nào mà CurrentPrice là null
                 if (req.Suppliers?.Any(x => x.CurrentPrice == null) == true)
-                    return OperationResult.Fail("Không được để trống giá (CurrentPrice) trong danh sách NCC.");
+                    return OperationResult<Guid>.Fail("Không được để trống giá (CurrentPrice) trong danh sách NCC.");
+
+                var attachmentCollectionId = await EnsureAttachmentCollectionAsync(
+                    req.AttachmentCollectionId ?? mat.AttachmentCollectionId,
+                    ct);
+
+                mat.AttachmentCollectionId = attachmentCollectionId;
+
+
 
                 // 2) Patch scalar fields của Material
                 PatchHelper.SetIfRef(req.CustomCode, () => mat.CustomCode, v => mat.CustomCode = v);
@@ -755,10 +911,9 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                                 await _unitOfWork.PriceHistorieRepository.AddAsync(hist, ct);
 
                                 link.CurrentPrice = s.CurrentPrice.Value;
+                                link.UpdatedBy = userId;
+                                link.UpdatedDate = now;
                             }
-
-                            link.UpdatedBy = userId;
-                            link.UpdatedDate = now;
 
                             if (s.IsPreferred == true && (s.IsActive ?? link.IsActive ?? true))
                                 preferredWinner ??= link.MaterialsSuppliersId;
@@ -795,10 +950,9 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
                                     await _unitOfWork.PriceHistorieRepository.AddAsync(hist, ct);
 
                                     dup.CurrentPrice = s.CurrentPrice.Value;
+                                    dup.UpdatedBy = userId;
+                                    dup.UpdatedDate = now;
                                 }
-
-                                dup.UpdatedBy = userId;
-                                dup.UpdatedDate = now;
 
                                 if (s.IsPreferred == true && (s.IsActive ?? dup.IsActive ?? true))
                                     preferredWinner ??= dup.MaterialsSuppliersId;
@@ -843,12 +997,14 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
-                return OperationResult.Ok("Cập nhật vật tư thành công.");
+
+                return OperationResult<Guid>.Ok(attachmentCollectionId, "Cập nhật vật tư thành công.");
+
             }
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                return OperationResult.Fail(ex.Message);
+                return OperationResult<Guid>.Fail(ex.Message);
             }
         }
 
@@ -894,14 +1050,13 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
             var currentCurr = ms.Currency ?? "VND";
             var newCurr = currentCurr; // nếu anh chưa cho đổi currency, giữ nguyên
 
-            var priceChanged = currentPrice != newPrice;
-
-            if (!priceChanged)
-                return; // không đổi giá thì thôi, khỏi ghi history
+            if (newPrice == currentPrice)
+                return;
 
             // 2) Ghi lịch sử giá (log giá cũ)
             var hist = new PriceHistory
             {
+                PriceHistoryId = Guid.CreateVersion7(),
                 MaterialsSuppliersId = ms.MaterialsSuppliersId,
                 OldPrice = ms.CurrentPrice,  // giá cũ
                 Currency = ms.Currency,      // currency cũ
@@ -921,6 +1076,35 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.Services
             // caller save chung với các thay đổi khác 
             return;
         }
+
+        private async Task<Guid> EnsureAttachmentCollectionAsync(Guid? attachmentCollectionId, CancellationToken ct = default)
+        {
+            if (attachmentCollectionId.HasValue && attachmentCollectionId.Value != Guid.Empty)
+            {
+                var exists = await _unitOfWork.AttachmentCollectionRepository.Query()
+                    .AnyAsync(x => x.AttachmentCollectionId == attachmentCollectionId.Value, ct);
+
+                if (!exists)
+                {
+                    await _unitOfWork.AttachmentCollectionRepository.AddAsync(new AttachmentCollection
+                    {
+                        AttachmentCollectionId = attachmentCollectionId.Value
+                    });
+                }
+
+                return attachmentCollectionId.Value;
+            }
+
+            var newCollectionId = Guid.CreateVersion7();
+
+            await _unitOfWork.AttachmentCollectionRepository.AddAsync(new AttachmentCollection
+            {
+                AttachmentCollectionId = newCollectionId
+            });
+
+            return newCollectionId;
+        }
+
 
 
     }

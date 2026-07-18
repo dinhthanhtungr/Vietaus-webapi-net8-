@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Enums.Manufacturings;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.ManufacturingVUFormulaFeatures
 {
@@ -16,7 +17,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.ManufacturingVUFormu
         public string? FormulaExternalId { get; set; }
         public decimal? TotalProductionQuantity { get; set; }
         public int? NumOfBatches { get; set; }
-
+        public ManufacturingProductOrder? Status { get; set; }  
         public string? QcCheck { get; set; }
 
         public string? ColourCode { get; set; }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.DevandqaSchema;
+using VietausWebAPI.Core.Domain.Enums.WareHouses;
 
 namespace VietausWebAPI.Core.Domain.Entities.WarehouseSchema
 {
@@ -18,6 +19,9 @@ namespace VietausWebAPI.Core.Domain.Entities.WarehouseSchema
         public decimal WeightKg { get; set; } = 0;
         public int BagNumber { get; set; } = 0;
         public string? StockStatus { get; set; } = string.Empty;
+        public StockType? ItemStockType { get; set; }
+        public string UnitName { get; set; } = string.Empty;
+        public DateOnly? ExpiryDate { get; set; }
 
         public bool IsActive { get; set; } = true;
         // Navigation properties

@@ -4,17 +4,23 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Notifications.DTOs;
+using VietausWebAPI.Core.Application.Features.Notifications.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.CustomerDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.DTOs.TransferCustomerDTOs;
 using VietausWebAPI.Core.Application.Features.Sales.Querys;
 using VietausWebAPI.Core.Application.Features.Sales.ServiceContracts.CustomerFeatures;
 using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
+using VietausWebAPI.Core.Application.Features.Shared.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities;
 using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 using VietausWebAPI.Core.Domain.Enums.CustomerEnum;
+using VietausWebAPI.Core.Domain.Enums.Notifications;
+using VietausWebAPI.Core.Domain.Enums.Visibilitys;
 
 namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeatures
 {
@@ -23,55 +29,86 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ICurrentUser _CurrentUser;
+        private readonly IVisibilityHelper _visibilityHelper;
+        private const string VietausCustomerExternalId = "KH_VIETAUS";
+        private readonly INotificationService _notificationService;
 
-        public TransferCustomerService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUser currentUser)
+        public TransferCustomerService(
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            ICurrentUser currentUser,
+            IVisibilityHelper visibilityHelper,
+            INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _CurrentUser = currentUser;
+            _visibilityHelper = visibilityHelper;
+            _notificationService = notificationService;
         }
 
 
 
-        public async Task<OperationResult> CreateAssignLeadRequestAsync(AssignLeadRequest req, CancellationToken ct)
+        public async Task<OperationResult> CreateAssignLeadRequestAsync(
+            AssignLeadRequest req,
+            CancellationToken ct)
         {
             var now = DateTime.Now;
             var userId = _CurrentUser.EmployeeId;
             var companyId = _CurrentUser.CompanyId;
 
+            // ------------------- 1) Kiểm tra Leader -------------------
+            var leaderGroupId = await _unitOfWork.MemberInGroupRepository.Query()
+                .Where(m => m.Profile == userId
+                         && m.IsAdmin == true
+                         && m.IsActive == true)
+                .Select(m => (Guid?)m.GroupId)
+                .FirstOrDefaultAsync(ct);
+
+            if (!leaderGroupId.HasValue)
+                return OperationResult.Fail("Bạn không phải Leader.");
+
+            var customer = await _unitOfWork.CustomerRepository.Query()
+                .Where(c => c.CustomerId == req.CustomerId && c.CompanyId == companyId)
+                .FirstOrDefaultAsync(ct);
+
+            if (customer is null)
+                return OperationResult.Fail("Không tìm thấy khách hàng.");
+
             using var tx = await _unitOfWork.BeginTransactionAsync();
 
             try
             {
-                // ------------------- 1) Kiểm tra Leader -------------------
-                var leaderGroupId = await _unitOfWork.MemberInGroupRepository.Query()
-                    .Where(m => m.Profile == userId
-                             && m.IsAdmin == true
-                             && m.IsActive == true)
-                    .Select(m => (Guid?)m.GroupId)
+                // ------------------- 2) Kiểm tra claim active cũ của cùng sale -------------------
+                var existingActiveClaim = await _unitOfWork.CustomerClaimRepository.Query()
+                    .Where(cl => cl.CustomerId == req.CustomerId
+                              && cl.EmployeeId == req.SalesEmployeeId
+                              && cl.GroupId == leaderGroupId.Value
+                              && cl.IsActive
+                              && cl.CompanyId == companyId)
                     .FirstOrDefaultAsync(ct);
 
-                if (!leaderGroupId.HasValue)
-                    return OperationResult<AssignLeadRequestNoice>.Fail("Bạn không phải Leader.");
+                if (existingActiveClaim is not null)
+                {
+                    // Nếu vẫn còn hạn thì sale này đang quản lý rồi, không cần tạo thêm
+                    if (existingActiveClaim.ExpiresAt > now)
+                    {
+                        await tx.RollbackAsync(ct);
+                        return OperationResult.Fail("Sale này đang quản lý khách hàng tiềm năng này rồi.");
+                    }
 
-                // customer exist + is lead
-                var customer = await _unitOfWork.CustomerRepository.Query()
-                    .Where(c => c.CustomerId == req.CustomerId && c.CompanyId == companyId)
-                    .FirstOrDefaultAsync(ct);
+                    // Nếu hết hạn nhưng IsActive vẫn true thì đóng claim cũ để giữ lịch sử
+                    existingActiveClaim.IsActive = false;
 
-                if (customer is null)
-                    return OperationResult<AssignLeadRequestNoice>.Fail("Không tìm thấy khách hàng.");
+                    // Nếu entity có các cột này thì mở ra dùng
+                    // existingActiveClaim.UpdatedDate = now;
+                    // existingActiveClaim.UpdatedBy = userId;
 
-                // ------------------- 2) Tạo yêu cầu -------------------
-                //var saleInGroup = await _unitOfWork.MemberInGroupRepository.Query()
-                //    .AnyAsync(m => m.GroupId == leaderGroupId.Value
-                //                && m.Profile == req.SalesEmployeeId
-                //                && m.IsActive == true, ct);
+                    // Save trước để DB bỏ unique active cũ ra trước khi insert claim mới
+                    await _unitOfWork.SaveChangesAsync();
+                }
 
-                //if (!saleInGroup)
-                //    return OperationResult<AssignLeadRequestNoice>.Fail("Nhân viên nhận không thuộc nhóm của bạn.");
-
-                // Tạo Work-Claim mới (nhiều sale cùng follow OK)
+                // ------------------- 3) Tạo claim mới -------------------
                 var newClaim = new CustomerClaim
                 {
                     Id = Guid.CreateVersion7(),
@@ -81,16 +118,19 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                     Type = ClaimType.Work,
                     ExpiresAt = now.AddDays(req.ExpiredInDays),
                     IsActive = true,
-                    CompanyId = companyId
+                    CompanyId = companyId,
+
+                    // Nếu entity có thì nên set
+                    // CreatedDate = now,
+                    // CreatedBy = userId
                 };
 
                 await _unitOfWork.CustomerClaimRepository.AddAsync(newClaim, ct);
 
-                // Ghi log chuyển lead
-                var logId = Guid.CreateVersion7();
+                // ------------------- 4) Ghi log giao lead -------------------
                 var log = new CustomerTransferLog
                 {
-                    Id = logId,
+                    Id = Guid.CreateVersion7(),
                     FromEmployeeId = userId,
                     ToEmployeeId = req.SalesEmployeeId,
                     FromGroupId = leaderGroupId.Value,
@@ -101,22 +141,119 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                     CreatedBy = userId,
                     CompanyId = companyId,
                     DetailCustomerTransfers = new List<DetailCustomerTransfer>
-                    {
-                        new DetailCustomerTransfer { CustomerId = req.CustomerId }
-                    }
+            {
+                new DetailCustomerTransfer
+                {
+                    CustomerId = req.CustomerId
+                }
+            }
                 };
+
                 await _unitOfWork.CustomerTransferLogRepository.AddAsync(log, ct);
 
                 await _unitOfWork.SaveChangesAsync();
                 await tx.CommitAsync(ct);
 
+                await NotifyActiveLeadSalesAsync(
+                    customer,
+                    req.SalesEmployeeId,
+                    leaderGroupId.Value,
+                    req.ExpiredInDays,
+                    now,
+                    ct);
+
                 return OperationResult.Ok("Đã giao lead thành công cho sale.");
             }
-
             catch (Exception ex)
             {
                 await tx.RollbackAsync(ct);
                 return OperationResult.Fail($"Lỗi khi giao Lead: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Gửi thông báo cho tất cả sale đang có claim active còn hạn của khách hàng khi leader thêm một sale cùng quản lý lead.
+        /// Thông báo được gửi sau khi transaction giao lead đã commit để lỗi notification không làm rollback nghiệp vụ chính.
+        /// </summary>
+        /// <param name="customer">Khách hàng vừa được giao lead.</param>
+        /// <param name="assignedSaleEmployeeId">Sale vừa được leader thêm vào quản lý lead.</param>
+        /// <param name="groupId">Nhóm của leader thực hiện giao lead.</param>
+        /// <param name="expiredInDays">Số ngày hiệu lực của claim mới.</param>
+        /// <param name="now">Thời điểm thực hiện giao lead.</param>
+        /// <param name="ct">Cancellation token.</param>
+        private async Task NotifyActiveLeadSalesAsync(
+            Customer customer,
+            Guid assignedSaleEmployeeId,
+            Guid groupId,
+            int expiredInDays,
+            DateTime now,
+            CancellationToken ct)
+        {
+            try
+            {
+                var companyId = _CurrentUser.CompanyId;
+                var userId = _CurrentUser.EmployeeId;
+
+                var targetSaleIds = await _unitOfWork.CustomerClaimRepository.Query()
+                    .Where(x =>
+                        x.CompanyId == companyId
+                        && x.CustomerId == customer.CustomerId
+                        
+                        && x.IsActive
+                        && x.ExpiresAt > now)
+                    .Select(x => x.EmployeeId)
+                    .Distinct()
+                    .ToListAsync(ct);
+
+                if (targetSaleIds.Count == 0)
+                    return;
+
+                var assignedSale = await _unitOfWork.EmployeesRepository.Query()
+                    .Where(x => x.EmployeeId == assignedSaleEmployeeId)
+                    .Select(x => new
+                    {
+                        x.EmployeeId,
+                        x.ExternalId,
+                        x.FullName
+                    })
+                    .FirstOrDefaultAsync(ct);
+
+                var assignedSaleName = assignedSale?.FullName ?? "sale mới";
+                var customerCode = customer.ExternalId ?? string.Empty;
+                var customerName = customer.CustomerName ?? string.Empty;
+                var leaderName = _CurrentUser.personName;
+
+                await _notificationService.PublishAsync(new PublishNotificationRequest
+                {
+                    CompanyId = companyId,
+                    CreatedBy = userId,
+                    CreatedByNameSnapshot = leaderName,
+                    Topic = TopicNotifications.CustomerLeadAssigned,
+                    Severity = NotificationSeverity.Info,
+                    Title = $"Thêm sale quản lý lead {customerCode}",
+                    Message = $"{leaderName} đã thêm {assignedSaleName} cùng quản lý khách tiềm năng {customerCode} - {customerName}.",
+                    Link = $"/sales/customer?customerKey={customerCode}",
+                    PayloadJson = JsonSerializer.Serialize(new
+                    {
+                        customerId = customer.CustomerId,
+                        customerCode,
+                        customerName,
+                        assignedSaleEmployeeId,
+                        assignedSaleCode = assignedSale?.ExternalId,
+                        assignedSaleName,
+                        groupId,
+                        expiredInDays,
+                        expiresAt = now.AddDays(expiredInDays),
+                        assignedBy = userId,
+                        assignedByName = leaderName,
+                        assignedAt = now
+                    }),
+                    TargetUserIds = targetSaleIds
+                }, ct);
+            }
+            catch
+            {
+                // Không rollback giao lead chỉ vì lỗi gửi thông báo.
             }
         }
 
@@ -310,17 +447,32 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
         {
             try
             {
-                var groupId = await _unitOfWork.MemberInGroupRepository.Query()
-                    .Where(g => g.Profile == _CurrentUser.EmployeeId && g.IsAdmin == true && g.IsActive == true)
-                    .Select(g => g.GroupId)
-                    .FirstOrDefaultAsync(ct);
+                query ??= new CustomerTransferQuery();
+                if (query.PageNumber <= 0) query.PageNumber = 1;
+                if (query.PageSize <= 0) query.PageSize = 15;
 
-                var q = _unitOfWork.TransferCustomerRepository.Query();
+                var viewer = await _visibilityHelper.BuildViewerScopeAsync(ct);
 
-                // scope theo leader group (nếu có)
-                if (groupId != Guid.Empty)
+                var q = _unitOfWork.TransferCustomerRepository.Query()
+                    //.Where(t => t.CompanyId == viewer.CompanyId)
+                    .Where(t => t.DetailCustomerTransfers.Any(d =>
+                        d.Customer.ExternalId != VietausCustomerExternalId));
+
+                if (viewer.ScopeType is not (ViewerScopeType.AdminFull or ViewerScopeType.LabFull))
                 {
-                    q = q.Where(t => t.FromGroupId == groupId || t.ToGroupId == groupId);
+                    var visibleCustomerIds = _visibilityHelper
+                        .ApplyCustomer(_unitOfWork.CustomerRepository.Query(), viewer)
+                        .Where(c => c.ExternalId != VietausCustomerExternalId)
+                        .Select(c => c.CustomerId);
+
+
+                    q = q.Where(t =>
+                        t.FromEmployeeId == viewer.EmployeeId
+                        || t.ToEmployeeId == viewer.EmployeeId
+                        || (viewer.IsLeader
+                            && viewer.GroupId.HasValue
+                            && (t.FromGroupId == viewer.GroupId.Value || t.ToGroupId == viewer.GroupId.Value))
+                        || t.DetailCustomerTransfers.Any(d => visibleCustomerIds.Contains(d.CustomerId)));
                 }
 
                 // lọc thời gian
@@ -344,13 +496,25 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                         || t.ToEmployee.FullName.Contains(kw)
                         || t.ToEmployee.ExternalId.Contains(kw)
                         || t.DetailCustomerTransfers.Any(d =>
-                               d.Customer.ExternalId.Contains(kw) || d.Customer.CustomerName.Contains(kw))
+                               d.Customer.ExternalId != VietausCustomerExternalId
+                               && (d.Customer.ExternalId.Contains(kw)
+                                   || d.Customer.CustomerName.Contains(kw)))
+
                     );
                 }
 
                 var totalItems = await q.CountAsync(ct);
 
+                var totalPages = (int)Math.Ceiling(totalItems / (double)query.PageSize);
+                if (totalPages > 0 && query.PageNumber > totalPages)
+                {
+                    query.PageNumber = totalPages;
+                }
+
+
                 var items = await q
+                    .OrderByDescending(x => x.CreatedDate)
+                    .ThenByDescending(x => x.Id)
                     .Skip((query.PageNumber - 1) * query.PageSize)
                     .Take(query.PageSize)
                     .Select(x => new TransferCustomerDTO
@@ -383,15 +547,16 @@ namespace VietausWebAPI.Core.Application.Features.Sales.Services.CustomerFeature
                         } : null,
                         Note = x.Note,
                         Customers = x.DetailCustomerTransfers
-                            .Select(d => new CustomerLiteDto
-                            {
-                                Id = d.CustomerId,
-                                ExternalId = d.Customer.ExternalId,
-                                Name = d.Customer.CustomerName
-                            })
-                            .ToList()
+                        .Where(d => d.Customer.ExternalId != VietausCustomerExternalId)
+                        .Select(d => new CustomerLiteDto
+                        {
+                            Id = d.CustomerId,
+                            ExternalId = d.Customer.ExternalId,
+                            Name = d.Customer.CustomerName
+                        })
+                        .ToList()
+
                     })
-                    .OrderByDescending(x => x.CreatedDate)
                     .ToListAsync(ct);
 
                 return new PagedResult<TransferCustomerDTO>(items, totalItems, query.PageNumber, query.PageSize);

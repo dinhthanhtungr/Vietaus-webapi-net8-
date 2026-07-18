@@ -16,6 +16,7 @@ using VietausWebAPI.Core.Application.Features.Shared.Repositories_Contracts;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.EventLogDtos;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.ServiceContracts;
 using VietausWebAPI.Core.Application.Features.TimelineFeature.Services;
+using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadServices;
 using VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts;
 using VietausWebAPI.Core.Application.Shared.Helper;
 using VietausWebAPI.Core.Application.Shared.Helper.IdCounter;
@@ -92,6 +93,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                 if (existing == null)
                     return OperationResult.Fail("Không tìm thấy dữ liệu Production Order.");
 
+                if (existing.Status != ManufacturingProductOrder.New.ToString())
+                    return OperationResult.Fail("Chỉ có thể xuất tồn kho cho lệnh sản xuất mới, tải lại trang.");
+
                 // Validate nghiệp vụ
                 if (!req.TotalQuantity.HasValue || req.TotalQuantity.Value <= 0)
                     return OperationResult.Fail("Khối lượng sản xuất phải lớn hơn 0.");
@@ -109,6 +113,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                 PatchHelper.SetIfNullable(req.ExpectedDate, () => existing.ExpectedDate, v => existing.ExpectedDate = v);
                 PatchHelper.SetIfNullable(req.TotalQuantity, () => existing.TotalQuantity, v => existing.TotalQuantity = v);
                 PatchHelper.SetIfNullable(req.NumOfBatches, () => existing.NumOfBatches, v => existing.NumOfBatches = v);
+                PatchHelper.SetIf(DateTime.Now, () => existing.CreatedDate, v => existing.CreatedDate = v, isValid: d => d != default);
 
                 // Action nghiệp vụ: Xuất tồn kho => BE tự set status
                 var oldStatus = existing.Status;
@@ -247,6 +252,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
             if (req.ManufacturingFormulaMaterials == null || !req.ManufacturingFormulaMaterials.Any())
                 return OperationResult.Fail("Công thức phải có ít nhất 1 nguyên vật liệu.");
 
+
+
             await _unitOfWork.BeginTransactionAsync();
 
             try
@@ -261,12 +268,17 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                         .Include(x => x.Detail)
                     .FirstOrDefaultAsync(ct);
 
+
+
                 if (existingMfgOrderPO == null)
                     return OperationResult.Fail($"Không tìm thấy lệnh sản xuất với ID {req.MfgProductionOrderId}");
 
                 var mpo = existingMfgOrderPO.ProductionOrder;
                 if (mpo == null)
                     return OperationResult.Fail("Không tìm thấy dữ liệu ProductionOrder.");
+
+                if (existingMfgOrderPO.ProductionOrder.Status != ManufacturingProductOrder.New.ToString())
+                    return OperationResult.Fail("Chỉ có thể xuất tồn kho cho lệnh sản xuất mới, tải lại trang.");
 
                 var oldStatus = mpo.Status;
 
@@ -286,6 +298,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                 PatchHelper.SetIfNullable(req.NumOfBatches, () => mpo.NumOfBatches, v => mpo.NumOfBatches = v);
                 PatchHelper.SetIfNullable(req.ExpectedDate, () => mpo.ExpectedDate, v => mpo.ExpectedDate = v);
                 PatchHelper.SetIfNullable(req.ManufacturingDate, () => mpo.ManufacturingDate, v => mpo.ManufacturingDate = v);
+                PatchHelper.SetIf(DateTime.Now, () => mpo.CreatedDate, v => mpo.CreatedDate = v, isValid: d => d != default);
 
                 // =====================================================
                 // 2. CREATE MANUFACTURING FORMULA
@@ -369,9 +382,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                         ManufacturingFormulaMaterialId = Guid.CreateVersion7(),
                         ManufacturingFormulaId = mf.ManufacturingFormulaId,
 
-                        itemType = m.ItemType,
-                        MaterialId = m.ItemType == ItemType.Material ? m.ItemId : (Guid?)null,
-                        ProductId = m.ItemType == ItemType.Product ? m.ItemId : (Guid?)null,
+                        itemType = ResolveItemTypeForSave(m.ItemType, m.LotNumber),
+                        MaterialId = IsMaterialItemType(m.ItemType) ? m.ItemId : (Guid?)null,
+                        ProductId = IsProductItemType(m.ItemType) ? m.ItemId : (Guid?)null,
 
                         CategoryId = m.CategoryId,
                         LineNo = index + 1,
@@ -382,6 +395,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
 
                         MaterialNameSnapshot = m.MaterialNameSnapshot,
                         MaterialExternalIdSnapshot = m.MaterialExternalIdSnapshot,
+                        LotNo = NormalizeLotNumberForSave(m.LotNumber),
                         Unit = m.Unit,
                         IsActive = m.IsActive
                     })
@@ -630,7 +644,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                 Qcstatus = null,
                 Area = null,
                 BTPStatus = null,
-                StepOfProduct = null
+                StepOfProduct = mpo.StepOfProduct,
             };
 
             await _unitOfWork.SchedualMfgRepository.AddAsync(schedual, ct);
@@ -1051,15 +1065,16 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                         else
                         {
                             // so sánh trước/sau để chỉ set changed khi thực sự đổi
-                            if (entity.itemType != item.ItemType
-                                || entity.MaterialId != (item.ItemType == ItemType.Material ? item.ItemId : null)
-                                || entity.ProductId != (item.ItemType == ItemType.Product ? item.ItemId : null)
+                            if (entity.itemType != ResolveItemTypeForSave(item.ItemType, item.LotNumber)
+                                || entity.MaterialId != (IsMaterialItemType(item.ItemType) ? item.ItemId : null)
+                                || entity.ProductId != (IsProductItemType(item.ItemType) ? item.ItemId : null)
                                 || entity.CategoryId != item.CategoryId
                                 || entity.LineNo != item.LineNo
                                 || entity.Quantity != item.Quantity
                                 || entity.UnitPrice != item.UnitPrice
                                 || entity.MaterialNameSnapshot != item.MaterialNameSnapshot
                                 || entity.MaterialExternalIdSnapshot != item.MaterialExternalIdSnapshot
+                                || entity.LotNo != NormalizeLotNumberForSave(item.LotNumber)
                                 || entity.Unit != item.Unit
                                 || entity.IsActive != item.IsActive)
                             {
@@ -1067,9 +1082,9 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                             }
                         }
 
-                        entity.itemType = item.ItemType;
-                        entity.MaterialId = item.ItemType == ItemType.Material ? item.ItemId : null;
-                        entity.ProductId = item.ItemType == ItemType.Product ? item.ItemId : null;
+                        entity.itemType = ResolveItemTypeForSave(item.ItemType, item.LotNumber);
+                        entity.MaterialId = IsMaterialItemType(item.ItemType) ? item.ItemId : null;
+                        entity.ProductId = IsProductItemType(item.ItemType) ? item.ItemId : null;
                         entity.CategoryId = item.CategoryId;
                         entity.LineNo = item.LineNo;
                         entity.Quantity = item.Quantity;
@@ -1077,6 +1092,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                         entity.TotalPrice = item.Quantity * item.UnitPrice;
                         entity.MaterialNameSnapshot = item.MaterialNameSnapshot;
                         entity.MaterialExternalIdSnapshot = item.MaterialExternalIdSnapshot;
+                        entity.LotNo = NormalizeLotNumberForSave(item.LotNumber);
                         entity.Unit = item.Unit;
                         entity.IsActive = item.IsActive;
                     }
@@ -1249,6 +1265,57 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.MFGProd
                 .FirstOrDefaultAsync(ct);
 
             return saleEmployeeId;
+        }
+
+        /// <summary>
+        /// Chuẩn hóa số lot người dùng chọn trước khi lưu vào ManufacturingFormulaMaterial.LotNo.
+        /// Giá trị N/A hoặc chuỗi rỗng được xem là chưa chọn lot và lưu null.
+        /// </summary>
+        private static string? NormalizeLotNumberForSave(LotNumberOptionDto? lotNumber)
+        {
+            if (lotNumber == null || string.IsNullOrWhiteSpace(lotNumber.LotNo))
+                return null;
+
+            var normalized = lotNumber.LotNo.Trim();
+            return string.Equals(normalized, "N/A", StringComparison.OrdinalIgnoreCase)
+                ? null
+                : normalized;
+        }
+
+        /// <summary>
+        /// Chuẩn hóa ItemType trước khi lưu dòng công thức.
+        /// Nếu người dùng chọn lot lỗi thì Material/Product được lưu thành MaterialFailure/ProductFailure.
+        /// </summary>
+        private static ItemType ResolveItemTypeForSave(ItemType itemType, LotNumberOptionDto? lotNumber)
+        {
+            var isDefective = lotNumber?.IsDefective == true;
+
+            return itemType switch
+            {
+                ItemType.Material or ItemType.MaterialFailure => isDefective
+                    ? ItemType.MaterialFailure
+                    : ItemType.Material,
+                ItemType.Product or ItemType.ProductFailure => isDefective
+                    ? ItemType.ProductFailure
+                    : ItemType.Product,
+                _ => itemType
+            };
+        }
+
+        /// <summary>
+        /// Xác định itemType đang trỏ tới bảng Material, bao gồm cả dòng MaterialFailure.
+        /// </summary>
+        private static bool IsMaterialItemType(ItemType itemType)
+        {
+            return itemType == ItemType.Material || itemType == ItemType.MaterialFailure;
+        }
+
+        /// <summary>
+        /// Xác định itemType đang trỏ tới bảng Product, bao gồm cả dòng ProductFailure.
+        /// </summary>
+        private static bool IsProductItemType(ItemType itemType)
+        {
+            return itemType == ItemType.Product || itemType == ItemType.ProductFailure;
         }
     }
 }

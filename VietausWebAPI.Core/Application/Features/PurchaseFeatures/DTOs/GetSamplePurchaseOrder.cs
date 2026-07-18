@@ -17,10 +17,17 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.DTOs
 
         public string? SupplierName { get; set; }   
         public string? SupplierExternalId { get; set; }
+        //public Guid? AttachmentCollectionId { get; set; }
 
         public decimal? TotalAmount { get; set; }
-
+        public decimal? RealTotalAmount { get; set; }
         public string? Comment { get; set; }
+
+        //public bool? HasSupplierDeliveryNote { get; set; }
+        //public bool? HasCOA { get; set; }
+        //public bool? HasPOConfirmation { get; set; }
+        //public bool? HasInvoice { get; set; }
+
 
         public bool IsActive { get; set; }
 

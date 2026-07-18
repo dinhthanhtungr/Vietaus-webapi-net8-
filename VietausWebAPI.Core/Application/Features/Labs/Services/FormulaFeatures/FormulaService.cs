@@ -514,7 +514,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.FormulaFeatures
                 {
                     //var isChangeSendBy = PatchHelper.SetIf(patch.SentBy, () => sampleRequestExist.SendBy.GetValueOrDefault(), v => sampleRequestExist.SendBy = v);
 
-                    if (sampleRequestExist.Status == SampleRequestStatus.InProgress.ToString())
+                    if (sampleRequestExist.Status == SampleRequestStatus.InProgress.ToString() || sampleRequestExist.Status == SampleRequestStatus.Completed.ToString())
                     {
                         sampleRequestExist.ResponseDeliveryDate = now;
                         sampleRequestExist.Status = SampleRequestStatus.SampleSent.ToString();

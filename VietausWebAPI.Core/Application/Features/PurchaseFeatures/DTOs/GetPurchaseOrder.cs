@@ -20,10 +20,17 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.DTOs
         public string? Comment { get; set; }
         public string? PLPUComment { get; set; }
 
+        //public bool? HasSupplierDeliveryNote { get; set; }
+        //public bool? HasCOA { get; set; }
+        //public bool? HasPOConfirmation { get; set; }
+        //public bool? HasInvoice { get; set; }
+
+
         public string? Status { get; set; }
         public DateTime? RequestDeliveryDate { get; set; }
         public DateTime? RealDeliveryDate { get; set; }
         public Guid? CompanyId { get; set; }
+        //public Guid? AttachmentCollectionId { get; set; }
 
         public DateTime? CreateDate { get; set; }
 

@@ -8,10 +8,12 @@ namespace VietausWebAPI.Core.Domain.Enums.WareHouses
 {
     public enum StockType
     {
-        FinishedGood = 1,           // Hàng thành phẩm
-        DefectiveFinishedGood = 2,  // Hàng thành phẩm lỗi
-        RawMaterial = 3,            // Nguyên vật liệu
-        DefectiveRawMaterial = 4,   // Nguyên vật liệu lỗi
-        Other = 5                   // Khác
+        FinishedGood = 1,           // Hàng đạt
+        DefectiveFinishedGood = 2,  // Hàng lỗi
+        RawMaterial = 3,            // Hàng đạt
+        DefectiveRawMaterial = 4,   // Hàng lỗi
+        Other = 5,                  // Khác
+        Waiter = 6,                  // Chưa QC
+        Material = 7                  // Vật tư, bao bì
     }
 }

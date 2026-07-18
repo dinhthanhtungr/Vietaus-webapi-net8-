@@ -61,5 +61,8 @@ namespace VietausWebAPI.Core.Domain.Enums.Category
                     // Chý ý
                     //... Riêng phiếu báo cáo sự cố, đề xuất cải tiến và đề xuất vật tư thì prefix là tên code của phòng ban tạo phiếu + "." + enum + "." + mã số gọi từ API)
                     // VD: phiếu báo cáo sự cố thuộc phòng IMS sẽ là: IMS.IR.251200001)
+
+
+        BBG,    // Bảng báo giá (Báo giá nội bộ)
     }
 }

@@ -75,12 +75,13 @@ namespace VietausWebAPI.Infrastructure.Repositories.Sales
                 string keywordLower = query.keyword.ToLower();
                 queryAble = queryAble.Where(x =>
                     (x.ApplicationName != null && x.ApplicationName.ToLower().Contains(keywordLower)) ||
-                    (x.ExternalId != null && x.ExternalId.ToLower().Contains(keywordLower))
+                    (x.ExternalId != null && x.ExternalId.ToLower().Contains(keywordLower)) ||
+                    (x.CreatedByNavigation.FullName != null && x.CreatedByNavigation.FullName.ToLower().Contains(keywordLower))
                 );
             }
 
 
-            queryAble = queryAble.OrderByDescending(x => x.UpdatedDate);
+            queryAble = queryAble.OrderByDescending(x => x.CreatedDate);
 
             return await QueryableExtensions.GetPagedAsync(queryAble, query);
 

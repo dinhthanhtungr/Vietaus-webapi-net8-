@@ -23,6 +23,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.DTOs.PLPUReport
         public DateTime? OrderReceivedDate { get; set; }    // MfgProductionOrder.CreatedDate
         public DateTime? DeliveryRequestDate { get; set; }  // MerchandiseOrderDetail.DeliveryRequestDate
         public DateTime? ActualDeliveryDate { get; set; }   // DeliveryOrder.CreatedDate
+        public DateTime? ExpectedDeliveryDate { get; set; }     // Ngày dự kiến giao hàng 
 
         public int? LateDays { get; set; }
 

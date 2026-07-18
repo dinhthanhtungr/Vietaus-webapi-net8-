@@ -30,6 +30,7 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadSe
 
         public string? SupplierName { get; set; }
         public string? SupplierExternalId { get; set; }
+        public string? Comments { get; set; }
 
         public List<WarehouseVoucherDetailDto> Details { get; set; } = new();
     }

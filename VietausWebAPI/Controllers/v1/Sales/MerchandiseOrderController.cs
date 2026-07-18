@@ -179,5 +179,28 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Sales
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
+
+        [HttpPatch("pause-delivery")]
+        public async Task<IActionResult> PauseDelivery([FromBody] PatchPauseDeliveryOrder request, CancellationToken ct = default)
+        {
+            if (request == null || request.MerchandiseOrderId == Guid.Empty)
+            {
+                return BadRequest("Invalid request data.");
+            }
+            try
+            {
+                var result = await _merchandiseOrderService.UpdatePauseDeliveryStatus(request, ct);
+                if (!result.Success)
+                {
+                    return BadRequest(result.Message);
+                }
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not shown here for brevity)
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
     }
 }

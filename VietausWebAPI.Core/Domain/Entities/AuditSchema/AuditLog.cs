@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.CompanySchema;
 using VietausWebAPI.Core.Domain.Entities.HrSchema;
@@ -28,13 +29,9 @@ namespace VietausWebAPI.Core.Domain.Entities.AuditSchema
 
         public DateTime ChangedAt { get; set; }
 
-        public string? OldValues { get; set; }
-        // jsonb
-
-        public string? NewValues { get; set; }
-        // jsonb
-
-        public string? ChangedValues { get; set; }
+        public JsonDocument? OldValues { get; set; }
+        public JsonDocument? NewValues { get; set; }
+        public JsonDocument? ChangedValues { get; set; }
         // jsonb: chỉ field bị thay đổi
 
         public string? IpAddress { get; set; }

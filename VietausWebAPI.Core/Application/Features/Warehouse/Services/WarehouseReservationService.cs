@@ -495,6 +495,15 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
 
         //=============================================================== PRIVATE - PUBLIC =================================================================
 
+        /// <summary>
+        /// Đồng bộ dữ liệu giữ chỗ tồn kho ảo theo danh sách nguyên vật liệu công thức mới. 
+        /// Hàm sẽ tính lại số lượng cần giữ chỗ
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="totalQuantity"></param>
+        /// <param name="formulaItems"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         private async Task<OperationResult> SyncReservationsCoreAsync(
             ReservationSyncContext ctx,
             decimal totalQuantity,
@@ -622,6 +631,14 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             return OperationResult.Ok("Đồng bộ giữ chỗ tồn kho ảo thành công.");
         }
 
+        /// <summary>
+        /// Đồng bộ giữ chỗ tồn kho ảo theo danh sách nguyên vật liệu công thức của một lệnh sản xuất.
+        /// </summary>
+        /// <param name="mfgProductionOrderId"></param>
+        /// <param name="totalQuantity"></param>
+        /// <param name="formulaItems"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         public async Task<OperationResult> SyncReservationsByFormulaItemsAsync(
             Guid mfgProductionOrderId,
             decimal totalQuantity,
@@ -651,6 +668,14 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
                     return await SyncReservationsCoreAsync(mpo, totalQuantity, formulaItems, ct);
                 }
 
+        /// <summary>
+        /// Đồng bộ giữ chỗ tồn kho ảo theo ngữ cảnh lệnh sản xuất đã có sẵn.
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="totalQuantity"></param>
+        /// <param name="formulaItems"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         public async Task<OperationResult> SyncReservationsByFormulaItemsAsync(
             ReservationSyncContext ctx,
             decimal totalQuantity,
@@ -660,6 +685,14 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.Services
             return await SyncReservationsCoreAsync(ctx, totalQuantity, formulaItems, ct);
         }
 
+        /// <summary>
+        /// Tạo yêu cầu giữ chỗ tồn kho ảo từ danh sách nguyên vật liệu của công thức sản xuất.
+        /// </summary>
+        /// <param name="mfgProductionOrderId"></param>
+        /// <param name="totalQuantity"></param>
+        /// <param name="materials"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         public async Task<OperationResult> ReserveByFormulaMaterialsAsync(
             Guid mfgProductionOrderId,
             decimal totalQuantity,

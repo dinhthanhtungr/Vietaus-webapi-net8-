@@ -20,7 +20,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.SampleRequestFeature
         public string Resin { get; set; } = string.Empty;
 
         public string ApprovalText { get; set; }
-            = "PLEASE RETURN ONE/TWO SETS TO VIET UC POLYMER UPON APPROVAL";
+            = "PLEASE RETURN ONE/TWO SETS TO VIETAUS POLYMER UPON APPROVAL";
 
         public string PreparedBy { get; set; } = string.Empty;
         public string Signature { get; set; } = string.Empty;

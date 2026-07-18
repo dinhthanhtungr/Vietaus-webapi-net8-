@@ -20,6 +20,8 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
             // Service + background jobs:
             services.AddScoped<INotificationService, NotificationService>();     // service app
             services.AddHostedService<OutboxProcessor>();                        // worker đẩy
+            services.AddHostedService<CustomerFollowUpDueReminderWorker>();       // worker nhắc task CRM đến hạn
+            services.AddHostedService<WorkTaskDueReminderWorker>();               // worker nhắc work task chung đến hạn
 
             return services;
         }

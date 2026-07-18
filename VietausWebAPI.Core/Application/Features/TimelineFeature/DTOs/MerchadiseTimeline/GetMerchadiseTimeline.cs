@@ -21,6 +21,16 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.DTOs.Merchadis
         public decimal TotalPrice { get; set; }
         public decimal Vat { get; set; }
 
+        // Tạm dừng 
+        public bool IsDeliveryPaused { get; set; } = false;
+        public DateTime? DeliveryPausedFrom { get; set; }
+        public DateTime? DeliveryPausedTo { get; set; }
+        public string? DeliveryPauseReason { get; set; }
+        public string? DeliveryPauseType { get; set; }
+        public Guid? DeliveryPausedBy { get; set; }
+
+        // ===========================================
+
         public List<GetMerchadiseTimelineDetail> Details { get; set; } = new();
     }
 }

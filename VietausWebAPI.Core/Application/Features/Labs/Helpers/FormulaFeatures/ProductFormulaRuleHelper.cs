@@ -67,7 +67,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers.FormulaFeatures
                 {
                     f.ExternalId,
                     MaterialCount = f.ManufacturingFormulaMaterials.Count(m =>
-                        m.IsActive && m.itemType == ItemType.Material)
+                        m.IsActive )
                 })
                 .Where(x => x.MaterialCount == 1)
                 .Select(x => x.ExternalId)

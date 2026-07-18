@@ -20,6 +20,8 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
             entity.HasIndex(e => e.CompanyId, "IX_Materials_CompanyId");
             entity.HasIndex(e => e.CreatedBy, "IX_Materials_CreatedBy");
             entity.HasIndex(e => e.UpdatedBy, "IX_Materials_UpdatedBy");
+            entity.HasIndex(e => e.AttachmentCollectionId)
+                .HasDatabaseName("IX_Materials_AttachmentCollection");
             // entity.HasIndex(e => e.UnitId, "IX_Materials_UnitId"); // nếu dùng sau này
 
             entity.Property(e => e.MaterialId).HasDefaultValueSql("gen_random_uuid()");
@@ -30,6 +32,14 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.ApplicationDbs.Configurat
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.Name).HasColumnType("citext");
             entity.Property(e => e.Package).HasColumnType("citext");
+            entity.Property(e => e.AttachmentCollectionId)
+                .HasColumnName("AttachmentCollectionId");
+
+            entity.HasOne(e => e.AttachmentCollection)
+                .WithMany()
+                .HasForeignKey(e => e.AttachmentCollectionId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_Materials_AttachmentCollection");
 
             entity.HasOne(d => d.Category).WithMany(p => p.Materials)
                 .HasForeignKey(d => d.CategoryId)

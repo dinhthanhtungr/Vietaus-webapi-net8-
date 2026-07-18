@@ -31,6 +31,7 @@ namespace VietausWebAPI.Core.Domain.Entities.WarehouseSchema
         // Audit
         public Guid CreatedBy { get; set; }
         public DateTime CreatedDate { get; set; } = DateTime.Now;
+        public string? UnitName { get; set; }
 
 
         public virtual Employee? CreatedByNavigation { get; set; }

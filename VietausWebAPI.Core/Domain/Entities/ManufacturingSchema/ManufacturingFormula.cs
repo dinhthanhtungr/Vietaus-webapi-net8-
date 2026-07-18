@@ -42,6 +42,7 @@ namespace VietausWebAPI.Core.Domain.Entities.ManufacturingSchema
         public virtual ICollection<ProductStandardFormula> ProductStandardFormulas { get; set; } = new List<ProductStandardFormula>();
         public virtual ICollection<ProductionSelectVersion> ProductionSelectVersions { get; set; } = new List<ProductionSelectVersion>();
         public virtual ICollection<ManufacturingFormulaVersion> ManufacturingFormulaVersions { get; set; } = new List<ManufacturingFormulaVersion>();
+        public virtual ICollection<ManufacturingFormulaAdjustment> ManufacturingFormulaAdjustments { get; set; } = new List<ManufacturingFormulaAdjustment>();
       
         public virtual ManufacturingFormula? SourceManufacturingFormula { get; set; }
         public virtual Formula? SourceVUFormula { get; set; }

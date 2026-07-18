@@ -54,33 +54,35 @@ namespace VietausWebAPI.Infrastructure.Repositories.HR
             await _context.MemberInGroups.AddRangeAsync(members);
         }
 
-        public async Task<IEnumerable<MemberInGroup>> AllMembers(Guid Id, string? keywork = null)
+        public async Task<IEnumerable<MemberInGroup>> AllMembers(Guid id, string? keyword = null)
         {
-            var queryAble = _context.MemberInGroups
+            var query = _context.MemberInGroups
                 .Include(x => x.ProfileNavigation)
                 .AsNoTracking()
-                .AsQueryable();
+                .Where(x => x.GroupId == id && x.IsActive);
 
-            queryAble = queryAble.Where(x => x.GroupId == Id && x.IsActive == true);
-
-            if (!string.IsNullOrWhiteSpace(keywork))
+            if (!string.IsNullOrWhiteSpace(keyword))
             {
-                string keywordLower = keywork.ToLower();
-                queryAble = queryAble.Where(x =>
-                    x.ProfileNavigation.FullName != null && EF.Functions.Collate(x.ProfileNavigation.FullName, "Latin1_General_CI_AI").ToLower().Contains(keywordLower) ||
-                    x.ProfileNavigation.ExternalId != null && EF.Functions.Collate(x.ProfileNavigation.Email, "Latin1_General_CI_AI").ToLower().Contains(keywordLower));
+                keyword = keyword.Trim();
+
+                query = query.Where(x =>
+                    x.ProfileNavigation != null &&
+                    x.ProfileNavigation.FullName != null &&
+                    EF.Functions.ILike(x.ProfileNavigation.FullName, $"%{keyword}%")
+                );
             }
-            return await queryAble.ToListAsync();
+
+            return await query.ToListAsync();
         }
 
         public async Task<int> changeLeaderStatus(GroupMemberQuery query)
         {
             // Gỡ quyền admin các thành viên trong group
-            await _context.MemberInGroups
-                .Where(m => m.GroupId == query.GroupId && m.MemberId != query.MemberId)
-                .ExecuteUpdateAsync(setters =>
-                    setters.SetProperty(m => m.IsAdmin, false)
-                );
+            //await _context.MemberInGroups
+            //    .Where(m => m.GroupId == query.GroupId && m.MemberId != query.MemberId)
+            //    .ExecuteUpdateAsync(setters =>
+            //        setters.SetProperty(m => m.IsAdmin, false)
+            //    );
 
             // Cấp quyền admin cho thành viên được chọn
             int affected = await _context.MemberInGroups

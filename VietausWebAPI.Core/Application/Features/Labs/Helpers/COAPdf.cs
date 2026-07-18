@@ -2,6 +2,7 @@
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using System.Globalization;
 using VietausWebAPI.Core.Application.Features.DevandqaFeatures.DTOs.ProductInspectionFeature;
 using VietausWebAPI.Core.Application.Features.Labs.Helpers;
 using VietausWebAPI.Core.Application.Shared.Helper;
@@ -101,15 +102,14 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                                              .PaddingVertical(3);
 
                                 AddRow("Product name (Tên sản phẩm):", _result.ProductName);
-                                AddRow("Date (Ngày sản xuất):", _result.ManufacturingDate?.ToString("dd/MM/yyyy"));
-                                AddRow("Expiry Date (Ngày hết hạn):", _result.ExpiryDate?.ToString("dd/MM/yyyy"));
-                                AddRow("Product Code:", _result.ProductCode);
+                                AddRow("Expiry Date (HSD):", GetExpiryTypeText(_result.ExpiryDate));
+                                AddRow("Product Code (Mã sản phẩm):", _result.ProductCode);
                                 AddRow("Lot No. (Lô sản xuất):", _result.BatchId);
-                                AddRow("Quantity (Số lượng):", $"{_result.Weight} KG");
+                                AddRow("Quantity (Số lượng):", $"{FormatQuantity(_result.Weight)} KG");
                                 AddRow("Company (Tên công ty):", "LONG GIANG CHEMICAL CO.,LTD");
                             });
 
-                            if(_isLongGiangBag)
+                            if(_isLongGiangBag || _isLongGiangBagWithSpecs)
                             {
                                 // Bên phải là ảnh
                                 row.ConstantItem(90).AlignMiddle().AlignLeft().Element(e =>
@@ -153,11 +153,10 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                                          .PaddingVertical(3);
 
                             AddRow("Product name (Tên sản phẩm):", _result.ProductName);
-                            AddRow("Date (Ngày sản xuất):", _result.ManufacturingDate?.ToString("dd/MM/yyyy"));
-                            AddRow("Expiry Date (Ngày hết hạn):", _result.ExpiryDate?.ToString("dd/MM/yyyy"));
+                            AddRow("Expiry Date (Hạn sử dụng):", GetExpiryTypeText(_result.ExpiryDate));
                             AddRow("Product Code:", _result.ProductCode);
                             AddRow("Lot No. (Lô sản xuất):", _result.BatchId);
-                            AddRow("Quantity (Số lượng):", $"{_result.Weight} KG");
+                            AddRow("Quantity (Số lượng):", $"{FormatQuantity(_result.Weight)} KG");
                             AddRow("Company (Tên công ty):", "VIETAUS POLYMER CO.,LTD");
                         });
 
@@ -260,6 +259,27 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Helpers
                 }
 
             });
+        }
+
+
+        private static string? GetExpiryTypeText(string? expiryType)
+        {
+            return expiryType switch
+            {
+                "ThreeMonths" => "3 tháng kể từ ngày sản xuất",
+                "SixMonths" => "6 tháng kể từ ngày sản xuất",
+                "OneYear" => "1 năm kể từ ngày sản xuất",
+                "TwoYears" => "2 năm kể từ ngày sản xuất",
+                "ThreeYears" => "3 năm kể từ ngày sản xuất",
+                _ => null
+            };
+        }
+
+        private static string FormatQuantity(decimal? value)
+        {
+            return value.HasValue
+                ? value.Value.ToString("0.###", CultureInfo.InvariantCulture)
+                : "-";
         }
     }
 

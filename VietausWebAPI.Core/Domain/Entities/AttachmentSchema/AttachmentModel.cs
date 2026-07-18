@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VietausWebAPI.Core.Domain.Entities.HrSchema;
+using VietausWebAPI.Core.Domain.Entities.InternalMailSchema;
 using VietausWebAPI.Core.Domain.Enums.Attachment;
 
 namespace VietausWebAPI.Core.Domain.Entities.AttachmentSchema
@@ -24,5 +25,6 @@ namespace VietausWebAPI.Core.Domain.Entities.AttachmentSchema
         public string? ContentHash { get; set; }        // chống trùng file (SHA-256)
 
         public virtual Employee? CreatedByNavigation { get; set; }
+        public virtual ICollection<InternalMessageAttachment> InternalMessageAttachments { get; set; } = new List<InternalMessageAttachment>();
     }
 }

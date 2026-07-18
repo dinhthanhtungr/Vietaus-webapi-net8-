@@ -88,6 +88,24 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.DeliveryOrders
             }
         }
 
+        [HttpPatch("finish")]
+        public async Task<IActionResult> FinishDeliveryOrder([FromBody] PatchFinishDelivery request, CancellationToken ct = default)
+        {
+            if (request.Id == Guid.Empty)
+            {
+                return BadRequest("ID cannot be empty.");
+            }
+            var result = await _deliveryOrderService.FinishAsync(request, ct);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            else
+            {
+                return BadRequest(result.Message);
+            }
+        }
+
         [HttpPost("Create")]
         public async Task<IActionResult> CreateDeliveryOrder([FromBody] PostDeliveryOrder postDeliveryOrder, CancellationToken ct = default)
         {
@@ -207,9 +225,9 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.DeliveryOrders
 
         [HttpGet("export-transport-summary")]
         public async Task<IActionResult> ExportTransportSummary(
-    [FromQuery] DateTime from,
-    [FromQuery] DateTime to,
-    CancellationToken ct)
+            [FromQuery] DateTime from,
+            [FromQuery] DateTime to,
+            CancellationToken ct)
         {
             if (from == default || to == default)
                 return BadRequest("from/to is required.");

@@ -13,11 +13,13 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
             // Repos
             services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>();
             services.AddScoped<IPurchaseOrderDetailRepository, PurchaseOrderDetailRepository>();
+            services.AddScoped<IPurchaseOrderDocumentRepository, PurchaseOrderDocumentRepository>();
             services.AddScoped<IPurchaseOrderSnapshotRepository, PurchaseOrderSnapshotRepository>();
             services.AddScoped<IPurchaseOrderLinkRepository, PurchaseOrderLinkRepository>();
 
             // Services & helpers
             services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
+            services.AddScoped<IPurchaseOrderDocumentService, PurchaseOrderDocumentService>();
             services.AddScoped<IPurchaseOrderPdfService, PurchaseOrderPdfService>();
             services.AddScoped<IPurchaseOrderPdfRenderHelper, PurchaseOrderPdfRenderHelper>();
             return services;

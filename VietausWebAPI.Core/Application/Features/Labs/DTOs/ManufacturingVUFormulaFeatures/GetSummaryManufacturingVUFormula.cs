@@ -4,6 +4,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Enums.Manufacturings;
 
 namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.ManufacturingVUFormulaFeatures
 {
@@ -17,7 +18,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.DTOs.ManufacturingVUFormu
 
         public decimal? TotalProductionQuantity { get; set; }
         public int? NumOfBatches { get; set; }
-        
+        public ManufacturingProductOrder? Status { get; set; }
         public string? CreatedByName { get; set; }
         public DateTime CreatedDate { get; set; }
     }

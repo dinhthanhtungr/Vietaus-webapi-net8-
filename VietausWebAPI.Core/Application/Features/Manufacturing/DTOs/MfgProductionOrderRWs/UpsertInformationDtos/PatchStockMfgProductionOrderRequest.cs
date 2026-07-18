@@ -12,7 +12,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgProducti
         public Guid MfgProductionOrderId { get; set; }
 
         public DateTime? ExpectedDate { get; set; }
-        public int? TotalQuantity { get; set; }
+        public decimal? TotalQuantity { get; set; }
         public int? NumOfBatches { get; set; }
 
         public StepOfProduct? StepOfProduct { get; set; }

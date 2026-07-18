@@ -89,6 +89,19 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.DevandqaFeatures
             return Ok();
         }
 
+        [HttpPatch("Patch/{id:guid}")]
+        public async Task<IActionResult> PatchProductInspection(
+            [FromRoute] Guid id,
+            [FromBody] PatchProductInspectionRequest productInspection,
+            CancellationToken ct)
+        {
+            if (productInspection == null)
+                return BadRequest("Product inspection patch cannot be null.");
+
+            var result = await _productInspectionService.PatchProductInspectionServiceAsync(id, productInspection, ct);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
         [HttpGet("GeneralPdf/{id:guid}")]
         public async Task<IActionResult> GeneralPdf([FromRoute] Guid id, CancellationToken ct)
         {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadServices;
 
 namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material.GetDtos
 {
@@ -17,6 +18,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
         public string? Name { get; set; }
 
         public Guid CategoryId { get; set; }
+        public Guid? AttachmentCollectionId { get; set; }
 
         public double? Weight { get; set; }
 
@@ -33,6 +35,7 @@ namespace VietausWebAPI.Core.Application.Features.MaterialFeatures.DTOs.Material
         public bool? IsActive { get; set; }
 
         public string? Barcode { get; set; } //mã “master” để quét ra sản phẩm/vật tư (thường là GTIN/EAN-13).
+        public List<LotNumberOptionDto>? LotNumber { get; set; } = new List<LotNumberOptionDto>();
         public List<GetMaterialSupplier> materialSuppliers { get; set; } = new List<GetMaterialSupplier>();
 
     }

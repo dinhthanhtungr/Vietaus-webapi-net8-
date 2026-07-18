@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReadServices;
 using VietausWebAPI.Core.Domain.Enums.Formulas;
 
 namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas
@@ -19,6 +20,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.MfgFormulas
         public decimal Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }
+
+        public LotNumberOptionDto? LotNumber { get; set; } = null;
 
         public string? MaterialNameSnapshot { get; set; }         // NVARCHAR
         public string? MaterialExternalIdSnapshot { get; set; }   // VARCHAR

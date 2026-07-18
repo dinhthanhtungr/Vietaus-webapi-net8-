@@ -21,6 +21,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
         private readonly IColorChipRecordPortraitPdf _colorChipRecordPortraitPdf;
         private readonly IColorChipRecordTanPhuPdf _ColorChipRecordTanPhuPdf;
         private readonly IColorChipRecordTanPhuBacNinhPdf _colorChipRecordTanPhuBacNinhPdf;
+        private readonly IColorChipRecordFiveOptionPdf _colorChipRecordFiveOptionPdf;
+        private readonly IColorChipRecordTanPhuBacNinh3ThresholdPdf _colorChipRecordTanPhuBacNinh3ThresholdPdf;
         private readonly ICurrentUser _currentUser;
 
         public ColourChipRecordPrintPDFService(
@@ -29,6 +31,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             IColorChipRecordPortraitPdf colorChipRecordPortraitPdf,
             IColorChipRecordTanPhuPdf colorChipRecordTanPhuPdf,
             IColorChipRecordTanPhuBacNinhPdf colorChipRecordTanPhuBacNinhPdf,
+            IColorChipRecordFiveOptionPdf colorChipRecordFiveOptionPdf,
+            IColorChipRecordTanPhuBacNinh3ThresholdPdf colorChipRecordTanPhuBacNinh3ThresholdPdf,
             ICurrentUser currentUser)
         {
             _unitOfWork = unitOfWork;
@@ -36,6 +40,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
             _colorChipRecordPortraitPdf = colorChipRecordPortraitPdf;
             _ColorChipRecordTanPhuPdf = colorChipRecordTanPhuPdf;
             _colorChipRecordTanPhuBacNinhPdf = colorChipRecordTanPhuBacNinhPdf;
+            _colorChipRecordFiveOptionPdf = colorChipRecordFiveOptionPdf;
+            _colorChipRecordTanPhuBacNinh3ThresholdPdf = colorChipRecordTanPhuBacNinh3ThresholdPdf;
             _currentUser = currentUser;
         }
 
@@ -76,6 +82,8 @@ namespace VietausWebAPI.Core.Application.Features.Labs.Services.SampleRequestFea
                     FormStyle.Chips3 => _colorChipRecordPdf.Render(result.PdfModel),
                     FormStyle.ChipsTanPhu => _ColorChipRecordTanPhuPdf.Render(result.PdfModel),
                     FormStyle.ChipsTanPhuBacNinh => _colorChipRecordTanPhuBacNinhPdf.Render(result.PdfModel),
+                    FormStyle.Chips5Options => _colorChipRecordFiveOptionPdf.Render(result.PdfModel),
+                    FormStyle.ChipsTanPhuBacNinh3Thresholds => _colorChipRecordTanPhuBacNinh3ThresholdPdf.Render(result.PdfModel),
                     FormStyle.Chips2_NonStandard => _colorChipRecordPortraitPdf.Render(result.PdfModel),
                     _ => _colorChipRecordPdf.Render(result.PdfModel)
                 };

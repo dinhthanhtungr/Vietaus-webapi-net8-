@@ -26,7 +26,9 @@
         public decimal RemainingAmount { get; set; }          // Doanh thu còn lại
         public decimal UnpaidAmount { get; set; }             // Tiền chưa thanh toán
         public decimal ActualSoldRate { get; set; }           // Tỷ lệ doanh thu thực/tổng đơn
-        
+        public decimal ActualSoldAmountInPeriod { get; set; }          // Doanh số đã giao trong kỳ
+        public decimal ExpectedPendingAmountInPeriod { get; set; }     // Doanh số còn có thể giao trong kỳ
+        public decimal ExpectedRevenueInMonth { get; set; }            // Tổng doanh số kỳ vọng trong kỳ
         // MỚI: So sánh kỳ
         public decimal PreviousPeriodRevenue { get; set; }    // Doanh thu kỳ trước
         public decimal RevenueGrowthRate { get; set; }        // % tăng trưởng
@@ -47,7 +49,7 @@
         public IReadOnlyList<MerchandiseOrderReportChartPointDto> RevenueByMonth { get; set; }
             = new List<MerchandiseOrderReportChartPointDto>();
 
-        public IReadOnlyList<MerchandiseOrderReportChartPointDto> RevenueByWeek { get; set; }
+        public IReadOnlyList<MerchandiseOrderReportChartPointDto    > RevenueByWeek { get; set; }
             = new List<MerchandiseOrderReportChartPointDto>();
 
         public IReadOnlyList<MerchandiseOrderReportChartPointDto> RevenueByManager { get; set; }

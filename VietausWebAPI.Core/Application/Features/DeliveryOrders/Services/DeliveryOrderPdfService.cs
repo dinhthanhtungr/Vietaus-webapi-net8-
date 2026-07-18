@@ -65,7 +65,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                     CustomerExternalIdSnapShot = x.CustomerExternalIdSnapShot,
                     DeliveryAddress = x.DeliveryAddress,
 
-                    CustomerAddress = x.Customer.Addresses.Select(a => a.AddressLine).FirstOrDefault(),
+                    CustomerAddress = x.Customer.RegistrationAddress,
                     CustomerName = x.Customer.CustomerName,
 
                     TaxNumber = x.TaxNumber,
@@ -81,6 +81,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
 
                     Details = x.Details.Select(d => new PdfPrinterDeliveryOrderDetail
                     {
+                        MerchandiseOrderDetailId = d.MerchandiseOrderDetailId,
                         ProductId = d.ProductId,
                         ProductCode = d.ProductExternalIdSnapShot ?? string.Empty,
                         ProductName = d.ProductNameSnapShot ?? string.Empty,
@@ -124,9 +125,52 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                 if (vm == null)
                     throw new Exception("Delivery Order not found.");
 
+                var merchandiseOrderDetailIds = vm.Details
+                    .Where(x => x.MerchandiseOrderDetailId.HasValue)
+                    .Select(x => x.MerchandiseOrderDetailId!.Value)
+                    .Distinct()
+                    .ToList();
+
+                var manufacturingFormulaExternalIdsByMoDetailId = new Dictionary<Guid, List<string>>();
+
+                if (merchandiseOrderDetailIds.Count > 0)
+                {
+                    var selectedManufacturingFormulaExternalIds = await _unitOfWork.MfgOrderPORepository.Query(track: false)
+                        .Where(x => x.IsActive
+                                    && merchandiseOrderDetailIds.Contains(x.MerchandiseOrderDetailId)
+                                    && x.ProductionOrder != null
+                                    && x.ProductionOrder.IsActive)
+                        .SelectMany(x => x.ProductionOrder.ProductionSelectVersions
+                            .Where(v => v.ValidTo == null
+                                        && v.ManufacturingFormula != null
+                                        && v.ManufacturingFormula.IsActive)
+                            .Select(v => new
+                            {
+                                x.MerchandiseOrderDetailId,
+                                v.ManufacturingFormula!.ExternalId
+                            }))
+                        .Where(x => !string.IsNullOrWhiteSpace(x.ExternalId))
+                        .ToListAsync(ct);
+
+                    manufacturingFormulaExternalIdsByMoDetailId = selectedManufacturingFormulaExternalIds
+                        .GroupBy(x => x.MerchandiseOrderDetailId)
+                        .ToDictionary(
+                            g => g.Key,
+                            g => g.Select(x => x.ExternalId.Trim())
+                                .Distinct(StringComparer.OrdinalIgnoreCase)
+                                .ToList());
+                }
 
                 var manufacturingFormulaExternalIds = vm.Details
-                    .SelectMany(x => SplitExternalIds(x.LotNumber))
+                    .SelectMany(x =>
+                    {
+                        var ids = SplitExternalIds(x.LotNumber);
+
+                        return x.MerchandiseOrderDetailId.HasValue
+                               && manufacturingFormulaExternalIdsByMoDetailId.TryGetValue(x.MerchandiseOrderDetailId.Value, out var selectedIds)
+                            ? ids.Concat(selectedIds)
+                            : ids;
+                    })
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
@@ -138,6 +182,13 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                 var fallbackProductIds = vm.Details
                     .Where(x =>
                     {
+                        var hasSelectedManufacturingFormula = x.MerchandiseOrderDetailId.HasValue
+                            && manufacturingFormulaExternalIdsByMoDetailId.TryGetValue(x.MerchandiseOrderDetailId.Value, out var selectedIds)
+                            && selectedIds.Count > 0;
+
+                        if (hasSelectedManufacturingFormula)
+                            return false;
+
                         var rowExternalIds = SplitExternalIds(x.LotNumber).ToList();
 
                         return x.ProductId.HasValue
@@ -151,14 +202,40 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.Services
                 var singleMaterialProductIds =
                     await _productFormulaRuleHelper.GetProductIdsWithSingleMaterialFormulaAsync(fallbackProductIds, ct);
 
+                //foreach (var row in vm.Details)
+                //{
+                //    var rowExternalIds = SplitExternalIds(row.LotNumber).ToList();
+                //    var hasSingleMaterialManufacturingFormula =
+                //        rowExternalIds.Any(singleMaterialManufacturingFormulaExternalIds.Contains);
+
+                //    var shouldFallbackToProductFormula =
+                //        rowExternalIds.Count == 0 || !hasSingleMaterialManufacturingFormula;
+
+                //    row.IsSingleMaterialFormula =
+                //        hasSingleMaterialManufacturingFormula
+                //        || (shouldFallbackToProductFormula
+                //            && row.ProductId.HasValue
+                //            && singleMaterialProductIds.Contains(row.ProductId.Value));
+                //}
+
                 foreach (var row in vm.Details)
                 {
-                    var rowExternalIds = SplitExternalIds(row.LotNumber).ToList();
+                    var selectedManufacturingFormulaExternalIds = row.MerchandiseOrderDetailId.HasValue
+                                                                  && manufacturingFormulaExternalIdsByMoDetailId.TryGetValue(row.MerchandiseOrderDetailId.Value, out var selectedIds)
+                        ? selectedIds
+                        : new List<string>();
+
+                    var rowExternalIds = SplitExternalIds(row.LotNumber)
+                        .Concat(selectedManufacturingFormulaExternalIds)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
                     var hasSingleMaterialManufacturingFormula =
                         rowExternalIds.Any(singleMaterialManufacturingFormulaExternalIds.Contains);
 
                     var shouldFallbackToProductFormula =
-                        rowExternalIds.Count == 0 || !hasSingleMaterialManufacturingFormula;
+                        selectedManufacturingFormulaExternalIds.Count == 0
+                        && (rowExternalIds.Count == 0 || !hasSingleMaterialManufacturingFormula);
 
                     row.IsSingleMaterialFormula =
                         hasSingleMaterialManufacturingFormula

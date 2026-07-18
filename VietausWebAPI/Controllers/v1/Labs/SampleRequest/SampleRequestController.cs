@@ -167,16 +167,16 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.SampleRequest
         }
 
         [HttpPatch("update-colour-code-name/{id}")]
-        public async Task<IActionResult> UpdateColourCodeName(Guid id, [FromQuery] string newColourCode, CancellationToken ct = default)
+        public async Task<IActionResult> UpdateColourCodeName(Guid id, [FromQuery] string? newColourCode, CancellationToken ct = default)
         {
             if (id == Guid.Empty)
             {
                 return BadRequest("Invalid ID.");
             }
-            if (string.IsNullOrWhiteSpace(newColourCode))
-            {
-                return BadRequest("New colour code cannot be empty.");
-            }
+            //if (string.IsNullOrWhiteSpace(newColourCode))
+            //{
+            //    return BadRequest("New colour code cannot be empty.");
+            //}
             try
             {
                 var result = await _sampleRequestService.UpdateColourCodeName(id, newColourCode, ct);

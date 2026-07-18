@@ -41,7 +41,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
             return doc.GeneratePdf();
         }
 
-        private void BuildContent(IContainer c, ColorChipRecordPdfModel m, bool templateOnly)
+        protected virtual void BuildContent(IContainer c, ColorChipRecordPdfModel m, bool templateOnly)
         {
             c.Column(col =>
             {
@@ -57,7 +57,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
                     .Bold();
             });
         }
-        private void BuildFooter(IContainer c, ColorChipRecordPdfModel m)
+        protected virtual void BuildFooter(IContainer c, ColorChipRecordPdfModel m)
         {
             var isBatchNoEmpty = string.IsNullOrWhiteSpace(m.BatchNo);
 
@@ -201,7 +201,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
             c.Column(col =>
             {
                 AddInfoRowUnderline(col, "BATCH NO", templateOnly ? "SAMPLE" : m.BatchNo);
-                AddInfoRowUnderline(col, "DATE", templateOnly ? "" : FormatDate(m.Date));
+                AddInfoRowUnderline(col, "DATE", templateOnly ? "" : FormatDate(DateTime.Now));
                 AddInfoRowUnderline(col, "CUSTOMER", templateOnly ? "" : m.Customer);
                 AddInfoRowUnderline(col, "CODE", templateOnly ? "" : m.Code);
                 AddInfoRowUnderline(col, "COLOR", templateOnly ? "" : m.Color);
@@ -256,7 +256,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs.ColorChipRecords
                     .BorderColor(Colors.Black)
                     .MinHeight(28)
                     .Padding(5)
-                    .Text(templateOnly ? "" : m.ApprovalText)
+                    .Text(templateOnly ? "" : ColorChipRecordPdfTextHelper.ResolveApprovalText(m))
                     .FontSize(labelFontSize);
 
                  col.Item()

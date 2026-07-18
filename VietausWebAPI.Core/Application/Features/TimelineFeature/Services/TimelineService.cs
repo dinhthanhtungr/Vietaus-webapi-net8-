@@ -16,6 +16,7 @@ using VietausWebAPI.Core.Application.Shared.Helper.JwtExport;
 using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 using VietausWebAPI.Core.Domain.Entities.AuditSchema;
 using VietausWebAPI.Core.Domain.Enums.Logs;
+using VietausWebAPI.Core.Domain.Enums.Merchadises;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static QuestPDF.Helpers.Colors;
 
@@ -58,6 +59,7 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
 
             // Status hiện tại của order
             string? orderStatus = string.IsNullOrWhiteSpace(query.Status) ? null : query.Status.Trim();
+            var today = DateTime.Today;
 
             var viewer = await _visibilityHelper.BuildViewerScopeAsync(ct);
 
@@ -96,9 +98,23 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
             // 1.2) Lọc theo status hiện tại của order
             if (orderStatus != null)
             {
-                baseQ = baseQ.Where(mo =>
-                    mo.Status != null &&
-                    mo.Status == orderStatus);
+
+
+                if (orderStatus == MerchadiseStatus.Paused.ToString())
+                {
+                    baseQ = baseQ.Where(mo =>
+                        mo.Status != MerchadiseStatus.Cancelled.ToString() &&
+                        mo.IsDeliveryPaused == true &&
+                        (mo.DeliveryPausedFrom == null || mo.DeliveryPausedFrom.Value.Date <= today) &&
+                        (mo.DeliveryPausedTo == null || mo.DeliveryPausedTo.Value.Date >= today));
+                }
+
+                else
+                {
+                    baseQ = baseQ.Where(mo =>
+                        mo.Status != null &&
+                        mo.Status == orderStatus);
+                }
             }
 
             // 1.3) Áp range From/ToCreated theo CreatedScope
@@ -183,12 +199,29 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                     CreatedName = mo.CreatedByNavigation != null
                         ? (mo.CreatedByNavigation.FullName ?? string.Empty)
                         : string.Empty,
-                    Status = mo.Status ?? string.Empty,
+                    Status = mo.Status == MerchadiseStatus.Cancelled.ToString()
+                        ? MerchadiseStatus.Cancelled.ToString()
+                        : mo.IsDeliveryPaused == true &&
+                          (mo.DeliveryPausedFrom == null || mo.DeliveryPausedFrom.Value.Date <= today) &&
+                          (mo.DeliveryPausedTo == null || mo.DeliveryPausedTo.Value.Date >= today)
+                            ? MerchadiseStatus.Paused.ToString()
+                            : mo.Status ?? string.Empty,
                     TotalPrice = mo.TotalPrice ?? 0m,
                     Vat = mo.Vat ?? 0m,
                     CreatedDate = mo.CreateDate,
                     CustomerName = mo.CustomerNameSnapshot,
                     CustomerExternalId = mo.CustomerExternalIdSnapshot,
+
+                    IsDeliveryPaused = mo.Status != MerchadiseStatus.Cancelled.ToString() &&
+                                       mo.IsDeliveryPaused == true &&
+                                       (mo.DeliveryPausedFrom == null || mo.DeliveryPausedFrom.Value.Date <= today) &&
+                                       (mo.DeliveryPausedTo == null || mo.DeliveryPausedTo.Value.Date >= today),
+                    DeliveryPausedFrom = mo.DeliveryPausedFrom,
+                    DeliveryPausedTo = mo.DeliveryPausedTo,
+                    DeliveryPauseReason = mo.DeliveryPauseReason,
+                    DeliveryPauseType = mo.DeliveryPauseType,
+                    DeliveryPausedBy = mo.DeliveryPausedBy,
+
                     Details = new List<GetMerchadiseTimelineDetail>()
                 })
                 .ToListAsync(ct);
@@ -428,6 +461,7 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                         ProductId = dod.ProductId!.Value,
                         DOExternalId = dop.DeliveryOrder.ExternalId,
                         dod.LotNoList,
+                        dod.Quantity,
                         CreatedDate = dop.DeliveryOrder.CreatedDate
                     }))
                 .Where(x => !string.IsNullOrWhiteSpace(x.DOExternalId))
@@ -440,12 +474,14 @@ namespace VietausWebAPI.Core.Application.Features.TimelineFeature.Services
                         {
                             x.DOExternalId,
                             x.LotNoList,
+                            x.Quantity,
                             x.CreatedDate
                         })
                         .Select(x => new DeliveryInfoDto
                         {
                             DOExternalId = x.Key.DOExternalId!,
                             LotNoList = x.Key.LotNoList,
+                            QuantityDelivery = x.Key.Quantity,
                             CreatedDate = x.Key.CreatedDate
                         })
                         .OrderBy(x => x.CreatedDate)

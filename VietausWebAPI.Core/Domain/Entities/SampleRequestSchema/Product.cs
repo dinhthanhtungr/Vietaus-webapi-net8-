@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using VietausWebAPI.Core.Domain.Entities.CompanySchema;
+using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 using VietausWebAPI.Core.Domain.Entities.DeliverySchema;
 using VietausWebAPI.Core.Domain.Entities.DevandqaSchema;
 using VietausWebAPI.Core.Domain.Entities.HrSchema;
@@ -96,9 +97,11 @@ public partial class Product
     public virtual ICollection<FormulaMaterial> FormulaMaterials { get; set; } = new List<FormulaMaterial>();
     public virtual ICollection<ManufacturingFormulaMaterial> ManufacturingFormulaMaterials { get; set; } = new List<ManufacturingFormulaMaterial>();
     public virtual ICollection<ManufacturingFormulaVersionItem> ManufacturingFormulaVersionItems { get; set; } = new List<ManufacturingFormulaVersionItem>();
+    public virtual ICollection<ManufacturingFormulaAdjustmentItem> ManufacturingFormulaAdjustmentItems { get; set; } = new List<ManufacturingFormulaAdjustmentItem>();
 
     public virtual ICollection<DeliveryOrderDetail> DeliveryOrderDetails { get; set; } = new List<DeliveryOrderDetail>();
     public virtual ICollection<Formula> Formulas { get; set; } = new List<Formula>();
+    public virtual ICollection<QuotationLine> QuotationLines { get; set; } = new List<QuotationLine>();
 
     public virtual ICollection<MerchandiseOrderDetail> MerchandiseOrderDetails { get; set; } = new List<MerchandiseOrderDetail>();
     public virtual ICollection<ColorChipRecord> ColorChipRecords { get; set; } = new List<ColorChipRecord>();

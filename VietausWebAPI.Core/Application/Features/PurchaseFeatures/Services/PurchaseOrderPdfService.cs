@@ -30,7 +30,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
         {
             _unitOfWork = unitOfWork;
             _pdfRenderHelper = pdfRenderHelper;
-            _currentUserService = currentUserService;   
+            _currentUserService = currentUserService;
             _idService = idService;
         }
 
@@ -134,6 +134,7 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                 .Query(track: true)
                 .Include(x => x.PurchaseOrderDetails)
                     .ThenInclude(d => d.Material)
+                        .ThenInclude(m => m.Category)
                 .FirstOrDefaultAsync(x => x.PurchaseOrderId == purchaseOrderId, ct);
 
 
@@ -146,20 +147,23 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
             if (po.CompanyId == null) throw new Exception("Purchase Order missing CompanyId.");
             if (po.CreatedBy == null) throw new Exception("Purchase Order missing CreatedBy.");
 
+            var importRequestTypes = new[]
+            {
+                WareHouseRequestType.ImportOther,
+                WareHouseRequestType.ImportMaterial
+            };
+
             var existed = await _unitOfWork.WarehouseRequestRepository
                 .Query(track: false)
                 .AnyAsync(x => x.IsActive
-                            && x.ReqType == WareHouseRequestType.ImportOther
+                            && importRequestTypes.Contains(x.ReqType)
                             && x.codeFromRequest == po.ExternalId, ct);
 
             if (existed) return;
 
-            // 3) Tạo header
-            var materialCategoryId = Guid.Parse("3bed94ed-da05-4e5f-ac04-c7647aaa63d6");
-
             var hasMaterialCategory = po.PurchaseOrderDetails
                 .Where(d => d.IsActive)
-                .Any(d => d.Material != null && d.Material.CategoryId == materialCategoryId);
+                .Any(IsMaterialStockItem);
 
             var req = new WarehouseRequest
             {
@@ -189,7 +193,12 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
                         ProductName = d.MaterialNameSnapshot ?? string.Empty,
                         WeightKg = d.RequestQuantity ?? 0m,
                         BagNumber = TryParseBagNumber(d.Package),
-                        StockStatus = VoucherDetailType.Waiter.ToString(),
+                        StockStatus = IsMaterialStockItem(d)
+                            ? StockType.Material.ToString()
+                            : VoucherDetailType.Waiter.ToString(),
+                        ItemStockType = IsMaterialStockItem(d)
+                            ? StockType.Material
+                            : StockType.Waiter,
                         LotNumber = null,
                         IsActive = true
                     })
@@ -209,6 +218,13 @@ namespace VietausWebAPI.Core.Application.Features.PurchaseFeatures.Services
             // Lấy số đầu tiên trong chuỗi
             var digits = new string(package.Where(char.IsDigit).ToArray());
             return int.TryParse(digits, out var n) ? n : 0;
+        }
+
+        private static bool IsMaterialStockItem(PurchaseOrderDetail detail)
+        {
+            var categoryType = detail.Material?.Category?.Types;
+            return !string.IsNullOrWhiteSpace(categoryType)
+                && !string.Equals(categoryType, "NVL", StringComparison.OrdinalIgnoreCase);
         }
     }
 

@@ -23,7 +23,8 @@ namespace VietausWebAPI.Core.Domain.Security.Rules.Attachment
                     {
                         "application/pdf",
                         "application/msword",
-                        "application/vnd.openxmlformats-officedocument"
+                        "application/vnd.openxmlformats-officedocument",
+                        "image/"
                     },
                     MaxBytes = 20 * MB
                 },
@@ -37,20 +38,55 @@ namespace VietausWebAPI.Core.Domain.Security.Rules.Attachment
                     MaxBytes = 20 * MB
                 },
 
+                // TDS/MSDS: thường là PDF hoặc ảnh/email scan.
+                [AttachmentSlot.TDS_MSDS] = new SlotRule
+                {
+                    AllowMultiple = true,
+                    AllowedMimePrefixes = new[]
+                    {
+                        "application/pdf",
+                        "image/",
+                        "application/msword",
+                        "application/vnd.ms-excel",
+                        "application/vnd.openxmlformats-officedocument"
+                    },
+                    MaxBytes = 50 * MB
+                },
+
 
                 // PHIẾU GIAO HÀNG (Delivery Note): 1 bản, phổ biến là PDF.
                 [AttachmentSlot.DeliveryNote] = new SlotRule
                 {
-                    AllowMultiple = false,
-                    AllowedMimePrefixes = new[] { "application/pdf" },
+                    AllowMultiple = true,
+                    AllowedMimePrefixes = new[]
+                    {
+                        "application/pdf",
+                        "application/msword",
+                        "application/vnd.openxmlformats-officedocument",
+                        "image/"
+                    },
                     MaxBytes = 20 * MB
                 },
 
                 // HÓA ĐƠN: 1 bản, chuẩn PDF.
                 [AttachmentSlot.Invoice] = new SlotRule
                 {
+                    AllowMultiple = true,
+                    AllowedMimePrefixes = new[]
+                    {
+                        "application/pdf",
+                        "application/msword",
+                        "application/vnd.openxmlformats-officedocument",
+                        "image/"
+                    },
+                    MaxBytes = 20 * MB
+                },
+
+                // COA: thường là PDF, nhưng vẫn cho ảnh scan thực tế.
+                [AttachmentSlot.COA] = new SlotRule
+                {
                     AllowMultiple = false,
-                    AllowedMimePrefixes = new[] { "application/pdf" },
+                    AllowedMimePrefixes = new[] { "application/pdf", "image/" },
                     MaxBytes = 20 * MB
                 },
 
@@ -128,6 +164,20 @@ namespace VietausWebAPI.Core.Domain.Security.Rules.Attachment
                         "application/pdf"    // report/scan
                     },
                     MaxBytes = 10 * MB,      // mỗi file tối đa 10MB (tuỳ bạn)
+                    GenerateThumbnail = true // có ảnh thì tạo thumbnail
+                },
+
+                [AttachmentSlot.Acceptance] = new SlotRule
+                {
+                    AllowMultiple = true,
+                    AllowedMimePrefixes = new[]
+                    {
+                        "application/pdf",
+                        "application/msword",
+                        "application/vnd.openxmlformats-officedocument",
+                        "image/"
+                    },
+                    MaxBytes = 20 * MB,      // mỗi file tối đa 10MB (tuỳ bạn)
                     GenerateThumbnail = true // có ảnh thì tạo thumbnail
                 },
             };

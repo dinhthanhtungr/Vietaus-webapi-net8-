@@ -23,4 +23,5 @@ public partial class Contact
     public bool IsActive { get; set; }
 
     public virtual Customer Customer { get; set; } = null!;
+    public virtual ICollection<Quotation> Quotations { get; set; } = new List<Quotation>();
 }

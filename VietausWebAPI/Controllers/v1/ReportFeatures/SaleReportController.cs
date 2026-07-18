@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VietausWebAPI.Core.Application.Features.ReportFeatures.DTOs;
+using VietausWebAPI.Core.Application.Features.ReportFeatures.DTOs.SaleReports;
 using VietausWebAPI.Core.Application.Features.ReportFeatures.Queries;
 using VietausWebAPI.Core.Application.Features.ReportFeatures.Queries.SaleReports;
 using VietausWebAPI.Core.Application.Features.ReportFeatures.ServiceContracts.SaleReports;
 using VietausWebAPI.Core.Application.Features.ReportFeatures.Services;
+using VietausWebAPI.Core.Application.Features.ReportFeatures.Services.SaleReports;
+using VietausWebAPI.Core.Application.Shared.Models.PageModels;
 
 namespace VietausWebAPI.WebAPI.Controllers.v1.ReportFeatures
 {
@@ -31,6 +34,35 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.ReportFeatures
         {
             var result = await _merchandiseOrderReportService
                 .GetSummaryMOReportAsync(query, ct);
+
+            return Ok(result);
+        }
+
+
+        [HttpGet("merchandise-orders/inactive-customers")]
+        public async Task<ActionResult<PagedResult<InactiveCustomerReportDto>>> GetInactiveCustomersReport(
+            [FromQuery] MerchandiseOrderReportQuery query,
+            CancellationToken cancellationToken)
+        {
+            var result = await _merchandiseOrderReportService.GetInactiveCustomersReportAsync(
+                query,
+                cancellationToken);
+
+            return Ok(result);
+        }
+
+
+        /// <summary>
+        /// Lấy danh sách dòng đơn hàng bán còn thiếu khối lượng giao.
+        /// Dữ liệu và công thức giống Summary: RemainingQuantity = RequestedQuantity - DeliveredQuantity.
+        /// </summary>
+        [HttpGet("merchandise-orders/delivery-shortages")]
+        public async Task<IActionResult> GetDeliveryShortageReport(
+            [FromQuery] MerchandiseOrderReportQuery query,
+            CancellationToken ct)
+        {
+            var result = await _merchandiseOrderReportService
+                .GetDeliveryShortageReportAsync(query, ct);
 
             return Ok(result);
         }
@@ -65,15 +97,45 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.ReportFeatures
         }
 
         /// <summary>
+        /// Lấy báo cáo chi tiết theo sale, gồm doanh thu đã giao, khối lượng, giá vốn và lợi nhuận thực.
+        /// </summary>
+        [HttpGet("merchandise-orders/sale-details")]
+        public async Task<IActionResult> GetSaleDetailReport(
+            [FromQuery] MerchandiseOrderReportQuery query,
+            CancellationToken ct)
+        {
+            var result = await _merchandiseOrderReportService
+                .GetSaleDetailReportAsync(query, ct);
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Lấy báo cáo doanh thu, khối lượng, giá vốn và lợi nhuận theo loại sản phẩm.
+        /// Các sản phẩm có mã màu kết thúc bằng C được gom vào nhóm Compound.
+        /// </summary>
+        [HttpGet("merchandise-orders/product-categories")]
+        public async Task<IActionResult> GetProductCategoryReport(
+            [FromQuery] MerchandiseOrderReportQuery query,
+            CancellationToken ct)
+        {
+            var result = await _merchandiseOrderReportService
+                .GetProductCategoryReportAsync(query, ct);
+
+            return Ok(result);
+        }
+
+        /// <summary>
         /// Lấy chi tiết báo cáo của một đơn hàng bán.
         /// </summary>
         [HttpGet("merchandise-orders/{merchandiseOrderId:guid}/details")]
         public async Task<IActionResult> GetMerchandiseOrderDetailReport(
             [FromRoute] Guid merchandiseOrderId,
+            [FromQuery] MerchandiseOrderReportQuery query,
             CancellationToken ct)
         {
             var result = await _merchandiseOrderReportService
-                .GetMerchandiseOrderDetailReportAsync(merchandiseOrderId, ct);
+                .GetMerchandiseOrderDetailReportAsync(merchandiseOrderId, query, ct);
 
             return Ok(result);
         }

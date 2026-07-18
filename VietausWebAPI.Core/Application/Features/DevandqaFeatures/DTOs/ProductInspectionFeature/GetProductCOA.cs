@@ -11,8 +11,8 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.DTOs.ProductI
         public Guid id { get; set; }
         public string? externalId { get; set; }
 
-        public DateTime? manufacturingDate { get; set; }
-        public DateTime? expiryDate { get; set; }
+        public List<DateTime>? labelPrintDates { get; set; }
+        public string? expiryDate { get; set; }
 
         public string? productPackage { get; set; }
         public float? ProductWeight { get; set; }

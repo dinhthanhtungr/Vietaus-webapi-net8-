@@ -62,7 +62,7 @@ namespace VietausWebAPI.WebAPI.Controllers.v1.Labs.Formula
         }
 
         [HttpPatch]
-        public async Task<IActionResult> UpsertFormula([FromBody] PatchFormula request, CancellationToken ct = default)
+        public async Task<IActionResult> UpsertFormula([FromBody] PatchFormula request, CancellationToken ct = default) 
         {
             if (request == null)
             {

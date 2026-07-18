@@ -17,6 +17,7 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.ServiceContra
         Task<OperationResult<ProductInspectionInformation>> GetProductInspectionByIdAsync(Guid id, CancellationToken ct);
         Task<OperationResult<PagedResult<GetProductCOA>>> GetProductCOAService(ProductInspectionQuery query, CancellationToken ct);
 
+        Task<OperationResult> PatchProductInspectionServiceAsync(Guid id, PatchProductInspectionRequest request, CancellationToken ct);
         Task<OperationResult> DeleteCOAService(Guid id, CancellationToken ct);
         Task<OperationResult<byte[]>> GeneralPdfService(Guid id, CancellationToken ct);
         Task<OperationResult<byte[]>> GeneralQCPdfService(StatisticalReportQuery query, CancellationToken ct);

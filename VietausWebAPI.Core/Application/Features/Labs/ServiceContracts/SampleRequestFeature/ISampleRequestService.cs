@@ -65,7 +65,7 @@ namespace VietausWebAPI.Core.Application.Features.Labs.ServiceContracts.SampleRe
 
         Task<OperationResult<string>> UpdateColourCodeName (
             Guid SampleRequestId, 
-            string newLastPrefix, 
+            string? newLastPrefix, 
             CancellationToken ct = default);
     }
 }

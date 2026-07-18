@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VietausWebAPI.Core.Domain.Enums.WareHouses;
 
 namespace VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseRequest
 {
@@ -14,5 +15,6 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.DTOs.WarehouseReques
         public decimal WeightKg { get; set; } = 0;
         public int BagNumber { get; set; } = 0;
         public string StockStatus { get; set; } = string.Empty;
+        public StockType? ItemStockType { get; set; }
     }
 }

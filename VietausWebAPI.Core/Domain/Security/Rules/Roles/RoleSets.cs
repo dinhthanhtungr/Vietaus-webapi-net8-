@@ -92,8 +92,8 @@
         public const string Manufacturing = $"{AppRoles.Developer},{AppRoles.ManufactureUser},{AppRoles.President}";
 
         /// <summary>Bán hàng: Admin, Dev, SaleUser.</summary>
-        public const string Sales = $"{AppRoles.Developer}, {AppRoles.SaleUser},{AppRoles.President}";
-        public const string SaleLeaders = $"{AppRoles.Developer}, {AppRoles.President},{AppRoles.Leader}";
+        public const string Sales = $"{AppRoles.Developer},{AppRoles.SaleAdmin},{AppRoles.SaleUser},{AppRoles.President}";
+        public const string SaleLeaders = $"{AppRoles.Developer},{AppRoles.SaleAdmin},{AppRoles.President},{AppRoles.Leader}";
         /// <summary>Mua hàng: Admin, Dev, Purchaser.</summary>
         public const string Purchasing = $"{AppRoles.Developer},{AppRoles.Purchaser}";
 

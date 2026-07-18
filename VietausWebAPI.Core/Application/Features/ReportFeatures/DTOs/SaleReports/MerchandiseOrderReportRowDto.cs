@@ -34,6 +34,8 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.DTOs.SaleReport
         public decimal ActualSoldRate { get; set; }
         public decimal UnpaidAmount { get; set; }
 
+        public decimal? VatPercent { get; set; }
+
         public string PaymentType { get; set; } = string.Empty;
         public bool IsPaid { get; set; }
         public DateTime? PaymentDate { get; set; }
@@ -43,7 +45,7 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.DTOs.SaleReport
         public int OrderAgeDays { get; set; }
         public bool IsOverdue { get; set; }
         public int OverdueDays { get; set; }
-        public string HealthStatus { get; set; } = string.Empty;
+        public string HealthStatus { get; set; } = string.Empty;    
         public int DetailCount { get; set; }
     }
 }

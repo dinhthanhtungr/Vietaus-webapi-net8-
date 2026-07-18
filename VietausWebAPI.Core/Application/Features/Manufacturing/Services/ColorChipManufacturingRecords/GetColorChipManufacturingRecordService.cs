@@ -37,6 +37,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
                 .Select(x => new GetColorChipManufacturingRecord
                 {
                     ColorChipMfgRecordId = x.ColorChipMfgRecordId,
+                    ColorCode = x.colorCode,
+                    ProductName = x.ProductName,
                     ResinType = x.ResinType,
                     LogoType = x.LogoType,
                     FormStyle = x.FormStyle,
@@ -118,6 +120,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
             {
                 var keyword = query.Keyword.Trim();
                 db = db.Where(x =>
+                    (x.colorCode != null && EF.Functions.ILike(x.colorCode, $"%{keyword}%")) ||
+                    (x.ProductName != null && EF.Functions.ILike(x.ProductName, $"%{keyword}%")) ||
                     (x.Machine != null && EF.Functions.ILike(x.Machine, $"%{keyword}%")) ||
                     (x.Resin != null && EF.Functions.ILike(x.Resin, $"%{keyword}%")) ||
                     (x.Note != null && EF.Functions.ILike(x.Note, $"%{keyword}%")) ||
@@ -138,6 +142,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
                 .Select(x => new GetColorChipManufacturingRecordSummary
                 {
                     ColorChipMfgRecordId = x.ColorChipMfgRecordId,
+                    ColorCode = x.colorCode,
+                    ProductName = x.ProductName,
                     MfgProductionOrderId = x.MfgProductionOrderId,
                     MfgProductionOrderExternalId = x.MfgProductionOrder != null ? x.MfgProductionOrder.ExternalId : null,
                     ManufacturingFormulaId = x.ManufacturingFormulaId,

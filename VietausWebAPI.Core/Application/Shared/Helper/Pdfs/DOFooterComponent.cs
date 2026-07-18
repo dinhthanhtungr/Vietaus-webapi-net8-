@@ -93,7 +93,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs
 
                     row.RelativeItem()
                         .AlignLeft()
-                        .Element(e => e.Text("VA-WH-F18(04)")
+                        .Element(e => e.Text("VA-WH-F18(05)")
                             .FontFamily("Open Sans")
                             .FontSize(9));
 
@@ -105,7 +105,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs
 
                     row.RelativeItem()
                         .AlignRight()
-                        .Element(e => e.Text("25-03-2026")
+                        .Element(e => e.Text("14-07-2026")
                             .FontFamily("Open Sans")
                             .FontSize(9));
                 });

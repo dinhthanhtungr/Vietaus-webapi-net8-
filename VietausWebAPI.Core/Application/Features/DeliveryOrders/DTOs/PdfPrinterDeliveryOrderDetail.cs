@@ -8,6 +8,7 @@ namespace VietausWebAPI.Core.Application.Features.DeliveryOrders.DTOs
 {
     public class PdfPrinterDeliveryOrderDetail
     {
+        public Guid? MerchandiseOrderDetailId { get; set; }
         public Guid? ProductId { get; set; }
 
         public bool IsSingleMaterialFormula { get; set; }

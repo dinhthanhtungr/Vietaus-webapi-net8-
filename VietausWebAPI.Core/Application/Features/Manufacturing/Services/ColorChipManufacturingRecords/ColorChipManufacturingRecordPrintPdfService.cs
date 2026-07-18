@@ -91,6 +91,7 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.Services.ColorCh
 
                 Date = data.RecordDate ?? data.CreatedDate,
 
+                ApprovalText = ColorChipRecordPdfTextHelper.BuildApprovalText(data.LogoType),
                 Customer = data.CustomerName ?? string.Empty,
 
                 Code = data.ProductExternalId

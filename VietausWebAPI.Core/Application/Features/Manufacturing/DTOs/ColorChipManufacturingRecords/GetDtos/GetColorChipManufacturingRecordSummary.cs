@@ -6,6 +6,8 @@ namespace VietausWebAPI.Core.Application.Features.Manufacturing.DTOs.ColorChipMa
     public class GetColorChipManufacturingRecordSummary
     {
         public Guid ColorChipMfgRecordId { get; set; }
+        public string? ColorCode { get; set; }
+        public string? ProductName { get; set; }
         public Guid? MfgProductionOrderId { get; set; }
         public string? MfgProductionOrderExternalId { get; set; }
         public Guid? ManufacturingFormulaId { get; set; }

@@ -63,6 +63,15 @@ namespace VietausWebAPI.Core.Application.Features.Warehouse.ServiceContracts
         Task<Dictionary<string, string>> GetLotNoMapByCodesAsync(IEnumerable<string> codes, CancellationToken ct = default);
 
 
+        /// <summary>
+        /// Lấy dictionary mapping giữa code hàng hóa và danh sách lotNo còn tồn trong kho để người dùng chọn.
+        /// Có phân biệt trạng thái chất lượng đạt/lỗi theo StockType.
+        /// </summary>
+        /// <param name="codes">Danh sách mã hàng hóa cần lấy lotNo.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>Dictionary có key là mã hàng hóa đã chuẩn hóa và value là danh sách lotNo kèm trạng thái mới nhất trước.</returns>
+        Task<Dictionary<string, List<LotNumberOptionDto>>> GetLotNoListMapByCodesAsync(IEnumerable<string> codes, CancellationToken ct = default);
+
 
         Task<OperationResult<List<StockAvailableExportRow>>> GetStockAvailableExportAsync(WarehouseReadServiceQuery query);
     }

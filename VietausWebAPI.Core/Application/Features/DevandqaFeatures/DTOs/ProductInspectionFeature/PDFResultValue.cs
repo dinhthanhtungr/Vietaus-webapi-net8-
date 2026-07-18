@@ -14,9 +14,9 @@ namespace VietausWebAPI.Core.Application.Features.DevandqaFeatures.DTOs.ProductI
         public string? ProductName { get; set; } // Tên sản phẩm (VD: HẠT COMPOUND...)
         public string? ProductCode { get; set; }
         public string? bagType { get; set; } // Loại bao bì (VD: Bao Jumbo, Bao PE, Bao giấy...)
-        public int? Weight { get; set; }
+        public decimal? Weight { get; set; }
         public DateTime? ManufacturingDate { get; set; }
-        public DateTime? ExpiryDate { get; set; }
+        public string? ExpiryDate { get; set; }
 
         public string? Shape { get; set; }
         public string? ParticleSize { get; set; }

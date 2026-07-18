@@ -40,6 +40,9 @@ namespace VietausWebAPI.Core.Application.Shared.Helper
         public static bool SetIfGuid(Guid? incoming, Func<Guid> current, Action<Guid> apply, bool ignoreEmpty = true)
             => SetIf(incoming, current, apply, g => !ignoreEmpty || g != Guid.Empty);
 
+        public static bool SetIfGuidNullable(Guid? incoming, Func<Guid?> current, Action<Guid?> apply, bool ignoreEmpty = true)
+            => SetIfNullable(incoming, current, apply);
+
         // Nullable value type entity: null = patch (set null)
         public static bool SetIfNullable<T>(
             T? incoming,

@@ -16,6 +16,16 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.RepositoriesCon
             ViewerScope viewerScope,
             CancellationToken cancellationToken = default);
 
+        Task<(IReadOnlyList<InactiveCustomerReportDto> Items, int TotalCount)> GetInactiveCustomersReportAsync(
+            MerchandiseOrderReportQuery query,
+            ViewerScope viewerScope,
+            CancellationToken cancellationToken = default);
+
+        Task<(IReadOnlyList<MerchandiseOrderReportRowDto> Items, int TotalCount)> GetDeliveryShortageReportAsync(
+            MerchandiseOrderReportQuery query,
+            ViewerScope viewerScope,
+            CancellationToken cancellationToken = default);
+
         Task<List<SummaryMOReportDto>> GetDeliveryPlanReportForExportAsync(
             MerchandiseOrderReportQuery query,
             ViewerScope viewerScope,
@@ -31,8 +41,19 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.RepositoriesCon
             ViewerScope viewerScope,
             CancellationToken cancellationToken = default);
 
+        Task<(IReadOnlyList<MerchandiseOrderSaleDetailReportDto> Items, int TotalCount)> GetSaleDetailReportAsync(
+            MerchandiseOrderReportQuery query,
+            ViewerScope viewerScope,
+            CancellationToken cancellationToken = default);
+
+        Task<MerchandiseOrderProductCategoryAnalyticsDto> GetProductCategoryReportAsync(
+            MerchandiseOrderReportQuery query,
+            ViewerScope viewerScope,
+            CancellationToken cancellationToken = default);
+
         Task<IReadOnlyList<MerchandiseOrderReportDetailDto>> GetMerchandiseOrderDetailReportAsync(
             Guid merchandiseOrderId,
+            MerchandiseOrderReportQuery query,
             ViewerScope viewerScope,
             CancellationToken cancellationToken = default);
     }

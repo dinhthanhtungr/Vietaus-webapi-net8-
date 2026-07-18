@@ -13,6 +13,7 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
             // Module registrations
             services
                 .AddAttachmentsModule()
+                .AddAuditModule()
                 .AddCompanyModule()
                 .AddDevandqaModule()
                 .AddExtruderOperationHistoryModule()
@@ -20,6 +21,7 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
                 .AddHRModule()
                 .AddIdentityModel()
                 .AddSalesModule()
+                .AddWorkManagementModule()
                 .AddLabsModule()
                 .AddPlanningModule()
                 .AddMaterialModule()
@@ -29,7 +31,8 @@ namespace VietausWebAPI.WebAPI.DependencyInjections
                 .AddPurchaseModule()
                 .AddTimelineModule()
                 .AddNotificationsModule()   // NEW
-                .AddHelpersModule();        // Helpers chung
+                .AddHelpersModule()       // Helpers chung
+                .AddPrintectModule();        // Module in charge of label printing
 
             return services;
         }

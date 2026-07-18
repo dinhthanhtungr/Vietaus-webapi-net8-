@@ -39,7 +39,7 @@ namespace VietausWebAPI.Infrastructure.DatabaseContext.Configurations.WarehouseS
                   .HasColumnName("isActive");
 
             entity.Property(x => x.IsReceivable)
-                  .HasDefaultValue(false)
+                  .HasDefaultValue(false)   
                   .HasColumnName("isReceivable");
 
             entity.Property(x => x.IsPickable)

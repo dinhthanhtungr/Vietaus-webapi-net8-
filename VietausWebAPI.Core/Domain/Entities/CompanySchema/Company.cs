@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using VietausWebAPI.Core.Domain.Entities.AuditSchema;
 using VietausWebAPI.Core.Domain.Entities.CustomerSchema;
 using VietausWebAPI.Core.Domain.Entities.HrSchema;
+using VietausWebAPI.Core.Domain.Entities.InternalMailSchema;
 using VietausWebAPI.Core.Domain.Entities.ManufacturingSchema;
 using VietausWebAPI.Core.Domain.Entities.MaterialSchema;
 using VietausWebAPI.Core.Domain.Entities.MROSchema;
+using VietausWebAPI.Core.Domain.Entities.Notifications;
 using VietausWebAPI.Core.Domain.Entities.OrderSchema;
 using VietausWebAPI.Core.Domain.Entities.SampleRequestSchema;
 using VietausWebAPI.Core.Domain.Entities.WarehouseSchema;
+using VietausWebAPI.Core.Domain.Entities.WorkTaskSchema;
 
 namespace VietausWebAPI.Core.Domain.Entities.CompanySchema;
 
@@ -51,6 +54,7 @@ public partial class Company
     public virtual ICollection<CustomerTransferLog> CustomerTransferLogs { get; set; } = new List<CustomerTransferLog>();
 
     public virtual ICollection<Customer> Customers { get; set; } = new List<Customer>();
+    public virtual ICollection<CustomerInteractionAiSummary> CustomerInteractionAiSummaries { get; set; } = new List<CustomerInteractionAiSummary>();
 
     public virtual ICollection<Formula> Formulas { get; set; } = new List<Formula>();
     public virtual ICollection<EventLog> EventLogs { get; set; } = new List<EventLog>();
@@ -68,6 +72,8 @@ public partial class Company
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 
     public virtual ICollection<PurchaseOrder> PurchaseOrders { get; set; } = new List<PurchaseOrder>();
+
+    public virtual ICollection<Quotation> Quotations { get; set; } = new List<Quotation>();
 
     public virtual ICollection<SampleRequest> SampleRequests { get; set; } = new List<SampleRequest>();
     public virtual ICollection<SampleRequest> SampleRequestBranchs { get; set; } = new List<SampleRequest>();
@@ -91,12 +97,18 @@ public partial class Company
     /// </summary>
     public virtual ICollection<ProductionSelectVersion> ProductionSelectVersions { get; set; } = new List<ProductionSelectVersion>();
     public virtual ICollection<ProductStandardFormula> ProductStandardFormulas { get; set; } = new List<ProductStandardFormula>();
+    public virtual ICollection<ManufacturingFormulaAdjustment> ManufacturingFormulaAdjustments { get; set; } = new List<ManufacturingFormulaAdjustment>();
 
     // Warehouse
     public virtual ICollection<WarehouseShelves> WarehouseShelves { get; set; } = new List<WarehouseShelves>();
     public virtual ICollection<WarehouseShelfLedger> WarehouseShelfLedgers { get; set; } = new List<WarehouseShelfLedger>();
     public virtual ICollection<WarehouseVoucher> WarehouseVouchers { get; set; } = new List<WarehouseVoucher>();
 
+    public virtual ICollection<WorkTask> WorkTasks { get; set; } = new List<WorkTask>();
+    public virtual ICollection<WorkPlan> WorkPlans { get; set; } = new List<WorkPlan>();
+
+    public virtual ICollection<InternalConversation> InternalConversations { get; set; } = new List<InternalConversation>();
+    public virtual ICollection<WebPushSubscription> WebPushSubscriptions { get; set; } = new List<WebPushSubscription>();
 
 
 }

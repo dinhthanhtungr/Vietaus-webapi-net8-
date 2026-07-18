@@ -50,7 +50,7 @@ namespace VietausWebAPI.Core.Application.Shared.Helper.Pdfs
                              {
                                  row.RelativeItem(1).Text("Factory 02:")
                                      .FontFamily("Open Sans").FontSize(7);
-                                 row.RelativeItem(3).Text("Industrial park slope 47, Long Khanh 2 quarter,\nTam Phuoc ward, Bien Hoa city, Dong Nai, Vietnam.")
+                                 row.RelativeItem(3).Text("Industrial park slope 47, Long Khanh 2 quarter,\nTam Phuoc ward, Dong Nai city, Vietnam.")
                                      .FontFamily("Open Sans").FontSize(7);
                              });
 

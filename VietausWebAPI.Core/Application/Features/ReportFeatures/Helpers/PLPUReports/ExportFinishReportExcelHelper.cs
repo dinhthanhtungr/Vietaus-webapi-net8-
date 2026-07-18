@@ -1,6 +1,7 @@
 ﻿using ClosedXML.Excel;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -42,28 +43,29 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Helpers.PLPURep
 
             string[] headers =
             {
-        "STT",
-        "Mã số",
-        "Đơn hàng",
-        "LSX",
-        "Tên khách hàng",
-        "Mã sản phẩm",
-        "Tên sản phẩm",
-        "Số lot",
-        "Ngày nhận đơn",
-        "Ngày yêu cầu giao",
-        "Ngày giao thực tế",
-        "Trễ (ngày)",
-        "SL đặt",
-        "SL giao",
-        "Địa chỉ",
-        "Ghi chú"
-    };
+                "STT",
+                "Mã số",
+                "Đơn hàng",
+                "LSX",
+                "Tên khách hàng",
+                "Mã sản phẩm",
+                "Tên sản phẩm",
+                "Số lot",
+                "Ngày nhận đơn",
+                "Ngày yêu cầu giao",
+                "Ngày dự kiến giao",
+                "Ngày giao thực tế",
+                "Trễ (ngày)",
+                "SL đặt",
+                "SL giao",
+                "Địa chỉ",
+                "Ghi chú"
+            };
 
             for (int c = 1; c <= headers.Length; c++)
                 ws.Cell(headerRow, c).Value = headers[c - 1];
 
-            var headerRange = ws.Range(headerRow, 1, headerRow, 16);
+            var headerRange = ws.Range(headerRow, 1, headerRow, 17);
             headerRange.Style.Fill.BackgroundColor = XLColor.Yellow;
             headerRange.Style.Font.Bold = true;
             headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
@@ -101,22 +103,29 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Helpers.PLPURep
                     ws.Cell(r, 10).Style.DateFormat.Format = "dd/MM/yyyy";
                 }
 
-                if (item.ActualDeliveryDate.HasValue)
+                if (item.ExpectedDeliveryDate.HasValue)
                 {
-                    ws.Cell(r, 11).Value = item.ActualDeliveryDate.Value;
+                    ws.Cell(r, 11).Value = item.ExpectedDeliveryDate.Value;
                     ws.Cell(r, 11).Style.DateFormat.Format = "dd/MM/yyyy";
                 }
 
-                ws.Cell(r, 12).Value = item.LateDays;
-                ws.Cell(r, 13).Value = item.OrderedQuantity;
-                ws.Cell(r, 14).Value = item.DeliveredQuantity;
-                ws.Cell(r, 15).Value = item.Address;
-                ws.Cell(r, 16).Value = item.Note;
+                if (item.ActualDeliveryDate.HasValue)
+                {
+                    ws.Cell(r, 12).Value = item.ActualDeliveryDate.Value;
+                    ws.Cell(r, 12).Style.DateFormat.Format = "dd/MM/yyyy";
+                }
+
+                var lateDays = CalculateLateDays(item.ExpectedDeliveryDate, item.ActualDeliveryDate);
+                ws.Cell(r, 13).Value = lateDays;
+                ws.Cell(r, 14).Value = item.OrderedQuantity;
+                ws.Cell(r, 15).Value = item.DeliveredQuantity;
+                ws.Cell(r, 16).Value = item.Address;
+                ws.Cell(r, 17).Value = item.Note;
 
                 ws.Cell(r, 13).Style.NumberFormat.Format = "#,##0.##";
                 ws.Cell(r, 14).Style.NumberFormat.Format = "#,##0.##";
 
-                var rowRange = ws.Range(r, 1, r, 16);
+                var rowRange = ws.Range(r, 1, r, 17);
                 rowRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
                 rowRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
                 rowRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
@@ -131,18 +140,19 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Helpers.PLPURep
                 ws.Cell(r, 10).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 ws.Cell(r, 11).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 ws.Cell(r, 12).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                ws.Cell(r, 13).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                ws.Cell(r, 13).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 ws.Cell(r, 14).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                ws.Cell(r, 15).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
 
                 ws.Cell(r, 7).Style.Alignment.WrapText = true;
                 ws.Cell(r, 8).Style.Alignment.WrapText = true;
-                ws.Cell(r, 15).Style.Alignment.WrapText = true;
                 ws.Cell(r, 16).Style.Alignment.WrapText = true;
+                ws.Cell(r, 17).Style.Alignment.WrapText = true;
 
-                if ((item.LateDays ?? 0) > 0)
+                if ((lateDays) > 0)
                 {
-                    ws.Cell(r, 12).Style.Font.FontColor = XLColor.Red;
-                    ws.Cell(r, 12).Style.Font.Bold = true;
+                    ws.Cell(r, 13).Style.Font.FontColor = XLColor.Red;
+                    ws.Cell(r, 13).Style.Font.Bold = true;
                 }
             }
 
@@ -228,11 +238,12 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Helpers.PLPURep
             ws.Column(9).Width = 14;
             ws.Column(10).Width = 14;
             ws.Column(11).Width = 14;
-            ws.Column(12).Width = 10;
-            ws.Column(13).Width = 12;
+            ws.Column(12).Width = 14;
+            ws.Column(13).Width = 10;
             ws.Column(14).Width = 12;
-            ws.Column(15).Width = 30;
-            ws.Column(16).Width = 20;
+            ws.Column(15).Width = 12;
+            ws.Column(16).Width = 30;
+            ws.Column(17).Width = 20;
 
             ws.SheetView.FreezeRows(headerRow);
             ws.PageSetup.PageOrientation = XLPageOrientation.Landscape;
@@ -250,34 +261,108 @@ namespace VietausWebAPI.Core.Application.Features.ReportFeatures.Helpers.PLPURep
         }
 
         // ========================================================= Helpers =========================================================
+        //private FinishReportSummary BuildFinishSummary(List<FinishRow> rows)
+        //{
+        //    rows ??= new List<FinishRow>();
+
+        //    var orderGroups = rows
+        //        .Where(x => !string.IsNullOrWhiteSpace(x.MerchandiseOrderCode))
+        //        .GroupBy(x => x.MerchandiseOrderCode)
+        //        .ToList();
+
+        //    int total = orderGroups.Count;
+
+        //    // Một đơn chỉ cần có 1 dòng giao trễ thì tính đơn đó là không đạt
+        //    int late = orderGroups.Count(g => g.Any(IsLate));
+
+        //    // Các đơn không trễ, bao gồm ExpectedDeliveryDate == null, sẽ mặc định đạt
+        //    int onTime = total - late;
+
+        //    decimal Percent(int value) =>
+        //        total == 0 ? 0 : Math.Round(value * 100m / total, 0);
+
+        //    return new FinishReportSummary
+        //    {
+        //        TotalOrders = total,
+        //        OnTimeOrders = onTime,
+        //        LateOrders = late,
+
+        //        OnTimePercent = Percent(onTime),
+        //        LatePercent = Percent(late),
+        //    };
+        //}
+
         private FinishReportSummary BuildFinishSummary(List<FinishRow> rows)
         {
             rows ??= new List<FinishRow>();
 
-            // Gom theo đơn hàng để tránh 1 đơn nhiều dòng bị đếm nhiều lần
             var orderRows = rows
-                .Where(x => !string.IsNullOrWhiteSpace(x.DeliveryOrderCode))
-                .GroupBy(x => x.DeliveryOrderCode)
-                .Select(g => g
-                    .OrderByDescending(x => x.LateDays ?? int.MinValue)
-                    .First())
+                .Where(x => !string.IsNullOrWhiteSpace(x.MerchandiseOrderCode))
+                .GroupBy(x => x.MerchandiseOrderCode)
+                .Select(g =>
+                {
+                    var expectedDate = g
+                        .Where(x => x.ExpectedDeliveryDate.HasValue)
+                        .Select(x => x.ExpectedDeliveryDate!.Value.Date)
+                        .DefaultIfEmpty()
+                        .Min();
+
+                    var firstActualDate = g
+                        .Where(x => x.ActualDeliveryDate.HasValue)
+                        .Select(x => x.ActualDeliveryDate!.Value.Date)
+                        .DefaultIfEmpty()
+                        .Min();
+
+                    bool hasExpectedDate = g.Any(x => x.ExpectedDeliveryDate.HasValue);
+                    bool hasActualDate = g.Any(x => x.ActualDeliveryDate.HasValue);
+
+                    bool isLate =
+                        hasExpectedDate &&
+                        hasActualDate &&
+                        firstActualDate > expectedDate;
+
+                    return new
+                    {
+                        MerchandiseOrderCode = g.Key,
+                        IsLate = isLate
+                    };
+                })
                 .ToList();
 
             int total = orderRows.Count;
-            int onTime = orderRows.Count(x => (x.LateDays ?? 0) <= 0);
-            int late = orderRows.Count(x => (x.LateDays ?? 0) > 0);
+            int late = orderRows.Count(x => x.IsLate);
+            int onTime = total - late;
 
-            decimal Percent(int value) => total == 0 ? 0 : Math.Round(value * 100m / total, 0);
+            decimal Percent(int value) =>
+                total == 0 ? 0 : Math.Round(value * 100m / total, 0);
 
             return new FinishReportSummary
             {
                 TotalOrders = total,
                 OnTimeOrders = onTime,
                 LateOrders = late,
-
                 OnTimePercent = Percent(onTime),
                 LatePercent = Percent(late),
             };
+        }
+
+        private static bool IsLate(FinishRow row)
+        {
+            if (!row.ExpectedDeliveryDate.HasValue)
+                return false; // Không có ngày hứa giao => mặc định đạt
+
+            if (!row.ActualDeliveryDate.HasValue)
+                return false; // Nếu report hoàn tất mà thiếu ngày thực giao => tạm mặc định đạt
+
+            return row.ActualDeliveryDate.Value.Date > row.ExpectedDeliveryDate.Value.Date;
+        }
+
+        private static int CalculateLateDays(DateTime? expectedDeliveryDate, DateTime? actualDeliveryDate)
+        {
+            if (!expectedDeliveryDate.HasValue || !actualDeliveryDate.HasValue)
+                return 0;
+
+            return Math.Max(0, (actualDeliveryDate.Value.Date - expectedDeliveryDate.Value.Date).Days);
         }
     }
 }
